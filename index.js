@@ -3,7 +3,7 @@ import bodyParser from 'body-parser';
 import path from 'path';
 import dotenv from 'dotenv';
 dotenv.config();
-import sequelize from './config/db.js';
+import sequelize from './config/sequelize.js';
 import cors from 'cors';
 
 const port = process.env.PORT || 3000;
