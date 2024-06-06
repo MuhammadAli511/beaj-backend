@@ -5,18 +5,19 @@ import dotenv from 'dotenv';
 dotenv.config();
 import sequelize from './config/sequelize.js';
 import cors from 'cors';
+import routes from './routes/index.js';
 
 const port = process.env.PORT || 3000;
 
 const app = express();
 
 app.use(cors());
-app.use(bodyParser.json({ limit: '10mb' }));
-app.use(bodyParser.urlencoded({ limit: '10mb', extended: false }));
+app.use(bodyParser.json({ limit: '500mb' }));
+app.use(bodyParser.urlencoded({ limit: '500mb', extended: false }));
 app.use(express.static(path.join(path.resolve(), './public')));
 app.use(express.json());
 
-
+app.use('/api', routes)
 
 sequelize.authenticate()
   .then(() => console.log('Database connected.'))
