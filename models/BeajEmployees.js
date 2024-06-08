@@ -1,9 +1,9 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../config/sequelize.js';
 
-class InternalUsers extends Model { }
+class BeajEmployees extends Model { }
 
-InternalUsers.init({
+BeajEmployees.init({
     id: {
         type: DataTypes.STRING,
         primaryKey: true,
@@ -32,10 +32,15 @@ InternalUsers.init({
     role: {
         type: DataTypes.STRING,
         allowNull: true
-    }
+    },
+    profile_picture: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
 }, {
     sequelize,
-    modelName: 'InternalUsers',
+    modelName: 'beajEmployees',
+    tableName: 'beaj_employees',
     timestamps: false,
     indexes: [
         {
@@ -45,4 +50,4 @@ InternalUsers.init({
     ]
 });
 
-export default InternalUsers;
+export default BeajEmployees;

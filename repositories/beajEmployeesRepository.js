@@ -1,8 +1,8 @@
-import InternalUsers from '../models/InternalUsers.js';
+import BeajEmployees from '../models/BeajEmployees.js';
 import bcrypt from 'bcryptjs';
 
 const findByEmail = async (email) => {
-    return await InternalUsers.findOne({ where: { email } });
+    return await BeajEmployees.findOne({ where: { email } });
 };
 
 const validatePassword = async (user, password) => {

@@ -1,8 +1,8 @@
 import generateToken from '../utils/generateToken.js'
-import internalUsersRepository from '../repositories/internalUsersRepository.js';
+import beajEmployeesRepository from '../repositories/beajEmployeesRepository.js';
 
 const loginService = async (email, password) => {
-    const user = await internalUsersRepository.findByEmail(email);
+    const user = await beajEmployeesRepository.findByEmail(email);
     if (!user || !(await userRepository.validatePassword(user, password))) {
         throw new Error('Invalid credentials');
     }
