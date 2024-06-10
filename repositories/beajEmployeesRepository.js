@@ -9,5 +9,9 @@ const validatePassword = async (user, password) => {
     return bcrypt.compare(password, user.password);
 };
 
+const create = async (email, password, first_name, last_name, role, date_registered) => {
+    return await BeajEmployees.create({ email, password, first_name, last_name, role, date_registered });
+};
 
-export default { findByEmail, validatePassword };
+
+export default { findByEmail, validatePassword, create };

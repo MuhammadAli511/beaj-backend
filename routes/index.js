@@ -1,5 +1,6 @@
 import express from 'express';
 import beajEmployeesRoutes from './beajEmployeesRoutes.js';
+import statsRoutes from './statsRoutes.js';
 
 const router = express.Router();
 
@@ -8,6 +9,8 @@ router.get('/status', (req, res) => {
     res.status(200).send("App Status : Working");
 });
 
-router.use('/beajEmployeesRoutes', beajEmployeesRoutes);
+router.use('/beajEmployees', beajEmployeesRoutes);
+
+router.use('/stats', statsRoutes);
 
 export default router;

@@ -1,19 +1,18 @@
 import express from 'express';
-import beajEmployeesAuth from '../middlewares/beajEmployeesAuth.js';
 import beajEmployeesController from '../controllers/beajEmployeesController.js';
 
 const router = express.Router();
 
-// GET  api/beajEmployeesRoutes/status
+// GET  api/beajEmployees/status
 router.get('/status', (req, res) => {
-    res.status(200).send("Internal Users Route Status : Working");
+    res.status(200).send("Beaj Employees Route Status : Working");
 });
 
-// POST api/beajEmployeesRoutes/register
-router.post('/register', beajEmployeesAuth, beajEmployeesController.registerController);
+// POST api/beajEmployees/register
+router.post('/register', beajEmployeesController.registerController);
 
-// POST api/beajEmployeesRoutes/login
-router.post('/login', beajEmployeesAuth, beajEmployeesController.loginController);
+// POST api/beajEmployees/login
+router.post('/login', beajEmployeesController.loginController);
 
 
 

@@ -1,7 +1,7 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../config/sequelize.js';
 
-class CourseCategory extends Model {}
+class CourseCategory extends Model { }
 
 CourseCategory.init({
   CourseCategoryId: {
@@ -20,6 +20,10 @@ CourseCategory.init({
   CategorySequenceNum: {
     type: DataTypes.INTEGER,
     allowNull: false
+  },
+  status: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 }, {
   sequelize,

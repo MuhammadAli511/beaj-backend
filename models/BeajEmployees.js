@@ -5,8 +5,9 @@ class BeajEmployees extends Model { }
 
 BeajEmployees.init({
     id: {
-        type: DataTypes.STRING,
+        type: DataTypes.INTEGER,
         primaryKey: true,
+        autoIncrement: true,
         allowNull: false
     },
     first_name: {
@@ -31,7 +32,10 @@ BeajEmployees.init({
     },
     role: {
         type: DataTypes.STRING,
-        allowNull: true
+        allowNull: true,
+        validate: {
+            isIn: [['employee', 'admin']]
+        }
     },
     profile_picture: {
         type: DataTypes.STRING,
