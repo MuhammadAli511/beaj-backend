@@ -1,7 +1,7 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../config/sequelize.js';
 
-class Course extends Model {}
+class Course extends Model { }
 
 Course.init({
   CourseId: {
@@ -30,10 +30,6 @@ Course.init({
     },
     onUpdate: 'CASCADE',
     onDelete: 'RESTRICT'
-  },
-  status: {
-    type: DataTypes.STRING,
-    allowNull: true
   },
   SequenceNumber: {
     type: DataTypes.INTEGER,

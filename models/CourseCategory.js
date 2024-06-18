@@ -20,10 +20,6 @@ CourseCategory.init({
   CategorySequenceNum: {
     type: DataTypes.INTEGER,
     allowNull: false
-  },
-  status: {
-    type: DataTypes.STRING,
-    allowNull: true
   }
 }, {
   sequelize,
