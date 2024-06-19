@@ -11,7 +11,7 @@ ActivityAlias.init({
     },
     Alias: {
         type: DataTypes.STRING,
-        allowNull: true
+        allowNull: false
     }
 }, {
     sequelize,

@@ -2,7 +2,7 @@ import CourseCategory from '../models/CourseCategory.js';
 
 const totalCourseCategoriesRepository = async () => {
     return await CourseCategory.count();
-}
+};
 
 const create = async (courseCategoryName, image, categorySequenceNum) => {
     const courseCategory = new CourseCategory({
@@ -11,7 +11,7 @@ const create = async (courseCategoryName, image, categorySequenceNum) => {
         CategorySequenceNum: categorySequenceNum
     });
     return await courseCategory.save();
-}
+};
 
 const getAll = async () => {
     return await CourseCategory.findAll({
@@ -19,11 +19,11 @@ const getAll = async () => {
             ['CategorySequenceNum', 'ASC']
         ]
     });
-}
+};
 
 const getById = async (id) => {
     return await CourseCategory.findByPk(id);
-}
+};
 
 const update = async (id, courseCategoryName, image, categorySequenceNum) => {
     return await CourseCategory.update({
@@ -35,7 +35,7 @@ const update = async (id, courseCategoryName, image, categorySequenceNum) => {
             CourseCategoryId: id
         }
     });
-}
+};
 
 const deleteCourseCategory = async (id) => {
     return await CourseCategory.destroy({
@@ -43,7 +43,7 @@ const deleteCourseCategory = async (id) => {
             CourseCategoryId: id
         }
     });
-}
+};
 
 export default {
     totalCourseCategoriesRepository,
@@ -52,4 +52,4 @@ export default {
     getById,
     update,
     deleteCourseCategory
-}
+};

@@ -27,5 +27,4 @@ router.put('/update/:id', beajEmployeesAuth, upload.single('file'), courseCatego
 router.delete('/delete/:id', beajEmployeesAuth, courseCategoryController.deleteCourseCategoryController);
 
 
-
 export default router;

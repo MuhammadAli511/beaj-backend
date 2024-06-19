@@ -15,7 +15,7 @@ const create = async (courseName, coursePrice, courseWeeks, courseCategoryId, st
         CourseDescription: courseDescription
     });
     return await course.save();
-}
+};
 
 const getAll = async () => {
     return await Course.findAll({
@@ -23,11 +23,11 @@ const getAll = async () => {
             ['SequenceNumber', 'ASC']
         ]
     });
-}
+};
 
 const getById = async (id) => {
     return await Course.findByPk(id);
-}
+};
 
 const update = async (id, courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription) => {
     return await Course.update({
@@ -43,7 +43,7 @@ const update = async (id, courseName, coursePrice, courseWeeks, courseCategoryId
             CourseId: id
         }
     });
-}
+};
 
 const deleteCourse = async (id) => {
     return await Course.destroy({
@@ -51,7 +51,7 @@ const deleteCourse = async (id) => {
             CourseId: id
         }
     });
-}
+};
 
 export default {
     totalCoursesRepository,
@@ -60,4 +60,4 @@ export default {
     getById,
     update,
     deleteCourse
-}
+};

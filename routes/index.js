@@ -3,6 +3,7 @@ import beajEmployeesRoutes from './beajEmployeesRoutes.js';
 import statsRoutes from './statsRoutes.js';
 import courseCategoryRoutes from './courseCategoryRoutes.js';
 import courseRoutes from './courseRoutes.js';
+import aliasRoutes from './aliasRoutes.js';
 
 const router = express.Router();
 
@@ -15,5 +16,6 @@ router.use('/beajEmployees', beajEmployeesRoutes);
 router.use('/stats', statsRoutes);
 router.use('/courseCategory', courseCategoryRoutes);
 router.use('/course', courseRoutes);
+router.use('/alias', aliasRoutes);
 
 export default router;
