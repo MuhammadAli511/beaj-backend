@@ -31,6 +31,10 @@ Course.init({
     onUpdate: 'CASCADE',
     onDelete: 'RESTRICT'
   },
+  status: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+  },
   SequenceNumber: {
     type: DataTypes.INTEGER,
     allowNull: false,

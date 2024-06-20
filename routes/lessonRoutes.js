@@ -29,15 +29,7 @@ router.get('/getAll', beajEmployeesAuth, lessonController.getAllLessonController
 router.get('/getById/:id', beajEmployeesAuth, lessonController.getLessonByIdController);
 
 // PUT  api/lesson/update/:id
-router.put('/update/:id',
-    beajEmployeesAuth,
-    upload.fields([
-        { name: 'video', maxCount: 1 },
-        { name: 'audio', maxCount: 1 },
-        { name: 'image', maxCount: 1 }
-    ]),
-    lessonController.updateLessonController
-);
+router.put('/update/:id', beajEmployeesAuth, lessonController.updateLessonController);
 
 // DELETE  api/lesson/delete/:id
 router.delete('/delete/:id', beajEmployeesAuth, lessonController.deleteLessonController);

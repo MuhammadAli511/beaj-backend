@@ -6,15 +6,17 @@ const createLessonService = async (lessonType, dayNumber, activity, activityAlia
     const lesson = await lessonRepository.create(lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber);
     if (videoFile) {
         const videoUrl = await azure_blob.uploadToBlobStorage(videoFile);
-        await documentFileRepository.create(lesson.id, "English", null, videoUrl, null, "video");
+        console.log(videoUrl);
+        console.log(lesson.LessonId);
+        await documentFileRepository.create(lesson.LessonId, "English", null, videoUrl, null, "video");
     }
     if (audioFile) {
         const audioUrl = await azure_blob.uploadToBlobStorage(audioFile);
-        await documentFileRepository.create(lesson.id, "English", null, null, audioUrl, "audio");
+        await documentFileRepository.create(lesson.LessonId, "English", null, null, audioUrl, "audio");
     }
     if (imageFile) {
         const imageUrl = await azure_blob.uploadToBlobStorage(imageFile);
-        await documentFileRepository.create(lesson.id, "English", imageUrl, null, null, "image");
+        await documentFileRepository.create(lesson.LessonId, "English", imageUrl, null, null, "image");
     }
     return lesson;
 };

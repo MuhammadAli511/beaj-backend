@@ -4,6 +4,8 @@ import statsRoutes from './statsRoutes.js';
 import courseCategoryRoutes from './courseCategoryRoutes.js';
 import courseRoutes from './courseRoutes.js';
 import aliasRoutes from './aliasRoutes.js';
+import lessonRoutes from './lessonRoutes.js';
+import courseWeekRoutes from './courseWeekRoutes.js';
 
 const router = express.Router();
 
@@ -17,5 +19,7 @@ router.use('/stats', statsRoutes);
 router.use('/courseCategory', courseCategoryRoutes);
 router.use('/course', courseRoutes);
 router.use('/alias', aliasRoutes);
+router.use('/lesson', lessonRoutes);
+router.use('/courseWeek', courseWeekRoutes);
 
 export default router;
