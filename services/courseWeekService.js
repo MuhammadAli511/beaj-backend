@@ -26,11 +26,15 @@ const getCourseWeekByIdService = async (id) => {
 };
 
 const updateCourseWeekService = async (id, weekNumber, image, description, courseId) => {
-    await courseWeekRepository.update(id, weekNumber, image, description, courseId);
+    const imageUrl = await azure_blob.uploadToBlobStorage(image);
+    const courseWeek = await courseWeekRepository.update(id, weekNumber, imageUrl, description, courseId);
+    return courseWeek;
 };
 
 const deleteCourseWeekService = async (id) => {
+    const courseWeek = await courseWeekRepository.getById(id);
     await courseWeekRepository.deleteCourseWeek(id);
+    await courseRepository.deleteOneInCourseWeeks(courseWeek.courseId);
 };
 
 export default {

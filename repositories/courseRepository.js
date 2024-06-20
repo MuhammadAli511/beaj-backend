@@ -35,6 +35,12 @@ const addOneInCourseWeeks = async (courseId) => {
     return await course.save();
 };
 
+const deleteOneInCourseWeeks = async (courseId) => {
+    const course = await Course.findByPk(courseId);
+    course.CourseWeeks--;
+    return await course.save();
+};
+
 const update = async (id, courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription) => {
     return await Course.update({
         CourseName: courseName,
@@ -66,5 +72,6 @@ export default {
     getById,
     update,
     deleteCourse,
-    addOneInCourseWeeks
+    addOneInCourseWeeks,
+    deleteOneInCourseWeeks
 };
