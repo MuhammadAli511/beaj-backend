@@ -28,8 +28,19 @@ const update = async (id, weekNumber, image, description, courseId) => {
 };
 
 const deleteCourseWeek = async (id) => {
-    const courseWeek = await CourseWeek.findByPk(id);
-    await courseWeek.destroy();
+    return await CourseWeek.destroy({
+        where: {
+            id: id
+        }
+    });
+};
+
+const deleteCourseWeekByCourseId = async (courseId) => {
+    return await CourseWeek.destroy({
+        where: {
+            courseId: courseId
+        }
+    });
 };
 
 export default {
@@ -37,5 +48,6 @@ export default {
     getAll,
     getById,
     update,
-    deleteCourseWeek
+    deleteCourseWeek,
+    deleteCourseWeekByCourseId
 };

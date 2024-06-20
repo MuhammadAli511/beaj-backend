@@ -24,6 +24,7 @@ const updateCourseService = async (id, courseName, coursePrice, courseWeeks, cou
 
 const deleteCourseService = async (id) => {
     await courseRepository.deleteCourse(id);
+    await courseWeekRepository.deleteCourseWeekByCourseId(id);
 };
 
 export default {

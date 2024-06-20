@@ -6,7 +6,7 @@ const createCourseController = async (req, res) => {
         const coursePrice = req.body.coursePrice;
         const courseWeeks = req.body.courseWeeks;
         const courseCategoryId = req.body.courseCategoryId;
-        const status = req.body.status;
+        const status = req.body.courseStatus;
         const sequenceNumber = req.body.sequenceNumber;
         const courseDescription = req.body.courseDescription;
 
