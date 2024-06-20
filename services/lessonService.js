@@ -1,23 +1,7 @@
-import azure_blob from "../utils/azureBlobStorage.js";
 import lessonRepository from "../repositories/lessonRepository.js";
-import documentFileRepository from "../repositories/documentFileRepository.js";
 
-const createLessonService = async (lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, videoFile, audioFile, imageFile) => {
+const createLessonService = async (lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber) => {
     const lesson = await lessonRepository.create(lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber);
-    if (videoFile) {
-        const videoUrl = await azure_blob.uploadToBlobStorage(videoFile);
-        console.log(videoUrl);
-        console.log(lesson.LessonId);
-        await documentFileRepository.create(lesson.LessonId, "English", null, videoUrl, null, "video");
-    }
-    if (audioFile) {
-        const audioUrl = await azure_blob.uploadToBlobStorage(audioFile);
-        await documentFileRepository.create(lesson.LessonId, "English", null, null, audioUrl, "audio");
-    }
-    if (imageFile) {
-        const imageUrl = await azure_blob.uploadToBlobStorage(imageFile);
-        await documentFileRepository.create(lesson.LessonId, "English", imageUrl, null, null, "image");
-    }
     return lesson;
 };
 

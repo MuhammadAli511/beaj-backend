@@ -1,7 +1,6 @@
 import express from 'express';
 import beajEmployeesAuth from '../middlewares/beajEmployeesAuth.js';
 import lessonController from '../controllers/lessonController.js';
-import upload from '../config/multerConfig.js';
 
 
 const router = express.Router();
@@ -12,15 +11,7 @@ router.get('/status', (req, res) => {
 });
 
 // POST api/lesson/create
-router.post('/create',
-    beajEmployeesAuth,
-    upload.fields([
-        { name: 'video', maxCount: 1 },
-        { name: 'audio', maxCount: 1 },
-        { name: 'image', maxCount: 1 }
-    ]),
-    lessonController.createLessonController
-);
+router.post('/create', beajEmployeesAuth, lessonController.createLessonController);
 
 // GET  api/lesson/getAll
 router.get('/getAll', beajEmployeesAuth, lessonController.getAllLessonController);

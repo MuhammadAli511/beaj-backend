@@ -11,10 +11,7 @@ const createLessonController = async (req, res) => {
         const text = req.body.text;
         const courseId = req.body.courseId;
         const sequenceNumber = req.body.sequenceNumber;
-        const videoFile = req.files.video ? req.files.video[0] : null;
-        const audioFile = req.files.audio ? req.files.audio[0] : null;
-        const imageFile = req.files.image ? req.files.image[0] : null;
-        await service.createLessonService(lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, videoFile, audioFile, imageFile);
+        await service.createLessonService(lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber);
         res.status(200).send({ message: "Lesson created successfully" });
     } catch (error) {
         res.status(400).json({ message: error.message });
