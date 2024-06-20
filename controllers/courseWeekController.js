@@ -3,9 +3,10 @@ import service from '../services/courseWeekService.js';
 const createCourseWeekController = async (req, res) => {
     try {
         const weekNumber = req.body.weekNumber;
+        const image = req.file;
+        const description = req.body.description;
         const courseId = req.body.courseId;
-
-        await service.createCourseWeekService(weekNumber, courseId);
+        await service.createCourseWeekService(weekNumber, courseId, image, description);
         res.status(200).send({ message: "Course Week created successfully" });
     }
     catch (error) {
@@ -38,7 +39,7 @@ const updateCourseWeekController = async (req, res) => {
     try {
         const id = req.params.id;
         const weekNumber = req.body.weekNumber;
-        const image = req.body.image;
+        const image = req.file;
         const description = req.body.description;
         const courseId = req.body.courseId;
 

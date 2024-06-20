@@ -1,6 +1,7 @@
 import express from 'express';
 import beajEmployeesAuth from '../middlewares/beajEmployeesAuth.js';
 import courseWeekController from '../controllers/courseWeekController.js';
+import upload from '../config/multerConfig.js';
 
 const router = express.Router();
 
@@ -10,7 +11,7 @@ router.get('/status', (req, res) => {
 });
 
 // POST  api/courseWeek/create
-router.post('/create', beajEmployeesAuth, courseWeekController.createCourseWeekController);
+router.post('/create', beajEmployeesAuth, upload.single('file'), courseWeekController.createCourseWeekController);
 
 // GET  api/courseWeek/getAll
 router.get('/getAll', beajEmployeesAuth, courseWeekController.getAllCourseWeekController);
@@ -19,7 +20,7 @@ router.get('/getAll', beajEmployeesAuth, courseWeekController.getAllCourseWeekCo
 router.get('/getById/:id', beajEmployeesAuth, courseWeekController.getCourseWeekByIdController);
 
 // PUT  api/courseWeek/update/:id
-router.put('/update/:id', beajEmployeesAuth, courseWeekController.updateCourseWeekController);
+router.put('/update/:id', beajEmployeesAuth, upload.single('file'), courseWeekController.updateCourseWeekController);
 
 // DELETE  api/courseWeek/delete/:id
 router.delete('/delete/:id', beajEmployeesAuth, courseWeekController.deleteCourseWeekController);

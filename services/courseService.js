@@ -4,7 +4,7 @@ import courseWeekRepository from "../repositories/courseWeekRepository.js";
 const createCourseService = async (courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription) => {
     const course = await courseRepository.create(courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription);
     for (let i = 1; i <= parseInt(courseWeeks); i++) {
-        await courseWeekRepository.create(i, course.CourseId);
+        await courseWeekRepository.create(i, course.CourseId, null, null);
     }
 };
 

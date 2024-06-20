@@ -29,6 +29,12 @@ const getById = async (id) => {
     return await Course.findByPk(id);
 };
 
+const addOneInCourseWeeks = async (courseId) => {
+    const course = await Course.findByPk(courseId);
+    course.CourseWeeks++;
+    return await course.save();
+};
+
 const update = async (id, courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription) => {
     return await Course.update({
         CourseName: courseName,
@@ -59,5 +65,6 @@ export default {
     getAll,
     getById,
     update,
-    deleteCourse
+    deleteCourse,
+    addOneInCourseWeeks
 };

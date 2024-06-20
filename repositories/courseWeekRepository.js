@@ -1,9 +1,11 @@
 import CourseWeek from '../models/CourseWeek.js';
 
-const create = async (weekNumber, courseId) => {
+const create = async (weekNumber, courseId, image, description) => {
     const courseWeek = new CourseWeek({
         weekNumber: weekNumber,
-        courseId: courseId
+        courseId: courseId,
+        image: image,
+        description: description
     });
     await courseWeek.save();
     return courseWeek;
@@ -15,6 +17,14 @@ const getAll = async () => {
 
 const getById = async (id) => {
     return await CourseWeek.findByPk(id);
+};
+
+const getByCourseId = async (courseId) => {
+    return await CourseWeek.findAll({
+        where: {
+            courseId: courseId
+        }
+    });
 };
 
 const update = async (id, weekNumber, image, description, courseId) => {
@@ -49,5 +59,6 @@ export default {
     getById,
     update,
     deleteCourseWeek,
-    deleteCourseWeekByCourseId
+    deleteCourseWeekByCourseId,
+    getByCourseId
 };
