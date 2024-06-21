@@ -42,7 +42,6 @@ async function deleteFromBlobStorage(fileUrl) {
         const blobClient = containerClient.getBlobClient(fileName);
 
         await blobClient.delete();
-        console.log(`Deleted file ${fileName} from container ${containerName}`);
     } catch (ex) {
         console.error(`deleteFromBlobStorage: ${ex.message}`);
         throw new Error('Failed to delete from Blob Storage');
