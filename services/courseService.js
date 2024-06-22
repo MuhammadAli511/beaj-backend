@@ -27,10 +27,16 @@ const deleteCourseService = async (id) => {
     await courseWeekRepository.deleteCourseWeekByCourseId(id);
 };
 
+const getCourseByCourseCategoryIdService = async (id) => {
+    const courses = await courseRepository.getByCourseCategoryId(id);
+    return courses;
+};
+
 export default {
     createCourseService,
     getAllCourseService,
     getCourseByIdService,
     updateCourseService,
-    deleteCourseService
+    deleteCourseService,
+    getCourseByCourseCategoryIdService
 };

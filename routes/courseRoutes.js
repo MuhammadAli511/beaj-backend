@@ -18,6 +18,9 @@ router.get('/getAll', beajEmployeesAuth, courseController.getAllCourseController
 // GET  api/course/getById/:id
 router.get('/getById/:id', beajEmployeesAuth, courseController.getCourseByIdController);
 
+// GET api/course/getByCourseCategoryId/:id
+router.get('/getByCourseCategoryId/:id', beajEmployeesAuth, courseController.getCourseByCourseCategoryIdController);
+
 // PUT  api/course/update/:id
 router.put('/update/:id', beajEmployeesAuth, courseController.updateCourseController);
 

@@ -69,10 +69,22 @@ const deleteCourseController = async (req, res) => {
     }
 };
 
+const getCourseByCourseCategoryIdController = async (req, res) => {
+    try {
+        const id = req.params.id;
+        const result = await service.getCourseByCourseCategoryIdService(id);
+        res.status(200).send(result);
+    }
+    catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
 export default {
     createCourseController,
     getAllCourseController,
     getCourseByIdController,
     updateCourseController,
-    deleteCourseController
+    deleteCourseController,
+    getCourseByCourseCategoryIdController
 };
