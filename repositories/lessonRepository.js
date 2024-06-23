@@ -15,8 +15,8 @@ const create = async (lessonType, dayNumber, activity, activityAlias, weekNumber
         courseId: courseId,
         SequenceNumber: sequenceNumber
     });
-    await lesson.save();
-    return lesson;
+    const result = await lesson.save();
+    return result;
 };
 
 const getAll = async () => {

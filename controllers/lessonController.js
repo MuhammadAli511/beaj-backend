@@ -11,8 +11,8 @@ const createLessonController = async (req, res) => {
         const text = req.body.text;
         const courseId = req.body.courseId;
         const sequenceNumber = req.body.sequenceNumber;
-        await service.createLessonService(lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber);
-        res.status(200).send({ message: "Lesson created successfully" });
+        const lesson = await service.createLessonService(lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber);
+        res.status(200).send({ message: "Lesson created successfully", lesson: lesson });
     } catch (error) {
         res.status(400).json({ message: error.message });
     }

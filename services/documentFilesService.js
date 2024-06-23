@@ -3,7 +3,7 @@ import documentFileRepository from "../repositories/documentFileRepository.js";
 
 
 const createDocumentFilesService = async (file, lessonId, language, mediaType) => {
-    const blob_url = await azure_blob.uploadBlob(file);
+    const blob_url = await azure_blob.uploadToBlobStorage(file);
     if (mediaType == "video") {
         const documentFile = await documentFileRepository.create(lessonId, language, null, blob_url, null, mediaType);
         return documentFile;
@@ -29,7 +29,7 @@ const getDocumentFilesByIdService = async (id) => {
 };
 
 const updateDocumentFilesService = async (id, file, lessonId, language, mediaType) => {
-    const blob_url = await azure_blob.uploadBlob(file);
+    const blob_url = await azure_blob.uploadToBlobStorage(file);
     if (mediaType == "video") {
         const documentFile = await documentFileRepository.update(id, lessonId, language, null, blob_url, null, mediaType);
         return documentFile;

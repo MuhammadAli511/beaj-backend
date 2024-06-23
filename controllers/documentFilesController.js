@@ -3,7 +3,7 @@ import service from '../services/documentFilesService.js';
 
 const createDocumentFilesController = async (req, res) => {
     try {
-        const file = req.files.file[0];
+        const file = req.file;
         const lessonId = req.body.lessonId;
         const language = req.body.language;
         const mediaType = req.body.mediaType;
@@ -39,7 +39,7 @@ const updateDocumentFilesController = async (req, res) => {
         const lessonId = req.body.lessonId;
         const language = req.body.language;
         const mediaType = req.body.mediaType;
-        const file = req.files.file[0];
+        const file = req.file;
         await service.updateDocumentFilesService(id, file, lessonId, language, mediaType);
         res.status(200).send({ message: "Document File updated successfully" });
     } catch (error) {

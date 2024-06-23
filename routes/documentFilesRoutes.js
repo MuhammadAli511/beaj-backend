@@ -12,13 +12,7 @@ router.get('/status', (req, res) => {
 });
 
 // POST api/documentFiles/create
-router.post('/create',
-    beajEmployeesAuth,
-    upload.fields([
-        { name: 'file', maxCount: 1 }
-    ]),
-    documentFilesController.createDocumentFilesController
-);
+router.post('/create', beajEmployeesAuth, upload.single('file'), documentFilesController.createDocumentFilesController);
 
 // GET  api/documentFiles/getAll
 router.get('/getAll', beajEmployeesAuth, documentFilesController.getAllDocumentFilesController);
@@ -27,13 +21,7 @@ router.get('/getAll', beajEmployeesAuth, documentFilesController.getAllDocumentF
 router.get('/getById/:id', beajEmployeesAuth, documentFilesController.getDocumentFilesByIdController);
 
 // PUT  api/documentFiles/update/:id
-router.put('/update/:id',
-    beajEmployeesAuth,
-    upload.fields([
-        { name: 'file', maxCount: 1 }
-    ]),
-    documentFilesController.updateDocumentFilesController
-);
+router.put('/update/:id', beajEmployeesAuth, upload.single('file'), documentFilesController.updateDocumentFilesController);
 
 // DELETE  api/documentFiles/delete/:id
 router.delete('/delete/:id', beajEmployeesAuth, documentFilesController.deleteDocumentFilesController);
