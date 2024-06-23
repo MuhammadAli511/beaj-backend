@@ -4,7 +4,6 @@ import OpenAI from "openai";
 import openai_prompt from "../utils/prompts.js";
 import cleanTextForSpeech from "../utils/cleanText.js";
 import getAudio from "../utils/getAudio.js";
-import fs from 'fs';
 dotenv.config();
 
 
@@ -33,8 +32,7 @@ const analyzeAudioChatService = async (audioText) => {
     const model_response = completion.choices[0].message.content;
     const cleaned_response = await cleanTextForSpeech(model_response)
     console.log(cleaned_response.length);
-    const model_audio_buffer = await getAudio(cleaned_response);
-    fs.writeFileSync('model_audio.wav', model_audio_buffer);
+    await getAudio(cleaned_response);
     return model_response;
 };
 

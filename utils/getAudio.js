@@ -1,47 +1,30 @@
 import { createClient } from "@deepgram/sdk";
 import dotenv from 'dotenv';
 dotenv.config();
+import fs from 'fs';
+import { pipeline } from "stream/promises";
 
-const getAudioBuffer = async (response) => {
-    const reader = response.getReader();
-    const chunks = [];
-
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        chunks.push(value);
-    }
-
-    const dataArray = chunks.reduce(
-        (acc, chunk) => Uint8Array.from([...acc, ...chunk]),
-        new Uint8Array(0)
-    );
-
-    return Buffer.from(dataArray.buffer);
-};
 
 const getAudio = async (text) => {
     const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
     const response = await deepgram.speak.request(
         { text },
         {
-            model: "aura-asteria-en",
-            encoding: "linear16",
-            container: "wav",
+            model: 'aura-asteria-en',
         }
     );
-
     const stream = await response.getStream();
-    const buffer = await getAudioBuffer(stream);
-
-    if (buffer) {
-        return buffer;
+    if (stream) {
+        const file = fs.createWriteStream('model_audio.wav');
+        try {
+            await pipeline(stream, file);
+            console.log('Audio file created successfully');
+        } catch (error) {
+            console.error('Pipeline failed', error);
+        }
     } else {
-        console.error("Error generating audio:", stream);
-        throw new Error("Failed to generate audio");
+        console.error('Failed to create audio file');
     }
 };
-
 
 export default getAudio;
