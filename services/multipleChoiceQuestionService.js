@@ -2,8 +2,8 @@ import azure_blob from "../utils/azureBlobStorage.js";
 import multipleChoiceQuestionRepository from "../repositories/multipleChoiceQuestionRepository.js";
 
 const createMultipleChoiceQuestionService = async (file, image, questionType, questionText, questionNumber, lessonId, optionsType) => {
-    const fileUrl = null;
-    const imageUrl = null;
+    let fileUrl = null;
+    let imageUrl = null;
     if (file) {
         fileUrl = await azure_blob.uploadToBlobStorage(file);
     }
@@ -25,8 +25,8 @@ const getMultipleChoiceQuestionByIdService = async (id) => {
 };
 
 const updateMultipleChoiceQuestionService = async (id, file, image, questionType, questionText, questionNumber, lessonId, optionsType) => {
-    const fileUrl = null;
-    const imageUrl = null;
+    let fileUrl = null;
+    let imageUrl = null;
     if (file) {
         fileUrl = await azure_blob.uploadToBlobStorage(file);
     }

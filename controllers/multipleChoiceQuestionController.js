@@ -10,8 +10,8 @@ const createMultipleChoiceQuestionController = async (req, res) => {
         const questionNumber = req.body.questionNumber;
         const lessonId = req.body.lessonId;
         const optionsType = req.body.optionsType;
-        await service.createMultipleChoiceQuestionService(file, image, questionType, questionText, questionNumber, lessonId, optionsType);
-        res.status(200).send({ message: "Multiple Choice Question created successfully" });
+        const multipleChoiceQuestion = await service.createMultipleChoiceQuestionService(file, image, questionType, questionText, questionNumber, lessonId, optionsType);
+        res.status(200).send({ message: "Multiple Choice Question created successfully", mcq: multipleChoiceQuestion });
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
