@@ -73,6 +73,14 @@ const getByCourseCategoryId = async (courseCategoryId) => {
     });
 };
 
+const deleteByCourseCategoryId = async (courseCategoryId) => {
+    return await Course.destroy({
+        where: {
+            CourseCategoryId: courseCategoryId
+        }
+    });
+};
+
 export default {
     totalCoursesRepository,
     create,
@@ -82,5 +90,6 @@ export default {
     deleteCourse,
     addOneInCourseWeeks,
     deleteOneInCourseWeeks,
-    getByCourseCategoryId
+    getByCourseCategoryId,
+    deleteByCourseCategoryId
 };

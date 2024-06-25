@@ -8,6 +8,7 @@ import lessonRoutes from './lessonRoutes.js';
 import courseWeekRoutes from './courseWeekRoutes.js';
 import audioChatRoutes from './audioChatRoutes.js';
 import documentFilesRoutes from './documentFilesRoutes.js';
+import speakActivityQuestionRoutes from './speakActivityQuestionRoutes.js';
 
 const router = express.Router();
 
@@ -25,5 +26,6 @@ router.use('/lesson', lessonRoutes);
 router.use('/courseWeek', courseWeekRoutes);
 router.use('/audioChat', audioChatRoutes);
 router.use('/documentFiles', documentFilesRoutes);
+router.use('/speakActivityQuestion', speakActivityQuestionRoutes);
 
 export default router;
