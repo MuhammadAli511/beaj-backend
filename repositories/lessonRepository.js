@@ -5,7 +5,6 @@ const totalLessonsRepository = async () => {
 };
 
 const create = async (lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber) => {
-    console.log(activityAlias)
     const lesson = new Lesson({
         lessonType: lessonType,
         dayNumber: dayNumber,

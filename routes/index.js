@@ -9,6 +9,7 @@ import courseWeekRoutes from './courseWeekRoutes.js';
 import audioChatRoutes from './audioChatRoutes.js';
 import documentFilesRoutes from './documentFilesRoutes.js';
 import speakActivityQuestionRoutes from './speakActivityQuestionRoutes.js';
+import multipleChoiceQuestionRoutes from './multipleChoiceQuestionRoutes.js';
 
 const router = express.Router();
 
@@ -27,5 +28,6 @@ router.use('/courseWeek', courseWeekRoutes);
 router.use('/audioChat', audioChatRoutes);
 router.use('/documentFiles', documentFilesRoutes);
 router.use('/speakActivityQuestion', speakActivityQuestionRoutes);
+router.use('/multipleChoiceQuestion', multipleChoiceQuestionRoutes);
 
 export default router;

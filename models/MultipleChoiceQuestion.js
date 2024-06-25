@@ -1,7 +1,7 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../config/sequelize.js';
 
-class MultipleChoiceQuestion extends Model {}
+class MultipleChoiceQuestion extends Model { }
 
 MultipleChoiceQuestion.init({
   Id: {
@@ -46,7 +46,7 @@ MultipleChoiceQuestion.init({
 }, {
   sequelize,
   modelName: 'MultipleChoiceQuestion',
-  tableName: 'MultipleChoiceQuestions',
+  tableName: 'MultipleChoiceQuesions',
   timestamps: false,
   indexes: [
     {
