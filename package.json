@@ -9,6 +9,10 @@
     "start": "node index.js",
     "dev": "nodemon index.js"
   },
+  "engines": {
+    "node": ">=20.10.0",
+    "npm": ">=10.2.3"
+  },
   "author": "",
   "license": "ISC",
   "dependencies": {
