@@ -21,7 +21,18 @@ const feedbackController = async (req, res, next) => {
     }
 };
 
+const getAllFeedback = async (req, res, next) => {
+    try {
+        const feedback = await service.getAllFeedbackService();
+        res.status(200).json(feedback);
+    } catch (error) {
+        error.fileName = 'chatBotController.js';
+        next(error);
+    }
+};
+
 export default {
     webhookController,
-    feedbackController
+    feedbackController,
+    getAllFeedback
 };

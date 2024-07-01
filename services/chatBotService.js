@@ -7,6 +7,7 @@ import cleanTextForSpeech from "../utils/cleanText.js";
 import azure_blob from "../utils/azureBlobStorage.js";
 import dotenv from 'dotenv';
 import performance from 'perf_hooks';
+import audioChatRepository from '../repositories/audioChatsRepository.js';
 
 dotenv.config();
 
@@ -46,7 +47,10 @@ const webhookService = async (body, res) => {
                 } else {
                     const transcription = result.results.channels[0].alternatives[0].transcript;
                     const completion = await openai.chat.completions.create({
-                        messages: [{ role: "system", content: await openai_prompt(transcription) }],
+                        messages: [
+                            { role: "system", content: await openai_prompt() },
+                            { role: "user", content: transcription },
+                        ],
                         model: "gpt-4o",
                     });
                     const model_response = completion.choices[0].message.content;
@@ -117,7 +121,10 @@ const feedbackService = async (prompt, userAudioFile) => {
 
     startTime = performance.now();
     const completion = await openai.chat.completions.create({
-        messages: [{ role: "system", content: await openai_prompt(transcription) }],
+        messages: [
+            { role: "system", content: prompt },
+            { role: "user", content: transcription },
+        ],
         model: "gpt-4o",
     });
     const model_response = completion.choices[0].message.content;
@@ -139,7 +146,13 @@ const feedbackService = async (prompt, userAudioFile) => {
 
     finalEndTime = performance.now();
     totalTime = (finalEndTime - finalStartTime).toFixed(2);
+    await audioChatRepository.create(userFileUrl, audioFileUrl, userSpeechToTextTime, modelFeedbackTime, modelTextToSpeechTime, totalTime, prompt);
     return audioFileUrl;
 };
 
-export default { webhookService, feedbackService };
+const getAllFeedbackService = async () => {
+    const feedback = await audioChatRepository.getAll();
+    return feedback;
+};
+
+export default { webhookService, feedbackService, getAllFeedbackService };

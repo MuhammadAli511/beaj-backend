@@ -1,11 +1,6 @@
 // fUNCTION TO INPUT STRING
-const openai_prompt = async (user_transcript) => {
+const openai_prompt = async () => {
     const prompt = `You are an AI assistant designed to help young users improve their spoken English skills. Your task is to analyze a transcript of user-spoken audio in English and provide constructive feedback to help the user enhance their language proficiency.
-    Here is the transcript of the user's spoken English:
-
-    <user_transcript>
-    ${user_transcript}
-    </user_transcript>
 
     Carefully analyze the provided transcript and generate feedback for the user. Follow these guidelines:
 
