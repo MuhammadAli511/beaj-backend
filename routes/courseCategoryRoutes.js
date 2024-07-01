@@ -2,7 +2,7 @@ import express from 'express';
 import beajEmployeesAuth from '../middlewares/beajEmployeesAuth.js';
 import courseCategoryController from '../controllers/courseCategoryController.js';
 import upload from '../config/multerConfig.js';
-
+import errorHandler from '../middlewares/errorHandler.js';
 
 const router = express.Router();
 
@@ -26,5 +26,7 @@ router.put('/update/:id', beajEmployeesAuth, upload.single('file'), courseCatego
 // DELETE  api/courseCategory/delete/:id
 router.delete('/delete/:id', beajEmployeesAuth, courseCategoryController.deleteCourseCategoryController);
 
+// Use error handler middleware
+router.use(errorHandler);
 
 export default router;

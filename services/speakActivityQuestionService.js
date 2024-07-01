@@ -1,32 +1,58 @@
-import azure_blob from "../utils/azureBlobStorage.js";
-import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
+// services/speakActivityQuestionService.js
+import azure_blob from '../utils/azureBlobStorage.js';
+import speakActivityQuestionRepository from '../repositories/speakActivityQuestionRepository.js';
 
 const createSpeakActivityQuestionService = async (question, mediaFile, answer, lessonId, questionNumber) => {
-    const audioUrl = await azure_blob.uploadToBlobStorage(mediaFile);
-    const answerArray = answer.split(",");
-    console.log(answerArray);
-    const speakActivityQuestion = await speakActivityQuestionRepository.create(question, audioUrl, answerArray, lessonId, questionNumber);
-    return speakActivityQuestion;
+    try {
+        const audioUrl = await azure_blob.uploadToBlobStorage(mediaFile);
+        const answerArray = answer.split(",");
+        console.log(answerArray);
+        const speakActivityQuestion = await speakActivityQuestionRepository.create(question, audioUrl, answerArray, lessonId, questionNumber);
+        return speakActivityQuestion;
+    } catch (error) {
+        error.fileName = 'speakActivityQuestionService.js';
+        throw error;
+    }
 };
 
 const getAllSpeakActivityQuestionService = async () => {
-    const speakActivityQuestions = await speakActivityQuestionRepository.getAll();
-    return speakActivityQuestions;
+    try {
+        const speakActivityQuestions = await speakActivityQuestionRepository.getAll();
+        return speakActivityQuestions;
+    } catch (error) {
+        error.fileName = 'speakActivityQuestionService.js';
+        throw error;
+    }
 };
 
 const getSpeakActivityQuestionByIdService = async (id) => {
-    const speakActivityQuestion = await speakActivityQuestionRepository.getById(id);
-    return speakActivityQuestion;
+    try {
+        const speakActivityQuestion = await speakActivityQuestionRepository.getById(id);
+        return speakActivityQuestion;
+    } catch (error) {
+        error.fileName = 'speakActivityQuestionService.js';
+        throw error;
+    }
 };
 
 const updateSpeakActivityQuestionService = async (id, question, mediaFile, answer, lessonId, questionNumber) => {
-    const audioUrl = await azure_blob.uploadToBlobStorage(mediaFile);
-    const speakActivityQuestion = await speakActivityQuestionRepository.update(id, question, audioUrl, answer, lessonId, questionNumber);
-    return speakActivityQuestion;
+    try {
+        const audioUrl = await azure_blob.uploadToBlobStorage(mediaFile);
+        const speakActivityQuestion = await speakActivityQuestionRepository.update(id, question, audioUrl, answer, lessonId, questionNumber);
+        return speakActivityQuestion;
+    } catch (error) {
+        error.fileName = 'speakActivityQuestionService.js';
+        throw error;
+    }
 };
 
 const deleteSpeakActivityQuestionService = async (id) => {
-    await speakActivityQuestionRepository.deleteSpeakActivityQuestion(id);
+    try {
+        await speakActivityQuestionRepository.deleteSpeakActivityQuestion(id);
+    } catch (error) {
+        error.fileName = 'speakActivityQuestionService.js';
+        throw error;
+    }
 };
 
 export default {

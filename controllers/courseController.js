@@ -1,82 +1,68 @@
-import service from '../services/courseService.js'
+import service from '../services/courseService.js';
 
-const createCourseController = async (req, res) => {
+const createCourseController = async (req, res, next) => {
     try {
-        const courseName = req.body.courseName;
-        const coursePrice = req.body.coursePrice;
-        const courseWeeks = req.body.courseWeeks;
-        const courseCategoryId = req.body.courseCategoryId;
-        const status = req.body.courseStatus;
-        const sequenceNumber = req.body.sequenceNumber;
-        const courseDescription = req.body.courseDescription;
-
+        const { courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription } = req.body;
         await service.createCourseService(courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription);
         res.status(200).send({ message: "Course created successfully" });
-    }
-    catch (error) {
-        res.status(400).json({ message: error.message });
+    } catch (error) {
+        error.fileName = 'courseController.js';
+        next(error);
     }
 };
 
-const getAllCourseController = async (req, res) => {
+const getAllCourseController = async (req, res, next) => {
     try {
         const result = await service.getAllCourseService();
         res.status(200).send(result);
-    }
-    catch (error) {
-        res.status(400).json({ message: error.message });
+    } catch (error) {
+        error.fileName = 'courseController.js';
+        next(error);
     }
 };
 
-const getCourseByIdController = async (req, res) => {
+const getCourseByIdController = async (req, res, next) => {
     try {
         const id = req.params.id;
         const result = await service.getCourseByIdService(id);
         res.status(200).send(result);
-    }
-    catch (error) {
-        res.status(400).json({ message: error.message });
+    } catch (error) {
+        error.fileName = 'courseController.js';
+        next(error);
     }
 };
 
-const updateCourseController = async (req, res) => {
+const updateCourseController = async (req, res, next) => {
     try {
-        const id = req.params.id;
-        const courseName = req.body.courseName;
-        const coursePrice = req.body.coursePrice;
-        const courseWeeks = req.body.courseWeeks;
-        const courseCategoryId = req.body.courseCategoryId;
-        const status = req.body.status;
-        const sequenceNumber = req.body.sequenceNumber;
-        const courseDescription = req.body.courseDescription;
-
+        const { id } = req.params;
+        const { courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription } = req.body;
         await service.updateCourseService(id, courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription);
         res.status(200).send({ message: "Course updated successfully" });
-    }
-    catch (error) {
-        res.status(400).json({ message: error.message });
+    } catch (error) {
+        error.fileName = 'courseController.js';
+        next(error);
     }
 };
 
-const deleteCourseController = async (req, res) => {
+const deleteCourseController = async (req, res, next) => {
     try {
         const id = req.params.id;
         await service.deleteCourseService(id);
         res.status(200).send({ message: "Course deleted successfully" });
-    }
-    catch (error) {
-        res.status(400).json({ message: error.message });
+    } catch (error) {
+        error.fileName = 'courseController.js';
+        next(error);
     }
 };
 
-const getCourseByCourseCategoryIdController = async (req, res) => {
+const getCourseByCourseCategoryIdController = async (req, res, next) => {
     try {
         const id = req.params.id;
         const result = await service.getCourseByCourseCategoryIdService(id);
         res.status(200).send(result);
-    }
-    catch (error) {
-        res.status(400).json({ message: error.message });
+    } catch (error) {
+        error.fileName = 'courseController.js';
+        next(error);
     }
 };
 

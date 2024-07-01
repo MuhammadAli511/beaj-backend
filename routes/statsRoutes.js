@@ -1,7 +1,7 @@
 import express from 'express';
 import beajEmployeesAuth from '../middlewares/beajEmployeesAuth.js';
 import statsController from '../controllers/statsController.js';
-
+import errorHandler from '../middlewares/errorHandler.js';
 
 const router = express.Router();
 
@@ -13,6 +13,7 @@ router.get('/status', (req, res) => {
 // GET  api/stats/totalContentStats
 router.get('/totalContentStats', beajEmployeesAuth, statsController.totalContentStatsController);
 
-
+// Use error handler middleware
+router.use(errorHandler);
 
 export default router;

@@ -6,9 +6,12 @@ import { format } from 'date-fns';
 dotenv.config();
 
 
-async function uploadToBlobStorage(fileBuffer) {
+async function uploadToBlobStorage(fileBuffer, originalName = null) {
     try {
-        const newFileName = fileBuffer.originalname;
+        let newFileName = originalName;
+        if (!newFileName) {
+            newFileName = fileBuffer.originalname;
+        }
         const containerName = "beajdocuments";
         const azureBlobConnectionString = process.env.AZURE_BLOB_CONNECTION_STRING;
         const blobServiceClient = BlobServiceClient.fromConnectionString(azureBlobConnectionString);

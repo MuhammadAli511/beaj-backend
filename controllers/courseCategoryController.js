@@ -1,7 +1,6 @@
-import service from '../services/courseCategoryService.js'
+import service from '../services/courseCategoryService.js';
 
-
-const createCourseCategoryController = async (req, res) => {
+const createCourseCategoryController = async (req, res, next) => {
     try {
         const courseCategoryName = req.body.courseCategoryName;
         const image = req.file;
@@ -9,30 +8,33 @@ const createCourseCategoryController = async (req, res) => {
         await service.createCourseCategoryService(courseCategoryName, image, categorySequenceNum);
         res.status(200).send({ message: "Category created successfully" });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        error.fileName = 'courseCategoryController.js';
+        next(error);
     }
 };
 
-const getAllCourseCategoryController = async (req, res) => {
+const getAllCourseCategoryController = async (req, res, next) => {
     try {
         const result = await service.getAllCourseCategoryService();
         res.status(200).send(result);
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        error.fileName = 'courseCategoryController.js';
+        next(error);
     }
 };
 
-const getCourseCategoryByIdController = async (req, res) => {
+const getCourseCategoryByIdController = async (req, res, next) => {
     try {
         const id = req.params.id;
         const result = await service.getCourseCategoryByIdService(id);
         res.status(200).send(result);
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        error.fileName = 'courseCategoryController.js';
+        next(error);
     }
 };
 
-const updateCourseCategoryController = async (req, res) => {
+const updateCourseCategoryController = async (req, res, next) => {
     try {
         const id = req.params.id;
         const courseCategoryName = req.body.courseCategoryName;
@@ -41,17 +43,19 @@ const updateCourseCategoryController = async (req, res) => {
         await service.updateCourseCategoryService(id, courseCategoryName, image, categorySequenceNum);
         res.status(200).send({ message: "Category updated successfully" });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        error.fileName = 'courseCategoryController.js';
+        next(error);
     }
 };
 
-const deleteCourseCategoryController = async (req, res) => {
+const deleteCourseCategoryController = async (req, res, next) => {
     try {
         const id = req.params.id;
         await service.deleteCourseCategoryService(id);
         res.status(200).send({ message: "Category deleted successfully" });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        error.fileName = 'courseCategoryController.js';
+        next(error);
     }
 };
 

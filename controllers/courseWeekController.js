@@ -1,64 +1,59 @@
 import service from '../services/courseWeekService.js';
 
-const createCourseWeekController = async (req, res) => {
+const createCourseWeekController = async (req, res, next) => {
     try {
-        const weekNumber = req.body.weekNumber;
+        const { weekNumber, description, courseId } = req.body;
         const image = req.file;
-        const description = req.body.description;
-        const courseId = req.body.courseId;
         await service.createCourseWeekService(weekNumber, courseId, image, description);
         res.status(200).send({ message: "Course Week created successfully" });
-    }
-    catch (error) {
-        res.status(400).json({ message: error.message });
+    } catch (error) {
+        error.fileName = 'courseWeekController.js';
+        next(error);
     }
 };
 
-const getAllCourseWeekController = async (req, res) => {
+const getAllCourseWeekController = async (req, res, next) => {
     try {
         const result = await service.getAllCourseWeekService();
         res.status(200).send(result);
-    }
-    catch (error) {
-        res.status(400).json({ message: error.message });
+    } catch (error) {
+        error.fileName = 'courseWeekController.js';
+        next(error);
     }
 };
 
-const getCourseWeekByIdController = async (req, res) => {
+const getCourseWeekByIdController = async (req, res, next) => {
     try {
         const id = req.params.id;
         const result = await service.getCourseWeekByIdService(id);
         res.status(200).send(result);
-    }
-    catch (error) {
-        res.status(400).json({ message: error.message });
+    } catch (error) {
+        error.fileName = 'courseWeekController.js';
+        next(error);
     }
 };
 
-const updateCourseWeekController = async (req, res) => {
+const updateCourseWeekController = async (req, res, next) => {
     try {
-        const id = req.params.id;
-        const weekNumber = req.body.weekNumber;
+        const { id } = req.params;
+        const { weekNumber, description, courseId } = req.body;
         const image = req.file;
-        const description = req.body.description;
-        const courseId = req.body.courseId;
-
         await service.updateCourseWeekService(id, weekNumber, image, description, courseId);
         res.status(200).send({ message: "Course Week updated successfully" });
-    }
-    catch (error) {
-        res.status(400).json({ message: error.message });
+    } catch (error) {
+        error.fileName = 'courseWeekController.js';
+        next(error);
     }
 };
 
-const deleteCourseWeekController = async (req, res) => {
+const deleteCourseWeekController = async (req, res, next) => {
     try {
         const id = req.params.id;
         await service.deleteCourseWeekService(id);
         res.status(200).send({ message: "Course Week deleted successfully" });
-    }
-    catch (error) {
-        res.status(400).json({ message: error.message });
+    } catch (error) {
+        error.fileName = 'courseWeekController.js';
+        next(error);
     }
 };
 

@@ -2,6 +2,7 @@ import express from 'express';
 import beajEmployeesAuth from '../middlewares/beajEmployeesAuth.js';
 import speakActivityQuestionController from '../controllers/speakActivityQuestionController.js';
 import upload from '../config/multerConfig.js';
+import errorHandler from '../middlewares/errorHandler.js';
 
 const router = express.Router();
 
@@ -25,5 +26,7 @@ router.put('/update/:id', beajEmployeesAuth, upload.single('file'), speakActivit
 // DELETE  api/speakActivityQuestion/delete/:id
 router.delete('/delete/:id', beajEmployeesAuth, speakActivityQuestionController.deleteSpeakActivityQuestionController);
 
+// Use error handler middleware
+router.use(errorHandler);
 
 export default router;

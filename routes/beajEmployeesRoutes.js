@@ -1,5 +1,6 @@
 import express from 'express';
 import beajEmployeesController from '../controllers/beajEmployeesController.js';
+import errorHandler from '../middlewares/errorHandler.js';
 
 const router = express.Router();
 
@@ -14,6 +15,6 @@ router.post('/register', beajEmployeesController.registerController);
 // POST api/beajEmployees/login
 router.post('/login', beajEmployeesController.loginController);
 
-
+router.use(errorHandler);
 
 export default router;

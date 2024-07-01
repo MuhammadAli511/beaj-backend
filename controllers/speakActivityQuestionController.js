@@ -1,60 +1,59 @@
-import service from '../services/speakActivityQuestionService.js'
+import service from '../services/speakActivityQuestionService.js';
 
-const createSpeakActivityQuestionController = async (req, res) => {
+const createSpeakActivityQuestionController = async (req, res, next) => {
     try {
-        const question = req.body.question;
+        const { question, answer, lessonId, questionNumber } = req.body;
         const mediaFile = req.file;
-        const answer = req.body.answer;
-        const lessonId = req.body.lessonId;
-        const questionNumber = req.body.questionNumber;
         await service.createSpeakActivityQuestionService(question, mediaFile, answer, lessonId, questionNumber);
         res.status(200).send({ message: "Question created successfully" });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        error.fileName = 'speakActivityQuestionController.js';
+        next(error);
     }
 };
 
-const getAllSpeakActivityQuestionController = async (req, res) => {
+const getAllSpeakActivityQuestionController = async (req, res, next) => {
     try {
         const result = await service.getAllSpeakActivityQuestionService();
         res.status(200).send(result);
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        error.fileName = 'speakActivityQuestionController.js';
+        next(error);
     }
 };
 
-const getSpeakActivityQuestionByIdController = async (req, res) => {
+const getSpeakActivityQuestionByIdController = async (req, res, next) => {
     try {
         const id = req.params.id;
         const result = await service.getSpeakActivityQuestionByIdService(id);
         res.status(200).send(result);
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        error.fileName = 'speakActivityQuestionController.js';
+        next(error);
     }
 };
 
-const updateSpeakActivityQuestionController = async (req, res) => {
+const updateSpeakActivityQuestionController = async (req, res, next) => {
     try {
-        const id = req.params.id;
-        const question = req.body.question;
+        const { id } = req.params;
+        const { question, answer, lessonId, questionNumber } = req.body;
         const mediaFile = req.file;
-        const answer = req.body.answer;
-        const lessonId = req.body.lessonId;
-        const questionNumber = req.body.questionNumber;
         await service.updateSpeakActivityQuestionService(id, question, mediaFile, answer, lessonId, questionNumber);
         res.status(200).send({ message: "Question updated successfully" });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        error.fileName = 'speakActivityQuestionController.js';
+        next(error);
     }
 };
 
-const deleteSpeakActivityQuestionController = async (req, res) => {
+const deleteSpeakActivityQuestionController = async (req, res, next) => {
     try {
         const id = req.params.id;
         await service.deleteSpeakActivityQuestionService(id);
         res.status(200).send({ message: "Question deleted successfully" });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        error.fileName = 'speakActivityQuestionController.js';
+        next(error);
     }
 };
 

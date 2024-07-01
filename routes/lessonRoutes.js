@@ -1,7 +1,7 @@
 import express from 'express';
 import beajEmployeesAuth from '../middlewares/beajEmployeesAuth.js';
 import lessonController from '../controllers/lessonController.js';
-
+import errorHandler from '../middlewares/errorHandler.js';
 
 const router = express.Router();
 
@@ -25,5 +25,7 @@ router.put('/update/:id', beajEmployeesAuth, lessonController.updateLessonContro
 // DELETE  api/lesson/delete/:id
 router.delete('/delete/:id', beajEmployeesAuth, lessonController.deleteLessonController);
 
+// Use error handler middleware
+router.use(errorHandler);
 
 export default router;

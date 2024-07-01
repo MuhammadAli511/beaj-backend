@@ -1,30 +1,55 @@
-import azure_blob from "../utils/azureBlobStorage.js";
-import courseCategoryRepository from "../repositories/courseCategoryRepository.js";
+import azure_blob from '../utils/azureBlobStorage.js';
+import courseCategoryRepository from '../repositories/courseCategoryRepository.js';
 
 const createCourseCategoryService = async (courseCategoryName, image, categorySequenceNum) => {
-    const imageUrl = await azure_blob.uploadToBlobStorage(image);
-    const courseCategory = await courseCategoryRepository.create(courseCategoryName, imageUrl, categorySequenceNum);
-    return courseCategory;
+    try {
+        const imageUrl = await azure_blob.uploadToBlobStorage(image);
+        const courseCategory = await courseCategoryRepository.create(courseCategoryName, imageUrl, categorySequenceNum);
+        return courseCategory;
+    } catch (error) {
+        error.fileName = 'courseCategoryService.js';
+        throw error;
+    }
 };
 
 const getAllCourseCategoryService = async () => {
-    const courseCategories = await courseCategoryRepository.getAll();
-    return courseCategories;
+    try {
+        const courseCategories = await courseCategoryRepository.getAll();
+        return courseCategories;
+    } catch (error) {
+        error.fileName = 'courseCategoryService.js';
+        throw error;
+    }
 };
 
 const getCourseCategoryByIdService = async (id) => {
-    const courseCategory = await courseCategoryRepository.getById(id);
-    return courseCategory;
+    try {
+        const courseCategory = await courseCategoryRepository.getById(id);
+        return courseCategory;
+    } catch (error) {
+        error.fileName = 'courseCategoryService.js';
+        throw error;
+    }
 };
 
 const updateCourseCategoryService = async (id, courseCategoryName, image, categorySequenceNum) => {
-    const imageUrl = await azure_blob.uploadToBlobStorage(image);
-    const courseCategory = await courseCategoryRepository.update(id, courseCategoryName, imageUrl, categorySequenceNum);
-    return courseCategory;
+    try {
+        const imageUrl = await azure_blob.uploadToBlobStorage(image);
+        const courseCategory = await courseCategoryRepository.update(id, courseCategoryName, imageUrl, categorySequenceNum);
+        return courseCategory;
+    } catch (error) {
+        error.fileName = 'courseCategoryService.js';
+        throw error;
+    }
 };
 
 const deleteCourseCategoryService = async (id) => {
-    await courseCategoryRepository.deleteCourseCategory(id);
+    try {
+        await courseCategoryRepository.deleteCourseCategory(id);
+    } catch (error) {
+        error.fileName = 'courseCategoryService.js';
+        throw error;
+    }
 };
 
 export default {
