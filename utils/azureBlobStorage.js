@@ -10,7 +10,7 @@ async function uploadToBlobStorage(fileBuffer) {
     try {
         const newFileName = fileBuffer.originalname;
         const containerName = "beajdocuments";
-        const azureBlobConnectionString = process.env.azure_blob_connection_string;
+        const azureBlobConnectionString = process.env.AZURE_BLOB_CONNECTION_STRING;
         const blobServiceClient = BlobServiceClient.fromConnectionString(azureBlobConnectionString);
         const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
         const uniqueID = uuidv4();
@@ -33,7 +33,7 @@ async function uploadToBlobStorage(fileBuffer) {
 
 async function deleteFromBlobStorage(fileUrl) {
     try {
-        const azureBlobConnectionString = process.env.azure_blob_connection_string;
+        const azureBlobConnectionString = process.env.AZURE_BLOB_CONNECTION_STRING;
         const blobServiceClient = BlobServiceClient.fromConnectionString(azureBlobConnectionString);
         const baseUrl = "https://beajbloblive.blob.core.windows.net/beajdocuments/";
         const fileName = fileUrl.substring(baseUrl.length);

@@ -3,10 +3,10 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const database = process.env.db_database;
-const username = process.env.db_username;
-const password = process.env.db_password;
-const host = process.env.db_host;
+const database = process.env.DB_DATABASE;
+const username = process.env.DB_USERNAME;
+const password = process.env.DB_PASSWORD;
+const host = process.env.DB_HOST;
 
 const sequelize = new Sequelize(database, username, password, {
   host: host,

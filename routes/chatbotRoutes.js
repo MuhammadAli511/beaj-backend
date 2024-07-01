@@ -10,8 +10,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 import { BlobServiceClient } from "@azure/storage-blob";
 
-const accountSid = 'ACc18ac1a30084870ad803b1f92a970abf';
-const authToken = 'd7d596f22ab024231fa4a64c7f99c7ac';
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
 
 
 
@@ -19,7 +19,7 @@ async function uploadToBlobStorage(fileBuffer, originalName) {
     try {
         const newFileName = originalName;
         const containerName = "beajdocuments";
-        const azureBlobConnectionString = process.env.azure_blob_connection_string;
+        const azureBlobConnectionString = process.env.AZURE_BLOB_CONNECTION_STRING;
         const blobServiceClient = BlobServiceClient.fromConnectionString(azureBlobConnectionString);
         const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
         const uniqueID = uuidv4();
