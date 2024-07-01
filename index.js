@@ -7,7 +7,7 @@ import sequelize from './config/sequelize.js';
 import cors from 'cors';
 import routes from './routes/index.js';
 
-const port = process.env.PORT || 8080;
+const port = 8080;
 
 const app = express();
 
@@ -16,6 +16,10 @@ app.use(bodyParser.json({ limit: '500mb' }));
 app.use(bodyParser.urlencoded({ limit: '500mb', extended: false }));
 app.use(express.static(path.join(path.resolve(), './public')));
 app.use(express.json());
+
+app.get('/', (req, res) => {
+  res.send('Hello World!');
+});
 
 app.use('/api', routes)
 

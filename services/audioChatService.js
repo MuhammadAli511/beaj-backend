@@ -13,15 +13,18 @@ const analyzeAudioChatService = async (audioText) => {
     const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
     const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
-    // const audioBuffer = await audioText.buffer;
+    const audioBuffer = await audioText.buffer;
 
-    // const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
-    //     audioBuffer,
-    //     {
-    //         model: "nova-2",
-    //         smart_format: false,
-    //     }
-    // );
+    const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
+        audioBuffer,
+        {
+            model: "nova-2",
+            smart_format: false,
+        }
+    );
+    console.log(audioBuffer)
+    return result.results.channels[0].alternatives[0].transcript;
+
 
     // if (error) throw error;
     // const transcript = result.results.channels[0].alternatives[0].transcript;

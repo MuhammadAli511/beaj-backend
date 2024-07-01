@@ -11,6 +11,7 @@ import documentFilesRoutes from './documentFilesRoutes.js';
 import speakActivityQuestionRoutes from './speakActivityQuestionRoutes.js';
 import multipleChoiceQuestionRoutes from './multipleChoiceQuestionRoutes.js';
 import multipleChoiceQuestionAnswerRoutes from './multipleChoiceQuestionAnswerRoutes.js';
+import chatbotRoutes from './chatbotRoutes.js';
 
 const router = express.Router();
 
@@ -31,5 +32,6 @@ router.use('/documentFiles', documentFilesRoutes);
 router.use('/speakActivityQuestion', speakActivityQuestionRoutes);
 router.use('/multipleChoiceQuestion', multipleChoiceQuestionRoutes);
 router.use('/multipleChoiceQuestionAnswer', multipleChoiceQuestionAnswerRoutes);
+router.use('/chatbot', chatbotRoutes);
 
 export default router;
