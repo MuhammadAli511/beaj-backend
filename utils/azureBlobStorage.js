@@ -6,11 +6,11 @@ import { format } from 'date-fns';
 dotenv.config();
 
 
-async function uploadToBlobStorage(fileBuffer, originalName = null) {
+async function uploadToBlobStorage(exact_file, originalName = null) {
     try {
         let newFileName = originalName;
         if (!newFileName) {
-            newFileName = fileBuffer.originalname;
+            newFileName = exact_file.originalname;
         }
         const containerName = "beajdocuments";
         const azureBlobConnectionString = process.env.AZURE_BLOB_CONNECTION_STRING;
@@ -23,9 +23,15 @@ async function uploadToBlobStorage(fileBuffer, originalName = null) {
         const blobClient = containerClient.getBlobClient(filename);
         const blockBlobClient = blobClient.getBlockBlobClient();
 
-        await blockBlobClient.upload(fileBuffer.buffer, fileBuffer.size, {
-            blobHTTPHeaders: { blobContentType: "application/octet-stream" }
-        });
+        if (originalName) {
+            await blockBlobClient.upload(exact_file, fileBuffer.length, {
+                blobHTTPHeaders: { blobContentType: "audio/ogg" },
+            });
+        } else {
+            await blockBlobClient.upload(exact_file.buffer, exact_file.size, {
+                blobHTTPHeaders: { blobContentType: "application/octet-stream" }
+            });
+        }
 
         return `https://${blobServiceClient.accountName}.blob.core.windows.net/${containerName}/${filename}`;
     } catch (ex) {

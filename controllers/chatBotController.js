@@ -10,4 +10,18 @@ const webhookController = async (req, res, next) => {
     }
 };
 
-export default { webhookController };
+const feedbackController = async (req, res, next) => {
+    try {
+        const prompt = req.body.prompt;
+        const userAudioFile = req.file;
+        await service.feedbackService(prompt, userAudioFile);
+    } catch (error) {
+        error.fileName = 'chatBotController.js';
+        next(error);
+    }
+};
+
+export default {
+    webhookController,
+    feedbackController
+};
