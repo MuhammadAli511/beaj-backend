@@ -146,7 +146,7 @@ const feedbackService = async (prompt, userAudioFile) => {
 
     finalEndTime = performance.now();
     totalTime = (finalEndTime - finalStartTime).toFixed(2) / 1000;
-    const db_response = await audioChatRepository.create(userFileUrl, audioFileUrl, userSpeechToTextTime, modelFeedbackTime, modelTextToSpeechTime, totalTime, prompt);
+    const db_response = await audioChatRepository.create(userFileUrl, audioFileUrl, userSpeechToTextTime, modelFeedbackTime, modelTextToSpeechTime, totalTime, prompt, model_response);
     if (db_response) {
         return "Feedback successfully submitted";
     } else {

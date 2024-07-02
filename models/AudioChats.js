@@ -17,6 +17,10 @@ AudioChats.init({
         type: DataTypes.STRING,
         allowNull: true
     },
+    modelText: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
     userSpeechToTextTime: {
         type: DataTypes.STRING,
         allowNull: true
