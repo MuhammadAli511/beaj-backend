@@ -6,7 +6,7 @@ import openai_prompt from "../utils/prompts.js";
 import cleanTextForSpeech from "../utils/cleanText.js";
 import azure_blob from "../utils/azureBlobStorage.js";
 import dotenv from 'dotenv';
-import performance from 'perf_hooks';
+import { performance } from 'perf_hooks';
 import audioChatRepository from '../repositories/audioChatsRepository.js';
 
 dotenv.config();
@@ -110,7 +110,7 @@ const feedbackService = async (prompt, userAudioFile) => {
         }
     );
     endTime = performance.now();
-    userSpeechToTextTime = (endTime - startTime).toFixed(2);
+    userSpeechToTextTime = (endTime - startTime).toFixed(2) / 1000;
 
     if (error) {
         console.error('Error transcribing audio:', error);
@@ -130,7 +130,7 @@ const feedbackService = async (prompt, userAudioFile) => {
     const model_response = completion.choices[0].message.content;
     const cleaned_response = await cleanTextForSpeech(model_response);
     endTime = performance.now();
-    modelFeedbackTime = (endTime - startTime).toFixed(2);
+    modelFeedbackTime = (endTime - startTime).toFixed(2) / 1000;
 
     startTime = performance.now();
     const mp3 = await openai.audio.speech.create({
@@ -142,12 +142,16 @@ const feedbackService = async (prompt, userAudioFile) => {
     const buffer = Buffer.from(await mp3.arrayBuffer());
     const audioFileUrl = await azure_blob.uploadToBlobStorage(buffer, "feedback.opus");
     endTime = performance.now();
-    modelTextToSpeechTime = (endTime - startTime).toFixed(2);
+    modelTextToSpeechTime = (endTime - startTime).toFixed(2) / 1000;
 
     finalEndTime = performance.now();
-    totalTime = (finalEndTime - finalStartTime).toFixed(2);
-    await audioChatRepository.create(userFileUrl, audioFileUrl, userSpeechToTextTime, modelFeedbackTime, modelTextToSpeechTime, totalTime, prompt);
-    return audioFileUrl;
+    totalTime = (finalEndTime - finalStartTime).toFixed(2) / 1000;
+    const db_response = await audioChatRepository.create(userFileUrl, audioFileUrl, userSpeechToTextTime, modelFeedbackTime, modelTextToSpeechTime, totalTime, prompt);
+    if (db_response) {
+        return "Feedback successfully submitted";
+    } else {
+        return "Failed to submit feedback";
+    }
 };
 
 const getAllFeedbackService = async () => {

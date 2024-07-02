@@ -24,7 +24,7 @@ async function uploadToBlobStorage(exact_file, originalName = null) {
         const blockBlobClient = blobClient.getBlockBlobClient();
 
         if (originalName) {
-            await blockBlobClient.upload(exact_file, fileBuffer.length, {
+            await blockBlobClient.upload(exact_file, exact_file.length, {
                 blobHTTPHeaders: { blobContentType: "audio/ogg" },
             });
         } else {

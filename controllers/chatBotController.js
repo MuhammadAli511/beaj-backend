@@ -14,7 +14,8 @@ const feedbackController = async (req, res, next) => {
     try {
         const prompt = req.body.prompt;
         const userAudioFile = req.file;
-        await service.feedbackService(prompt, userAudioFile);
+        const status = await service.feedbackService(prompt, userAudioFile);
+        res.status(200).json(status);
     } catch (error) {
         error.fileName = 'chatBotController.js';
         next(error);
