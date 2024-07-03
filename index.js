@@ -18,7 +18,7 @@ app.use(express.static(path.join(path.resolve(), './public')));
 app.use(express.json());
 
 app.get('/', (req, res) => {
-  res.send('Hello World!');
+  res.send('Welcome to Beaj!');
 });
 
 app.use('/api', routes)

@@ -16,6 +16,7 @@ const webhookService = async (body, res) => {
     const authToken = process.env.TWILIO_AUTH_TOKEN;
     const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
     const openai = new OpenAI(process.env.OPENAI_API_KEY);
+    const client = new twilio(accountSid, authToken);
 
     const twiml = new twilio.twiml.MessagingResponse();
 
@@ -46,6 +47,13 @@ const webhookService = async (body, res) => {
                     twiml.message('Sorry, there was an error processing your audio file.');
                 } else {
                     const transcription = result.results.channels[0].alternatives[0].transcript;
+                    const message = `Please wait for an answer. \n\nYou said: ${transcription}`;
+                    client.messages.create({
+                        from: body.To,
+                        body: message,
+                        to: body.From,
+                    }).then(message => console.log(message.sid));
+
                     const completion = await openai.chat.completions.create({
                         messages: [
                             { role: "system", content: await openai_prompt() },
@@ -63,7 +71,6 @@ const webhookService = async (body, res) => {
                     });
                     const buffer = Buffer.from(await mp3.arrayBuffer());
                     const audioFileUrl = await azure_blob.uploadToBlobStorage(buffer, "feedback.opus");
-                    const client = new twilio(accountSid, authToken);
 
                     console.log('Sending Message');
                     client.messages.create({
