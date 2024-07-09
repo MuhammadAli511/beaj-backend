@@ -45,7 +45,7 @@ const update = async (id, userId, lessonId, questionId, activityType, alias, sub
 };
 
 const getScore = async (userId, lessonId) => {
-    const score = await QuestionResponse.findAll({
+    const score = await QuestionResponse.count({
         where: {
             UserId: userId,
             lessonId: lessonId,

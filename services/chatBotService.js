@@ -157,15 +157,17 @@ const get_next_lesson = async (userMobileNumber, user, startingLesson, body, use
 
 const get_lessons = async (userMobileNumber, user, startingLesson, body, userMessage) => {
     const activity = startingLesson.dataValues.activity;
-    let lessonMessage = "Week " + startingLesson.dataValues.weekNumber + ", Day " + startingLesson.dataValues.dayNumber + "\nActivity Name: " + startingLesson.dataValues.activityAlias;
-    if (startingLesson.dataValues.text) {
-        lessonMessage += "\n\n" + startingLesson.dataValues.text;
+    if (user.dataValues.question_number === null) {
+        let lessonMessage = "Week " + startingLesson.dataValues.weekNumber + ", Day " + startingLesson.dataValues.dayNumber + "\nActivity Name: " + startingLesson.dataValues.activityAlias;
+        if (startingLesson.dataValues.text) {
+            lessonMessage += "\n\n" + startingLesson.dataValues.text;
+        }
+        await client.messages.create({
+            from: body.To,
+            body: lessonMessage,
+            to: body.From,
+        }).then(message => console.log("Lesson message sent + " + message.sid));
     }
-    await client.messages.create({
-        from: body.To,
-        body: lessonMessage,
-        to: body.From,
-    }).then(message => console.log("Lesson message sent + " + message.sid));
     if (activity === 'video') {
         const videoURL = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
         // await client.messages.create({
@@ -207,7 +209,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                 await send_mcq(userMobileNumber, user, nextMCQ, body);
             } else {
                 // Give total score here
-                const totalScore = await questionResponseRepository.getScore(user.dataValues.phone_number);
+                const totalScore = await questionResponseRepository.getScore(user.dataValues.phone_number, user.dataValues.lesson_id);
                 let message = "You have completed the MCQs for this lesson. Your total score is " + totalScore;
                 await client.messages.create({
                     from: body.To,
