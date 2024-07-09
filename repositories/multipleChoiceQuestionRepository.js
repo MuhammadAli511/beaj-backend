@@ -1,4 +1,5 @@
 import MultipleChoiceQuestion from '../models/multipleChoiceQuestion.js';
+import Sequelize from 'sequelize';
 
 const create = async (file, image, questionType, questionText, questionNumber, lessonId, optionsType) => {
     const multipleChoiceQuestion = new MultipleChoiceQuestion({
@@ -15,7 +16,7 @@ const create = async (file, image, questionType, questionText, questionNumber, l
 };
 
 const getAll = async () => {
-    const multipleChoiceQuestions = await MultipleChoiceQuestion.find();
+    const multipleChoiceQuestions = await MultipleChoiceQuestion.findAll();
     return multipleChoiceQuestions;
 };
 
@@ -41,10 +42,38 @@ const deleteMultipleChoiceQuestion = async (id) => {
     await MultipleChoiceQuestion.findByIdAndDelete(id);
 };
 
+const getNextMultipleChoiceQuestion = async (lessonId, questionNumber) => {
+    if (!questionNumber) {
+        return await MultipleChoiceQuestion.findOne({
+            where: {
+                LessonId: lessonId
+            },
+            order: [
+                ['QuestionNumber', 'ASC']
+            ]
+        });
+    }
+    let nextMCQ = await MultipleChoiceQuestion.findOne({
+        where: {
+            LessonId: lessonId,
+            QuestionNumber: {
+                [Sequelize.Op.gt]: questionNumber
+            }
+        },
+        order: [
+            ['QuestionNumber', 'ASC']
+        ]
+    });
+    if (!nextMCQ) {
+        return null;
+    }
+}
+
 export default {
     create,
     getAll,
     getById,
     update,
-    deleteMultipleChoiceQuestion
+    deleteMultipleChoiceQuestion,
+    getNextMultipleChoiceQuestion
 };

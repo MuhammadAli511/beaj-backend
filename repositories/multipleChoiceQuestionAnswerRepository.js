@@ -14,7 +14,7 @@ const create = async (answerText, answerImageUrl, answerAudioUrl, isCorrect, mul
 };
 
 const getAll = async () => {
-    const multipleChoiceQuestionAnswers = await MultipleChoiceQuestionAnswer.find();
+    const multipleChoiceQuestionAnswers = await MultipleChoiceQuestionAnswer.findAll();
     return multipleChoiceQuestionAnswers;
 };
 
@@ -39,10 +39,20 @@ const deleteMultipleChoiceQuestionAnswer = async (id) => {
     await MultipleChoiceQuestionAnswer.findByIdAndDelete(id);
 };
 
+const getByQuestionId = async (multipleChoiceQuestionId) => {
+    const multipleChoiceQuestionAnswers = await MultipleChoiceQuestionAnswer.findAll({
+        where: {
+            MultipleChoiceQuestionId: multipleChoiceQuestionId
+        }
+    });
+    return multipleChoiceQuestionAnswers;
+};
+
 export default {
     create,
     getAll,
     getById,
     update,
-    deleteMultipleChoiceQuestionAnswer
+    deleteMultipleChoiceQuestionAnswer,
+    getByQuestionId
 };

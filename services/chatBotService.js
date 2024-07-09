@@ -10,6 +10,11 @@ import { performance } from 'perf_hooks';
 import audioChatRepository from '../repositories/audioChatsRepository.js';
 import { introLists, personaDict } from '../constants/chatbotConstants.js';
 import waUser from '../repositories/waUser.js';
+import lessonRepository from '../repositories/lessonRepository.js';
+import documentFileRepository from '../repositories/documentFileRepository.js';
+import multipleChoiceQuestionRepository from '../repositories/multipleChoiceQuestionRepository.js';
+import multipleChoiceQuestionAnswerRepository from '../repositories/multipleChoiceQuestionAnswerRepository.js';
+
 
 dotenv.config();
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -21,15 +26,7 @@ const openai = new OpenAI(process.env.OPENAI_API_KEY);
 const greeting_message = async (body) => {
     client.messages.create({
         from: body.To,
-        body: 'Hi there! Welcome to Beaj. Would you like to practice speaking or start taking lessons?',
-        to: body.From,
-    });
-};
-
-const zero_message = async (body) => {
-    client.messages.create({
-        from: body.To,
-        body: 'Great! Please select one of the below to get started.',
+        body: "Hi there! Welcome to Beaj. Let's begin your course. Below is your first lesson.",
         to: body.From,
     });
 };
@@ -62,7 +59,7 @@ const audio_feedback_message = async (body) => {
                     from: body.To,
                     body: 'Sorry, there was an error processing your audio file.',
                     to: body.From,
-                }).then(message => console.log(message.sid));
+                }).then(message => console.log("Error message sent + " + message.sid));
             } else {
                 const transcription = result.results.channels[0].alternatives[0].transcript;
                 const message = `Please wait for an answer. \n\nYou said: ${transcription}`;
@@ -70,7 +67,7 @@ const audio_feedback_message = async (body) => {
                     from: body.To,
                     body: message,
                     to: body.From,
-                }).then(message => console.log(message.sid));
+                }).then(message => console.log("Transcription message sent + " + message.sid));
 
                 const completion = await openai.chat.completions.create({
                     messages: [
@@ -94,7 +91,7 @@ const audio_feedback_message = async (body) => {
                     from: body.To,
                     mediaUrl: [audioFileUrl],
                     to: body.From,
-                }).then(message => console.log(message.sid));
+                }).then(message => console.log("Audio message sent + " + message.sid));
 
             }
         } catch (err) {
@@ -103,73 +100,164 @@ const audio_feedback_message = async (body) => {
                 from: body.To,
                 body: 'Sorry, there was an error processing your audio file.',
                 to: body.From,
-            }).then(message => console.log(message.sid));
+            }).then(message => console.log("Error message sent + " + message.sid));
         }
     } else {
         client.messages.create({
             from: body.To,
             body: 'Sorry, I only accept audio files.',
             to: body.From,
-        }).then(message => console.log(message.sid));
+        }).then(message => console.log("Error message sent + " + message.sid));
     }
 };
+
+const update_user = async (userMobileNumber, user, startingLesson) => {
+    await waUser.update(
+        userMobileNumber,
+        user.dataValues.persona,
+        user.dataValues.engagement_type,
+        user.dataValues.level,
+        startingLesson.dataValues.weekNumber,
+        startingLesson.dataValues.dayNumber,
+        startingLesson.dataValues.SequenceNumber,
+        startingLesson.dataValues.activity,
+        startingLesson.dataValues.LessonId,
+        null
+    );
+};
+
+const send_mcq = async (userMobileNumber, user, mcq, body) => {
+    console.log(mcq.dataValues.Id)
+    const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(mcq.dataValues.Id);
+    console.log(mcqAnswers)
+    let mcqMessage = mcq.QuestionText;
+    for (let j = 0; j < mcqAnswers.length; j++) {
+        mcqMessage += "\n" + String.fromCharCode(65 + j) + ". " + mcqAnswers[j].dataValues.AnswerText;
+    }
+    await client.messages.create({
+        from: body.To,
+        body: mcqMessage,
+        to: body.From,
+    }).then(message => console.log("MCQ message sent + " + message.sid));
+};
+
+
+
+const get_lessons = async (userMobileNumber, user, startingLesson, body) => {
+    const activity = startingLesson.dataValues.activity;
+    let lessonMessage = "Week " + startingLesson.dataValues.weekNumber + ", Day " + startingLesson.dataValues.dayNumber + "\nActivity Name: " + startingLesson.dataValues.activityAlias;
+    if (startingLesson.dataValues.text) {
+        lessonMessage += "\n\n" + startingLesson.dataValues.text;
+    }
+    await client.messages.create({
+        from: body.To,
+        body: lessonMessage,
+        to: body.From,
+    }).then(message => console.log("Lesson message sent + " + message.sid));
+    if (activity === 'video') {
+        const videoURL = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
+        // await client.messages.create({
+        //     from: body.To,
+        //     mediaUrl: [videoURL[0].dataValues.video],
+        //     to: body.From,
+        // }).then(message => console.log("Video message sent + " + message.sid));
+        // Update user
+        const nextLesson = await lessonRepository.getNextLesson(user.dataValues.level, user.dataValues.week, user.dataValues.day, user.dataValues.lesson_sequence);
+        await update_user(userMobileNumber, user, nextLesson);
+        await get_lessons(userMobileNumber, user, nextLesson, body);
+    } else if (activity === 'mcqs') {
+        if (user.dataValues.question_number === null) {
+            const startingMCQ = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(startingLesson.dataValues.LessonId, null);
+            await waUser.update_question(userMobileNumber, startingMCQ.dataValues.QuestionNumber);
+            await send_mcq(userMobileNumber, user, startingMCQ, body);
+        } else {
+            // Check for the answer of the user and update in DB
+
+
+
+
+
+            // Send Next MCQ
+            const nextMCQ = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(startingLesson.dataValues.LessonId, user.dataValues.question_number);
+            if (nextMCQ === null) {
+                // Give Score here
+            } else {
+                await waUser.update_question(userMobileNumber, nextMCQ.dataValues.QuestionNumber);
+                await send_mcq(userMobileNumber, user, nextMCQ, body);
+            }
+        }
+
+
+
+
+
+
+        const mcq = mcqs[i].dataValues;
+        const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(mcq.id);
+        let mcqMessage = mcq.QuestionText;
+        for (let j = 0; j < mcqAnswers.length; j++) {
+            mcqMessage += "\n" + mcqAnswers[j].dataValues.AnswerText;
+        }
+        await client.messages.create({
+            from: body.To,
+            body: mcqMessage,
+            to: body.From,
+        }).then(message => console.log("MCQ message sent + " + message.sid));
+
+    }
+};
+
 
 const webhookService = async (body, res) => {
     try {
         const message = body.Body.toLowerCase().trim();
         const userMobileNumber = body.From.split(":")[1];
+        // If the user sends an audio file, process it
+        if (body.NumMedia > 0) {
+            await audio_feedback_message(body);
+            return;
+        }
 
         // Check if user exists in the database
-        const user = await waUser.getByPhoneNumber(userMobileNumber);
+        let user = await waUser.getByPhoneNumber(userMobileNumber);
 
-        // If user is new send a greeting message and set the user status to active
         if (!user) {
             greeting_message(body);
-            waUser.create(userMobileNumber, 'active');
+            waUser.create(userMobileNumber, 'Teacher', 'Learning');
+            const startingLesson = await lessonRepository.getNextLesson(94, 4, null, null);
+            await waUser.update(
+                userMobileNumber,
+                'Teacher',
+                'Learning',
+                '94',
+                startingLesson.dataValues.weekNumber,
+                startingLesson.dataValues.dayNumber,
+                startingLesson.dataValues.SequenceNumber,
+                startingLesson.dataValues.activity,
+                startingLesson.dataValues.LessonId,
+                null
+            );
+            user = await waUser.getByPhoneNumber(userMobileNumber);
+            await get_lessons(userMobileNumber, user, startingLesson, body);
             return;
         }
 
-        // If user exists and message is 0, reset the user status to active and send menu options
-        if (user && message === '0') {
-            zero_message(body);
-            waUser.update(userMobileNumber, 'active', null);
-            return;
-        }
+        const startingLesson = await lessonRepository.getNextLesson(user.dataValues.level, user.dataValues.week, user.dataValues.day, user.dataValues.lesson_sequence);
+        await update_user(userMobileNumber, user, startingLesson);
 
-        // If user exists and message is speaking, set the user status to speaking
-        if (user.state === 'active' && body.Body.toLowerCase().includes("speaking")) {
+
+
+
+
+
+        if (startingLesson === null) {
             client.messages.create({
                 from: body.To,
-                body: 'Great! Please send me an audio file of you speaking and I will provide feedback. Press 0 to return to main menu.',
+                body: 'Congratulations! You have completed all the lessons for this course.',
                 to: body.From,
-            });
-            waUser.update(userMobileNumber, 'speaking', null);
+            }).then(message => console.log("Completion message sent + " + message.sid));
             return;
-        }
-        if (user.state === 'speaking' && body.NumMedia > 0) {
-            audio_feedback_message(body);
-            return;
-        }
-
-
-        // COURSE
-        if (user.state === 'active' && body.Body.toLowerCase().includes("course")) {
-            client.messages.create({
-                from: body.To,
-                body: 'Kindly select your persona. Type 1 for teacher, 2 for student, 3 for office employee, 4 for parent.',
-                to: body.From,
-            });
-            waUser.update(userMobileNumber, 'course', null);
-        }
-        if (user.state === 'course' && message in ['1', '2', '3', '4']) {
-            // Send qquestions here
-            waUser.update(userMobileNumber, 'taking_placement_test', personaDict[message]);
-        }
-
-
-
-
-
+        };
     } catch (error) {
         console.error('Error in chatBotService:', error);
         error.fileName = 'chatBotService.js';

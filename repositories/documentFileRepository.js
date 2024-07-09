@@ -21,6 +21,14 @@ const getById = async (id) => {
     return await DocumentFile.findByPk(id);
 }
 
+const getByLessonId = async (lessonId) => {
+    return await DocumentFile.findAll({
+        where: {
+            lessonId: lessonId
+        }
+    });
+}
+
 const update = async (id, lessonId, language, image, video, audio, mediaType) => {
     return await DocumentFile.update({
         lessonId: lessonId,
@@ -50,5 +58,6 @@ export default {
     getAll,
     getById,
     update,
-    deleteDocumentFile
+    deleteDocumentFile,
+    getByLessonId
 };

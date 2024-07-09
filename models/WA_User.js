@@ -8,11 +8,39 @@ WA_User.init({
         type: DataTypes.STRING,
         primaryKey: true
     },
-    state: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
     persona: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    engagement_type: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    level: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    week: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    day: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    lesson_sequence: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    activity_type: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    lesson_id: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    question_number: {
         type: DataTypes.STRING,
         allowNull: true
     },
