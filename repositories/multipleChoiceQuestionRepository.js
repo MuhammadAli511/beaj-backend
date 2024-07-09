@@ -42,6 +42,16 @@ const deleteMultipleChoiceQuestion = async (id) => {
     await MultipleChoiceQuestion.findByIdAndDelete(id);
 };
 
+const getCurrentMultipleChoiceQuestion = async (lessonId, questionNumber) => {
+    const currentMCQ = await MultipleChoiceQuestion.findOne({
+        where: {
+            LessonId: lessonId,
+            QuestionNumber: questionNumber
+        }
+    });
+    return currentMCQ;
+};
+
 const getNextMultipleChoiceQuestion = async (lessonId, questionNumber) => {
     if (!questionNumber) {
         return await MultipleChoiceQuestion.findOne({
@@ -53,19 +63,25 @@ const getNextMultipleChoiceQuestion = async (lessonId, questionNumber) => {
             ]
         });
     }
-    let nextMCQ = await MultipleChoiceQuestion.findOne({
-        where: {
-            LessonId: lessonId,
-            QuestionNumber: {
-                [Sequelize.Op.gt]: questionNumber
-            }
-        },
-        order: [
-            ['QuestionNumber', 'ASC']
-        ]
-    });
-    if (!nextMCQ) {
-        return null;
+    if (lessonId && questionNumber) {
+        console.log('lessonId', lessonId);
+        console.log('questionNumber', questionNumber);
+        let nextMCQ = await MultipleChoiceQuestion.findOne({
+            where: {
+                LessonId: lessonId,
+                QuestionNumber: {
+                    [Sequelize.Op.gt]: questionNumber
+                }
+            },
+            order: [
+                ['QuestionNumber', 'ASC']
+            ]
+        });
+        console.log('nextMCQ', nextMCQ);
+        if (!nextMCQ) {
+            return null;
+        }
+        return nextMCQ;
     }
 }
 
@@ -75,5 +91,6 @@ export default {
     getById,
     update,
     deleteMultipleChoiceQuestion,
-    getNextMultipleChoiceQuestion
+    getNextMultipleChoiceQuestion,
+    getCurrentMultipleChoiceQuestion
 };

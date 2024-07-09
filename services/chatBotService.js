@@ -14,6 +14,7 @@ import lessonRepository from '../repositories/lessonRepository.js';
 import documentFileRepository from '../repositories/documentFileRepository.js';
 import multipleChoiceQuestionRepository from '../repositories/multipleChoiceQuestionRepository.js';
 import multipleChoiceQuestionAnswerRepository from '../repositories/multipleChoiceQuestionAnswerRepository.js';
+import questionResponseRepository from '../repositories/questionResponseRepository.js';
 
 
 dotenv.config();
@@ -127,9 +128,7 @@ const update_user = async (userMobileNumber, user, startingLesson) => {
 };
 
 const send_mcq = async (userMobileNumber, user, mcq, body) => {
-    console.log(mcq.dataValues.Id)
     const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(mcq.dataValues.Id);
-    console.log(mcqAnswers)
     let mcqMessage = mcq.QuestionText;
     for (let j = 0; j < mcqAnswers.length; j++) {
         mcqMessage += "\n" + String.fromCharCode(65 + j) + ". " + mcqAnswers[j].dataValues.AnswerText;
@@ -141,9 +140,22 @@ const send_mcq = async (userMobileNumber, user, mcq, body) => {
     }).then(message => console.log("MCQ message sent + " + message.sid));
 };
 
+const get_next_lesson = async (userMobileNumber, user, startingLesson, body, userMessage) => {
+    const nextLesson = await lessonRepository.getNextLesson(user.dataValues.level, user.dataValues.week, user.dataValues.day, user.dataValues.lesson_sequence);
+    if (nextLesson === null) {
+        client.messages.create({
+            from: body.To,
+            body: 'Congratulations! You have completed all the lessons for this course.',
+            to: body.From,
+        }).then(message => console.log("Completion message sent + " + message.sid));
+        return;
+    }
+    await update_user(userMobileNumber, user, nextLesson);
+    await get_lessons(userMobileNumber, user, nextLesson, body, userMessage);
+};
 
 
-const get_lessons = async (userMobileNumber, user, startingLesson, body) => {
+const get_lessons = async (userMobileNumber, user, startingLesson, body, userMessage) => {
     const activity = startingLesson.dataValues.activity;
     let lessonMessage = "Week " + startingLesson.dataValues.weekNumber + ", Day " + startingLesson.dataValues.dayNumber + "\nActivity Name: " + startingLesson.dataValues.activityAlias;
     if (startingLesson.dataValues.text) {
@@ -162,55 +174,58 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body) => {
         //     to: body.From,
         // }).then(message => console.log("Video message sent + " + message.sid));
         // Update user
-        const nextLesson = await lessonRepository.getNextLesson(user.dataValues.level, user.dataValues.week, user.dataValues.day, user.dataValues.lesson_sequence);
-        await update_user(userMobileNumber, user, nextLesson);
-        await get_lessons(userMobileNumber, user, nextLesson, body);
+        await get_next_lesson(userMobileNumber, user, startingLesson, body, userMessage);
     } else if (activity === 'mcqs') {
         if (user.dataValues.question_number === null) {
             const startingMCQ = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(startingLesson.dataValues.LessonId, null);
             await waUser.update_question(userMobileNumber, startingMCQ.dataValues.QuestionNumber);
             await send_mcq(userMobileNumber, user, startingMCQ, body);
         } else {
-            // Check for the answer of the user and update in DB
+            const mcq = await multipleChoiceQuestionRepository.getCurrentMultipleChoiceQuestion(user.dataValues.lesson_id, user.dataValues.question_number);
+            const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(mcq.dataValues.Id);
+            let correctAnswer;
+            for (let i = 0; i < mcqAnswers.length; i++) {
+                if (mcqAnswers[i].dataValues.IsCorrect === true) {
+                    correctAnswer = mcqAnswers[i].dataValues.SequenceNumber;
+                    break;
+                }
+            }
+            const userAnswer = mcqAnswers.find(answer => answer.dataValues.SequenceNumber === userMessage.toUpperCase().charCodeAt(0) - 64).dataValues.AnswerText;
+            const userAnswerSequenceNumber = userMessage.toUpperCase().charCodeAt(0) - 64;
 
-
-
-
-
-            // Send Next MCQ
-            const nextMCQ = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(startingLesson.dataValues.LessonId, user.dataValues.question_number);
-            if (nextMCQ === null) {
-                // Give Score here
+            const submissionDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+            if (userAnswerSequenceNumber === correctAnswer) {
+                await questionResponseRepository.create(user.dataValues.phone_number, user.dataValues.lesson_id, mcq.dataValues.Id, 'mcqs', null, userAnswer, null, true, 1, submissionDate);
             } else {
+                await questionResponseRepository.create(user.dataValues.phone_number, user.dataValues.lesson_id, mcq.dataValues.Id, 'mcqs', null, userAnswer, null, false, 1, submissionDate);
+            }
+            console.log("Lesson ID: " + user.dataValues.lesson_id + " Question number: " + user.dataValues.question_number)
+            const nextMCQ = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(user.dataValues.lesson_id, user.dataValues.question_number);
+            console.log("Next MCQ: " + nextMCQ);
+            if (nextMCQ) {
                 await waUser.update_question(userMobileNumber, nextMCQ.dataValues.QuestionNumber);
                 await send_mcq(userMobileNumber, user, nextMCQ, body);
+            } else {
+                // Give total score here
+                const totalScore = await questionResponseRepository.getScore(user.dataValues.phone_number);
+                let message = "You have completed the MCQs for this lesson. Your total score is " + totalScore;
+                await client.messages.create({
+                    from: body.To,
+                    body: message,
+                    to: body.From,
+                }).then(message => console.log("Total score message sent + " + message.sid));
+                await get_next_lesson(userMobileNumber, user, startingLesson, body, userMessage);
             }
         }
+    };
 
 
-
-
-
-
-        const mcq = mcqs[i].dataValues;
-        const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(mcq.id);
-        let mcqMessage = mcq.QuestionText;
-        for (let j = 0; j < mcqAnswers.length; j++) {
-            mcqMessage += "\n" + mcqAnswers[j].dataValues.AnswerText;
-        }
-        await client.messages.create({
-            from: body.To,
-            body: mcqMessage,
-            to: body.From,
-        }).then(message => console.log("MCQ message sent + " + message.sid));
-
-    }
 };
 
 
 const webhookService = async (body, res) => {
     try {
-        const message = body.Body.toLowerCase().trim();
+        const userMessage = body.Body.toLowerCase().trim();
         const userMobileNumber = body.From.split(":")[1];
         // If the user sends an audio file, process it
         if (body.NumMedia > 0) {
@@ -238,19 +253,23 @@ const webhookService = async (body, res) => {
                 null
             );
             user = await waUser.getByPhoneNumber(userMobileNumber);
-            await get_lessons(userMobileNumber, user, startingLesson, body);
+            await get_lessons(userMobileNumber, user, startingLesson, body, userMessage);
             return;
         }
 
-        const startingLesson = await lessonRepository.getNextLesson(user.dataValues.level, user.dataValues.week, user.dataValues.day, user.dataValues.lesson_sequence);
-        await update_user(userMobileNumber, user, startingLesson);
+        if (user.activity_type === 'mcqs') {
+            const currentLesson = await lessonRepository.getCurrentLesson(user.dataValues.lesson_id);
+            await get_lessons(userMobileNumber, user, currentLesson, body, userMessage);
+            return;
+        }
 
 
 
 
+        const nextLesson = await lessonRepository.getNextLesson(user.dataValues.level, user.dataValues.week, user.dataValues.day, user.dataValues.lesson_sequence);
+        await update_user(userMobileNumber, user, nextLesson);
 
-
-        if (startingLesson === null) {
+        if (nextLesson === null) {
             client.messages.create({
                 from: body.To,
                 body: 'Congratulations! You have completed all the lessons for this course.',

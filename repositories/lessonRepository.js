@@ -47,6 +47,15 @@ const deleteLesson = async (id) => {
     await lesson.destroy();
 };
 
+const getCurrentLesson = async (lesson_id) => {
+    return await Lesson.findOne({
+        where: {
+            LessonId: lesson_id
+        }
+    });
+};
+
+
 
 const getNextLesson = async (courseId, weekNumber, dayNumber, sequenceNumber) => {
     // If weekNumber, dayNumber, and sequenceNumber are all null, return the first lesson in the course
@@ -137,4 +146,5 @@ export default {
     update,
     deleteLesson,
     getNextLesson,
+    getCurrentLesson
 };
