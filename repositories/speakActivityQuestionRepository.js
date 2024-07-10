@@ -1,8 +1,5 @@
 import SpeakActivityQuestion from "../models/SpeakActivityQuestion.js";
-
-const totalSpeakActivityQuestionsRepository = async () => {
-    return await SpeakActivityQuestion.count();
-};
+import Sequelize from 'sequelize';
 
 const create = async (question, audioUrl, answer, lessonId, questionNumber) => {
     const speakActivityQuestion = new SpeakActivityQuestion({
@@ -45,11 +42,51 @@ const deleteSpeakActivityQuestion = async (id) => {
     });
 };
 
+const getCurrentSpeakActivityQuestion = async (lessonId, questionNumber) => {
+    return await SpeakActivityQuestion.findOne({
+        where: {
+            lessonId: lessonId,
+            questionNumber: questionNumber
+        }
+    });
+};
+
+const getNextSpeakActivityQuestion = async (lessonId, questionNumber) => {
+    if (!questionNumber) {
+        return await SpeakActivityQuestion.findOne({
+            where: {
+                lessonId: lessonId,
+            },
+            order: [
+                ['questionNumber', 'ASC']
+            ]
+        });
+    }
+    if (lessonId && questionNumber) {
+        let nextSpeakActivityQuestion = await SpeakActivityQuestion.findOne({
+            where: {
+                lessonId: lessonId,
+                questionNumber: {
+                    [Sequelize.Op.gt]: questionNumber
+                }
+            },
+            order: [
+                ['questionNumber', 'ASC']
+            ]
+        });
+        if (!nextSpeakActivityQuestion) {
+            return null;
+        }
+        return nextSpeakActivityQuestion;
+    }
+}
+
 export default {
-    totalSpeakActivityQuestionsRepository,
     create,
     getAll,
     getById,
     update,
-    deleteSpeakActivityQuestion
+    deleteSpeakActivityQuestion,
+    getCurrentSpeakActivityQuestion,
+    getNextSpeakActivityQuestion
 };

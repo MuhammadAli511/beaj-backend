@@ -15,6 +15,7 @@ import documentFileRepository from '../repositories/documentFileRepository.js';
 import multipleChoiceQuestionRepository from '../repositories/multipleChoiceQuestionRepository.js';
 import multipleChoiceQuestionAnswerRepository from '../repositories/multipleChoiceQuestionAnswerRepository.js';
 import questionResponseRepository from '../repositories/questionResponseRepository.js';
+import speakActivityQuestionRepository from '../repositories/speakActivityQuestionRepository.js';
 
 
 dotenv.config();
@@ -140,6 +141,26 @@ const send_mcq = async (userMobileNumber, user, mcq, body) => {
     }).then(message => console.log("MCQ message sent + " + message.sid));
 };
 
+const sendSpeakActivityQuestion = async (userMobileNumber, user, speakActivityQuestion, body) => {
+    const speakActivityQuestionMessage = speakActivityQuestion.dataValues.question;
+    if (speakActivityQuestionMessage) {
+        await client.messages.create({
+            from: body.To,
+            body: speakActivityQuestionMessage,
+            to: body.From,
+        }).then(message => console.log("Speak Activity message sent + " + message.sid));
+    }
+    // const speakActivityQuestionMediaUrl = speakActivityQuestion.dataValues.mediaFile;
+    const speakActivityQuestionMediaUrl = "https://beajbloblive.blob.core.windows.net/asset-202307301859231194707-out/cff9a24d-15e4-4d4f-94aa-20508e83_720x480_2200.mp4?sv=2022-11-02&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=3023-06-23T16:57:22Z&st=2023-06-23T08:57:22Z&spr=https&sig=YfguGfVzPg4kO8ynxR0M%2FMowlU1ZtBv2K1VCswkwVcM%3D";
+    if (speakActivityQuestionMediaUrl) {
+        await client.messages.create({
+            from: body.To,
+            mediaUrl: [speakActivityQuestionMediaUrl],
+            to: body.From,
+        }).then(message => console.log("Speak Activity media sent + " + message.sid));
+    }
+};
+
 const get_next_lesson = async (userMobileNumber, user, startingLesson, body, userMessage) => {
     const nextLesson = await lessonRepository.getNextLesson(user.dataValues.level, user.dataValues.week, user.dataValues.day, user.dataValues.lesson_sequence);
     if (nextLesson === null) {
@@ -169,15 +190,17 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
         }).then(message => console.log("Lesson message sent + " + message.sid));
     }
     if (activity === 'video') {
-        const videoURL = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
+        // const videoURL = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
+        const videoURL = "https://beajbloblive.blob.core.windows.net/asset-202307301859231194707-out/cff9a24d-15e4-4d4f-94aa-20508e83_720x480_2200.mp4?sv=2022-11-02&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=3023-06-23T16:57:22Z&st=2023-06-23T08:57:22Z&spr=https&sig=YfguGfVzPg4kO8ynxR0M%2FMowlU1ZtBv2K1VCswkwVcM%3D";
         await client.messages.create({
             from: body.To,
-            mediaUrl: ["https://beajbloblive.blob.core.windows.net/asset-202307301859231194707-out/cff9a24d-15e4-4d4f-94aa-20508e83_720x480_2200.mp4?sv=2022-11-02&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=3023-06-23T16:57:22Z&st=2023-06-23T08:57:22Z&spr=https&sig=YfguGfVzPg4kO8ynxR0M%2FMowlU1ZtBv2K1VCswkwVcM%3D"],
+            mediaUrl: [videoURL],
             to: body.From,
         }).then(message => console.log("Video message sent + " + message.sid));
         // Update user
         await get_next_lesson(userMobileNumber, user, startingLesson, body, userMessage);
-    } else if (activity === 'mcqs') {
+    }
+    else if (activity === 'mcqs') {
         if (user.dataValues.question_number === null) {
             const startingMCQ = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(startingLesson.dataValues.LessonId, null);
             await waUser.update_question(userMobileNumber, startingMCQ.dataValues.QuestionNumber);
@@ -197,13 +220,11 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
 
             const submissionDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
             if (userAnswerSequenceNumber === correctAnswer) {
-                await questionResponseRepository.create(user.dataValues.phone_number, user.dataValues.lesson_id, mcq.dataValues.Id, 'mcqs', null, userAnswer, null, true, 1, submissionDate);
+                await questionResponseRepository.create(user.dataValues.phone_number, user.dataValues.lesson_id, mcq.dataValues.Id, 'mcqs', startingLesson.dataValues.activityAlias, userAnswer, null, true, 1, submissionDate);
             } else {
-                await questionResponseRepository.create(user.dataValues.phone_number, user.dataValues.lesson_id, mcq.dataValues.Id, 'mcqs', null, userAnswer, null, false, 1, submissionDate);
+                await questionResponseRepository.create(user.dataValues.phone_number, user.dataValues.lesson_id, mcq.dataValues.Id, 'mcqs', startingLesson.dataValues.activityAlias, userAnswer, null, false, 1, submissionDate);
             }
-            console.log("Lesson ID: " + user.dataValues.lesson_id + " Question number: " + user.dataValues.question_number)
             const nextMCQ = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(user.dataValues.lesson_id, user.dataValues.question_number);
-            console.log("Next MCQ: " + nextMCQ);
             if (nextMCQ) {
                 await waUser.update_question(userMobileNumber, nextMCQ.dataValues.QuestionNumber);
                 await send_mcq(userMobileNumber, user, nextMCQ, body);
@@ -216,6 +237,33 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                     body: message,
                     to: body.From,
                 }).then(message => console.log("Total score message sent + " + message.sid));
+                await waUser.update_activity_question_lessonid(userMobileNumber, null, null);
+            }
+        }
+    }
+    else if (activity === 'watchAndSpeak') {
+        if (user.dataValues.question_number === null) {
+            const startingSpeakActivityQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(startingLesson.dataValues.LessonId, null);
+            await waUser.update_question(userMobileNumber, startingSpeakActivityQuestion.dataValues.questionNumber);
+            await sendSpeakActivityQuestion(userMobileNumber, user, startingSpeakActivityQuestion, body);
+        } else {
+            const speakActivityQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(user.dataValues.lesson_id, user.dataValues.question_number);
+            const userAudioFile = body.MediaUrl0;
+            const userAudioFileUrl = await azure_blob.uploadToBlobStorage(userAudioFile);
+            const submissionDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+            await questionResponseRepository.create(user.dataValues.phone_number, user.dataValues.lesson_id, speakActivityQuestion.dataValues.Id, activity, startingLesson.dataValues.activityAlias, null, userAudioFileUrl, true, 1, submissionDate);
+            const nextSpeakActivityQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(user.dataValues.lesson_id, user.dataValues.question_number);
+            if (nextSpeakActivityQuestion) {
+                await waUser.update_question(userMobileNumber, nextSpeakActivityQuestion.dataValues.questionNumber);
+                await sendSpeakActivityQuestion(userMobileNumber, user, nextSpeakActivityQuestion, body);
+            } else {
+                // Give total score here
+                let message = "You have completed the Speak Activity for this lesson.";
+                await client.messages.create({
+                    from: body.To,
+                    body: message,
+                    to: body.From,
+                }).then(message => console.log("Speak Activity completion message sent + " + message.sid));
                 await waUser.update_activity_question_lessonid(userMobileNumber, null, null);
             }
         }

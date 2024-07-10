@@ -18,7 +18,6 @@ const getAudio = async (text) => {
         const file = fs.createWriteStream('model_audio.wav');
         try {
             await pipeline(stream, file);
-            console.log('Audio file created successfully');
         } catch (error) {
             console.error('Pipeline failed', error);
         }

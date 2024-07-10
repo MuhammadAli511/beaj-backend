@@ -21,12 +21,12 @@ const getAll = async () => {
 };
 
 const getById = async (id) => {
-    const multipleChoiceQuestion = await MultipleChoiceQuestion.getById(id);
+    const multipleChoiceQuestion = await MultipleChoiceQuestion.findByPk(id);
     return multipleChoiceQuestion;
 };
 
 const update = async (id, file, image, questionType, questionText, questionNumber, lessonId, optionsType) => {
-    const multipleChoiceQuestion = await MultipleChoiceQuestion.findByIdAndUpdate(id, {
+    return await MultipleChoiceQuestion.update({
         QuestionAudioUrl: file,
         QuestionImageUrl: image,
         QuestionType: questionType,
@@ -34,12 +34,19 @@ const update = async (id, file, image, questionType, questionText, questionNumbe
         QuestionNumber: questionNumber,
         LessonId: lessonId,
         OptionsType: optionsType
-    }, { new: true });
-    return multipleChoiceQuestion;
+    }, {
+        where: {
+            id: id
+        }
+    });
 };
 
 const deleteMultipleChoiceQuestion = async (id) => {
-    await MultipleChoiceQuestion.findByIdAndDelete(id);
+    return await MultipleChoiceQuestion.destroy({
+        where: {
+            id: id
+        }
+    });
 };
 
 const getCurrentMultipleChoiceQuestion = async (lessonId, questionNumber) => {
@@ -64,8 +71,6 @@ const getNextMultipleChoiceQuestion = async (lessonId, questionNumber) => {
         });
     }
     if (lessonId && questionNumber) {
-        console.log('lessonId', lessonId);
-        console.log('questionNumber', questionNumber);
         let nextMCQ = await MultipleChoiceQuestion.findOne({
             where: {
                 LessonId: lessonId,
@@ -77,7 +82,6 @@ const getNextMultipleChoiceQuestion = async (lessonId, questionNumber) => {
                 ['QuestionNumber', 'ASC']
             ]
         });
-        console.log('nextMCQ', nextMCQ);
         if (!nextMCQ) {
             return null;
         }

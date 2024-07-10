@@ -6,7 +6,6 @@ const createSpeakActivityQuestionService = async (question, mediaFile, answer, l
     try {
         const audioUrl = await azure_blob.uploadToBlobStorage(mediaFile);
         const answerArray = answer.split(",");
-        console.log(answerArray);
         const speakActivityQuestion = await speakActivityQuestionRepository.create(question, audioUrl, answerArray, lessonId, questionNumber);
         return speakActivityQuestion;
     } catch (error) {
