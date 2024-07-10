@@ -238,6 +238,13 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                     to: body.From,
                 }).then(message => console.log("Total score message sent + " + message.sid));
                 await waUser.update_activity_question_lessonid(userMobileNumber, null, null);
+                // Send template here for next lesson
+                let nextLessonMessage = "Great Job. Click if you wish to begin the next lesson."
+                await client.messages.create({
+                    from: body.To,
+                    body: nextLessonMessage,
+                    to: body.From,
+                }).then(message => console.log("Next lesson message sent + " + message.sid));
             }
         }
     }
@@ -265,6 +272,13 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                     to: body.From,
                 }).then(message => console.log("Speak Activity completion message sent + " + message.sid));
                 await waUser.update_activity_question_lessonid(userMobileNumber, null, null);
+                // Send template here for next lesson
+                let nextLessonMessage = "Great Job. Click if you wish to begin the next lesson."
+                await client.messages.create({
+                    from: body.To,
+                    body: nextLessonMessage,
+                    to: body.From,
+                }).then(message => console.log("Next lesson message sent + " + message.sid));
             }
         }
     }
@@ -278,10 +292,10 @@ const webhookService = async (body, res) => {
         const userMessage = body.Body.toLowerCase().trim();
         const userMobileNumber = body.From.split(":")[1];
         // If the user sends an audio file, process it
-        if (body.NumMedia > 0) {
-            await audio_feedback_message(body);
-            return;
-        }
+        // if (body.NumMedia > 0) {
+        //     await audio_feedback_message(body);
+        //     return;
+        // }
 
         // Check if user exists in the database
         let user = await waUser.getByPhoneNumber(userMobileNumber);
