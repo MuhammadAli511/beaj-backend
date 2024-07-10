@@ -170,11 +170,11 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
     }
     if (activity === 'video') {
         const videoURL = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
-        // await client.messages.create({
-        //     from: body.To,
-        //     mediaUrl: [videoURL[0].dataValues.video],
-        //     to: body.From,
-        // }).then(message => console.log("Video message sent + " + message.sid));
+        await client.messages.create({
+            from: body.To,
+            mediaUrl: ["https://beajbloblive.blob.core.windows.net/asset-202307301859231194707-out/cff9a24d-15e4-4d4f-94aa-20508e83_720x480_2200.mp4?sv=2022-11-02&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=3023-06-23T16:57:22Z&st=2023-06-23T08:57:22Z&spr=https&sig=YfguGfVzPg4kO8ynxR0M%2FMowlU1ZtBv2K1VCswkwVcM%3D"],
+            to: body.From,
+        }).then(message => console.log("Video message sent + " + message.sid));
         // Update user
         await get_next_lesson(userMobileNumber, user, startingLesson, body, userMessage);
     } else if (activity === 'mcqs') {
@@ -216,10 +216,10 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                     body: message,
                     to: body.From,
                 }).then(message => console.log("Total score message sent + " + message.sid));
-                await get_next_lesson(userMobileNumber, user, startingLesson, body, userMessage);
+                await waUser.update_activity_question_lessonid(userMobileNumber, null, null);
             }
         }
-    };
+    }
 
 
 };
@@ -259,17 +259,16 @@ const webhookService = async (body, res) => {
             return;
         }
 
-        if (user.activity_type === 'mcqs') {
+        if (user.activity_type === 'mcqs' || user.activity_type === 'watchAndSpeak') {
             const currentLesson = await lessonRepository.getCurrentLesson(user.dataValues.lesson_id);
             await get_lessons(userMobileNumber, user, currentLesson, body, userMessage);
             return;
         }
 
 
-
-
         const nextLesson = await lessonRepository.getNextLesson(user.dataValues.level, user.dataValues.week, user.dataValues.day, user.dataValues.lesson_sequence);
         await update_user(userMobileNumber, user, nextLesson);
+        await get_lessons(userMobileNumber, user, nextLesson, body, userMessage);
 
         if (nextLesson === null) {
             client.messages.create({

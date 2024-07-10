@@ -47,10 +47,24 @@ const update_question = async (phone_number, question_number) => {
     });
 };
 
+const update_activity_question_lessonid = async (phone_number, activity_type, question_number, lesson_id) => {
+    return await WA_User.update({
+        activity_type: activity_type,
+        question_number: question_number,
+        lesson_id: lesson_id,
+        last_updated: new Date()
+    }, {
+        where: {
+            phone_number: phone_number
+        }
+    });
+};
+
 export default {
     create,
     getAll,
     getByPhoneNumber,
     update,
-    update_question
+    update_question,
+    update_activity_question_lessonid
 };
