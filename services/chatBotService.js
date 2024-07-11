@@ -274,7 +274,16 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                 await sendSpeakActivityQuestion(userMobileNumber, user, nextSpeakActivityQuestion, body, activity);
             } else {
                 // Give total score here
-                let message = "You have completed the Watch And Speak Activity.";
+                let message;
+                if (activity === 'watchAndSpeak') {
+                    message = "You have completed the Watch and Speak activity for this lesson.";
+                } else if (activity === 'listenAndSpeak') {
+                    message = "You have completed the Listen and Speak activity for this lesson.";
+                } else if (activity === 'postListenAndSpeak') {
+                    message = "You have completed the Post Listen and Speak activity for this lesson.";
+                } else if (activity === 'preListenAndSpeak') {
+                    message = "You have completed the Pre Listen and Speak activity for this lesson.";
+                }
                 await client.messages.create({
                     from: body.To,
                     body: message,
@@ -398,7 +407,7 @@ const webhookService = async (body, res) => {
             return;
         }
 
-        if (user.activity_type === 'mcqs' || user.activity_type === 'watchAndSpeak') {
+        if (user.activity_type === 'mcqs' || user.activity_type === 'watchAndSpeak' || user.activity_type === 'listenAndSpeak' || user.activity_type === 'postListenAndSpeak' || user.activity_type === 'preListenAndSpeak' || user.activity_type === 'postMCQs' || user.activity_type === 'preMCQs') {
             const currentLesson = await lessonRepository.getCurrentLesson(user.dataValues.lesson_id);
             await get_lessons(userMobileNumber, user, currentLesson, body, userMessage);
             return;
