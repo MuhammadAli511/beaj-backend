@@ -200,7 +200,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
             await waUser.updateMessageSid(userMobileNumber, message.sid);
         });
     }
-    else if (activity === 'mcqs') {
+    else if (activity === 'mcqs' || activity === 'postMCQs' || activity === 'preMCQs') {
         if (user.dataValues.question_number === null) {
             const startingMCQ = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(startingLesson.dataValues.LessonId, null);
             await waUser.update_question(userMobileNumber, startingMCQ.dataValues.QuestionNumber);
@@ -247,7 +247,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
             }
         }
     }
-    else if (activity === 'watchAndSpeak') {
+    else if (activity === 'watchAndSpeak' || activity === 'listenAndSpeak' || activity === 'postListenAndSpeak' || activity === 'preListenAndSpeak') {
         if (user.dataValues.question_number === null) {
             const startingSpeakActivityQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(startingLesson.dataValues.LessonId, null);
             await waUser.update_question(userMobileNumber, startingSpeakActivityQuestion.dataValues.questionNumber);
@@ -272,7 +272,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                 await sendSpeakActivityQuestion(userMobileNumber, user, nextSpeakActivityQuestion, body);
             } else {
                 // Give total score here
-                let message = "You have completed the Speak Activity for this lesson.";
+                let message = "You have completed the Watch And Speak Activity.";
                 await client.messages.create({
                     from: body.To,
                     body: message,
@@ -287,6 +287,78 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                 }).then(message => console.log("Next lesson message sent + " + message.sid));
             }
         }
+    }
+    else if (activity === 'read') {
+        const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
+        // Iterate through the documentFile array and send each mediaUrl
+        let englishAudio, urduAudio, image;
+        for (let i = 0; i < documentFile.length; i++) {
+            if (documentFile[i].dataValues.language === 'English') {
+                englishAudio = documentFile[i].dataValues.mediaUrl;
+            } else if (documentFile[i].dataValues.language === 'Urdu') {
+                urduAudio = documentFile[i].dataValues.mediaUrl;
+            } else {
+                image = documentFile[i].dataValues.mediaUrl;
+            }
+        }
+        if (englishAudio) {
+            await client.messages.create({
+                from: body.To,
+                mediaUrl: [englishAudio],
+                to: body.From,
+            }).then(message => console.log("English audio message sent + " + message.sid));
+        }
+        if (urduAudio) {
+            await client.messages.create({
+                from: body.To,
+                mediaUrl: [urduAudio],
+                to: body.From,
+            }).then(message => console.log("Urdu audio message sent + " + message.sid));
+        }
+        if (image) {
+            await client.messages.create({
+                from: body.To,
+                mediaUrl: [image],
+                to: body.From,
+            }).then(message => console.log("Image message sent + " + message.sid));
+        }
+        // Send template here for next lesson
+        await client.messages.create({
+            from: "MG252cac2eba974fff75b1df0cab40ece7",
+            contentSid: "HXc714b662d9dcff30ff4c46bef490fb29",
+            to: body.From,
+        }).then(message => console.log("Next lesson message sent + " + message.sid));
+    }
+    else if (activity === 'audio') {
+        const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
+        let audio, image;
+        for (let i = 0; i < documentFile.length; i++) {
+            if (documentFile[i].dataValues.mediaType === 'audio') {
+                audio = documentFile[i].dataValues.mediaUrl;
+            } else {
+                image = documentFile[i].dataValues.mediaUrl;
+            }
+        }
+        if (audio) {
+            await client.messages.create({
+                from: body.To,
+                mediaUrl: [audio],
+                to: body.From,
+            }).then(message => console.log("Audio message sent + " + message.sid));
+        }
+        if (image) {
+            await client.messages.create({
+                from: body.To,
+                mediaUrl: [image],
+                to: body.From,
+            }).then(message => console.log("Image message sent + " + message.sid));
+        }
+        // Send template here for next lesson
+        await client.messages.create({
+            from: "MG252cac2eba974fff75b1df0cab40ece7",
+            contentSid: "HXc714b662d9dcff30ff4c46bef490fb29",
+            to: body.From,
+        }).then(message => console.log("Next lesson message sent + " + message.sid));
     }
 };
 
