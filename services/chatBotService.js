@@ -27,7 +27,7 @@ const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
 const greeting_message = async (body) => {
     client.messages.create({
-        from: "MG252cac2eba974fff75b1df0cab40ece7",
+        from: body.To,
         body: "Hi there! Welcome to Beaj. Let's begin your course. Below is your first lesson.",
         to: body.From,
     });
