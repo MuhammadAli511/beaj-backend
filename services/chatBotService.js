@@ -407,18 +407,8 @@ const webhookService = async (body, res) => {
             return;
         }
 
-        if (user.activity_type === 'mcqs' || user.activity_type === 'watchAndSpeak' || user.activity_type === 'listenAndSpeak' || user.activity_type === 'postListenAndSpeak' || user.activity_type === 'preListenAndSpeak' || user.activity_type === 'postMCQs' || user.activity_type === 'preMCQs') {
-            const currentLesson = await lessonRepository.getCurrentLesson(user.dataValues.lesson_id);
-            await get_lessons(userMobileNumber, user, currentLesson, body, userMessage);
-            return;
-        }
-
-
-        const nextLesson = await lessonRepository.getNextLesson(user.dataValues.level, user.dataValues.week, user.dataValues.day, user.dataValues.lesson_sequence);
-        await update_user(userMobileNumber, user, nextLesson);
-        await get_lessons(userMobileNumber, user, nextLesson, body, userMessage);
-
-        if (nextLesson === null) {
+        const currentLesson = await lessonRepository.getCurrentLesson(user.dataValues.lesson_id);
+        if (currentLesson === null) {
             client.messages.create({
                 from: body.To,
                 body: 'Congratulations! You have completed all the lessons for this course.',
@@ -426,6 +416,8 @@ const webhookService = async (body, res) => {
             }).then(message => console.log("Completion message sent + " + message.sid));
             return;
         };
+        await get_lessons(userMobileNumber, user, currentLesson, body, userMessage);
+        return;
     } catch (error) {
         console.error('Error in chatBotService:', error);
         error.fileName = 'chatBotService.js';
