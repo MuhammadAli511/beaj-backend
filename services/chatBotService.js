@@ -141,7 +141,7 @@ const send_mcq = async (userMobileNumber, user, mcq, body) => {
     }).then(message => console.log("MCQ message sent + " + message.sid));
 };
 
-const sendSpeakActivityQuestion = async (userMobileNumber, user, speakActivityQuestion, body) => {
+const sendSpeakActivityQuestion = async (userMobileNumber, user, speakActivityQuestion, body, activity) => {
     const speakActivityQuestionMessage = speakActivityQuestion.dataValues.question;
     if (speakActivityQuestionMessage) {
         await client.messages.create({
@@ -150,8 +150,10 @@ const sendSpeakActivityQuestion = async (userMobileNumber, user, speakActivityQu
             to: body.From,
         }).then(message => console.log("Speak Activity message sent + " + message.sid));
     }
-    // const speakActivityQuestionMediaUrl = speakActivityQuestion.dataValues.mediaFile;
-    const speakActivityQuestionMediaUrl = "https://beajbloblive.blob.core.windows.net/asset-202307301859231194707-out/cff9a24d-15e4-4d4f-94aa-20508e83_720x480_2200.mp4?sv=2022-11-02&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=3023-06-23T16:57:22Z&st=2023-06-23T08:57:22Z&spr=https&sig=YfguGfVzPg4kO8ynxR0M%2FMowlU1ZtBv2K1VCswkwVcM%3D";
+    let speakActivityQuestionMediaUrl = speakActivityQuestion.dataValues.mediaFile;
+    if (activity === 'watchAndSpeak') {
+        speakActivityQuestionMediaUrl = "https://beajbloblive.blob.core.windows.net/asset-202307301859231194707-out/cff9a24d-15e4-4d4f-94aa-20508e83_720x480_2200.mp4?sv=2022-11-02&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=3023-06-23T16:57:22Z&st=2023-06-23T08:57:22Z&spr=https&sig=YfguGfVzPg4kO8ynxR0M%2FMowlU1ZtBv2K1VCswkwVcM%3D";
+    }
     if (speakActivityQuestionMediaUrl) {
         await client.messages.create({
             from: body.To,
@@ -251,7 +253,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
         if (user.dataValues.question_number === null) {
             const startingSpeakActivityQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(startingLesson.dataValues.LessonId, null);
             await waUser.update_question(userMobileNumber, startingSpeakActivityQuestion.dataValues.questionNumber);
-            await sendSpeakActivityQuestion(userMobileNumber, user, startingSpeakActivityQuestion, body);
+            await sendSpeakActivityQuestion(userMobileNumber, user, startingSpeakActivityQuestion, body, activity);
         } else {
             const speakActivityQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(user.dataValues.lesson_id, user.dataValues.question_number);
             const userAudioFile = body.MediaUrl0;
@@ -269,7 +271,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
             const nextSpeakActivityQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(user.dataValues.lesson_id, user.dataValues.question_number);
             if (nextSpeakActivityQuestion) {
                 await waUser.update_question(userMobileNumber, nextSpeakActivityQuestion.dataValues.questionNumber);
-                await sendSpeakActivityQuestion(userMobileNumber, user, nextSpeakActivityQuestion, body);
+                await sendSpeakActivityQuestion(userMobileNumber, user, nextSpeakActivityQuestion, body, activity);
             } else {
                 // Give total score here
                 let message = "You have completed the Watch And Speak Activity.";
