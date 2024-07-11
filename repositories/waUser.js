@@ -17,6 +17,17 @@ const getByPhoneNumber = async (phone_number) => {
     return await WA_User.findByPk(phone_number);
 };
 
+const updateMessageSid = async (phone_number, message_sid) => {
+    return await WA_User.update({
+        message_sid: message_sid,
+        last_updated: new Date()
+    }, {
+        where: {
+            phone_number: phone_number
+        }
+    });
+};
+
 const update = async (phone_number, persona, engagement_type, level, week, day, lesson_sequence, activity_type, lesson_id, question_number) => {
     return await WA_User.update({
         persona: persona,
@@ -66,5 +77,6 @@ export default {
     getByPhoneNumber,
     update,
     update_question,
-    update_activity_question_lessonid
+    update_activity_question_lessonid,
+    updateMessageSid
 };

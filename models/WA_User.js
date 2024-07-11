@@ -44,6 +44,10 @@ WA_User.init({
         type: DataTypes.STRING,
         allowNull: true
     },
+    message_sid: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
     last_updated: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW

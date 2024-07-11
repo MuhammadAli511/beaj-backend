@@ -195,9 +195,10 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
             from: body.To,
             mediaUrl: [videoURL],
             to: body.From,
-        }).then(message => console.log("Video message sent + " + message.sid));
-        // Update user
-        await get_next_lesson(userMobileNumber, user, startingLesson, body, userMessage);
+        }).then(async message => {
+            console.log("Video message sent + " + message.sid);
+            await waUser.updateMessageSid(userMobileNumber, message.sid);
+        });
     }
     else if (activity === 'mcqs') {
         if (user.dataValues.question_number === null) {
@@ -279,17 +280,14 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                 }).then(message => console.log("Speak Activity completion message sent + " + message.sid));
                 await waUser.update_activity_question_lessonid(userMobileNumber, null, null);
                 // Send template here for next lesson
-                let nextLessonMessage = "Great Job. Click if you wish to begin the next lesson."
                 await client.messages.create({
-                    from: body.To,
-                    body: nextLessonMessage,
+                    from: "MG252cac2eba974fff75b1df0cab40ece7",
+                    contentSid: "HXc714b662d9dcff30ff4c46bef490fb29",
                     to: body.From,
                 }).then(message => console.log("Next lesson message sent + " + message.sid));
             }
         }
     }
-
-
 };
 
 const webhookService = async (body, res) => {
@@ -353,7 +351,20 @@ const webhookService = async (body, res) => {
 };
 
 const statusWebhookService = async (body, res) => {
-    res.status(200).send("Chatbot Status Webhook Route : Working");
+    if (body.SmsStatus === 'delivered') {
+        const userMobileNumber = body.To.split(":")[1];
+        const user = await waUser.getByPhoneNumber(userMobileNumber);
+        const incomingMessageSid = body.MessageSid;
+        const messageSidInDb = user.dataValues.message_sid;
+        if (incomingMessageSid === messageSidInDb) {
+            const currentLesson = await lessonRepository.getCurrentLesson(user.dataValues.lesson_id);
+            const newBody = {
+                From: body.To,
+                To: body.From
+            }
+            await get_next_lesson(userMobileNumber, user, currentLesson, newBody, "userMessage");
+        }
+    }
 };
 
 
