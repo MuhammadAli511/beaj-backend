@@ -27,7 +27,7 @@ const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
 const greeting_message = async (body) => {
     client.messages.create({
-        from: body.To,
+        from: "MG252cac2eba974fff75b1df0cab40ece7",
         body: "Hi there! Welcome to Beaj. Let's begin your course. Below is your first lesson.",
         to: body.From,
     });
@@ -175,7 +175,6 @@ const get_next_lesson = async (userMobileNumber, user, startingLesson, body, use
     await get_lessons(userMobileNumber, user, nextLesson, body, userMessage);
 };
 
-
 const get_lessons = async (userMobileNumber, user, startingLesson, body, userMessage) => {
     const activity = startingLesson.dataValues.activity;
     if (user.dataValues.question_number === null) {
@@ -239,10 +238,9 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                 }).then(message => console.log("Total score message sent + " + message.sid));
                 await waUser.update_activity_question_lessonid(userMobileNumber, null, null);
                 // Send template here for next lesson
-                let nextLessonMessage = "Great Job. Click if you wish to begin the next lesson."
                 await client.messages.create({
-                    from: body.To,
-                    body: nextLessonMessage,
+                    from: "MG252cac2eba974fff75b1df0cab40ece7",
+                    contentSid: "HXc714b662d9dcff30ff4c46bef490fb29",
                     to: body.From,
                 }).then(message => console.log("Next lesson message sent + " + message.sid));
             }
@@ -256,9 +254,17 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
         } else {
             const speakActivityQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(user.dataValues.lesson_id, user.dataValues.question_number);
             const userAudioFile = body.MediaUrl0;
-            const userAudioFileUrl = await azure_blob.uploadToBlobStorage(userAudioFile);
+            const audioResponse = await axios.get(userAudioFile, {
+                responseType: 'arraybuffer',
+                auth: {
+                    username: accountSid,
+                    password: authToken
+                }
+            });
+            const audioBuffer = audioResponse.data;
+            const userAudioFileUrl = await azure_blob.uploadToBlobStorage(audioBuffer, "audioFile.opus");
             const submissionDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
-            await questionResponseRepository.create(user.dataValues.phone_number, user.dataValues.lesson_id, speakActivityQuestion.dataValues.Id, activity, startingLesson.dataValues.activityAlias, null, userAudioFileUrl, true, 1, submissionDate);
+            await questionResponseRepository.create(user.dataValues.phone_number, user.dataValues.lesson_id, speakActivityQuestion.dataValues.id, activity, startingLesson.dataValues.activityAlias, null, userAudioFileUrl, true, 1, submissionDate);
             const nextSpeakActivityQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(user.dataValues.lesson_id, user.dataValues.question_number);
             if (nextSpeakActivityQuestion) {
                 await waUser.update_question(userMobileNumber, nextSpeakActivityQuestion.dataValues.questionNumber);
@@ -285,7 +291,6 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
 
 
 };
-
 
 const webhookService = async (body, res) => {
     try {
@@ -345,6 +350,10 @@ const webhookService = async (body, res) => {
         error.fileName = 'chatBotService.js';
         throw error;
     }
+};
+
+const statusWebhookService = async (body, res) => {
+    res.status(200).send("Chatbot Status Webhook Route : Working");
 };
 
 
@@ -416,4 +425,4 @@ const getAllFeedbackService = async () => {
     return feedback;
 };
 
-export default { webhookService, feedbackService, getAllFeedbackService };
+export default { webhookService, feedbackService, getAllFeedbackService, statusWebhookService };

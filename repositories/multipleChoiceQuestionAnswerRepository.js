@@ -43,7 +43,10 @@ const getByQuestionId = async (multipleChoiceQuestionId) => {
     const multipleChoiceQuestionAnswers = await MultipleChoiceQuestionAnswer.findAll({
         where: {
             MultipleChoiceQuestionId: multipleChoiceQuestionId
-        }
+        },
+        order: [
+            ['SequenceNumber', 'ASC']
+        ]
     });
     return multipleChoiceQuestionAnswers;
 };
