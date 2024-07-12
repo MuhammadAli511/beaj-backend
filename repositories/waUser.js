@@ -71,6 +71,14 @@ const update_activity_question_lessonid = async (phone_number, activity_type, qu
     });
 };
 
+const deleteByPhoneNumber = async (phone_number) => {
+    return await WA_User.destroy({
+        where: {
+            phone_number: phone_number
+        }
+    });
+};
+
 export default {
     create,
     getAll,
@@ -78,5 +86,6 @@ export default {
     update,
     update_question,
     update_activity_question_lessonid,
-    updateMessageSid
+    updateMessageSid,
+    deleteByPhoneNumber
 };

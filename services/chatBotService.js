@@ -25,6 +25,27 @@ const client = new twilio(accountSid, authToken);
 const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
 const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function stripHtmlTags(html) {
+    // Replace list items with a newline and dash
+    let text = html.replace(/<li>/g, '\n- ').replace(/<\/li>/g, '');
+
+    // Replace paragraph breaks with newlines
+    text = text.replace(/<br\s*\/?>/g, '\n').replace(/<\/?p>/g, '\n');
+
+    // Replace remaining HTML tags with an empty string
+    text = text.replace(/<[^>]*>?/gm, '');
+
+    // Remove extra newlines
+    text = text.replace(/\n{2,}/g, '\n\n').trim();
+
+    return text;
+}
+
+
 const greeting_message = async (body) => {
     client.messages.create({
         from: body.To,
@@ -153,6 +174,8 @@ const sendSpeakActivityQuestion = async (userMobileNumber, user, speakActivityQu
     let speakActivityQuestionMediaUrl = speakActivityQuestion.dataValues.mediaFile;
     if (activity === 'watchAndSpeak') {
         speakActivityQuestionMediaUrl = "https://beajbloblive.blob.core.windows.net/asset-202307301859231194707-out/cff9a24d-15e4-4d4f-94aa-20508e83_720x480_2200.mp4?sv=2022-11-02&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=3023-06-23T16:57:22Z&st=2023-06-23T08:57:22Z&spr=https&sig=YfguGfVzPg4kO8ynxR0M%2FMowlU1ZtBv2K1VCswkwVcM%3D";
+    } else if (activity === 'listenAndSpeak' || activity === 'postListenAndSpeak' || activity === 'preListenAndSpeak') {
+        speakActivityQuestionMediaUrl = "https://beajbloblive.blob.core.windows.net/test/15da300b-c49a-4f0b-9b0c-48646b7c_AACAudio_2Ch_192kbps.mp3"
     }
     if (speakActivityQuestionMediaUrl) {
         await client.messages.create({
@@ -181,8 +204,20 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
     const activity = startingLesson.dataValues.activity;
     if (user.dataValues.question_number === null) {
         let lessonMessage = "Week " + startingLesson.dataValues.weekNumber + ", Day " + startingLesson.dataValues.dayNumber + "\nActivity Name: " + startingLesson.dataValues.activityAlias;
+        if (activity === 'mcqs' || activity === 'preMCQs' || activity === 'postMCQs') {
+            lessonMessage += "\n\nThis lesson contains multiple choice questions. Please answer the following questions by typing the letter corresponding to the correct answer.";
+        } else if (activity === 'watchAndSpeak') {
+            lessonMessage += "\n\nThis lesson contains a Watch and Speak activity. Please watch the video and record your response.";
+        } else if (activity === 'listenAndSpeak' || activity === 'postListenAndSpeak' || activity === 'preListenAndSpeak') {
+            lessonMessage += "\n\nThis lesson contains a Listen and Speak activity. Please listen to the audio and record your response.";
+        } else if (activity === 'read') {
+            lessonMessage += "\n\nThis lesson contains a reading activity. Please listen to the audio and read the text.";
+        } else if (activity === 'audio') {
+            lessonMessage += "\n\nThis lesson contains an audio activity. Please listen to the audio and view the image.";
+        }
+
         if (startingLesson.dataValues.text) {
-            lessonMessage += "\n\n" + startingLesson.dataValues.text;
+            lessonMessage += "\n\n" + stripHtmlTags(startingLesson.dataValues.text);
         }
         await client.messages.create({
             from: body.To,
@@ -304,12 +339,18 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
         // Iterate through the documentFile array and send each mediaUrl
         let englishAudio, urduAudio, image;
         for (let i = 0; i < documentFile.length; i++) {
-            if (documentFile[i].dataValues.language === 'English') {
-                englishAudio = documentFile[i].dataValues.mediaUrl;
-            } else if (documentFile[i].dataValues.language === 'Urdu') {
-                urduAudio = documentFile[i].dataValues.mediaUrl;
+            console.log(documentFile[i].dataValues);
+            if (documentFile[i].dataValues.mediaType == 'image') {
+                image = documentFile[i].dataValues.image;
+            }
+            else if (documentFile[i].dataValues.language == 'English') {
+                // englishAudio = documentFile[i].dataValues.audio;
+                englishAudio = "https://beajbloblive.blob.core.windows.net/test/15da300b-c49a-4f0b-9b0c-48646b7c_AACAudio_2Ch_192kbps.mp3"
+            } else if (documentFile[i].dataValues.language == 'Urdu') {
+                // urduAudio = documentFile[i].dataValues.audio;
+                urduAudio = "https://beajbloblive.blob.core.windows.net/test/15da300b-c49a-4f0b-9b0c-48646b7c_AACAudio_2Ch_192kbps.mp3"
             } else {
-                image = documentFile[i].dataValues.mediaUrl;
+
             }
         }
         if (englishAudio) {
@@ -333,6 +374,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                 to: body.From,
             }).then(message => console.log("Image message sent + " + message.sid));
         }
+        await sleep(20000);
         // Send template here for next lesson
         await client.messages.create({
             from: "MG252cac2eba974fff75b1df0cab40ece7",
@@ -345,9 +387,10 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
         let audio, image;
         for (let i = 0; i < documentFile.length; i++) {
             if (documentFile[i].dataValues.mediaType === 'audio') {
-                audio = documentFile[i].dataValues.mediaUrl;
+                // audio = documentFile[i].dataValues.audio;
+                audio = "https://beajbloblive.blob.core.windows.net/test/15da300b-c49a-4f0b-9b0c-48646b7c_AACAudio_2Ch_192kbps.mp3"
             } else {
-                image = documentFile[i].dataValues.mediaUrl;
+                image = documentFile[i].dataValues.image;
             }
         }
         if (audio) {
@@ -364,6 +407,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                 to: body.From,
             }).then(message => console.log("Image message sent + " + message.sid));
         }
+        await sleep(15000);
         // Send template here for next lesson
         await client.messages.create({
             from: "MG252cac2eba974fff75b1df0cab40ece7",
@@ -386,6 +430,9 @@ const webhookService = async (body, res) => {
         // Check if user exists in the database
         let user = await waUser.getByPhoneNumber(userMobileNumber);
 
+
+
+
         if (!user) {
             greeting_message(body);
             waUser.create(userMobileNumber, 'Teacher', 'Learning');
@@ -405,6 +452,15 @@ const webhookService = async (body, res) => {
             user = await waUser.getByPhoneNumber(userMobileNumber);
             await get_lessons(userMobileNumber, user, startingLesson, body, userMessage);
             return;
+        }
+
+        if (userMessage === 'reset') {
+            await waUser.deleteByPhoneNumber(userMobileNumber);
+            client.messages.create({
+                from: body.To,
+                body: 'Your progress has been reset. You can start the course again.',
+                to: body.From,
+            }).then(message => console.log("Reset message sent + " + message.sid));
         }
 
         const currentLesson = await lessonRepository.getCurrentLesson(user.dataValues.lesson_id);
