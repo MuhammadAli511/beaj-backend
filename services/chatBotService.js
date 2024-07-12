@@ -29,6 +29,10 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+const normalizeAnswer = (input) => {
+    return input.toLowerCase().replace(/[.]/g, '').replace(/\s+/g, ' ').trim();
+};
+
 function stripHtmlTags(html) {
     // Replace list items with a newline and dash
     let text = html.replace(/<li>/g, '\n- ').replace(/<\/li>/g, '');
@@ -45,13 +49,13 @@ function stripHtmlTags(html) {
     return text;
 }
 
-
 const greeting_message = async (body) => {
     client.messages.create({
         from: body.To,
         body: "Hi there! Welcome to Beaj. Let's begin your course. Below is your first lesson.",
         to: body.From,
     });
+    sleep(2000);
 };
 
 const audio_feedback_message = async (body) => {
@@ -174,10 +178,13 @@ const sendSpeakActivityQuestion = async (userMobileNumber, user, speakActivityQu
     let speakActivityQuestionMediaUrl = speakActivityQuestion.dataValues.mediaFile;
     if (activity === 'watchAndSpeak') {
         speakActivityQuestionMediaUrl = "https://beajbloblive.blob.core.windows.net/asset-202307301859231194707-out/cff9a24d-15e4-4d4f-94aa-20508e83_720x480_2200.mp4?sv=2022-11-02&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=3023-06-23T16:57:22Z&st=2023-06-23T08:57:22Z&spr=https&sig=YfguGfVzPg4kO8ynxR0M%2FMowlU1ZtBv2K1VCswkwVcM%3D";
+        await client.messages.create({
+            from: body.To,
+            mediaUrl: [speakActivityQuestionMediaUrl],
+            to: body.From,
+        }).then(message => console.log("Speak Activity media sent + " + message.sid));
     } else if (activity === 'listenAndSpeak' || activity === 'postListenAndSpeak' || activity === 'preListenAndSpeak') {
         speakActivityQuestionMediaUrl = "https://beajbloblive.blob.core.windows.net/test/15da300b-c49a-4f0b-9b0c-48646b7c_AACAudio_2Ch_192kbps.mp3"
-    }
-    if (speakActivityQuestionMediaUrl) {
         await client.messages.create({
             from: body.To,
             mediaUrl: [speakActivityQuestionMediaUrl],
@@ -245,22 +252,51 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
         } else {
             const mcq = await multipleChoiceQuestionRepository.getCurrentMultipleChoiceQuestion(user.dataValues.lesson_id, user.dataValues.question_number);
             const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(mcq.dataValues.Id);
+
             let correctAnswer;
             for (let i = 0; i < mcqAnswers.length; i++) {
                 if (mcqAnswers[i].dataValues.IsCorrect === true) {
-                    correctAnswer = mcqAnswers[i].dataValues.SequenceNumber;
+                    correctAnswer = normalizeAnswer(mcqAnswers[i].dataValues.AnswerText); // Normalize the correct answer
                     break;
                 }
             }
-            const userAnswer = mcqAnswers.find(answer => answer.dataValues.SequenceNumber === userMessage.toUpperCase().charCodeAt(0) - 64).dataValues.AnswerText;
-            const userAnswerSequenceNumber = userMessage.toUpperCase().charCodeAt(0) - 64;
+
+            const userInput = userMessage.trim();
+            let userAnswer, userAnswerIsCorrect = false;
+
+            if (userInput.length === 1 && /^[A-D]$/i.test(userInput)) {
+                // User entered a letter (A, B, C, D)
+                const index = userInput.toUpperCase().charCodeAt(0) - 65;
+                if (mcqAnswers[index]) {
+                    userAnswer = mcqAnswers[index].dataValues.AnswerText;
+                    userAnswerIsCorrect = normalizeAnswer(userAnswer) === correctAnswer;
+                }
+            } else {
+                // User entered full answer text or a mixed input
+                const normalizedInput = normalizeAnswer(userInput);
+
+                const foundAnswer = mcqAnswers.find(answer => normalizeAnswer(answer.dataValues.AnswerText) === normalizedInput);
+                userAnswer = foundAnswer ? foundAnswer.dataValues.AnswerText : null;
+                userAnswerIsCorrect = foundAnswer ? normalizeAnswer(userAnswer) === correctAnswer : false;
+            }
+
+            if (!userAnswerIsCorrect) {
+                userAnswerIsCorrect = false;
+            }
 
             const submissionDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
-            if (userAnswerSequenceNumber === correctAnswer) {
-                await questionResponseRepository.create(user.dataValues.phone_number, user.dataValues.lesson_id, mcq.dataValues.Id, 'mcqs', startingLesson.dataValues.activityAlias, userAnswer, null, true, 1, submissionDate);
-            } else {
-                await questionResponseRepository.create(user.dataValues.phone_number, user.dataValues.lesson_id, mcq.dataValues.Id, 'mcqs', startingLesson.dataValues.activityAlias, userAnswer, null, false, 1, submissionDate);
-            }
+            await questionResponseRepository.create(
+                user.dataValues.phone_number,
+                user.dataValues.lesson_id,
+                mcq.dataValues.Id,
+                'mcqs',
+                startingLesson.dataValues.activityAlias,
+                userAnswer,
+                null,
+                userAnswerIsCorrect,
+                1,
+                submissionDate
+            );
             const nextMCQ = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(user.dataValues.lesson_id, user.dataValues.question_number);
             if (nextMCQ) {
                 await waUser.update_question(userMobileNumber, nextMCQ.dataValues.QuestionNumber);
@@ -284,7 +320,57 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
             }
         }
     }
-    else if (activity === 'watchAndSpeak' || activity === 'listenAndSpeak' || activity === 'postListenAndSpeak' || activity === 'preListenAndSpeak') {
+    else if (activity === 'listenAndSpeak' || activity === 'postListenAndSpeak' || activity === 'preListenAndSpeak') {
+        if (user.dataValues.question_number === null) {
+            const startingSpeakActivityQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(startingLesson.dataValues.LessonId, null);
+            await waUser.update_question(userMobileNumber, startingSpeakActivityQuestion.dataValues.questionNumber);
+            await sendSpeakActivityQuestion(userMobileNumber, user, startingSpeakActivityQuestion, body, activity);
+        } else {
+            const speakActivityQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(user.dataValues.lesson_id, user.dataValues.question_number);
+            const userAudioFile = body.MediaUrl0;
+            const audioResponse = await axios.get(userAudioFile, {
+                responseType: 'arraybuffer',
+                auth: {
+                    username: accountSid,
+                    password: authToken
+                }
+            });
+            const audioBuffer = audioResponse.data;
+            const userAudioFileUrl = await azure_blob.uploadToBlobStorage(audioBuffer, "audioFile.opus");
+            const submissionDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+            await questionResponseRepository.create(user.dataValues.phone_number, user.dataValues.lesson_id, speakActivityQuestion.dataValues.id, activity, startingLesson.dataValues.activityAlias, null, userAudioFileUrl, true, 1, submissionDate);
+            const nextSpeakActivityQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(user.dataValues.lesson_id, user.dataValues.question_number);
+            if (nextSpeakActivityQuestion) {
+                await waUser.update_question(userMobileNumber, nextSpeakActivityQuestion.dataValues.questionNumber);
+                await sendSpeakActivityQuestion(userMobileNumber, user, nextSpeakActivityQuestion, body, activity);
+            } else {
+                // Give total score here
+                let message;
+                if (activity === 'watchAndSpeak') {
+                    message = "You have completed the Watch and Speak activity for this lesson.";
+                } else if (activity === 'listenAndSpeak') {
+                    message = "You have completed the Listen and Speak activity for this lesson.";
+                } else if (activity === 'postListenAndSpeak') {
+                    message = "You have completed the Post Listen and Speak activity for this lesson.";
+                } else if (activity === 'preListenAndSpeak') {
+                    message = "You have completed the Pre Listen and Speak activity for this lesson.";
+                }
+                await client.messages.create({
+                    from: body.To,
+                    body: message,
+                    to: body.From,
+                }).then(message => console.log("Speak Activity completion message sent + " + message.sid));
+                await waUser.update_activity_question_lessonid(userMobileNumber, null, null);
+                // Send template here for next lesson
+                await client.messages.create({
+                    from: "MG252cac2eba974fff75b1df0cab40ece7",
+                    contentSid: "HXc714b662d9dcff30ff4c46bef490fb29",
+                    to: body.From,
+                }).then(message => console.log("Next lesson message sent + " + message.sid));
+            }
+        }
+    }
+    else if (activity === 'watchAndSpeak') {
         if (user.dataValues.question_number === null) {
             const startingSpeakActivityQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(startingLesson.dataValues.LessonId, null);
             await waUser.update_question(userMobileNumber, startingSpeakActivityQuestion.dataValues.questionNumber);
@@ -421,11 +507,6 @@ const webhookService = async (body, res) => {
     try {
         const userMessage = body.Body.toLowerCase().trim();
         const userMobileNumber = body.From.split(":")[1];
-        // If the user sends an audio file, process it
-        // if (body.NumMedia > 0) {
-        //     await audio_feedback_message(body);
-        //     return;
-        // }
 
         // Check if user exists in the database
         let user = await waUser.getByPhoneNumber(userMobileNumber);
@@ -461,9 +542,19 @@ const webhookService = async (body, res) => {
                 body: 'Your progress has been reset. You can start the course again.',
                 to: body.From,
             }).then(message => console.log("Reset message sent + " + message.sid));
+            return;
         }
 
-        const currentLesson = await lessonRepository.getCurrentLesson(user.dataValues.lesson_id);
+        if (user.activity_type === 'mcqs' || user.activity_type === 'watchAndSpeak' || user.activity_type === 'listenAndSpeak' || user.activity_type === 'postListenAndSpeak' || user.activity_type === 'preListenAndSpeak' || user.activity_type === 'postMCQs' || user.activity_type === 'preMCQs') {
+            const currentLesson = await lessonRepository.getCurrentLesson(user.dataValues.lesson_id);
+            await get_lessons(userMobileNumber, user, currentLesson, body, userMessage);
+            return;
+        }
+
+
+        const nextLesson = await lessonRepository.getNextLesson(user.dataValues.level, user.dataValues.week, user.dataValues.day, user.dataValues.lesson_sequence);
+        await update_user(userMobileNumber, user, nextLesson);
+        await get_lessons(userMobileNumber, user, nextLesson, body, userMessage);
         if (currentLesson === null) {
             client.messages.create({
                 from: body.To,
