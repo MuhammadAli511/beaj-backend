@@ -185,7 +185,6 @@ const sendSpeakActivityQuestion = async (userMobileNumber, user, speakActivityQu
             mediaUrl: [speakActivityQuestionMediaUrl],
             to: body.From,
         }).then(message => console.log("Speak Activity media sent + " + message.sid));
-        console.log("Video Sent");
         await sleep(20000);
         // Next template for skipping the audio recording
         await client.messages.create({
@@ -193,7 +192,6 @@ const sendSpeakActivityQuestion = async (userMobileNumber, user, speakActivityQu
             contentSid: "HXc714b662d9dcff30ff4c46bef490fb29",
             to: body.From,
         }).then(message => console.log("Next lesson message sent + " + message.sid));
-        console.log("Next lesson message sent");
         return;
     }
     else if (activity === 'listenAndSpeak' || activity === 'postListenAndSpeak' || activity === 'preListenAndSpeak') {
@@ -393,8 +391,6 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                 }).then(message => console.log("Error message sent + " + message.sid));
             } else {
                 const transcription = result.results.channels[0].alternatives[0].transcript;
-                console.log("Here:")
-                console.log(speakActivityQuestion.dataValues.answer);
                 const answersArray = speakActivityQuestion.dataValues.answer;
                 let userAnswerIsCorrect = false;
                 for (let i = 0; i < answersArray.length; i++) {
@@ -465,7 +461,6 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
             const speakActivityQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(user.dataValues.lesson_id, user.dataValues.question_number);
             if (userMessage.toLowerCase().includes('start next lesson')) {
                 const nextSpeakActivityQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(user.dataValues.lesson_id, user.dataValues.question_number);
-                console.log("Next Speak Activity Question: ", nextSpeakActivityQuestion);
                 if (nextSpeakActivityQuestion) {
                     await waUser.update_question(userMobileNumber, nextSpeakActivityQuestion.dataValues.questionNumber);
                     await sendSpeakActivityQuestion(userMobileNumber, user, nextSpeakActivityQuestion, body, activity);
@@ -529,7 +524,6 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
         // Iterate through the documentFile array and send each mediaUrl
         let englishAudio, urduAudio, image;
         for (let i = 0; i < documentFile.length; i++) {
-            console.log(documentFile[i].dataValues);
             if (documentFile[i].dataValues.mediaType == 'image') {
                 image = documentFile[i].dataValues.image;
             }
@@ -721,7 +715,6 @@ const statusWebhookService = async (body, res) => {
         const incomingMessageSid = body.MessageSid;
         const messageSidInDb = user.dataValues.message_sid;
         if (incomingMessageSid === messageSidInDb && user.dataValues.activity_type === 'video') {
-            console.log("Activity type: " + user.dataValues.activity_type);
             const currentLesson = await lessonRepository.getCurrentLesson(user.dataValues.lesson_id);
             const newBody = {
                 From: body.To,
