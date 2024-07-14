@@ -558,7 +558,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
             }).then(message => console.log("Lesson message sent + " + message.sid));
         }
 
-
+        await sleep(3000);
         if (englishAudio) {
             await client.messages.create({
                 from: body.To,
