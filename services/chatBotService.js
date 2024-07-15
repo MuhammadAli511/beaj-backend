@@ -689,8 +689,6 @@ const webhookService = async (body, res) => {
 
         if (userMessage.toLowerCase().includes('start next lesson')) {
             const nextLesson = await lessonRepository.getNextLesson(user.dataValues.level, user.dataValues.week, user.dataValues.day, user.dataValues.lesson_sequence);
-            await update_user(userMobileNumber, user, nextLesson);
-            await get_lessons(userMobileNumber, user, nextLesson, body, userMessage);
             if (nextLesson === null) {
                 client.messages.create({
                     from: body.To,
@@ -699,6 +697,10 @@ const webhookService = async (body, res) => {
                 }).then(message => console.log("Completion message sent + " + message.sid));
                 return;
             };
+            await update_user(userMobileNumber, user, nextLesson);
+            await get_lessons(userMobileNumber, user, nextLesson, body, userMessage);
+            console.log("Next Lesson: ", nextLesson);
+
         }
     } catch (error) {
         console.error('Error in chatBotService:', error);
