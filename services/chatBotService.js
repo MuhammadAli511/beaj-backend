@@ -156,7 +156,7 @@ const update_user = async (userMobileNumber, user, startingLesson) => {
 
 const send_mcq = async (userMobileNumber, user, mcq, body) => {
     const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(mcq.dataValues.Id);
-    let mcqMessage = "Question: " + mcq.QuestionText;
+    let mcqMessage = "*Question:* " + mcq.QuestionText + "\n\n";
     for (let j = 0; j < mcqAnswers.length; j++) {
         mcqMessage += "\n" + String.fromCharCode(65 + j) + ". " + mcqAnswers[j].dataValues.AnswerText;
     }
@@ -189,19 +189,12 @@ const sendSpeakActivityQuestion = async (userMobileNumber, user, speakActivityQu
         // Next template for skipping the audio recording
         await client.messages.create({
             from: "MG252cac2eba974fff75b1df0cab40ece7",
-            contentSid: "HXc714b662d9dcff30ff4c46bef490fb29",
+            contentSid: "HXad8f10612db3a737b580eea1892c98f9",
             to: body.From,
         }).then(message => console.log("Next lesson message sent + " + message.sid));
         return;
     }
     else if (activity === 'listenAndSpeak' || activity === 'postListenAndSpeak' || activity === 'preListenAndSpeak') {
-        speakActivityQuestionMediaUrl = "https://beajbloblive.blob.core.windows.net/test/15da300b-c49a-4f0b-9b0c-48646b7c_AACAudio_2Ch_192kbps.mp3"
-        await client.messages.create({
-            from: body.To,
-            mediaUrl: [speakActivityQuestionMediaUrl],
-            to: body.From,
-        }).then(message => console.log("Speak Activity media sent + " + message.sid));
-        await sleep(20000);
         const speakActivityQuestionMessage = speakActivityQuestion.dataValues.question;
         if (speakActivityQuestionMessage) {
             await client.messages.create({
@@ -210,6 +203,12 @@ const sendSpeakActivityQuestion = async (userMobileNumber, user, speakActivityQu
                 to: body.From,
             }).then(message => console.log("Speak Activity message sent + " + message.sid));
         }
+        speakActivityQuestionMediaUrl = "https://beajbloblive.blob.core.windows.net/test/15da300b-c49a-4f0b-9b0c-48646b7c_AACAudio_2Ch_192kbps.mp3"
+        await client.messages.create({
+            from: body.To,
+            mediaUrl: [speakActivityQuestionMediaUrl],
+            to: body.From,
+        }).then(message => console.log("Speak Activity media sent + " + message.sid));
     }
 };
 
@@ -232,7 +231,6 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
     if (activity === 'video') {
         // Send lesson message
         let lessonMessage = "Activity Name: " + startingLesson.dataValues.activityAlias;
-        lessonMessage += "\n\nThis lesson contains a video activity. Please watch the video and answer the following questions.";
         if (startingLesson.dataValues.text) {
             lessonMessage += "\n\n" + stripHtmlTags(startingLesson.dataValues.text);
         }
@@ -258,7 +256,6 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
         if (user.dataValues.question_number === null) {
             // Send lesson message
             let lessonMessage = "Activity Name: " + startingLesson.dataValues.activityAlias;
-            lessonMessage += "\n\nThis lesson contains multiple choice questions. Please answer the following questions by typing the letter corresponding to the correct answer.";
             if (startingLesson.dataValues.text) {
                 lessonMessage += "\n\n" + stripHtmlTags(startingLesson.dataValues.text);
             }
@@ -460,7 +457,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
             return;
         } else {
             const speakActivityQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(user.dataValues.lesson_id, user.dataValues.question_number);
-            if (userMessage.toLowerCase().includes('start next lesson')) {
+            if (userMessage.toLowerCase().includes('next video')) {
                 const nextSpeakActivityQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(user.dataValues.lesson_id, user.dataValues.question_number);
                 if (nextSpeakActivityQuestion) {
                     await waUser.update_question(userMobileNumber, nextSpeakActivityQuestion.dataValues.questionNumber);
@@ -540,7 +537,6 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
 
         // Send lesson message
         let lessonMessage = "Activity Name: " + startingLesson.dataValues.activityAlias;
-        lessonMessage += "\n\nThis lesson contains a reading activity. Please listen to the audio and read the text.";
         if (startingLesson.dataValues.text) {
             lessonMessage += "\n\n" + stripHtmlTags(startingLesson.dataValues.text);
         }
@@ -599,7 +595,6 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
 
         // Send lesson message
         let lessonMessage = "Activity Name: " + startingLesson.dataValues.activityAlias;
-        lessonMessage += "\n\nThis lesson contains an audio activity. Please listen to the audio and view the image.";
         if (startingLesson.dataValues.text) {
             lessonMessage += "\n\n" + stripHtmlTags(startingLesson.dataValues.text);
         }
@@ -691,17 +686,19 @@ const webhookService = async (body, res) => {
         }
 
 
-        const nextLesson = await lessonRepository.getNextLesson(user.dataValues.level, user.dataValues.week, user.dataValues.day, user.dataValues.lesson_sequence);
-        await update_user(userMobileNumber, user, nextLesson);
-        await get_lessons(userMobileNumber, user, nextLesson, body, userMessage);
-        if (nextLesson === null) {
-            client.messages.create({
-                from: body.To,
-                body: 'Congratulations! You have completed all the lessons for this course.',
-                to: body.From,
-            }).then(message => console.log("Completion message sent + " + message.sid));
-            return;
-        };
+        if (userMessage.toLowerCase().includes('start next lesson')) {
+            const nextLesson = await lessonRepository.getNextLesson(user.dataValues.level, user.dataValues.week, user.dataValues.day, user.dataValues.lesson_sequence);
+            await update_user(userMobileNumber, user, nextLesson);
+            await get_lessons(userMobileNumber, user, nextLesson, body, userMessage);
+            if (nextLesson === null) {
+                client.messages.create({
+                    from: body.To,
+                    body: 'Congratulations! You have completed all the lessons for this course.',
+                    to: body.From,
+                }).then(message => console.log("Completion message sent + " + message.sid));
+                return;
+            };
+        }
     } catch (error) {
         console.error('Error in chatBotService:', error);
         error.fileName = 'chatBotService.js';
