@@ -262,11 +262,11 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
             if (startingLesson.dataValues.text) {
                 lessonMessage += "\n\n" + stripHtmlTags(startingLesson.dataValues.text);
             }
-            await client.messages.create({
-                from: body.To,
-                body: lessonMessage,
-                to: body.From,
-            }).then(message => console.log("Lesson message sent + " + message.sid));
+            // await client.messages.create({
+            //     from: body.To,
+            //     body: lessonMessage,
+            //     to: body.From,
+            // }).then(message => console.log("Lesson message sent + " + message.sid));
 
             // Send first MCQ
             const startingMCQ = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(startingLesson.dataValues.LessonId, null);
@@ -358,6 +358,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                 body: lessonMessage,
                 to: body.From,
             }).then(message => console.log("Lesson message sent + " + message.sid));
+            await sleep(1000);
 
             // Send first Speak Activity Question
             const startingSpeakActivityQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(startingLesson.dataValues.LessonId, null);
@@ -618,7 +619,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
         }
 
         // Add a delay before sending the audio content
-        await sleep(2000);
+        await sleep(3000);
 
         // Send audio content
         if (audio) {
