@@ -346,7 +346,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
         if (user.dataValues.question_number === null) {
             // Send lesson message
             let lessonMessage = "Activity Name: " + startingLesson.dataValues.activityAlias;
-            lessonMessage += "\n\nThis lesson contains a Listen and Speak activity. Please listen to the audio and record your response.";
+            lessonMessage += "\n\nNote: Record your answers for this lesson";
             if (startingLesson.dataValues.text) {
                 lessonMessage += "\n\n" + stripHtmlTags(startingLesson.dataValues.text);
             }
@@ -440,7 +440,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
         if (user.dataValues.question_number === null) {
             // Send lesson message
             let lessonMessage = "Activity Name: " + startingLesson.dataValues.activityAlias;
-            lessonMessage += "\n\nThis lesson contains a Watch and Speak activity. Please watch the video and record your response.";
+            lessonMessage += "\n\nNote: Record your answers for this lesson";
             if (startingLesson.dataValues.text) {
                 lessonMessage += "\n\n" + stripHtmlTags(startingLesson.dataValues.text);
             }
@@ -537,6 +537,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
 
         // Send lesson message
         let lessonMessage = "Activity Name: " + startingLesson.dataValues.activityAlias;
+        lessonMessage += "\n\nNote: Record your answers for this lesson";
         if (startingLesson.dataValues.text) {
             lessonMessage += "\n\n" + stripHtmlTags(startingLesson.dataValues.text);
         }
@@ -722,7 +723,6 @@ const statusWebhookService = async (body, res) => {
         }
     }
 };
-
 
 const feedbackService = async (prompt, userAudioFile) => {
     let startTime, endTime, userSpeechToTextTime, modelFeedbackTime, modelTextToSpeechTime, finalStartTime, finalEndTime, totalTime;
