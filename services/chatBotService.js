@@ -56,7 +56,7 @@ const greeting_message = async (body) => {
         body: "Hi there! Welcome to Beaj. Let's begin your course. Below is your first lesson.",
         to: body.From,
     });
-    sleep(2000);
+    await sleep(2000);
 };
 
 const audio_feedback_message = async (body) => {
