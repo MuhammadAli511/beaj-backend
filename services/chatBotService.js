@@ -156,7 +156,7 @@ const update_user = async (userMobileNumber, user, startingLesson) => {
 
 const send_mcq = async (userMobileNumber, user, mcq, body) => {
     const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(mcq.dataValues.Id);
-    let mcqMessage = mcq.QuestionText;
+    let mcqMessage = "Question: " + mcq.QuestionText;
     for (let j = 0; j < mcqAnswers.length; j++) {
         mcqMessage += "\n" + String.fromCharCode(65 + j) + ". " + mcqAnswers[j].dataValues.AnswerText;
     }
