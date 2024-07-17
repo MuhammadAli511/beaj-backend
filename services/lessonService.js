@@ -1,4 +1,5 @@
 import lessonRepository from "../repositories/lessonRepository.js";
+import documentFileRepository from "../repositories/documentFileRepository.js";
 
 const createLessonService = async (lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber) => {
     try {
@@ -49,10 +50,34 @@ const deleteLessonService = async (id) => {
     }
 };
 
+const getLessonsByActivity = async (course, activity) => {
+    try {
+        const lessons = await lessonRepository.getByCourseActivity(course, activity);
+
+        const lessonIds = lessons.map(lesson => lesson.LessonId);
+
+        const documentFiles = await documentFileRepository.getByLessonIds(lessonIds);
+
+        const lessonsWithFiles = lessons.map(lesson => {
+            return {
+                ...lesson.dataValues,
+                documentFiles: documentFiles.filter(file => file.lessonId === lesson.LessonId)
+            };
+        });
+
+        return lessonsWithFiles;
+    } catch (error) {
+        error.fileName = 'lessonService.js';
+        throw error;
+    }
+}
+
+
 export default {
     createLessonService,
     getAllLessonService,
     getLessonByIdService,
     updateLessonService,
-    deleteLessonService
+    deleteLessonService,
+    getLessonsByActivity
 };

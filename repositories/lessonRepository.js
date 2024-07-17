@@ -28,6 +28,15 @@ const getById = async (id) => {
     return await Lesson.findByPk(id);
 };
 
+const getByCourseActivity = async (course, activity) => {
+    return await Lesson.findAll({
+        where: {
+            courseId: course,
+            activity: activity
+        }
+    });
+};
+
 const update = async (id, lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber) => {
     const lesson = await Lesson.findByPk(id);
     lesson.lessonType = lessonType;
@@ -146,5 +155,6 @@ export default {
     update,
     deleteLesson,
     getNextLesson,
-    getCurrentLesson
+    getCurrentLesson,
+    getByCourseActivity
 };

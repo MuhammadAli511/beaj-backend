@@ -55,10 +55,22 @@ const deleteLessonController = async (req, res, next) => {
     }
 };
 
+const getLessonsByActivityController = async (req, res, next) => {
+    try {
+        const { course, activity } = req.body;
+        const result = await service.getLessonsByActivity(course, activity);
+        res.status(200).send(result);
+    } catch (error) {
+        error.fileName = 'lessonController.js';
+        next(error);
+    }
+};
+
 export default {
     createLessonController,
     getAllLessonController,
     getLessonByIdController,
     updateLessonController,
-    deleteLessonController
+    deleteLessonController,
+    getLessonsByActivityController
 };

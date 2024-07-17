@@ -1,4 +1,5 @@
 import DocumentFile from '../models/DocumentFile.js';
+import Sequelize from 'sequelize';
 
 const create = async (lessonId, language, image, video, audio, mediaType) => {
     const documentFile = new DocumentFile({
@@ -25,6 +26,16 @@ const getByLessonId = async (lessonId) => {
     return await DocumentFile.findAll({
         where: {
             lessonId: lessonId
+        }
+    });
+}
+
+const getByLessonIds = async (lessonIds) => {
+    return await DocumentFile.findAll({
+        where: {
+            lessonId: {
+                [Sequelize.Op.in]: lessonIds
+            }
         }
     });
 }
@@ -59,5 +70,6 @@ export default {
     getById,
     update,
     deleteDocumentFile,
-    getByLessonId
+    getByLessonId,
+    getByLessonIds
 };
