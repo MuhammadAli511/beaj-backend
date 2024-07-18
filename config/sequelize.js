@@ -16,7 +16,8 @@ const sequelize = new Sequelize(database, username, password, {
       require: true,
       rejectUnauthorized: false
     }
-  }
+  },
+  logging: false
 });
 
 export default sequelize;
