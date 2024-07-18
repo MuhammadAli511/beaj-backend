@@ -194,7 +194,7 @@ const sendSpeakActivityQuestion = async (userMobileNumber, user, speakActivityQu
         return;
     }
     else if (activity === 'listenAndSpeak' || activity === 'postListenAndSpeak' || activity === 'preListenAndSpeak') {
-        const speakActivityQuestionMessage = "*Question:* " + speakActivityQuestion.dataValues.question;
+        const speakActivityQuestionMessage = "*Record the following sentence:* \n\n" + speakActivityQuestion.dataValues.question;
         if (speakActivityQuestionMessage) {
             await client.messages.create({
                 from: body.To,
@@ -345,7 +345,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
         if (user.dataValues.question_number === null) {
             // Send lesson message
             let lessonMessage = "Activity Name: " + startingLesson.dataValues.activityAlias;
-            lessonMessage += "\n\nNote: Record your answers for this lesson";
+            lessonMessage += "\n\n*Note:* Record your answers for this lesson";
             if (startingLesson.dataValues.text) {
                 lessonMessage += "\n\n" + stripHtmlTags(startingLesson.dataValues.text);
             }
@@ -440,7 +440,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
         if (user.dataValues.question_number === null) {
             // Send lesson message
             let lessonMessage = "Activity Name: " + startingLesson.dataValues.activityAlias;
-            lessonMessage += "\n\nNote: Record your answers for this lesson";
+            lessonMessage += "\n\n*Note:* Record your answers for this lesson";
             if (startingLesson.dataValues.text) {
                 lessonMessage += "\n\n" + stripHtmlTags(startingLesson.dataValues.text);
             }
@@ -538,7 +538,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
 
             // Send lesson message
             let lessonMessage = "Activity Name: " + startingLesson.dataValues.activityAlias;
-            lessonMessage += "\n\nNote: Record your answers for this lesson";
+            lessonMessage += "\n\n*Note:* Record your answers for this lesson";
             if (startingLesson.dataValues.text) {
                 lessonMessage += "\n\n" + stripHtmlTags(startingLesson.dataValues.text);
             }
