@@ -187,7 +187,7 @@ const sendSpeakActivityQuestion = async (userMobileNumber, user, speakActivityQu
         // Next template for skipping the audio recording
         await client.messages.create({
             from: "MG252cac2eba974fff75b1df0cab40ece7",
-            contentSid: "HXb7e16dd689d1b5120d24ddc25ad981a5",
+            contentSid: "HX21b63761673f8efd2d02466bab67d088",
             to: body.From,
         }).then(message => console.log("Next lesson message sent: " + message.sid));
         return;
@@ -199,7 +199,7 @@ const sendSpeakActivityQuestion = async (userMobileNumber, user, speakActivityQu
             to: body.From,
         }).then(message => console.log("Speak Activity media sent: " + message.sid));
         await sleep(8000);
-        const speakActivityQuestionMessage = "How do you say:❓ \n\n" + speakActivityQuestion.dataValues.question;
+        const speakActivityQuestionMessage = speakActivityQuestion.dataValues.question + "\n\nRecord your answer";
         if (speakActivityQuestionMessage) {
             await client.messages.create({
                 from: body.To,
@@ -367,7 +367,6 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
             );
 
             if (error) {
-                console.error('Error transcribing audio:', error);
                 client.messages.create({
                     from: body.To,
                     body: 'Sorry, there was an error processing your audio file.',
@@ -410,7 +409,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                     const totalScore = await questionResponseRepository.getScore(user.dataValues.phone_number, user.dataValues.lesson_id);
                     const totalQuestions = await questionResponseRepository.getTotalQuestions(user.dataValues.phone_number, user.dataValues.lesson_id);
                     // Give total score here
-                    let message = "❗️❗️ 🎉 RESULT 🎉❗️❗️\n\n Your score is " + totalScore + " out of " + totalQuestions + ". Kepp working hard!";
+                    let message = "❗️❗️ 🎉 RESULT 🎉❗️❗️\n\n Your score is " + totalScore + " out of " + totalQuestions + ". Keep working hard!";
                     await client.messages.create({
                         from: body.To,
                         body: message,
@@ -507,7 +506,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
 
 
             // Send lesson message
-            let lessonMessage = "📝 *Note:* Read the lesson and record yourself. 🎤 \n\n";
+            let lessonMessage = "📝 *Note:* Read the passage and record yourself. 🎤 \n";
             if (startingLesson.dataValues.text) {
                 lessonMessage += "\n\n" + stripHtmlTags(startingLesson.dataValues.text);
             }
@@ -534,6 +533,13 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                     to: body.From,
                 }).then(message => console.log("English audio message sent: " + message.sid));
             }
+            await sleep(10000);
+            let lessonMessage2 = "📝 *Note:* Read the passage and record yourself. 🎤 \n";
+            await client.messages.create({
+                from: body.To,
+                body: lessonMessage2,
+                to: body.From,
+            }).then(message => console.log("Lesson message sent: " + message.sid));
         }
 
         // if audio
