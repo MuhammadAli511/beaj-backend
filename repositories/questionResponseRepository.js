@@ -55,6 +55,16 @@ const getScore = async (userId, lessonId) => {
     return score;
 };
 
+const getTotalQuestions = async (userId, lessonId) => {
+    const totalQuestions = await QuestionResponse.count({
+        where: {
+            UserId: userId,
+            lessonId: lessonId
+        }
+    });
+    return totalQuestions;
+};
+
 const deleteQuestionResponse = async (id) => {
     const questionResponse = await QuestionResponse.findByPk(id);
     await questionResponse.destroy();
@@ -66,5 +76,6 @@ export default {
     getById,
     update,
     getScore,
-    deleteQuestionResponse
+    deleteQuestionResponse,
+    getTotalQuestions
 };

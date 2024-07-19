@@ -15,6 +15,7 @@ import multipleChoiceQuestionRepository from '../repositories/multipleChoiceQues
 import multipleChoiceQuestionAnswerRepository from '../repositories/multipleChoiceQuestionAnswerRepository.js';
 import questionResponseRepository from '../repositories/questionResponseRepository.js';
 import speakActivityQuestionRepository from '../repositories/speakActivityQuestionRepository.js';
+import { mcqsResponse } from '../constants/chatbotConstants.js';
 
 
 dotenv.config();
@@ -53,7 +54,7 @@ function stripHtmlTags(html) {
 const greeting_message = async (body) => {
     await client.messages.create({
         from: body.To,
-        body: "Hi there! Welcome to Beaj. Let's begin your course. Below is your first lesson.",
+        body: "Assalam o Alaikum. 👋\nWelcome to your English course! Get ready for fun exercises & practice! 💬",
         to: body.From,
     });
 };
@@ -155,7 +156,7 @@ const update_user = async (userMobileNumber, user, startingLesson) => {
 
 const send_mcq = async (userMobileNumber, user, mcq, body) => {
     const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(mcq.dataValues.Id);
-    let mcqMessage = "*Question:* " + mcq.QuestionText + "\n\n";
+    let mcqMessage = "❓❓ *Question:* ❓❓" + "\n" + mcq.QuestionText + "\n\nChoose the correct answer:";
     for (let j = 0; j < mcqAnswers.length; j++) {
         mcqMessage += "\n" + String.fromCharCode(65 + j) + ". " + mcqAnswers[j].dataValues.AnswerText;
     }
@@ -167,7 +168,6 @@ const send_mcq = async (userMobileNumber, user, mcq, body) => {
 };
 
 const sendSpeakActivityQuestion = async (userMobileNumber, user, speakActivityQuestion, body, activity) => {
-
     let speakActivityQuestionMediaUrl = speakActivityQuestion.dataValues.mediaFile;
     if (activity === 'watchAndSpeak') {
         const speakActivityQuestionMessage = speakActivityQuestion.dataValues.question;
@@ -178,7 +178,6 @@ const sendSpeakActivityQuestion = async (userMobileNumber, user, speakActivityQu
                 to: body.From,
             }).then(message => console.log("Speak Activity message sent: " + message.sid));
         }
-        speakActivityQuestionMediaUrl = "https://beajbloblive.blob.core.windows.net/asset-202307301859231194707-out/cff9a24d-15e4-4d4f-94aa-20508e83_720x480_2200.mp4?sv=2022-11-02&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=3023-06-23T16:57:22Z&st=2023-06-23T08:57:22Z&spr=https&sig=YfguGfVzPg4kO8ynxR0M%2FMowlU1ZtBv2K1VCswkwVcM%3D";
         await client.messages.create({
             from: body.To,
             mediaUrl: [speakActivityQuestionMediaUrl],
@@ -188,13 +187,19 @@ const sendSpeakActivityQuestion = async (userMobileNumber, user, speakActivityQu
         // Next template for skipping the audio recording
         await client.messages.create({
             from: "MG252cac2eba974fff75b1df0cab40ece7",
-            contentSid: "HXbbb3db19206bd9b2c08414fd2bf69948",
+            contentSid: "HXb7e16dd689d1b5120d24ddc25ad981a5",
             to: body.From,
         }).then(message => console.log("Next lesson message sent: " + message.sid));
         return;
     }
     else if (activity === 'listenAndSpeak' || activity === 'postListenAndSpeak' || activity === 'preListenAndSpeak') {
-        const speakActivityQuestionMessage = "*Record the following sentence:* \n\n" + speakActivityQuestion.dataValues.question;
+        await client.messages.create({
+            from: body.To,
+            mediaUrl: [speakActivityQuestionMediaUrl],
+            to: body.From,
+        }).then(message => console.log("Speak Activity media sent: " + message.sid));
+        await sleep(8000);
+        const speakActivityQuestionMessage = "How do you say:❓ \n\n" + speakActivityQuestion.dataValues.question;
         if (speakActivityQuestionMessage) {
             await client.messages.create({
                 from: body.To,
@@ -202,12 +207,7 @@ const sendSpeakActivityQuestion = async (userMobileNumber, user, speakActivityQu
                 to: body.From,
             }).then(message => console.log("Speak Activity message sent: " + message.sid));
         }
-        speakActivityQuestionMediaUrl = "https://beajbloblive.blob.core.windows.net/test/15da300b-c49a-4f0b-9b0c-48646b7c_AACAudio_2Ch_192kbps.mp3"
-        await client.messages.create({
-            from: body.To,
-            mediaUrl: [speakActivityQuestionMediaUrl],
-            to: body.From,
-        }).then(message => console.log("Speak Activity media sent: " + message.sid));
+
     }
 };
 
@@ -216,7 +216,7 @@ const get_next_lesson = async (userMobileNumber, user, startingLesson, body, use
     if (nextLesson === null) {
         client.messages.create({
             from: body.To,
-            body: 'Congratulations! You have completed all the lessons for this course.',
+            body: '❗️❗️🎉 CONGRATULATIONS 🎉❗️❗️\n 🌟 You have successfully completed the course! 🌟 \n Please contact your group admin to receive your certificate. 📜💬',
             to: body.From,
         }).then(message => console.log("Completion message sent: " + message.sid));
         return;
@@ -229,7 +229,8 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
     const activity = startingLesson.dataValues.activity;
     if (activity === 'video') {
         // Send lesson message
-        let lessonMessage = "Activity Name: " + startingLesson.dataValues.activityAlias;
+        let lessonMessage = "➡️ *Activity*: " + startingLesson.dataValues.activityAlias;
+        lessonMessage += "\n\n📝 *Note:* Watch the video and answer the questions.";
         if (startingLesson.dataValues.text) {
             lessonMessage += "\n\n" + stripHtmlTags(startingLesson.dataValues.text);
         }
@@ -240,8 +241,9 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
         }).then(message => console.log("Lesson message sent: " + message.sid));
 
         // Send video content
-        // const videoURL = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
-        const videoURL = "https://beajbloblive.blob.core.windows.net/asset-202307301859231194707-out/cff9a24d-15e4-4d4f-94aa-20508e83_720x480_2200.mp4?sv=2022-11-02&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=3023-06-23T16:57:22Z&st=2023-06-23T08:57:22Z&spr=https&sig=YfguGfVzPg4kO8ynxR0M%2FMowlU1ZtBv2K1VCswkwVcM%3D";
+        const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
+        let videoURL = documentFile[0].dataValues.video;
+        console.log("Video URL: " + videoURL);
         await client.messages.create({
             from: body.To,
             mediaUrl: [videoURL],
@@ -253,17 +255,6 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
     }
     else if (activity === 'mcqs' || activity === 'postMCQs' || activity === 'preMCQs') {
         if (user.dataValues.question_number === null) {
-            // Send lesson message
-            let lessonMessage = "Activity Name: " + startingLesson.dataValues.activityAlias;
-            if (startingLesson.dataValues.text) {
-                lessonMessage += "\n\n" + stripHtmlTags(startingLesson.dataValues.text);
-            }
-            // await client.messages.create({
-            //     from: body.To,
-            //     body: lessonMessage,
-            //     to: body.From,
-            // }).then(message => console.log("Lesson message sent: " + message.sid));
-
             // Send first MCQ
             const startingMCQ = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(startingLesson.dataValues.LessonId, null);
             await waUser.update_question(userMobileNumber, startingMCQ.dataValues.QuestionNumber);
@@ -324,7 +315,11 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
             } else {
                 // Give total score here
                 const totalScore = await questionResponseRepository.getScore(user.dataValues.phone_number, user.dataValues.lesson_id);
-                let message = "You have completed the MCQs for this lesson. Your total score is " + totalScore;
+                const totalQuestions = await questionResponseRepository.getTotalQuestions(user.dataValues.phone_number, user.dataValues.lesson_id);
+                let message = "❗️❗️ 🎉 RESULT 🎉❗️❗️\n\nYour score is " + totalScore + " out of " + totalQuestions + "\n\n";
+                console.log(user.dataValues.lesson_id);
+                console.log(mcqsResponse[user.dataValues.lesson_id]);
+                message += mcqsResponse[user.dataValues.lesson_id];
                 await client.messages.create({
                     from: body.To,
                     body: message,
@@ -335,7 +330,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                 await sleep(2000);
                 await client.messages.create({
                     from: "MG252cac2eba974fff75b1df0cab40ece7",
-                    contentSid: "HXc714b662d9dcff30ff4c46bef490fb29",
+                    contentSid: "HXc5149ad4b2ac1ee2e71c00582c59db18",
                     to: body.From,
                 }).then(message => console.log("Next lesson message sent: " + message.sid));
             }
@@ -343,19 +338,6 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
     }
     else if (activity === 'listenAndSpeak' || activity === 'postListenAndSpeak' || activity === 'preListenAndSpeak') {
         if (user.dataValues.question_number === null) {
-            // Send lesson message
-            let lessonMessage = "Activity Name: " + startingLesson.dataValues.activityAlias;
-            lessonMessage += "\n\n*Note:* Record your answers for this lesson";
-            if (startingLesson.dataValues.text) {
-                lessonMessage += "\n\n" + stripHtmlTags(startingLesson.dataValues.text);
-            }
-            await client.messages.create({
-                from: body.To,
-                body: lessonMessage,
-                to: body.From,
-            }).then(message => console.log("Lesson message sent: " + message.sid));
-            await sleep(1000);
-
             // Send first Speak Activity Question
             const startingSpeakActivityQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(startingLesson.dataValues.LessonId, null);
             await waUser.update_question(userMobileNumber, startingSpeakActivityQuestion.dataValues.questionNumber);
@@ -403,17 +385,16 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                 if (userAnswerIsCorrect) {
                     await client.messages.create({
                         from: body.To,
-                        body: "Your answer is correct.",
+                        body: "✅",
                         to: body.From,
                     }).then(message => console.log("Speak Activity completion message sent: " + message.sid));
                 } else {
                     await client.messages.create({
                         from: body.To,
-                        body: "Your answer is incorrect.",
+                        body: "❌",
                         to: body.From,
                     }).then(message => console.log("Speak Activity completion message sent: " + message.sid));
                 }
-                // day 2, seq 61
                 const userAudioFileUrl = await azure_blob.uploadToBlobStorage(audioBuffer, "audioFile.opus");
                 const submissionDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
                 await questionResponseRepository.create(user.dataValues.phone_number, user.dataValues.lesson_id, speakActivityQuestion.dataValues.id, activity, startingLesson.dataValues.activityAlias, transcription, userAudioFileUrl, userAnswerIsCorrect, 1, submissionDate);
@@ -423,16 +404,9 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                     await sendSpeakActivityQuestion(userMobileNumber, user, nextSpeakActivityQuestion, body, activity);
                 } else {
                     const totalScore = await questionResponseRepository.getScore(user.dataValues.phone_number, user.dataValues.lesson_id);
+                    const totalQuestions = await questionResponseRepository.getTotalQuestions(user.dataValues.phone_number, user.dataValues.lesson_id);
                     // Give total score here
-                    let message;
-                    if (activity === 'listenAndSpeak') {
-                        message = "You have completed the Listen and Speak activity for this lesson.";
-                    } else if (activity === 'postListenAndSpeak') {
-                        message = "You have completed the Post Listen and Speak activity for this lesson.";
-                    } else if (activity === 'preListenAndSpeak') {
-                        message = "You have completed the Pre Listen and Speak activity for this lesson.";
-                    }
-                    message += "\n\nYour total score is " + totalScore;
+                    let message = "❗️❗️ 🎉 RESULT 🎉❗️❗️\n\n Your score is " + totalScore + " out of " + totalQuestions + ". Kepp working hard!";
                     await client.messages.create({
                         from: body.To,
                         body: message,
@@ -443,7 +417,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                     // Send template here for next lesson
                     await client.messages.create({
                         from: "MG252cac2eba974fff75b1df0cab40ece7",
-                        contentSid: "HXc714b662d9dcff30ff4c46bef490fb29",
+                        contentSid: "HXc5149ad4b2ac1ee2e71c00582c59db18",
                         to: body.From,
                     }).then(message => console.log("Next lesson message sent: " + message.sid));
                 }
@@ -453,8 +427,8 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
     else if (activity === 'watchAndSpeak') {
         if (user.dataValues.question_number === null) {
             // Send lesson message
-            let lessonMessage = "Activity Name: " + startingLesson.dataValues.activityAlias;
-            lessonMessage += "\n\n*Note:* Record your answers for this lesson";
+            let lessonMessage = "➡️ *Activity*: " + startingLesson.dataValues.activityAlias;
+            lessonMessage += "\n\n📝 *Note:* Practice speaking by recording yourself. 🎤";
             if (startingLesson.dataValues.text) {
                 lessonMessage += "\n\n" + stripHtmlTags(startingLesson.dataValues.text);
             }
@@ -477,19 +451,11 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                     await waUser.update_question(userMobileNumber, nextSpeakActivityQuestion.dataValues.questionNumber);
                     await sendSpeakActivityQuestion(userMobileNumber, user, nextSpeakActivityQuestion, body, activity);
                 } else {
-                    // Give total score here
-                    let message = "You have completed the Watch and Speak activity for this lesson.";
-                    await client.messages.create({
-                        from: body.To,
-                        body: message,
-                        to: body.From,
-                    }).then(message => console.log("Speak Activity completion message sent: " + message.sid));
                     await waUser.update_activity_question_lessonid(userMobileNumber, null, null);
-                    await sleep(2000);
                     // Send template here for next lesson
                     await client.messages.create({
                         from: "MG252cac2eba974fff75b1df0cab40ece7",
-                        contentSid: "HXc714b662d9dcff30ff4c46bef490fb29",
+                        contentSid: "HXc5149ad4b2ac1ee2e71c00582c59db18",
                         to: body.From,
                     }).then(message => console.log("Next lesson message sent: " + message.sid));
                 }
@@ -512,19 +478,11 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                 await waUser.update_question(userMobileNumber, nextSpeakActivityQuestion.dataValues.questionNumber);
                 await sendSpeakActivityQuestion(userMobileNumber, user, nextSpeakActivityQuestion, body, activity);
             } else {
-                // Give total score here
-                let message = "You have completed the Watch and Speak activity for this lesson.";
-                await client.messages.create({
-                    from: body.To,
-                    body: message,
-                    to: body.From,
-                }).then(message => console.log("Speak Activity completion message sent: " + message.sid));
                 await waUser.update_activity_question_lessonid(userMobileNumber, null, null);
-                await sleep(2000);
                 // Send template here for next lesson
                 await client.messages.create({
                     from: "MG252cac2eba974fff75b1df0cab40ece7",
-                    contentSid: "HXc714b662d9dcff30ff4c46bef490fb29",
+                    contentSid: "HXc5149ad4b2ac1ee2e71c00582c59db18",
                     to: body.From,
                 }).then(message => console.log("Next lesson message sent: " + message.sid));
             }
@@ -534,25 +492,18 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
         if (body.Body) {
             // Send audio content
             const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
-            // Iterate through the documentFile array and send each mediaUrl
-            let englishAudio, urduAudio, image;
+            let englishAudio, image;
             for (let i = 0; i < documentFile.length; i++) {
                 if (documentFile[i].dataValues.mediaType == 'image') {
                     image = documentFile[i].dataValues.image;
-                }
-                else if (documentFile[i].dataValues.language == 'English') {
-                    // englishAudio = documentFile[i].dataValues.audio;
-                    englishAudio = "https://beajbloblive.blob.core.windows.net/test/15da300b-c49a-4f0b-9b0c-48646b7c_AACAudio_2Ch_192kbps.mp3"
-                } else if (documentFile[i].dataValues.language == 'Urdu') {
-                    // urduAudio = documentFile[i].dataValues.audio;
-                    urduAudio = "https://beajbloblive.blob.core.windows.net/test/15da300b-c49a-4f0b-9b0c-48646b7c_AACAudio_2Ch_192kbps.mp3"
+                } else if (documentFile[i].dataValues.language == 'English') {
+                    englishAudio = documentFile[i].dataValues.audio;
                 }
             }
 
 
             // Send lesson message
-            let lessonMessage = "Activity Name: " + startingLesson.dataValues.activityAlias;
-            lessonMessage += "\n\n*Note:* Record your answers for this lesson";
+            let lessonMessage = "📝 *Note:* Read the lesson and record yourself. 🎤 \n\n";
             if (startingLesson.dataValues.text) {
                 lessonMessage += "\n\n" + stripHtmlTags(startingLesson.dataValues.text);
             }
@@ -579,13 +530,6 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                     to: body.From,
                 }).then(message => console.log("English audio message sent: " + message.sid));
             }
-            if (urduAudio) {
-                await client.messages.create({
-                    from: body.To,
-                    mediaUrl: [urduAudio],
-                    to: body.From,
-                }).then(message => console.log("Urdu audio message sent: " + message.sid));
-            }
         }
 
         // if audio
@@ -604,7 +548,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
             await questionResponseRepository.create(user.dataValues.phone_number, user.dataValues.lesson_id, 1, activity, startingLesson.dataValues.activityAlias, null, userAudioFileUrl, true, 1, submissionDate);
             await client.messages.create({
                 from: "MG252cac2eba974fff75b1df0cab40ece7",
-                contentSid: "HXc714b662d9dcff30ff4c46bef490fb29",
+                contentSid: "HXc5149ad4b2ac1ee2e71c00582c59db18",
                 to: body.From,
             }).then(message => console.log("Next lesson message sent: " + message.sid));
         }
@@ -615,8 +559,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
         let audio, image;
         for (let i = 0; i < documentFile.length; i++) {
             if (documentFile[i].dataValues.mediaType === 'audio') {
-                // audio = documentFile[i].dataValues.audio;
-                audio = "https://beajbloblive.blob.core.windows.net/test/15da300b-c49a-4f0b-9b0c-48646b7c_AACAudio_2Ch_192kbps.mp3"
+                audio = documentFile[i].dataValues.audio;
             } else {
                 image = documentFile[i].dataValues.image;
             }
@@ -624,7 +567,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
 
 
         // Send lesson message
-        let lessonMessage = "Activity Name: " + startingLesson.dataValues.activityAlias;
+        let lessonMessage = "➡️ *Activity*: " + startingLesson.dataValues.activityAlias;
         if (startingLesson.dataValues.text) {
             lessonMessage += "\n\n" + stripHtmlTags(startingLesson.dataValues.text);
         }
@@ -661,7 +604,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
         // Send template here for next lesson
         await client.messages.create({
             from: "MG252cac2eba974fff75b1df0cab40ece7",
-            contentSid: "HXc714b662d9dcff30ff4c46bef490fb29",
+            contentSid: "HXc5149ad4b2ac1ee2e71c00582c59db18",
             to: body.From,
         }).then(message => console.log("Next lesson message sent: " + message.sid));
     }
@@ -715,7 +658,7 @@ const webhookService = async (body, res) => {
             if (nextLesson === null) {
                 client.messages.create({
                     from: body.To,
-                    body: 'Congratulations! You have completed all the lessons for this course.',
+                    body: '❗️❗️🎉 CONGRATULATIONS 🎉❗️❗️\n 🌟 You have successfully completed the course! 🌟 \n Please contact your group admin to receive your certificate. 📜💬',
                     to: body.From,
                 }).then(message => console.log("Completion message sent: " + message.sid));
                 return;
