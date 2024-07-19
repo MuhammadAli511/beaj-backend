@@ -400,6 +400,20 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                 if (!userAnswerIsCorrect) {
                     userAnswerIsCorrect = false;
                 }
+                if (userAnswerIsCorrect) {
+                    await client.messages.create({
+                        from: body.To,
+                        body: "Your answer is correct.",
+                        to: body.From,
+                    }).then(message => console.log("Speak Activity completion message sent: " + message.sid));
+                } else {
+                    await client.messages.create({
+                        from: body.To,
+                        body: "Your answer is incorrect.",
+                        to: body.From,
+                    }).then(message => console.log("Speak Activity completion message sent: " + message.sid));
+                }
+                // day 2, seq 61
                 const userAudioFileUrl = await azure_blob.uploadToBlobStorage(audioBuffer, "audioFile.opus");
                 const submissionDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
                 await questionResponseRepository.create(user.dataValues.phone_number, user.dataValues.lesson_id, speakActivityQuestion.dataValues.id, activity, startingLesson.dataValues.activityAlias, transcription, userAudioFileUrl, userAnswerIsCorrect, 1, submissionDate);
