@@ -1,7 +1,7 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../config/sequelize.js';
 
-class Lesson extends Model {}
+class Lesson extends Model { }
 
 Lesson.init({
   LessonId: {
@@ -45,6 +45,10 @@ Lesson.init({
   },
   SequenceNumber: {
     type: DataTypes.INTEGER,
+    allowNull: false
+  },
+  status: {
+    type: DataTypes.STRING,
     allowNull: false
   }
 }, {

@@ -220,6 +220,13 @@ const get_next_lesson = async (userMobileNumber, user, startingLesson, body, use
             to: body.From,
         }).then(message => console.log("Completion message sent: " + message.sid));
         return;
+    } else if (nextLesson.dataValues.status === 'Not Active') {
+        client.messages.create({
+            from: body.To,
+            body: "Today's lessons are complete! ✅\nCome back tomorrow for more learning fun. 📅💡",
+            to: body.From,
+        }).then(message => console.log("Completion message sent: " + message.sid));
+        return;
     }
     await update_user(userMobileNumber, user, nextLesson);
     await get_lessons(userMobileNumber, user, nextLesson, body, userMessage);
@@ -243,7 +250,6 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
         // Send video content
         const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
         let videoURL = documentFile[0].dataValues.video;
-        console.log("Video URL: " + videoURL);
         await client.messages.create({
             from: body.To,
             mediaUrl: [videoURL],
@@ -317,8 +323,6 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                 const totalScore = await questionResponseRepository.getScore(user.dataValues.phone_number, user.dataValues.lesson_id);
                 const totalQuestions = await questionResponseRepository.getTotalQuestions(user.dataValues.phone_number, user.dataValues.lesson_id);
                 let message = "❗️❗️ 🎉 RESULT 🎉❗️❗️\n\nYour score is " + totalScore + " out of " + totalQuestions + "\n\n";
-                console.log(user.dataValues.lesson_id);
-                console.log(mcqsResponse[user.dataValues.lesson_id]);
                 message += mcqsResponse[user.dataValues.lesson_id];
                 await client.messages.create({
                     from: body.To,
@@ -626,6 +630,14 @@ const webhookService = async (body, res) => {
             await sleep(2000);
             waUser.create(userMobileNumber, 'Teacher', 'Learning');
             const startingLesson = await lessonRepository.getNextLesson(94, 4, null, null);
+            if (startingLesson.dataValues.status === 'Not Active') {
+                client.messages.create({
+                    from: body.To,
+                    body: "Today's lessons are complete! ✅\nCome back tomorrow for more learning fun. 📅💡",
+                    to: body.From,
+                }).then(message => console.log("Completion message sent: " + message.sid));
+                return;
+            }
             await waUser.update(
                 userMobileNumber,
                 'Teacher',
@@ -662,7 +674,14 @@ const webhookService = async (body, res) => {
                     to: body.From,
                 }).then(message => console.log("Completion message sent: " + message.sid));
                 return;
-            };
+            } else if (nextLesson.dataValues.status === 'Not Active') {
+                client.messages.create({
+                    from: body.To,
+                    body: "Today's lessons are complete! ✅\nCome back tomorrow for more learning fun. 📅💡",
+                    to: body.From,
+                }).then(message => console.log("Completion message sent: " + message.sid));
+                return;
+            }
             await update_user(userMobileNumber, user, nextLesson);
             await get_lessons(userMobileNumber, user, nextLesson, body, userMessage);
             return;
