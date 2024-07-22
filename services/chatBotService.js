@@ -628,6 +628,31 @@ const webhookService = async (body, res) => {
         // Check if user exists in the database
         let user = await waUser.getByPhoneNumber(userMobileNumber);
 
+        if (userMessage === 'beaj_audio_bot') {
+            if (user && user.dataValues.persona === 'Teacher' && user.dataValues.engagement_type === 'Learning') {
+                await waUser.update(userMobileNumber, 'Student', 'Audio Practice');
+            } else {
+                await waUser.create(userMobileNumber, 'Student', 'Audio Practice');
+            }
+            await client.messages.create({
+                from: body.To,
+                body: "Assalam o Alaikum. 👋\nWelcome to your Beaj Speaking Tutor.",
+                to: body.From,
+            });
+            return;
+        }
+
+        if (user && user.dataValues.engagement_type === 'Audio Practice' && body.MediaUrl0) {
+            await audio_feedback_message(body);
+            return;
+        } else if (user && user.dataValues.engagement_type === 'Audio Practice' && !body.MediaUrl0) {
+            await client.messages.create({
+                from: body.To,
+                body: "Please send an audio file.",
+                to: body.From,
+            }).then(message => console.log("Audio message sent: " + message.sid));
+            return;
+        }
 
 
 
