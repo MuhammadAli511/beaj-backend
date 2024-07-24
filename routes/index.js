@@ -11,6 +11,7 @@ import speakActivityQuestionRoutes from './speakActivityQuestionRoutes.js';
 import multipleChoiceQuestionRoutes from './multipleChoiceQuestionRoutes.js';
 import multipleChoiceQuestionAnswerRoutes from './multipleChoiceQuestionAnswerRoutes.js';
 import chatbotRoutes from './chatbotRoutes.js';
+import waUserRoutes from './waUserRoutes.js';
 
 const router = express.Router();
 
@@ -31,5 +32,6 @@ router.use('/speakActivityQuestion', speakActivityQuestionRoutes);
 router.use('/multipleChoiceQuestion', multipleChoiceQuestionRoutes);
 router.use('/multipleChoiceQuestionAnswer', multipleChoiceQuestionAnswerRoutes);
 router.use('/chatbot', chatbotRoutes);
+router.use('/wauser', waUserRoutes);
 
 export default router;

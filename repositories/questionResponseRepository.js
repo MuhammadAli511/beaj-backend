@@ -70,6 +70,18 @@ const deleteQuestionResponse = async (id) => {
     await questionResponse.destroy();
 };
 
+const getAllWhatsappUserResponses = async () => {
+    const Op = Sequelize.Op;
+    const questionResponses = await QuestionResponse.findAll({
+        where: {
+            UserId: {
+                [Op.like]: '+%'
+            }
+        }
+    });
+    return questionResponses;
+};
+
 export default {
     create,
     getAll,
@@ -77,5 +89,6 @@ export default {
     update,
     getScore,
     deleteQuestionResponse,
-    getTotalQuestions
+    getTotalQuestions,
+    getAllWhatsappUserResponses
 };

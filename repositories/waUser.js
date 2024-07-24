@@ -10,7 +10,9 @@ const create = async (phone_number, persona, engagement_type) => {
 };
 
 const getAll = async () => {
-    return await WA_User.findAll();
+    return await WA_User.findAll({
+        attributes: ['phone_number', 'level', 'week', 'day', 'activity_type', 'lesson_id', 'question_number', 'last_updated']
+    });
 };
 
 const getByPhoneNumber = async (phone_number) => {
