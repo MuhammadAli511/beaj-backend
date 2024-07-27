@@ -1,6 +1,8 @@
 import lessonRepository from "../repositories/lessonRepository.js";
 import documentFileRepository from "../repositories/documentFileRepository.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
+import multipleChoiceQuestionRepository from "../repositories/multipleChoiceQuestionRepository.js";
+import multipleChoiceQuestionAnswerRepository from "../repositories/multipleChoiceQuestionAnswerRepository.js";
 
 const createLessonService = async (lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber) => {
     try {
@@ -54,7 +56,6 @@ const deleteLessonService = async (id) => {
 const getLessonsByActivity = async (course, activity) => {
     try {
         const lessons = await lessonRepository.getByCourseActivity(course, activity);
-
         const lessonIds = lessons.map(lesson => lesson.LessonId);
 
         if (activity == 'listenAndSpeak' || activity == 'postListenAndSpeak' || activity == 'preListenAndSpeak' || activity == 'watchAndSpeak') {
@@ -67,7 +68,20 @@ const getLessonsByActivity = async (course, activity) => {
             });
             return lessonsWithFiles;
         } else if (activity == 'mcqs' || activity == 'preMCQs' || activity == 'postMCQs') {
-
+            const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonIds(lessonIds);
+            const multipleChoiceQuestionAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(multipleChoiceQuestions.map(question => question.Id));
+            const lessonsWithQuestions = lessons.map(lesson => {
+                return {
+                    ...lesson.dataValues,
+                    multipleChoiceQuestions: multipleChoiceQuestions.filter(question => question.LessonId === lesson.LessonId).map(question => {
+                        return {
+                            ...question,
+                            multipleChoiceQuestionAnswers: multipleChoiceQuestionAnswers.filter(answer => answer.MultipleChoiceQuestionId === question.Id)
+                        };
+                    })
+                };
+            });
+            return lessonsWithQuestions;
         } else {
             const documentFiles = await documentFileRepository.getByLessonIds(lessonIds);
             const lessonsWithFiles = lessons.map(lesson => {

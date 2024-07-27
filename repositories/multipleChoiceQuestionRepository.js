@@ -89,6 +89,16 @@ const getNextMultipleChoiceQuestion = async (lessonId, questionNumber) => {
     }
 }
 
+const getByLessonIds = async (lessonIds) => {
+    return await MultipleChoiceQuestion.findAll({
+        where: {
+            LessonId: {
+                [Sequelize.Op.in]: lessonIds
+            }
+        }
+    });
+};
+
 export default {
     create,
     getAll,
@@ -96,5 +106,6 @@ export default {
     update,
     deleteMultipleChoiceQuestion,
     getNextMultipleChoiceQuestion,
-    getCurrentMultipleChoiceQuestion
+    getCurrentMultipleChoiceQuestion,
+    getByLessonIds
 };

@@ -89,7 +89,7 @@ const getByLessonIds = async (lessonIds) => {
             }
         }
     });
-}
+};
 
 
 export default {
