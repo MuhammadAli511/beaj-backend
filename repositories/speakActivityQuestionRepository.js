@@ -81,6 +81,17 @@ const getNextSpeakActivityQuestion = async (lessonId, questionNumber) => {
     }
 }
 
+const getByLessonIds = async (lessonIds) => {
+    return await SpeakActivityQuestion.findAll({
+        where: {
+            lessonId: {
+                [Sequelize.Op.in]: lessonIds
+            }
+        }
+    });
+}
+
+
 export default {
     create,
     getAll,
@@ -88,5 +99,6 @@ export default {
     update,
     deleteSpeakActivityQuestion,
     getCurrentSpeakActivityQuestion,
-    getNextSpeakActivityQuestion
+    getNextSpeakActivityQuestion,
+    getByLessonIds
 };

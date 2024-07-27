@@ -33,9 +33,14 @@ const getByCourseActivity = async (course, activity) => {
         where: {
             courseId: course,
             activity: activity
-        }
+        },
+        order: [
+            ['weekNumber', 'ASC'],
+            ['dayNumber', 'ASC']
+        ]
     });
 };
+
 
 const update = async (id, lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber) => {
     const lesson = await Lesson.findByPk(id);

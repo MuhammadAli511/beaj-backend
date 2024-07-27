@@ -1,5 +1,6 @@
 import lessonRepository from "../repositories/lessonRepository.js";
 import documentFileRepository from "../repositories/documentFileRepository.js";
+import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 
 const createLessonService = async (lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber) => {
     try {
@@ -56,16 +57,27 @@ const getLessonsByActivity = async (course, activity) => {
 
         const lessonIds = lessons.map(lesson => lesson.LessonId);
 
-        const documentFiles = await documentFileRepository.getByLessonIds(lessonIds);
+        if (activity == 'listenAndSpeak' || activity == 'postListenAndSpeak' || activity == 'preListenAndSpeak' || activity == 'watchAndSpeak') {
+            const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonIds(lessonIds);
+            const lessonsWithFiles = lessons.map(lesson => {
+                return {
+                    ...lesson.dataValues,
+                    speakActivityQuestionFiles: speakActivityQuestionFiles.filter(file => file.lessonId === lesson.LessonId)
+                };
+            });
+            return lessonsWithFiles;
+        } else if (activity == 'mcqs' || activity == 'preMCQs' || activity == 'postMCQs') {
 
-        const lessonsWithFiles = lessons.map(lesson => {
-            return {
-                ...lesson.dataValues,
-                documentFiles: documentFiles.filter(file => file.lessonId === lesson.LessonId)
-            };
-        });
-
-        return lessonsWithFiles;
+        } else {
+            const documentFiles = await documentFileRepository.getByLessonIds(lessonIds);
+            const lessonsWithFiles = lessons.map(lesson => {
+                return {
+                    ...lesson.dataValues,
+                    documentFiles: documentFiles.filter(file => file.lessonId === lesson.LessonId)
+                };
+            });
+            return lessonsWithFiles;
+        }
     } catch (error) {
         error.fileName = 'lessonService.js';
         throw error;
