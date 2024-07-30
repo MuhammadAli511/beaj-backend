@@ -1,4 +1,5 @@
 import MultipleChoiceQuestionAnswer from "../models/MultipleChoiceQuestionAnswer.js";
+import Sequelize from 'sequelize';
 
 const create = async (answerText, answerImageUrl, answerAudioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber) => {
     const multipleChoiceQuestionAnswer = new MultipleChoiceQuestionAnswer({
@@ -51,11 +52,20 @@ const getByQuestionId = async (multipleChoiceQuestionId) => {
     return multipleChoiceQuestionAnswers;
 };
 
+const deleteByQuestionId = async (multipleChoiceQuestionId) => {
+    await MultipleChoiceQuestionAnswer.destroy({
+        where: {
+            MultipleChoiceQuestionId: multipleChoiceQuestionId
+        }
+    });
+};
+
 export default {
     create,
     getAll,
     getById,
     update,
     deleteMultipleChoiceQuestionAnswer,
-    getByQuestionId
+    getByQuestionId,
+    deleteByQuestionId
 };

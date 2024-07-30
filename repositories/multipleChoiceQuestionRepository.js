@@ -99,6 +99,14 @@ const getByLessonIds = async (lessonIds) => {
     });
 };
 
+const deleteByLessonId = async (lessonId) => {
+    return await MultipleChoiceQuestion.destroy({
+        where: {
+            LessonId: lessonId
+        }
+    });
+};
+
 export default {
     create,
     getAll,
@@ -107,5 +115,6 @@ export default {
     deleteMultipleChoiceQuestion,
     getNextMultipleChoiceQuestion,
     getCurrentMultipleChoiceQuestion,
-    getByLessonIds
+    getByLessonIds,
+    deleteByLessonId
 };

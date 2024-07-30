@@ -91,6 +91,14 @@ const getByLessonIds = async (lessonIds) => {
     });
 };
 
+const deleteByLessonId = async (lessonId) => {
+    return await SpeakActivityQuestion.destroy({
+        where: {
+            lessonId: lessonId
+        }
+    });
+};
+
 
 export default {
     create,
@@ -100,5 +108,6 @@ export default {
     deleteSpeakActivityQuestion,
     getCurrentSpeakActivityQuestion,
     getNextSpeakActivityQuestion,
-    getByLessonIds
+    getByLessonIds,
+    deleteByLessonId
 };

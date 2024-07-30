@@ -63,6 +63,14 @@ const deleteDocumentFile = async (id) => {
     });
 }
 
+const deleteByLessonId = async (lessonId) => {
+    return await DocumentFile.destroy({
+        where: {
+            lessonId: lessonId
+        }
+    });
+};
+
 
 export default {
     create,
@@ -71,5 +79,6 @@ export default {
     update,
     deleteDocumentFile,
     getByLessonId,
-    getByLessonIds
+    getByLessonIds,
+    deleteByLessonId
 };

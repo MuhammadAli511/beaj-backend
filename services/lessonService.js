@@ -27,6 +27,22 @@ const getAllLessonService = async () => {
 const getLessonByIdService = async (id) => {
     try {
         const lesson = await lessonRepository.getById(id);
+        if (lesson.activity == 'listenAndSpeak' || lesson.activity == 'postListenAndSpeak' || lesson.activity == 'preListenAndSpeak' || lesson.activity == 'watchAndSpeak') {
+            const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonId(lesson.LessonId);
+            lesson.dataValues.speakActivityQuestionFiles = speakActivityQuestionFiles;
+        } else if (lesson.activity == 'mcqs' || lesson.activity == 'preMCQs' || lesson.activity == 'postMCQs') {
+            const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonId(lesson.LessonId);
+            const multipleChoiceQuestionAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(multipleChoiceQuestions.map(question => question.Id));
+            lesson.dataValues.multipleChoiceQuestions = multipleChoiceQuestions.map(question => {
+                return {
+                    ...question,
+                    multipleChoiceQuestionAnswers: multipleChoiceQuestionAnswers.filter(answer => answer.MultipleChoiceQuestionId === question.Id)
+                };
+            });
+        } else {
+            const documentFiles = await documentFileRepository.getByLessonId(lesson.LessonId);
+            lesson.dataValues.documentFiles = documentFiles;
+        }
         return lesson;
     } catch (error) {
         error.fileName = 'lessonService.js';
@@ -46,7 +62,19 @@ const updateLessonService = async (id, lessonType, dayNumber, activity, activity
 
 const deleteLessonService = async (id) => {
     try {
+        const lesson = await lessonRepository.getById(id);
+        const activity = lesson.activity;
         await lessonRepository.deleteLesson(id);
+
+        if (activity == 'listenAndSpeak' || activity == 'postListenAndSpeak' || activity == 'preListenAndSpeak' || activity == 'watchAndSpeak') {
+            await speakActivityQuestionRepository.deleteByLessonId(id);
+        } else if (activity == 'mcqs' || activity == 'preMCQs' || activity == 'postMCQs') {
+            const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonId(id);
+            await multipleChoiceQuestionAnswerRepository.deleteByQuestionId(multipleChoiceQuestions.map(question => question.Id));
+            await multipleChoiceQuestionRepository.deleteByLessonId(id);
+        } else {
+            await documentFileRepository.deleteByLessonId(id);
+        }
     } catch (error) {
         error.fileName = 'lessonService.js';
         throw error;
