@@ -9,7 +9,6 @@ dotenv.config();
 async function uploadToBlobStorage(exact_file, originalName = null) {
     try {
         let newFileName = originalName;
-        console.log('exact_file', exact_file);
         if (!newFileName) {
             newFileName = exact_file.originalname;
         }

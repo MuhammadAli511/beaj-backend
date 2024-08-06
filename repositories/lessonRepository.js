@@ -5,7 +5,7 @@ const totalLessonsRepository = async () => {
     return await Lesson.count();
 };
 
-const create = async (lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber) => {
+const create = async (lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status) => {
     const lesson = new Lesson({
         lessonType: lessonType,
         dayNumber: dayNumber,
@@ -14,7 +14,8 @@ const create = async (lessonType, dayNumber, activity, activityAlias, weekNumber
         weekNumber: weekNumber,
         text: text,
         courseId: courseId,
-        SequenceNumber: sequenceNumber
+        SequenceNumber: sequenceNumber,
+        status: status
     });
     const result = await lesson.save();
     return result;
@@ -42,7 +43,7 @@ const getByCourseActivity = async (course, activity) => {
 };
 
 
-const update = async (id, lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber) => {
+const update = async (id, lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status) => {
     const lesson = await Lesson.findByPk(id);
     lesson.lessonType = lessonType;
     lesson.dayNumber = dayNumber;
@@ -52,6 +53,7 @@ const update = async (id, lessonType, dayNumber, activity, activityAlias, weekNu
     lesson.text = text;
     lesson.courseId = courseId;
     lesson.SequenceNumber = sequenceNumber;
+    lesson.status = status;
     await lesson.save();
     return lesson;
 };

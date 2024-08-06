@@ -2,8 +2,8 @@ import service from '../services/lessonService.js';
 
 const createLessonController = async (req, res, next) => {
     try {
-        const { lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber } = req.body;
-        const lesson = await service.createLessonService(lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber);
+        const { lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status } = req.body;
+        const lesson = await service.createLessonService(lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status);
         res.status(200).send({ message: "Lesson created successfully", lesson });
     } catch (error) {
         error.fileName = 'lessonController.js';
@@ -35,8 +35,8 @@ const getLessonByIdController = async (req, res, next) => {
 const updateLessonController = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber } = req.body;
-        await service.updateLessonService(id, lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber);
+        const { lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status } = req.body;
+        await service.updateLessonService(id, lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status);
         res.status(200).send({ message: "Lesson updated successfully" });
     } catch (error) {
         error.fileName = 'lessonController.js';

@@ -2,17 +2,24 @@ import DocumentFile from '../models/DocumentFile.js';
 import Sequelize from 'sequelize';
 
 const create = async (lessonId, language, image, video, audio, mediaType) => {
-    const documentFile = new DocumentFile({
-        lessonId: lessonId,
-        language: language,
-        image: image,
-        video: video,
-        audio: audio,
-        mediaType: mediaType
-    });
-    await documentFile.save();
-    return documentFile;
+    try {
+        const documentFile = new DocumentFile({
+            lessonId: lessonId,
+            language: language,
+            image: image,
+            video: video,
+            audio: audio,
+            mediaType: mediaType
+        });
+
+        await documentFile.save();
+        return documentFile;
+    } catch (error) {
+        error.fileName = 'documentFileRepository.js';
+        throw error;
+    }
 };
+
 
 const getAll = async () => {
     return await DocumentFile.findAll();
