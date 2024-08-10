@@ -91,6 +91,14 @@ const getByLessonIds = async (lessonIds) => {
     });
 };
 
+const getByLessonId = async (lessonId) => {
+    return await SpeakActivityQuestion.findAll({
+        where: {
+            lessonId: lessonId
+        }
+    })
+};
+
 const deleteByLessonId = async (lessonId) => {
     return await SpeakActivityQuestion.destroy({
         where: {
@@ -109,5 +117,6 @@ export default {
     getCurrentSpeakActivityQuestion,
     getNextSpeakActivityQuestion,
     getByLessonIds,
+    getByLessonId,
     deleteByLessonId
 };

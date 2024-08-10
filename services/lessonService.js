@@ -31,7 +31,7 @@ const getLessonByIdService = async (id) => {
             const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonId(lesson.LessonId);
             lesson.dataValues.speakActivityQuestionFiles = speakActivityQuestionFiles;
         } else if (lesson.activity == 'mcqs' || lesson.activity == 'preMCQs' || lesson.activity == 'postMCQs') {
-            const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonId(lesson.LessonId);
+            const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonIds(lesson.LessonId);
             const multipleChoiceQuestionAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(multipleChoiceQuestions.map(question => question.Id));
             lesson.dataValues.multipleChoiceQuestions = multipleChoiceQuestions.map(question => {
                 return {
@@ -69,7 +69,7 @@ const deleteLessonService = async (id) => {
         if (activity == 'listenAndSpeak' || activity == 'postListenAndSpeak' || activity == 'preListenAndSpeak' || activity == 'watchAndSpeak') {
             await speakActivityQuestionRepository.deleteByLessonId(id);
         } else if (activity == 'mcqs' || activity == 'preMCQs' || activity == 'postMCQs') {
-            const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonId(id);
+            const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonIds(id);
             await multipleChoiceQuestionAnswerRepository.deleteByQuestionId(multipleChoiceQuestions.map(question => question.Id));
             await multipleChoiceQuestionRepository.deleteByLessonId(id);
         } else {
