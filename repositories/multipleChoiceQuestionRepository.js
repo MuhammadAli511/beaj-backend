@@ -99,6 +99,14 @@ const getByLessonIds = async (lessonIds) => {
     });
 };
 
+const getByLessonId = async (lessonId) => {
+    return await MultipleChoiceQuestion.findAll({
+        where: {
+            LessonId: lessonId
+        }
+    });
+};
+
 const deleteByLessonId = async (lessonId) => {
     return await MultipleChoiceQuestion.destroy({
         where: {
@@ -116,5 +124,6 @@ export default {
     getNextMultipleChoiceQuestion,
     getCurrentMultipleChoiceQuestion,
     getByLessonIds,
+    getByLessonId,
     deleteByLessonId
 };

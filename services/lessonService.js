@@ -31,7 +31,7 @@ const getLessonByIdService = async (id) => {
             const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonId(lesson.LessonId);
             lesson.dataValues.speakActivityQuestionFiles = speakActivityQuestionFiles;
         } else if (lesson.activity == 'mcqs' || lesson.activity == 'preMCQs' || lesson.activity == 'postMCQs') {
-            const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonIds(lesson.LessonId);
+            const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonId(lesson.LessonId);
             const multipleChoiceQuestionAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(multipleChoiceQuestions.map(question => question.Id));
             lesson.dataValues.multipleChoiceQuestions = multipleChoiceQuestions.map(question => {
                 return {
