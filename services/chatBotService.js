@@ -15,6 +15,7 @@ import multipleChoiceQuestionAnswerRepository from '../repositories/multipleChoi
 import questionResponseRepository from '../repositories/questionResponseRepository.js';
 import speakActivityQuestionRepository from '../repositories/speakActivityQuestionRepository.js';
 import { mcqsResponse } from '../constants/chatbotConstants.js';
+import { type } from "os";
 
 
 dotenv.config();
@@ -73,20 +74,57 @@ const sendMessage = async (to, body) => {
 
 const sendMediaMessage = async (to, mediaUrl, mediaType) => {
     try {
-        await axios.post(
-            `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
-            {
-                messaging_product: 'whatsapp',
-                to: to,
-                [mediaType]: { link: mediaUrl },
-            },
-            {
-                headers: {
-                    Authorization: `Bearer ${whatsappToken}`,
-                    'Content-Type': 'application/json',
+        if (mediaType == 'video') {
+            await axios.post(
+                `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
+                {
+                    messaging_product: 'whatsapp',
+                    to: to,
+                    type: 'video',
+                    video: { link: mediaUrl },
                 },
-            }
-        );
+                {
+                    headers: {
+                        Authorization: `Bearer ${whatsappToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+        } else if (mediaType == 'audio') {
+            await axios.post(
+                `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
+                {
+                    messaging_product: 'whatsapp',
+                    to: to,
+                    type: 'audio',
+                    audio: { link: mediaUrl },
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${whatsappToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+        } else if (mediaType == 'image') {
+            await axios.post(
+                `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
+                {
+                    messaging_product: 'whatsapp',
+                    to: to,
+                    type: 'image',
+                    image: { link: mediaUrl },
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${whatsappToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+        } else {
+            console.error('Invalid media type:', mediaType);
+        }
     } catch (error) {
         console.error('Error sending media message:', error.response ? error.response.data : error.message);
     }
@@ -94,39 +132,19 @@ const sendMediaMessage = async (to, mediaUrl, mediaType) => {
 
 const sendNextLessonTemplateMessage = async (to) => {
     try {
-        await axios.post(
+        console.log("Phone Number:", to);
+        const response = await axios.post(
             `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
             {
                 messaging_product: 'whatsapp',
+                recipient_type: 'individual',
                 to: to,
                 type: 'template',
                 template: {
                     name: 'next_lesson_emoji',
                     language: {
-                        code: 'en_US',
+                        code: 'en',
                     },
-                    components: [
-                        {
-                            type: 'body',
-                            parameters: [
-                                {
-                                    type: 'text',
-                                    text: '🌟 Lesson Complete! 🎉',
-                                },
-                            ],
-                        },
-                        {
-                            type: 'button',
-                            sub_type: 'quick_reply',
-                            index: '0',
-                            parameters: [
-                                {
-                                    type: 'text',
-                                    text: 'Start next lesson',
-                                },
-                            ],
-                        },
-                    ],
                 },
             },
             {
@@ -136,6 +154,7 @@ const sendNextLessonTemplateMessage = async (to) => {
                 },
             }
         );
+        console.log('Next Lesson template message sent:', response.data);
     } catch (error) {
         console.error('Error sending Next Lesson template message:', error.response ? error.response.data : error.message);
     }
@@ -150,32 +169,10 @@ const sendNextVideoTemplateMessage = async (to) => {
                 to: to,
                 type: 'template',
                 template: {
-                    name: 'next_video_emoji_2',
+                    name: 'next_video_emoji',
                     language: {
-                        code: 'en_US',
+                        code: 'en',
                     },
-                    components: [
-                        {
-                            type: 'body',
-                            parameters: [
-                                {
-                                    type: 'text',
-                                    text: 'Continue! 📚',
-                                },
-                            ],
-                        },
-                        {
-                            type: 'button',
-                            sub_type: 'quick_reply',
-                            index: '0',
-                            parameters: [
-                                {
-                                    type: 'text',
-                                    text: 'Next Video',
-                                },
-                            ],
-                        },
-                    ],
                 },
             },
             {
@@ -281,7 +278,7 @@ const sendSpeakActivityQuestion = async (userMobileNumber, user, speakActivityQu
             await sendMessage(userMobileNumber, speakActivityQuestionMessage);
         }
         await sendMediaMessage(userMobileNumber, speakActivityQuestionMediaUrl, 'video');
-        await sleep(20000);
+        await sleep(10000);
         // Next template for skipping the audio recording
         await sendNextVideoTemplateMessage(userMobileNumber);
         return;
@@ -312,7 +309,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
         const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
         let videoURL = documentFile[0].dataValues.video;
         await sendMediaMessage(userMobileNumber, videoURL, 'video');
-        await sleep(20000);
+        await sleep(10000);
         // Next template for next lesson
         await sendNextLessonTemplateMessage(userMobileNumber);
     }
@@ -617,8 +614,6 @@ const webhookService = async (body, res) => {
             const message = body.entry[0].changes[0].value.messages[0];
             const userMobileNumber = "+" + message.from;
             const userMessage = message.text?.body.toLowerCase().trim() || "";
-            console.log('Received message:', userMessage);
-            console.log('From:', userMobileNumber);
 
             // Check if user exists in the database
             let user = await waUser.getByPhoneNumber(userMobileNumber);
