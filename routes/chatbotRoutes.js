@@ -14,8 +14,8 @@ router.get('/status', (req, res) => {
 // POST /chatbot/webhook
 router.post('/webhook', chatBotController.webhookController);
 
-// POST /chatbot/statusWebhook
-router.post('/statusWebhook', chatBotController.statusWebhookController);
+// GET /chatbot/webhook
+router.get('/webhook', chatBotController.verifyWebhookController);
 
 // POST /chatbot/feedback
 router.post('/feedback', beajEmployeesAuth, upload.single('file'), chatBotController.feedbackController);

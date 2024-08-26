@@ -1,4 +1,3 @@
-import twilio from 'twilio';
 import { createClient } from "@deepgram/sdk";
 import OpenAI from "openai";
 import axios from 'axios';
@@ -19,11 +18,11 @@ import { mcqsResponse } from '../constants/chatbotConstants.js';
 
 
 dotenv.config();
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const client = new twilio(accountSid, authToken);
 const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
 const openai = new OpenAI(process.env.OPENAI_API_KEY);
+const whatsappToken = process.env.WHATSAPP_TOKEN;
+const whatsappPhoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+const whatsappVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN;
 
 let activity_types_to_repeat = ['mcqs', 'watchAndSpeak', 'listenAndSpeak', 'postListenAndSpeak', 'preListenAndSpeak', 'postMCQs', 'preMCQs', 'read'];
 
@@ -51,25 +50,156 @@ function stripHtmlTags(html) {
     return text;
 }
 
-const greeting_message = async (body) => {
-    await client.messages.create({
-        from: body.To,
-        body: "Assalam o Alaikum. 👋\nWelcome to your English course! Get ready for fun exercises & practice! 💬",
-        to: body.From,
-    });
+const sendMessage = async (to, body) => {
+    try {
+        await axios.post(
+            `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
+            {
+                messaging_product: 'whatsapp',
+                to: to,
+                text: { body: body },
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${whatsappToken}`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+    } catch (error) {
+        console.error('Error sending message:', error.response ? error.response.data : error.message);
+    }
 };
 
-const audio_feedback_message = async (body) => {
+const sendMediaMessage = async (to, mediaUrl, mediaType) => {
+    try {
+        await axios.post(
+            `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
+            {
+                messaging_product: 'whatsapp',
+                to: to,
+                [mediaType]: { link: mediaUrl },
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${whatsappToken}`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+    } catch (error) {
+        console.error('Error sending media message:', error.response ? error.response.data : error.message);
+    }
+};
+
+const sendNextLessonTemplateMessage = async (to) => {
+    try {
+        await axios.post(
+            `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
+            {
+                messaging_product: 'whatsapp',
+                to: to,
+                type: 'template',
+                template: {
+                    name: 'next_lesson_emoji',
+                    language: {
+                        code: 'en_US',
+                    },
+                    components: [
+                        {
+                            type: 'body',
+                            parameters: [
+                                {
+                                    type: 'text',
+                                    text: '🌟 Lesson Complete! 🎉',
+                                },
+                            ],
+                        },
+                        {
+                            type: 'button',
+                            sub_type: 'quick_reply',
+                            index: '0',
+                            parameters: [
+                                {
+                                    type: 'text',
+                                    text: 'Start next lesson',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${whatsappToken}`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+    } catch (error) {
+        console.error('Error sending Next Lesson template message:', error.response ? error.response.data : error.message);
+    }
+};
+
+const sendNextVideoTemplateMessage = async (to) => {
+    try {
+        await axios.post(
+            `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
+            {
+                messaging_product: 'whatsapp',
+                to: to,
+                type: 'template',
+                template: {
+                    name: 'next_video_emoji_2',
+                    language: {
+                        code: 'en_US',
+                    },
+                    components: [
+                        {
+                            type: 'body',
+                            parameters: [
+                                {
+                                    type: 'text',
+                                    text: 'Continue! 📚',
+                                },
+                            ],
+                        },
+                        {
+                            type: 'button',
+                            sub_type: 'quick_reply',
+                            index: '0',
+                            parameters: [
+                                {
+                                    type: 'text',
+                                    text: 'Next Video',
+                                },
+                            ],
+                        },
+                    ],
+                },
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${whatsappToken}`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+    } catch (error) {
+        console.error('Error sending Next Lesson template message:', error.response ? error.response.data : error.message);
+    }
+};
+
+const greeting_message = async (userMobileNumber) => {
+    await sendMessage(userMobileNumber, "Assalam o Alaikum. 👋\nWelcome to your English course! Get ready for fun exercises & practice! 💬");
+};
+
+const audio_feedback_message = async (body, userMobileNumber) => {
     const mediaUrl = body.MediaUrl0;
-    const mediaContentType = body.MediaContentType0;
-    if (mediaContentType.startsWith('audio/')) {
+    if (mediaUrl) {
         try {
             const audioResponse = await axios.get(mediaUrl, {
                 responseType: 'arraybuffer',
-                auth: {
-                    username: accountSid,
-                    password: authToken
-                }
             });
             const audioBuffer = audioResponse.data;
 
@@ -83,19 +213,11 @@ const audio_feedback_message = async (body) => {
 
             if (error) {
                 console.error('Error transcribing audio:', error);
-                client.messages.create({
-                    from: body.To,
-                    body: 'Sorry, there was an error processing your audio file.',
-                    to: body.From,
-                }).then(message => console.log("Error message sent: " + message.sid));
+                await sendMessage(userMobileNumber, 'Sorry, there was an error processing your audio file.');
             } else {
                 const transcription = result.results.channels[0].alternatives[0].transcript;
                 const message = `Please wait for an answer. \n\nYou said: ${transcription}`;
-                client.messages.create({
-                    from: body.To,
-                    body: message,
-                    to: body.From,
-                }).then(message => console.log("Transcription message sent: " + message.sid));
+                await sendMessage(userMobileNumber, message);
 
                 const completion = await openai.chat.completions.create({
                     messages: [
@@ -115,27 +237,15 @@ const audio_feedback_message = async (body) => {
                 const buffer = Buffer.from(await mp3.arrayBuffer());
                 const audioFileUrl = await azure_blob.uploadToBlobStorage(buffer, "feedback.opus");
 
-                client.messages.create({
-                    from: body.To,
-                    mediaUrl: [audioFileUrl],
-                    to: body.From,
-                }).then(message => console.log("Audio message sent: " + message.sid));
+                await sendMediaMessage(userMobileNumber, audioFileUrl, 'audio');
 
             }
         } catch (err) {
             console.error('Error fetching or processing audio file:', err);
-            client.messages.create({
-                from: body.To,
-                body: 'Sorry, there was an error processing your audio file.',
-                to: body.From,
-            }).then(message => console.log("Error message sent: " + message.sid));
+            await sendMessage(userMobileNumber, 'Sorry, there was an error processing your audio file.');
         }
     } else {
-        client.messages.create({
-            from: body.To,
-            body: 'Sorry, I only accept audio files.',
-            to: body.From,
-        }).then(message => console.log("Error message sent: " + message.sid));
+        await sendMessage(userMobileNumber, 'Sorry, I only accept audio files.');
     }
 };
 
@@ -160,11 +270,7 @@ const send_mcq = async (userMobileNumber, user, mcq, body) => {
     for (let j = 0; j < mcqAnswers.length; j++) {
         mcqMessage += "\n" + String.fromCharCode(65 + j) + ". " + mcqAnswers[j].dataValues.AnswerText;
     }
-    await client.messages.create({
-        from: body.To,
-        body: mcqMessage,
-        to: body.From,
-    }).then(message => console.log("MCQ message sent: " + message.sid));
+    await sendMessage(userMobileNumber, mcqMessage);
 };
 
 const sendSpeakActivityQuestion = async (userMobileNumber, user, speakActivityQuestion, body, activity) => {
@@ -172,64 +278,23 @@ const sendSpeakActivityQuestion = async (userMobileNumber, user, speakActivityQu
     if (activity === 'watchAndSpeak') {
         const speakActivityQuestionMessage = speakActivityQuestion.dataValues.question;
         if (speakActivityQuestionMessage) {
-            await client.messages.create({
-                from: body.To,
-                body: speakActivityQuestionMessage,
-                to: body.From,
-            }).then(message => console.log("Speak Activity message sent: " + message.sid));
+            await sendMessage(userMobileNumber, speakActivityQuestionMessage);
         }
-        await client.messages.create({
-            from: body.To,
-            mediaUrl: [speakActivityQuestionMediaUrl],
-            to: body.From,
-        }).then(message => console.log("Speak Activity media sent: " + message.sid));
+        await sendMediaMessage(userMobileNumber, speakActivityQuestionMediaUrl, 'video');
         await sleep(20000);
         // Next template for skipping the audio recording
-        await client.messages.create({
-            from: "MG252cac2eba974fff75b1df0cab40ece7",
-            contentSid: "HX21b63761673f8efd2d02466bab67d088",
-            to: body.From,
-        }).then(message => console.log("Next lesson message sent: " + message.sid));
+        await sendNextVideoTemplateMessage(userMobileNumber);
         return;
     }
     else if (activity === 'listenAndSpeak' || activity === 'postListenAndSpeak' || activity === 'preListenAndSpeak') {
-        await client.messages.create({
-            from: body.To,
-            mediaUrl: [speakActivityQuestionMediaUrl],
-            to: body.From,
-        }).then(message => console.log("Speak Activity media sent: " + message.sid));
+        await sendMediaMessage(userMobileNumber, speakActivityQuestionMediaUrl, 'audio');
         await sleep(8000);
         const speakActivityQuestionMessage = speakActivityQuestion.dataValues.question + "\n\nRecord your answer";
         if (speakActivityQuestionMessage) {
-            await client.messages.create({
-                from: body.To,
-                body: speakActivityQuestionMessage,
-                to: body.From,
-            }).then(message => console.log("Speak Activity message sent: " + message.sid));
+            await sendMessage(userMobileNumber, speakActivityQuestionMessage);
         }
 
     }
-};
-
-const get_next_lesson = async (userMobileNumber, user, startingLesson, body, userMessage) => {
-    const nextLesson = await lessonRepository.getNextLesson(user.dataValues.level, user.dataValues.week, user.dataValues.day, user.dataValues.lesson_sequence);
-    if (nextLesson === null) {
-        client.messages.create({
-            from: body.To,
-            body: '❗️❗️🎉 CONGRATULATIONS 🎉❗️❗️\n 🌟 You have successfully completed the course! 🌟 \n Please contact your group admin to receive your certificate. 📜💬',
-            to: body.From,
-        }).then(message => console.log("Completion message sent: " + message.sid));
-        return;
-    } else if (nextLesson.dataValues.status === 'Not Active') {
-        client.messages.create({
-            from: body.To,
-            body: "Today's lessons are complete! ✅\nCome back tomorrow for more learning fun. 📅💡",
-            to: body.From,
-        }).then(message => console.log("Completion message sent: " + message.sid));
-        return;
-    }
-    await update_user(userMobileNumber, user, nextLesson);
-    await get_lessons(userMobileNumber, user, nextLesson, body, userMessage);
 };
 
 const get_lessons = async (userMobileNumber, user, startingLesson, body, userMessage) => {
@@ -241,23 +306,15 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
         if (startingLesson.dataValues.text) {
             lessonMessage += "\n\n" + stripHtmlTags(startingLesson.dataValues.text);
         }
-        await client.messages.create({
-            from: body.To,
-            body: lessonMessage,
-            to: body.From,
-        }).then(message => console.log("Lesson message sent: " + message.sid));
+        await sendMessage(userMobileNumber, lessonMessage);
 
         // Send video content
         const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
         let videoURL = documentFile[0].dataValues.video;
-        await client.messages.create({
-            from: body.To,
-            mediaUrl: [videoURL],
-            to: body.From,
-        }).then(async message => {
-            console.log("Video message sent: " + message.sid);
-            await waUser.updateMessageSid(userMobileNumber, message.sid);
-        });
+        await sendMediaMessage(userMobileNumber, videoURL, 'video');
+        await sleep(20000);
+        // Next template for next lesson
+        await sendNextLessonTemplateMessage(userMobileNumber);
     }
     else if (activity === 'mcqs' || activity === 'postMCQs' || activity === 'preMCQs') {
         if (user.dataValues.question_number === null) {
@@ -324,19 +381,11 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                 const totalQuestions = await questionResponseRepository.getTotalQuestions(user.dataValues.phone_number, user.dataValues.lesson_id);
                 let message = "❗️❗️ 🎉 RESULT 🎉❗️❗️\n\nYour score is " + totalScore + " out of " + totalQuestions + "\n\n";
                 message += mcqsResponse[user.dataValues.lesson_id];
-                await client.messages.create({
-                    from: body.To,
-                    body: message,
-                    to: body.From,
-                }).then(message => console.log("Total score message sent: " + message.sid));
+                await sendMessage(userMobileNumber, message);
                 await waUser.update_activity_question_lessonid(userMobileNumber, null, null);
                 // Send template here for next lesson
                 await sleep(2000);
-                await client.messages.create({
-                    from: "MG252cac2eba974fff75b1df0cab40ece7",
-                    contentSid: "HXc5149ad4b2ac1ee2e71c00582c59db18",
-                    to: body.From,
-                }).then(message => console.log("Next lesson message sent: " + message.sid));
+                await sendNextLessonTemplateMessage(userMobileNumber);
             }
         }
     }
@@ -352,10 +401,6 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
             const userAudioFile = body.MediaUrl0;
             const audioResponse = await axios.get(userAudioFile, {
                 responseType: 'arraybuffer',
-                auth: {
-                    username: accountSid,
-                    password: authToken
-                }
             });
             const audioBuffer = audioResponse.data;
             const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
@@ -367,11 +412,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
             );
 
             if (error) {
-                client.messages.create({
-                    from: body.To,
-                    body: 'Sorry, there was an error processing your audio file.',
-                    to: body.From,
-                }).then(message => console.log("Error message sent: " + message.sid));
+                await sendMessage(userMobileNumber, 'Sorry, there was an error processing your audio file.');
             } else {
                 const transcription = result.results.channels[0].alternatives[0].transcript;
                 const answersArray = speakActivityQuestion.dataValues.answer;
@@ -386,17 +427,9 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                     userAnswerIsCorrect = false;
                 }
                 if (userAnswerIsCorrect) {
-                    await client.messages.create({
-                        from: body.To,
-                        body: "✅",
-                        to: body.From,
-                    }).then(message => console.log("Speak Activity completion message sent: " + message.sid));
+                    await sendMessage(userMobileNumber, "✅");
                 } else {
-                    await client.messages.create({
-                        from: body.To,
-                        body: "❌",
-                        to: body.From,
-                    }).then(message => console.log("Speak Activity completion message sent: " + message.sid));
+                    await sendMessage(userMobileNumber, "❌");
                 }
                 const userAudioFileUrl = await azure_blob.uploadToBlobStorage(audioBuffer, "audioFile.opus");
                 const submissionDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -410,19 +443,11 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                     const totalQuestions = await questionResponseRepository.getTotalQuestions(user.dataValues.phone_number, user.dataValues.lesson_id);
                     // Give total score here
                     let message = "❗️❗️ 🎉 RESULT 🎉❗️❗️\n\n Your score is " + totalScore + " out of " + totalQuestions + ". Keep working hard!";
-                    await client.messages.create({
-                        from: body.To,
-                        body: message,
-                        to: body.From,
-                    }).then(message => console.log("Speak Activity completion message sent: " + message.sid));
+                    await sendMessage(userMobileNumber, message);
                     await waUser.update_activity_question_lessonid(userMobileNumber, null, null);
                     await sleep(2000);
                     // Send template here for next lesson
-                    await client.messages.create({
-                        from: "MG252cac2eba974fff75b1df0cab40ece7",
-                        contentSid: "HXc5149ad4b2ac1ee2e71c00582c59db18",
-                        to: body.From,
-                    }).then(message => console.log("Next lesson message sent: " + message.sid));
+                    await sendNextLessonTemplateMessage(userMobileNumber);
                 }
             }
         }
@@ -435,11 +460,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
             if (startingLesson.dataValues.text) {
                 lessonMessage += "\n\n" + stripHtmlTags(startingLesson.dataValues.text);
             }
-            await client.messages.create({
-                from: body.To,
-                body: lessonMessage,
-                to: body.From,
-            }).then(message => console.log("Lesson message sent: " + message.sid));
+            await sendMessage(userMobileNumber, lessonMessage);
 
             // Send first Speak Activity Question
             const startingSpeakActivityQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(startingLesson.dataValues.LessonId, null);
@@ -456,21 +477,13 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                 } else {
                     await waUser.update_activity_question_lessonid(userMobileNumber, null, null);
                     // Send template here for next lesson
-                    await client.messages.create({
-                        from: "MG252cac2eba974fff75b1df0cab40ece7",
-                        contentSid: "HXc5149ad4b2ac1ee2e71c00582c59db18",
-                        to: body.From,
-                    }).then(message => console.log("Next lesson message sent: " + message.sid));
+                    await sendNextLessonTemplateMessage(userMobileNumber);
                 }
                 return;
             }
             const userAudioFile = body.MediaUrl0;
             const audioResponse = await axios.get(userAudioFile, {
                 responseType: 'arraybuffer',
-                auth: {
-                    username: accountSid,
-                    password: authToken
-                }
             });
             const audioBuffer = audioResponse.data;
             const userAudioFileUrl = await azure_blob.uploadToBlobStorage(audioBuffer, "audioFile.opus");
@@ -483,11 +496,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
             } else {
                 await waUser.update_activity_question_lessonid(userMobileNumber, null, null);
                 // Send template here for next lesson
-                await client.messages.create({
-                    from: "MG252cac2eba974fff75b1df0cab40ece7",
-                    contentSid: "HXc5149ad4b2ac1ee2e71c00582c59db18",
-                    to: body.From,
-                }).then(message => console.log("Next lesson message sent: " + message.sid));
+                await sendNextLessonTemplateMessage(userMobileNumber);
             }
         }
     }
@@ -511,35 +520,18 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                 lessonMessage += "\n\n" + stripHtmlTags(startingLesson.dataValues.text);
             }
             if (image) {
-                await client.messages.create({
-                    from: body.To,
-                    mediaUrl: [image],
-                    body: lessonMessage,
-                    to: body.From,
-                }).then(message => console.log("Image message sent: " + message.sid));
+                await sendMediaMessage(userMobileNumber, image, 'image');
             } else {
-                await client.messages.create({
-                    from: body.To,
-                    body: lessonMessage,
-                    to: body.From,
-                }).then(message => console.log("Lesson message sent: " + message.sid));
+                await sendMessage(userMobileNumber, lessonMessage);
             }
 
             await sleep(5000);
             if (englishAudio) {
-                await client.messages.create({
-                    from: body.To,
-                    mediaUrl: [englishAudio],
-                    to: body.From,
-                }).then(message => console.log("English audio message sent: " + message.sid));
+                await sendMediaMessage(userMobileNumber, englishAudio, 'audio');
             }
             await sleep(10000);
             let lessonMessage2 = "📝 *Note:* Read the passage and record yourself. 🎤 \n";
-            await client.messages.create({
-                from: body.To,
-                body: lessonMessage2,
-                to: body.From,
-            }).then(message => console.log("Lesson message sent: " + message.sid));
+            await sendMessage(userMobileNumber, lessonMessage2);
         }
 
         // if audio
@@ -547,20 +539,14 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
             const userAudioFile = body.MediaUrl0;
             const audioResponse = await axios.get(userAudioFile, {
                 responseType: 'arraybuffer',
-                auth: {
-                    username: accountSid,
-                    password: authToken
-                }
             });
             const audioBuffer = audioResponse.data;
             const userAudioFileUrl = await azure_blob.uploadToBlobStorage(audioBuffer, "audioFile.opus");
             const submissionDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
             await questionResponseRepository.create(user.dataValues.phone_number, user.dataValues.lesson_id, 1, activity, startingLesson.dataValues.activityAlias, null, userAudioFileUrl, true, 1, submissionDate);
-            await client.messages.create({
-                from: "MG252cac2eba974fff75b1df0cab40ece7",
-                contentSid: "HXc5149ad4b2ac1ee2e71c00582c59db18",
-                to: body.From,
-            }).then(message => console.log("Next lesson message sent: " + message.sid));
+            // Send template here for next lesson
+            await sleep(2000);
+            await sendNextLessonTemplateMessage(userMobileNumber);
         }
     }
     else if (activity === 'audio') {
@@ -582,18 +568,9 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
             lessonMessage += "\n\n" + stripHtmlTags(startingLesson.dataValues.text);
         }
         if (image) {
-            await client.messages.create({
-                from: body.To,
-                body: lessonMessage,
-                mediaUrl: [image],
-                to: body.From,
-            }).then(message => console.log("Lesson message sent: " + message.sid));
+            await sendMediaMessage(userMobileNumber, image, 'image');
         } else {
-            await client.messages.create({
-                from: body.To,
-                body: lessonMessage,
-                to: body.From,
-            }).then(message => console.log("Lesson message sent: " + message.sid));
+            await sendMessage(userMobileNumber, lessonMessage);
         }
 
         // Add a delay before sending the audio content
@@ -601,151 +578,129 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
 
         // Send audio content
         if (audio) {
-            await client.messages.create({
-                from: body.To,
-                mediaUrl: [audio],
-                to: body.From,
-            }).then(message => console.log("Audio message sent: " + message.sid));
+            await sendMediaMessage(userMobileNumber, audio, 'audio');
         }
 
         // Add a delay before sending the next lesson template
         await sleep(15000);
 
         // Send template here for next lesson
-        await client.messages.create({
-            from: "MG252cac2eba974fff75b1df0cab40ece7",
-            contentSid: "HXc5149ad4b2ac1ee2e71c00582c59db18",
-            to: body.From,
-        }).then(message => console.log("Next lesson message sent: " + message.sid));
+        await sendNextLessonTemplateMessage(userMobileNumber);
+    }
+};
+
+const verifyWebhookService = async (req, res) => {
+    try {
+        const mode = req.query['hub.mode'];
+        const token = req.query['hub.verify_token'];
+        const challenge = req.query['hub.challenge'];
+
+        if (mode && token === whatsappVerifyToken) {
+            console.log('Webhook verified');
+            res.status(200).send(challenge);
+        } else {
+            res.sendStatus(403);
+        }
+    } catch (error) {
+        console.error('Error in verifyWebhookService:', error);
+        error.fileName = 'chatBotService.js';
+        throw error;
     }
 };
 
 const webhookService = async (body, res) => {
     try {
-        const userMessage = body.Body.toLowerCase().trim();
-        const userMobileNumber = body.From.split(":")[1];
+        if (body.entry &&
+            body.entry[0].changes &&
+            body.entry[0].changes[0].value.messages
+        ) {
+            const message = body.entry[0].changes[0].value.messages[0];
+            const userMobileNumber = "+" + message.from;
+            const userMessage = message.text?.body.toLowerCase().trim() || "";
+            console.log('Received message:', userMessage);
+            console.log('From:', userMobileNumber);
 
-        // Check if user exists in the database
-        let user = await waUser.getByPhoneNumber(userMobileNumber);
+            // Check if user exists in the database
+            let user = await waUser.getByPhoneNumber(userMobileNumber);
 
-        if (userMessage === 'beaj_audio_bot') {
-            if (user && user.dataValues.persona === 'Teacher' && user.dataValues.engagement_type === 'Learning') {
-                await waUser.update(userMobileNumber, 'Student', 'Audio Practice');
-            } else {
-                await waUser.create(userMobileNumber, 'Student', 'Audio Practice');
-            }
-            await client.messages.create({
-                from: body.To,
-                body: "Assalam o Alaikum. 👋\nWelcome to your Beaj Speaking Tutor.",
-                to: body.From,
-            });
-            return;
-        }
-
-        if (user && user.dataValues.engagement_type === 'Audio Practice' && body.MediaUrl0) {
-            await audio_feedback_message(body);
-            return;
-        } else if (user && user.dataValues.engagement_type === 'Audio Practice' && !body.MediaUrl0) {
-            await client.messages.create({
-                from: body.To,
-                body: "Please send an audio file.",
-                to: body.From,
-            }).then(message => console.log("Audio message sent: " + message.sid));
-            return;
-        }
-
-
-
-        if (!user) {
-            await greeting_message(body);
-            await sleep(2000);
-            waUser.create(userMobileNumber, 'Teacher', 'Learning');
-            const startingLesson = await lessonRepository.getNextLesson(94, 4, null, null);
-            if (startingLesson.dataValues.status === 'Not Active') {
-                client.messages.create({
-                    from: body.To,
-                    body: "Today's lessons are complete! ✅\nCome back tomorrow for more learning fun. 📅💡",
-                    to: body.From,
-                }).then(message => console.log("Completion message sent: " + message.sid));
+            if (userMessage === 'beaj_audio_bot') {
+                if (user && user.dataValues.persona === 'Teacher' && user.dataValues.engagement_type === 'Learning') {
+                    await waUser.update(userMobileNumber, 'Student', 'Audio Practice');
+                } else {
+                    await waUser.create(userMobileNumber, 'Student', 'Audio Practice');
+                }
+                await sendMessage(userMobileNumber, "Assalam o Alaikum. 👋\nWelcome to your Beaj Speaking Tutor.");
                 return;
             }
-            await waUser.update(
-                userMobileNumber,
-                'Teacher',
-                'Learning',
-                '94',
-                startingLesson.dataValues.weekNumber,
-                startingLesson.dataValues.dayNumber,
-                startingLesson.dataValues.SequenceNumber,
-                startingLesson.dataValues.activity,
-                startingLesson.dataValues.LessonId,
-                null
-            );
-            user = await waUser.getByPhoneNumber(userMobileNumber);
-            await get_lessons(userMobileNumber, user, startingLesson, body, userMessage);
-            return;
-        }
 
-        if (userMessage === 'reset') {
-            await waUser.deleteByPhoneNumber(userMobileNumber);
-            client.messages.create({
-                from: body.To,
-                body: 'Your progress has been reset. You can start the course again.',
-                to: body.From,
-            }).then(message => console.log("Reset message sent: " + message.sid));
-            return;
-        }
-
-        if (userMessage.toLowerCase().includes('start next lesson')) {
-            const nextLesson = await lessonRepository.getNextLesson(user.dataValues.level, user.dataValues.week, user.dataValues.day, user.dataValues.lesson_sequence);
-            if (nextLesson === null) {
-                client.messages.create({
-                    from: body.To,
-                    body: '❗️❗️🎉 CONGRATULATIONS 🎉❗️❗️\n 🌟 You have successfully completed the course! 🌟 \n Please contact your group admin to receive your certificate. 📜💬',
-                    to: body.From,
-                }).then(message => console.log("Completion message sent: " + message.sid));
+            if (user && user.dataValues.engagement_type === 'Audio Practice' && body.MediaUrl0) {
+                await audio_feedback_message(body, userMobileNumber);
                 return;
-            } else if (nextLesson.dataValues.status === 'Not Active') {
-                client.messages.create({
-                    from: body.To,
-                    body: "Today's lessons are complete! ✅\nCome back tomorrow for more learning fun. 📅💡",
-                    to: body.From,
-                }).then(message => console.log("Completion message sent: " + message.sid));
+            } else if (user && user.dataValues.engagement_type === 'Audio Practice' && !body.MediaUrl0) {
+                await sendMessage(userMobileNumber, "Please send an audio file.");
                 return;
             }
-            await update_user(userMobileNumber, user, nextLesson);
-            await get_lessons(userMobileNumber, user, nextLesson, body, userMessage);
-            return;
-        }
 
 
-        if (user.activity_type && activity_types_to_repeat.includes(user.activity_type)) {
-            const currentLesson = await lessonRepository.getCurrentLesson(user.dataValues.lesson_id);
-            await get_lessons(userMobileNumber, user, currentLesson, body, userMessage);
-            return;
+
+            if (!user) {
+                await greeting_message(userMobileNumber);
+                await sleep(2000);
+                waUser.create(userMobileNumber, 'Teacher', 'Learning');
+                const startingLesson = await lessonRepository.getNextLesson(94, 4, null, null);
+                if (startingLesson.dataValues.status === 'Not Active') {
+                    await sendMessage(userMobileNumber, "Today's lessons are complete! ✅\nCome back tomorrow for more learning fun. 📅💡");
+                    return;
+                }
+                await waUser.update(
+                    userMobileNumber,
+                    'Teacher',
+                    'Learning',
+                    '94',
+                    startingLesson.dataValues.weekNumber,
+                    startingLesson.dataValues.dayNumber,
+                    startingLesson.dataValues.SequenceNumber,
+                    startingLesson.dataValues.activity,
+                    startingLesson.dataValues.LessonId,
+                    null
+                );
+                user = await waUser.getByPhoneNumber(userMobileNumber);
+                await get_lessons(userMobileNumber, user, startingLesson, body, userMessage);
+                return;
+            }
+
+            if (userMessage === 'reset') {
+                await waUser.deleteByPhoneNumber(userMobileNumber);
+                await sendMessage(userMobileNumber, 'Your progress has been reset. You can start the course again.');
+                return;
+            }
+
+            if (userMessage.toLowerCase().includes('start next lesson')) {
+                const nextLesson = await lessonRepository.getNextLesson(user.dataValues.level, user.dataValues.week, user.dataValues.day, user.dataValues.lesson_sequence);
+                if (nextLesson === null) {
+                    await sendMessage(userMobileNumber, '❗️❗️🎉 CONGRATULATIONS 🎉❗️❗️\n 🌟 You have successfully completed the course! 🌟 \n Please contact your group admin to receive your certificate. 📜💬');
+                    return;
+                } else if (nextLesson.dataValues.status === 'Not Active') {
+                    await sendMessage(userMobileNumber, "Today's lessons are complete! ✅\nCome back tomorrow for more learning fun. 📅💡");
+                    return;
+                }
+                await update_user(userMobileNumber, user, nextLesson);
+                await get_lessons(userMobileNumber, user, nextLesson, body, userMessage);
+                return;
+            }
+
+
+            if (user.activity_type && activity_types_to_repeat.includes(user.activity_type)) {
+                const currentLesson = await lessonRepository.getCurrentLesson(user.dataValues.lesson_id);
+                await get_lessons(userMobileNumber, user, currentLesson, body, userMessage);
+                return;
+            }
         }
 
     } catch (error) {
         console.error('Error in chatBotService:', error);
         error.fileName = 'chatBotService.js';
         throw error;
-    }
-};
-
-const statusWebhookService = async (body, res) => {
-    if (body.SmsStatus === 'delivered') {
-        const userMobileNumber = body.To.split(":")[1];
-        const user = await waUser.getByPhoneNumber(userMobileNumber);
-        const incomingMessageSid = body.MessageSid;
-        const messageSidInDb = user.dataValues.message_sid;
-        if (incomingMessageSid === messageSidInDb && user.dataValues.activity_type === 'video') {
-            const currentLesson = await lessonRepository.getCurrentLesson(user.dataValues.lesson_id);
-            const newBody = {
-                From: body.To,
-                To: body.From
-            }
-            await get_next_lesson(userMobileNumber, user, currentLesson, newBody, "userMessage");
-        }
     }
 };
 
@@ -817,4 +772,4 @@ const getAllFeedbackService = async () => {
     return feedback;
 };
 
-export default { webhookService, feedbackService, getAllFeedbackService, statusWebhookService };
+export default { webhookService, feedbackService, getAllFeedbackService, verifyWebhookService };

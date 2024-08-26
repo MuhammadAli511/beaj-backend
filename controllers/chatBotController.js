@@ -10,10 +10,9 @@ const webhookController = async (req, res, next) => {
     }
 };
 
-const statusWebhookController = async (req, res, next) => {
+const verifyWebhookController = async (req, res, next) => {
     try {
-        const { body } = req;
-        await service.statusWebhookService(body, res);
+        await service.verifyWebhookService(req, res);
     } catch (error) {
         error.fileName = 'chatBotController.js';
         next(error);
@@ -46,5 +45,5 @@ export default {
     webhookController,
     feedbackController,
     getAllFeedback,
-    statusWebhookController
+    verifyWebhookController
 };
