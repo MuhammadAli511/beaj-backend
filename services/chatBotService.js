@@ -15,7 +15,6 @@ import multipleChoiceQuestionAnswerRepository from '../repositories/multipleChoi
 import questionResponseRepository from '../repositories/questionResponseRepository.js';
 import speakActivityQuestionRepository from '../repositories/speakActivityQuestionRepository.js';
 import { mcqsResponse } from '../constants/chatbotConstants.js';
-import { type } from "os";
 
 
 dotenv.config();
@@ -70,6 +69,27 @@ const sendMessage = async (to, body) => {
     } catch (error) {
         console.error('Error sending message:', error.response ? error.response.data : error.message);
     }
+};
+
+const retrieveAudioURL = async (mediaId) => {
+    const mediaResponse = await axios.get(
+        `https://graph.facebook.com/v20.0/${mediaId}`,
+        {
+            headers: {
+                Authorization: `Bearer ${whatsappToken}`,
+            },
+        }
+    );
+
+    const audioUrl = mediaResponse.data.url;
+
+    const audioResponse = await axios.get(audioUrl, {
+        responseType: 'arraybuffer',
+        headers: {
+            Authorization: `Bearer ${whatsappToken}`,
+        },
+    });
+    return audioResponse;
 };
 
 const sendMediaMessage = async (to, mediaUrl, mediaType) => {
@@ -191,13 +211,11 @@ const greeting_message = async (userMobileNumber) => {
     await sendMessage(userMobileNumber, "Assalam o Alaikum. 👋\nWelcome to your English course! Get ready for fun exercises & practice! 💬");
 };
 
-const audio_feedback_message = async (body, userMobileNumber) => {
-    const mediaUrl = body.MediaUrl0;
-    if (mediaUrl) {
+const audio_feedback_message = async (message, userMobileNumber) => {
+    if (message.type === 'audio') {
         try {
-            const audioResponse = await axios.get(mediaUrl, {
-                responseType: 'arraybuffer',
-            });
+            const mediaId = message.audio.id;
+            const audioResponse = await retrieveAudioURL(mediaId);
             const audioBuffer = audioResponse.data;
 
             const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
@@ -294,7 +312,7 @@ const sendSpeakActivityQuestion = async (userMobileNumber, user, speakActivityQu
     }
 };
 
-const get_lessons = async (userMobileNumber, user, startingLesson, body, userMessage) => {
+const get_lessons = async (userMobileNumber, user, startingLesson, body, userMessage, message) => {
     const activity = startingLesson.dataValues.activity;
     if (activity === 'video') {
         // Send lesson message
@@ -393,12 +411,10 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
             await waUser.update_question(userMobileNumber, startingSpeakActivityQuestion.dataValues.questionNumber);
             await sendSpeakActivityQuestion(userMobileNumber, user, startingSpeakActivityQuestion, body, activity);
             return;
-        } else {
+        } else if (message.type === 'audio') {
             const speakActivityQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(user.dataValues.lesson_id, user.dataValues.question_number);
-            const userAudioFile = body.MediaUrl0;
-            const audioResponse = await axios.get(userAudioFile, {
-                responseType: 'arraybuffer',
-            });
+            const mediaId = message.audio.id;
+            const audioResponse = await retrieveAudioURL(mediaId);
             const audioBuffer = audioResponse.data;
             const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
                 audioBuffer,
@@ -478,10 +494,8 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                 }
                 return;
             }
-            const userAudioFile = body.MediaUrl0;
-            const audioResponse = await axios.get(userAudioFile, {
-                responseType: 'arraybuffer',
-            });
+            const mediaId = message.audio.id;
+            const audioResponse = await retrieveAudioURL(mediaId);
             const audioBuffer = audioResponse.data;
             const userAudioFileUrl = await azure_blob.uploadToBlobStorage(audioBuffer, "audioFile.opus");
             const submissionDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -532,11 +546,9 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
         }
 
         // if audio
-        else if (body.MediaUrl0) {
-            const userAudioFile = body.MediaUrl0;
-            const audioResponse = await axios.get(userAudioFile, {
-                responseType: 'arraybuffer',
-            });
+        else if (message.type === 'audio') {
+            const mediaId = message.audio.id;
+            const audioResponse = await retrieveAudioURL(mediaId);
             const audioBuffer = audioResponse.data;
             const userAudioFileUrl = await azure_blob.uploadToBlobStorage(audioBuffer, "audioFile.opus");
             const submissionDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -607,13 +619,22 @@ const verifyWebhookService = async (req, res) => {
 
 const webhookService = async (body, res) => {
     try {
-        if (body.entry &&
+        res.sendStatus(200);
+        if (
+            body.entry &&
             body.entry[0].changes &&
-            body.entry[0].changes[0].value.messages
+            body.entry[0].changes[0].value.messages &&
+            body.entry[0].changes[0].value.statuses == undefined
         ) {
+            console.log('Webhook received:', body);
             const message = body.entry[0].changes[0].value.messages[0];
             const userMobileNumber = "+" + message.from;
             const userMessage = message.text?.body.toLowerCase().trim() || "";
+            const messageId = message.id;
+            console.log('Message ID:', messageId);
+            console.log('User:', userMobileNumber);
+            console.log('Message:', userMessage);
+            console.log("Status:", body.entry[0].changes[0].value.statuses);
 
             // Check if user exists in the database
             let user = await waUser.getByPhoneNumber(userMobileNumber);
@@ -628,10 +649,10 @@ const webhookService = async (body, res) => {
                 return;
             }
 
-            if (user && user.dataValues.engagement_type === 'Audio Practice' && body.MediaUrl0) {
-                await audio_feedback_message(body, userMobileNumber);
+            if (user && user.dataValues.engagement_type === 'Audio Practice' && message.type === 'audio') {
+                await audio_feedback_message(message, userMobileNumber);
                 return;
-            } else if (user && user.dataValues.engagement_type === 'Audio Practice' && !body.MediaUrl0) {
+            } else if (user && user.dataValues.engagement_type === 'Audio Practice' && !message.type === 'audio') {
                 await sendMessage(userMobileNumber, "Please send an audio file.");
                 return;
             }
@@ -660,7 +681,7 @@ const webhookService = async (body, res) => {
                     null
                 );
                 user = await waUser.getByPhoneNumber(userMobileNumber);
-                await get_lessons(userMobileNumber, user, startingLesson, body, userMessage);
+                await get_lessons(userMobileNumber, user, startingLesson, body, userMessage, message);
                 return;
             }
 
@@ -680,14 +701,14 @@ const webhookService = async (body, res) => {
                     return;
                 }
                 await update_user(userMobileNumber, user, nextLesson);
-                await get_lessons(userMobileNumber, user, nextLesson, body, userMessage);
+                await get_lessons(userMobileNumber, user, nextLesson, body, userMessage, message);
                 return;
             }
 
 
             if (user.activity_type && activity_types_to_repeat.includes(user.activity_type)) {
                 const currentLesson = await lessonRepository.getCurrentLesson(user.dataValues.lesson_id);
-                await get_lessons(userMobileNumber, user, currentLesson, body, userMessage);
+                await get_lessons(userMobileNumber, user, currentLesson, body, userMessage, message);
                 return;
             }
         }
