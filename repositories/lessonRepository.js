@@ -29,6 +29,20 @@ const getById = async (id) => {
     return await Lesson.findByPk(id);
 };
 
+const getLessonsArrayForWeek = async (courseId, week) => {
+    const lessons = await Lesson.findAll({
+        where: {
+            courseId: courseId,
+            weekNumber: week
+        },
+        order: [
+            ['dayNumber', 'ASC'],
+            ['SequenceNumber', 'ASC']
+        ]
+    });
+    return lessons.map(lesson => lesson.LessonId);
+};
+
 const getByCourseActivity = async (course, activity) => {
     return await Lesson.findAll({
         where: {
@@ -163,5 +177,6 @@ export default {
     deleteLesson,
     getNextLesson,
     getCurrentLesson,
-    getByCourseActivity
+    getByCourseActivity,
+    getLessonsArrayForWeek
 };

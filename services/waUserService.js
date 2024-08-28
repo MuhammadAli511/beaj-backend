@@ -1,7 +1,7 @@
 import waUser from "../repositories/waUser.js";
 import questionResponseRepository from "../repositories/questionResponseRepository.js";
+import lessonRepository from "../repositories/lessonRepository.js"
 
-const lessonIdSequence = [1213, 1214, 1215, 1217, 1218, 1219, 1220, 1221, 1222, 1223, 1224, 1225, 1226, 1228, 1229, 1230, 1232];
 
 const getAllWaUsersService = async () => {
     try {
@@ -10,6 +10,7 @@ const getAllWaUsersService = async () => {
         const waUsers = [];
 
         const activityTypes = ['listenAndSpeak', 'postListenAndSpeak', 'preListenAndSpeak', 'mcqs', 'preMCQs', 'postMCQs'];
+        const lessonIdSequence = await lessonRepository.getLessonsArrayForWeek(94, 4);
 
         result.forEach(user => {
             const userResponses = responses.filter(response => response.UserId === user.phone_number);
@@ -30,7 +31,6 @@ const getAllWaUsersService = async () => {
 
             const average = totalQuestions > 0 ? (totalCorrect / totalQuestions) * 100 : 0;
 
-            // Find the position of the current lesson_id in the lessonIdSequence array
             const currentLessonIndex = lessonIdSequence.indexOf(parseInt(user.lesson_id));
             const lessonsCompleted = currentLessonIndex + 1;
 
