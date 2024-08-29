@@ -174,7 +174,6 @@ const sendNextLessonTemplateMessage = async (to) => {
                 },
             }
         );
-        console.log('Next Lesson template message sent:', response.data);
     } catch (error) {
         console.error('Error sending Next Lesson template message:', error.response ? error.response.data : error.message);
     }
@@ -626,15 +625,22 @@ const webhookService = async (body, res) => {
             body.entry[0].changes[0].value.messages &&
             body.entry[0].changes[0].value.statuses == undefined
         ) {
-            console.log('Webhook received:', body);
             const message = body.entry[0].changes[0].value.messages[0];
             const userMobileNumber = "+" + message.from;
-            const userMessage = message.text?.body.toLowerCase().trim() || "";
-            const messageId = message.id;
-            console.log('Message ID:', messageId);
+            let userMessage;
             console.log('User:', userMobileNumber);
-            console.log('Message:', userMessage);
-            console.log("Status:", body.entry[0].changes[0].value.statuses);
+            if (message.type === 'image') {
+                console.log('Message: Image');
+            } else if (message.type === 'audio') {
+                console.log('Message: Audio');
+            } else if (message.type === 'text') {
+                userMessage = message.text?.body.toLowerCase().trim() || "";
+                console.log('Message:', userMessage);
+            } else if (message.type === 'video') {
+                console.log('Message: Video');
+            } else if (message.type === 'button') {
+                userMessage = message.button.text;
+            }
 
             // Check if user exists in the database
             let user = await waUser.getByPhoneNumber(userMobileNumber);
