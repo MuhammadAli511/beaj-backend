@@ -128,89 +128,143 @@ const getLessonsByActivity = async (course, activity) => {
 }
 
 const migrateLessonService = async (lessonId, courseId) => {
+    let transaction;
     try {
         const lesson = await lessonRepository.getById(lessonId);
 
-        const transaction = await prodSequelize.transaction();
+        transaction = await prodSequelize.transaction();
 
         try {
-            const [newLesson, created] = await prodSequelize.models.Lesson.findOrCreate({
-                where: { LessonId: lessonId },
-                defaults: {
-                    lessonType: lesson.lessonType,
-                    dayNumber: lesson.dayNumber,
-                    activity: lesson.activity,
-                    activityAlias: lesson.activityAlias,
-                    weekNumber: lesson.weekNumber,
-                    text: lesson.text,
-                    courseId: courseId,
-                    sequenceNumber: lesson.sequenceNumber,
-                    status: lesson.status,
-                },
-                transaction
-            });
 
+            const [newLesson] = await prodSequelize.query(
+                `INSERT INTO "Lesson" 
+                    ("lessonType", "dayNumber", "activity", "activityAlias", "weekNumber", "text", 
+                    "courseId", "SequenceNumber", "status") 
+                    VALUES (:lessonType, :dayNumber, :activity, :activityAlias, :weekNumber, :text, 
+                    :courseId, :SequenceNumber, :status) 
+                    RETURNING *`,
+                {
+                    replacements: {
+                        lessonType: lesson.lessonType,
+                        dayNumber: lesson.dayNumber,
+                        activity: lesson.activity,
+                        activityAlias: lesson.activityAlias,
+                        weekNumber: lesson.weekNumber,
+                        text: lesson.text,
+                        courseId: courseId,
+                        SequenceNumber: lesson.SequenceNumber,
+                        status: lesson.status,
+                    },
+                    type: prodSequelize.QueryTypes.INSERT,
+                    transaction,
+                }
+            );
+
+            // Handle additional data based on activity type
             if (['listenAndSpeak', 'postListenAndSpeak', 'preListenAndSpeak', 'watchAndSpeak'].includes(lesson.activity)) {
                 const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonId(lesson.LessonId);
 
                 await Promise.all(speakActivityQuestionFiles.map(file =>
-                    prodSequelize.models.SpeakActivityQuestion.create({
-                        question: file.question,
-                        mediaFile: file.mediaFile,
-                        answer: file.answer,
-                        lessonId: newLesson.LessonId,
-                        questionNumber: file.questionNumber
-                    }, { transaction })
+                    prodSequelize.query(
+                        `INSERT INTO "speakActivityQuestions" 
+                            ("question", "mediaFile", "answer", "lessonId", "questionNumber") 
+                            VALUES (:question, :mediaFile, :answer, :lessonId, :questionNumber)`,
+                        {
+                            replacements: {
+                                question: file.question,
+                                mediaFile: file.mediaFile,
+                                answer: file.answer || null,
+                                lessonId: newLesson[0].LessonId,
+                                questionNumber: file.questionNumber
+                            },
+                            type: prodSequelize.QueryTypes.INSERT,
+                            transaction
+                        }
+                    )
                 ));
             } else if (['mcqs', 'preMCQs', 'postMCQs'].includes(lesson.activity)) {
                 const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonId(lesson.LessonId);
 
                 await Promise.all(multipleChoiceQuestions.map(async question => {
-                    const newQuestion = await prodSequelize.models.MultipleChoiceQuestion.create({
-                        QuestionType: question.QuestionType,
-                        QuestionText: question.QuestionText,
-                        QuestionImageUrl: question.QuestionImageUrl,
-                        QuestionAudioUrl: question.QuestionAudioUrl,
-                        QuestionNumber: question.QuestionNumber,
-                        LessonId: newLesson.LessonId,
-                        OptionsType: question.OptionsType
-                    }, { transaction });
+                    const [newQuestion] = await prodSequelize.query(
+                        `INSERT INTO "MultipleChoiceQuesions" 
+                            ("QuestionType", "QuestionText", "QuestionImageUrl", "QuestionAudioUrl", 
+                            "QuestionNumber", "LessonId") 
+                            VALUES (:QuestionType, :QuestionText, :QuestionImageUrl, :QuestionAudioUrl, 
+                            :QuestionNumber, :LessonId) 
+                            RETURNING *`,
+                        {
+                            replacements: {
+                                QuestionType: question.QuestionType,
+                                QuestionText: question.QuestionText || null,
+                                QuestionImageUrl: question.QuestionImageUrl || null,
+                                QuestionAudioUrl: question.QuestionAudioUrl || null,
+                                QuestionNumber: question.QuestionNumber,
+                                LessonId: newLesson[0].LessonId,
+                            },
+                            type: prodSequelize.QueryTypes.INSERT,
+                            transaction
+                        }
+                    );
 
                     const multipleChoiceQuestionAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(question.Id);
 
                     await Promise.all(multipleChoiceQuestionAnswers.map(answer =>
-                        prodSequelize.models.MultipleChoiceQuestionAnswer.create({
-                            AnswerText: answer.AnswerText,
-                            AnswerImageUrl: answer.AnswerImageUrl,
-                            AnswerAudioUrl: answer.AnswerAudioUrl,
-                            IsCorrect: answer.IsCorrect,
-                            MultipleChoiceQuestionId: newQuestion.Id,
-                            SequenceNumber: answer.SequenceNumber
-                        }, { transaction })
+                        prodSequelize.query(
+                            `INSERT INTO "MultipleChoiceQuestionAnswers" 
+                                ("AnswerText", "AnswerImageUrl", "AnswerAudioUrl", "IsCorrect", 
+                                "MultipleChoiceQuestionId", "SequenceNumber") 
+                                VALUES (:AnswerText, :AnswerImageUrl, :AnswerAudioUrl, :IsCorrect,
+                                :MultipleChoiceQuestionId, :SequenceNumber)`,
+                            {
+                                replacements: {
+                                    AnswerText: answer.AnswerText || null,
+                                    AnswerImageUrl: answer.AnswerImageUrl || null,
+                                    AnswerAudioUrl: answer.AnswerAudioUrl || null,
+                                    IsCorrect: answer.IsCorrect,
+                                    MultipleChoiceQuestionId: newQuestion[0].Id,
+                                    SequenceNumber: answer.SequenceNumber
+                                },
+                                type: prodSequelize.QueryTypes.INSERT,
+                                transaction
+                            }
+                        )
                     ));
                 }));
             } else {
                 const documentFiles = await documentFileRepository.getByLessonId(lesson.LessonId);
 
-                await Promise.all(documentFiles.map(file =>
-                    prodSequelize.models.DocumentFile.create({
-                        lessonId: newLesson.LessonId,
-                        language: file.language,
-                        image: file.image,
-                        video: file.video,
-                        audio: file.audio,
-                        mediaType: file.mediaType
-                    }, { transaction })
+
+                await Promise.all(documentFiles.map(file => {
+                    prodSequelize.query(
+                        `INSERT INTO "DocumentFiles" 
+                            ("lessonId", "language", "image", "video", "audio", "mediaType") 
+                            VALUES (:lessonId, :language, :image, :video, :audio, :mediaType)`,
+                        {
+                            replacements: {
+                                lessonId: newLesson[0].LessonId,
+                                language: file.language,
+                                image: file.image || null,
+                                video: file.video || null,
+                                audio: file.audio || null,
+                                mediaType: file.mediaType
+                            },
+                            type: prodSequelize.QueryTypes.INSERT,
+                            transaction
+                        }
+                    )
+                }
                 ));
             }
 
             // Commit the transaction after successful operations
             await transaction.commit();
-            return newLesson;
+            return newLesson[0];
 
         } catch (err) {
-            // Rollback the transaction in case of any error
-            await transaction.rollback();
+            if (transaction) {
+                await transaction.rollback();
+            }
             throw err;
         }
 
