@@ -28,6 +28,9 @@ router.delete('/delete/:id', beajEmployeesAuth, lessonController.deleteLessonCon
 // POST  api/lesson/getLessonsByActivity
 router.post('/getLessonsByActivity', beajEmployeesAuth, lessonController.getLessonsByActivityController);
 
+// POST api/lesson/migrateLesson
+router.post('/migrateLesson', beajEmployeesAuth, lessonController.migrateLessonController);
+
 // Use error handler middleware
 router.use(errorHandler);
 

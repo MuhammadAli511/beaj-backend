@@ -3,6 +3,7 @@ import documentFileRepository from "../repositories/documentFileRepository.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import multipleChoiceQuestionRepository from "../repositories/multipleChoiceQuestionRepository.js";
 import multipleChoiceQuestionAnswerRepository from "../repositories/multipleChoiceQuestionAnswerRepository.js";
+import prodSequelize from "../config/prodDB.js";
 
 const createLessonService = async (lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status) => {
     try {
@@ -126,6 +127,90 @@ const getLessonsByActivity = async (course, activity) => {
     }
 }
 
+const migrateLessonService = async (lessonId, courseId, sequenceNumber) => {
+    try {
+        const lesson = await lessonRepository.getById(lessonId);
+
+        const transaction = await prodSequelize.transaction();
+
+        try {
+            const [newLesson, created] = await prodSequelize.models.Lesson.findOrCreate({
+                where: { LessonId: lessonId },
+                defaults: {
+                    lessonType: lesson.lessonType,
+                    dayNumber: lesson.dayNumber,
+                    activity: lesson.activity,
+                    activityAlias: lesson.activityAlias,
+                    weekNumber: lesson.weekNumber,
+                    text: lesson.text,
+                    courseId: courseId,
+                    sequenceNumber: sequenceNumber,
+                    status: lesson.status,
+                },
+                transaction
+            });
+
+            if (lesson.activity == 'listenAndSpeak' || lesson.activity == 'postListenAndSpeak' || lesson.activity == 'preListenAndSpeak' || lesson.activity == 'watchAndSpeak') {
+                const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonId(lesson.LessonId);
+                for (let i = 0; i < speakActivityQuestionFiles.length; i++) {
+                    await prodSequelize.models.SpeakActivityQuestion.create({
+                        question: speakActivityQuestionFiles[i].question,
+                        mediaFile: speakActivityQuestionFiles[i].mediaFile,
+                        answer: speakActivityQuestionFiles[i].answer,
+                        lessonId: newLesson.LessonId,
+                        questionNumber: speakActivityQuestionFiles[i].questionNumber
+                    }, { transaction });
+                }
+            } else if (lesson.activity == 'mcqs' || lesson.activity == 'preMCQs' || lesson.activity == 'postMCQs') {
+                const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonId(lesson.LessonId);
+                for (let i = 0; i < multipleChoiceQuestions.length; i++) {
+                    const newQuestion = await prodSequelize.models.MultipleChoiceQuestion.create({
+                        QuestionType: multipleChoiceQuestions[i].QuestionType,
+                        QuestionText: multipleChoiceQuestions[i].QuestionText,
+                        QuestionImageUrl: multipleChoiceQuestions[i].QuestionImageUrl,
+                        QuestionAudioUrl: multipleChoiceQuestions[i].QuestionAudioUrl,
+                        QuestionNumber: multipleChoiceQuestions[i].QuestionNumber,
+                        LessonId: newLesson.LessonId,
+                        OptionsType: multipleChoiceQuestions[i].OptionsType
+                    }, { transaction });
+
+                    const multipleChoiceQuestionAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(multipleChoiceQuestions[i].Id);
+                    for (let j = 0; j < multipleChoiceQuestionAnswers.length; j++) {
+                        await prodSequelize.models.MultipleChoiceQuestionAnswer.create({
+                            AnswerText: multipleChoiceQuestionAnswers[j].AnswerText,
+                            AnswerImageUrl: multipleChoiceQuestionAnswers[j].AnswerImageUrl,
+                            AnswerAudioUrl: multipleChoiceQuestionAnswers[j].AnswerAudioUrl,
+                            IsCorrect: multipleChoiceQuestionAnswers[j].IsCorrect,
+                            MultipleChoiceQuestionId: newQuestion.Id,
+                            SequenceNumber: multipleChoiceQuestionAnswers[j].SequenceNumber
+                        }, { transaction });
+                    }
+                }
+            } else {
+                const documentFiles = await documentFileRepository.getByLessonId(lesson.LessonId);
+                for (let i = 0; i < documentFiles.length; i++) {
+                    await prodSequelize.models.DocumentFile.create({
+                        lessonId: newLesson.LessonId,
+                        language: documentFiles[i].language,
+                        image: documentFiles[i].image,
+                        video: documentFiles[i].video,
+                        audio: documentFiles[i].audio,
+                        mediaType: documentFiles[i].mediaType
+                    }, { transaction });
+                }
+            }
+            await transaction.commit();
+            return newLesson;
+        } catch (err) {
+            await transaction.rollback();
+            throw err;
+        }
+    } catch (error) {
+        error.fileName = 'lessonService.js';
+        throw error;
+    }
+};
+
 
 export default {
     createLessonService,
@@ -133,5 +218,6 @@ export default {
     getLessonByIdService,
     updateLessonService,
     deleteLessonService,
-    getLessonsByActivity
+    getLessonsByActivity,
+    migrateLessonService
 };
