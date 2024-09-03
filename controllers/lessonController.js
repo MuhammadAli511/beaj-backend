@@ -68,8 +68,8 @@ const getLessonsByActivityController = async (req, res, next) => {
 
 const migrateLessonController = async (req, res, next) => {
     try {
-        const { lessonId, courseId, sequenceNumber } = req.body;
-        const result = await service.migrateLessonService(lessonId, courseId, sequenceNumber);
+        const { lessonId, courseId } = req.body;
+        const result = await service.migrateLessonService(lessonId, courseId);
         res.status(200).send({ message: "Lesson copied successfully", result });
     } catch (error) {
         error.fileName = 'lessonController.js';

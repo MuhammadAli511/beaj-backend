@@ -127,7 +127,7 @@ const getLessonsByActivity = async (course, activity) => {
     }
 }
 
-const migrateLessonService = async (lessonId, courseId, sequenceNumber) => {
+const migrateLessonService = async (lessonId, courseId) => {
     try {
         const lesson = await lessonRepository.getById(lessonId);
 
@@ -144,72 +144,82 @@ const migrateLessonService = async (lessonId, courseId, sequenceNumber) => {
                     weekNumber: lesson.weekNumber,
                     text: lesson.text,
                     courseId: courseId,
-                    sequenceNumber: sequenceNumber,
+                    sequenceNumber: lesson.sequenceNumber,
                     status: lesson.status,
                 },
                 transaction
             });
 
-            if (lesson.activity == 'listenAndSpeak' || lesson.activity == 'postListenAndSpeak' || lesson.activity == 'preListenAndSpeak' || lesson.activity == 'watchAndSpeak') {
+            if (['listenAndSpeak', 'postListenAndSpeak', 'preListenAndSpeak', 'watchAndSpeak'].includes(lesson.activity)) {
                 const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonId(lesson.LessonId);
-                for (let i = 0; i < speakActivityQuestionFiles.length; i++) {
-                    await prodSequelize.models.SpeakActivityQuestion.create({
-                        question: speakActivityQuestionFiles[i].question,
-                        mediaFile: speakActivityQuestionFiles[i].mediaFile,
-                        answer: speakActivityQuestionFiles[i].answer,
+
+                await Promise.all(speakActivityQuestionFiles.map(file =>
+                    prodSequelize.models.SpeakActivityQuestion.create({
+                        question: file.question,
+                        mediaFile: file.mediaFile,
+                        answer: file.answer,
                         lessonId: newLesson.LessonId,
-                        questionNumber: speakActivityQuestionFiles[i].questionNumber
-                    }, { transaction });
-                }
-            } else if (lesson.activity == 'mcqs' || lesson.activity == 'preMCQs' || lesson.activity == 'postMCQs') {
+                        questionNumber: file.questionNumber
+                    }, { transaction })
+                ));
+            } else if (['mcqs', 'preMCQs', 'postMCQs'].includes(lesson.activity)) {
                 const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonId(lesson.LessonId);
-                for (let i = 0; i < multipleChoiceQuestions.length; i++) {
+
+                await Promise.all(multipleChoiceQuestions.map(async question => {
                     const newQuestion = await prodSequelize.models.MultipleChoiceQuestion.create({
-                        QuestionType: multipleChoiceQuestions[i].QuestionType,
-                        QuestionText: multipleChoiceQuestions[i].QuestionText,
-                        QuestionImageUrl: multipleChoiceQuestions[i].QuestionImageUrl,
-                        QuestionAudioUrl: multipleChoiceQuestions[i].QuestionAudioUrl,
-                        QuestionNumber: multipleChoiceQuestions[i].QuestionNumber,
+                        QuestionType: question.QuestionType,
+                        QuestionText: question.QuestionText,
+                        QuestionImageUrl: question.QuestionImageUrl,
+                        QuestionAudioUrl: question.QuestionAudioUrl,
+                        QuestionNumber: question.QuestionNumber,
                         LessonId: newLesson.LessonId,
-                        OptionsType: multipleChoiceQuestions[i].OptionsType
+                        OptionsType: question.OptionsType
                     }, { transaction });
 
-                    const multipleChoiceQuestionAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(multipleChoiceQuestions[i].Id);
-                    for (let j = 0; j < multipleChoiceQuestionAnswers.length; j++) {
-                        await prodSequelize.models.MultipleChoiceQuestionAnswer.create({
-                            AnswerText: multipleChoiceQuestionAnswers[j].AnswerText,
-                            AnswerImageUrl: multipleChoiceQuestionAnswers[j].AnswerImageUrl,
-                            AnswerAudioUrl: multipleChoiceQuestionAnswers[j].AnswerAudioUrl,
-                            IsCorrect: multipleChoiceQuestionAnswers[j].IsCorrect,
+                    const multipleChoiceQuestionAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(question.Id);
+
+                    await Promise.all(multipleChoiceQuestionAnswers.map(answer =>
+                        prodSequelize.models.MultipleChoiceQuestionAnswer.create({
+                            AnswerText: answer.AnswerText,
+                            AnswerImageUrl: answer.AnswerImageUrl,
+                            AnswerAudioUrl: answer.AnswerAudioUrl,
+                            IsCorrect: answer.IsCorrect,
                             MultipleChoiceQuestionId: newQuestion.Id,
-                            SequenceNumber: multipleChoiceQuestionAnswers[j].SequenceNumber
-                        }, { transaction });
-                    }
-                }
+                            SequenceNumber: answer.SequenceNumber
+                        }, { transaction })
+                    ));
+                }));
             } else {
                 const documentFiles = await documentFileRepository.getByLessonId(lesson.LessonId);
-                for (let i = 0; i < documentFiles.length; i++) {
-                    await prodSequelize.models.DocumentFile.create({
+
+                await Promise.all(documentFiles.map(file =>
+                    prodSequelize.models.DocumentFile.create({
                         lessonId: newLesson.LessonId,
-                        language: documentFiles[i].language,
-                        image: documentFiles[i].image,
-                        video: documentFiles[i].video,
-                        audio: documentFiles[i].audio,
-                        mediaType: documentFiles[i].mediaType
-                    }, { transaction });
-                }
+                        language: file.language,
+                        image: file.image,
+                        video: file.video,
+                        audio: file.audio,
+                        mediaType: file.mediaType
+                    }, { transaction })
+                ));
             }
+
+            // Commit the transaction after successful operations
             await transaction.commit();
             return newLesson;
+
         } catch (err) {
+            // Rollback the transaction in case of any error
             await transaction.rollback();
             throw err;
         }
+
     } catch (error) {
         error.fileName = 'lessonService.js';
         throw error;
     }
 };
+
 
 
 export default {
