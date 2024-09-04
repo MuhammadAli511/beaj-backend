@@ -160,28 +160,31 @@ const migrateLessonService = async (lessonId, courseId) => {
                 }
             );
 
-            // Handle additional data based on activity type
             if (['listenAndSpeak', 'postListenAndSpeak', 'preListenAndSpeak', 'watchAndSpeak'].includes(lesson.activity)) {
                 const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonId(lesson.LessonId);
 
-                await Promise.all(speakActivityQuestionFiles.map(file =>
-                    prodSequelize.query(
+
+                await Promise.all(speakActivityQuestionFiles.map(file => {
+                    const answerArray = Array.isArray(file.answer) ? file.answer : [file.answer];
+                    const formattedAnswer = `{${answerArray.map(answer => `"${answer}"`).join(',')}}`;
+                    return prodSequelize.query(
                         `INSERT INTO "speakActivityQuestions" 
-                            ("question", "mediaFile", "answer", "lessonId", "questionNumber") 
-                            VALUES (:question, :mediaFile, :answer, :lessonId, :questionNumber)`,
+                                ("question", "mediaFile", "answer", "lessonId", "questionNumber") 
+                                VALUES (:question, :mediaFile, :answer, :lessonId, :questionNumber)`,
                         {
                             replacements: {
                                 question: file.question,
                                 mediaFile: file.mediaFile,
-                                answer: file.answer || null,
+                                answer: formattedAnswer,
                                 lessonId: newLesson[0].LessonId,
                                 questionNumber: file.questionNumber
                             },
                             type: prodSequelize.QueryTypes.INSERT,
                             transaction
                         }
-                    )
-                ));
+                    );
+                }));
+
             } else if (['mcqs', 'preMCQs', 'postMCQs'].includes(lesson.activity)) {
                 const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonId(lesson.LessonId);
 
