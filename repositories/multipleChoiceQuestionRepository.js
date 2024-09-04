@@ -36,7 +36,7 @@ const update = async (id, file, image, questionType, questionText, questionNumbe
         OptionsType: optionsType
     }, {
         where: {
-            id: id
+            Id: id
         }
     });
 };
@@ -44,7 +44,7 @@ const update = async (id, file, image, questionType, questionText, questionNumbe
 const deleteMultipleChoiceQuestion = async (id) => {
     return await MultipleChoiceQuestion.destroy({
         where: {
-            id: id
+            Id: id
         }
     });
 };

@@ -20,24 +20,31 @@ const getAll = async () => {
 };
 
 const getById = async (id) => {
-    const multipleChoiceQuestionAnswer = await MultipleChoiceQuestionAnswer.getById(id);
+    const multipleChoiceQuestionAnswer = await MultipleChoiceQuestionAnswer.findByPk(id);
     return multipleChoiceQuestionAnswer;
 };
 
 const update = async (id, answerText, answerImageUrl, answerAudioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber) => {
-    const multipleChoiceQuestionAnswer = await MultipleChoiceQuestionAnswer.findByIdAndUpdate(id, {
+    return await MultipleChoiceQuestionAnswer.update({
         AnswerText: answerText,
         AnswerImageUrl: answerImageUrl,
         AnswerAudioUrl: answerAudioUrl,
         IsCorrect: isCorrect,
         MultipleChoiceQuestionId: multipleChoiceQuestionId,
         SequenceNumber: sequenceNumber
-    }, { new: true });
-    return multipleChoiceQuestionAnswer;
+    }, {
+        where: {
+            Id: id
+        }
+    });
 };
 
 const deleteMultipleChoiceQuestionAnswer = async (id) => {
-    await MultipleChoiceQuestionAnswer.findByIdAndDelete(id);
+    return await MultipleChoiceQuestionAnswer.destroy({
+        where: {
+            Id: id
+        }
+    });
 };
 
 const getByQuestionId = async (multipleChoiceQuestionId) => {

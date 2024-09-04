@@ -192,9 +192,9 @@ const migrateLessonService = async (lessonId, courseId) => {
                     const [newQuestion] = await prodSequelize.query(
                         `INSERT INTO "MultipleChoiceQuesions" 
                             ("QuestionType", "QuestionText", "QuestionImageUrl", "QuestionAudioUrl", 
-                            "QuestionNumber", "LessonId") 
+                            "QuestionNumber", "LessonId", "OptionsType")
                             VALUES (:QuestionType, :QuestionText, :QuestionImageUrl, :QuestionAudioUrl, 
-                            :QuestionNumber, :LessonId) 
+                            :QuestionNumber, :LessonId, :OptionsType)
                             RETURNING *`,
                         {
                             replacements: {
@@ -204,6 +204,7 @@ const migrateLessonService = async (lessonId, courseId) => {
                                 QuestionAudioUrl: question.QuestionAudioUrl || null,
                                 QuestionNumber: question.QuestionNumber,
                                 LessonId: newLesson[0].LessonId,
+                                OptionsType: question.OptionsType
                             },
                             type: prodSequelize.QueryTypes.INSERT,
                             transaction
