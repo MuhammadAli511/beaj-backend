@@ -37,8 +37,16 @@ WA_QuestionResponses.init({
         type: DataTypes.ARRAY(DataTypes.TEXT),
         allowNull: true,
     },
+    submittedFeedbackText: {
+        type: DataTypes.ARRAY(DataTypes.TEXT),
+        allowNull: true,
+    },
+    submittedFeedbackAudio: {
+        type: DataTypes.ARRAY(DataTypes.TEXT),
+        allowNull: true,
+    },
     correct: {
-        type: DataTypes.BOOLEAN,
+        type: DataTypes.ARRAY(DataTypes.BOOLEAN),
         allowNull: true,
     },
     numberOfTries: {
