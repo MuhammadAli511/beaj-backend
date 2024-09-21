@@ -1,11 +1,16 @@
-// services/speakActivityQuestionService.js
 import azure_blob from '../utils/azureBlobStorage.js';
+import azureAIServices from '../utils/azureAIServices.js';
 import speakActivityQuestionRepository from '../repositories/speakActivityQuestionRepository.js';
 
 const createSpeakActivityQuestionService = async (question, mediaFile, answer, lessonId, questionNumber) => {
     try {
-        const audioUrl = await azure_blob.uploadToBlobStorage(mediaFile);
-        const answerArray = answer.split(",");
+        let audioUrl = null;
+        if (mediaFile) {
+            audioUrl = await azure_blob.uploadToBlobStorage(mediaFile);
+        } else {
+            audioUrl = await azureAIServices.azureTextToSpeechAndUpload(question);
+        }
+        const answerArray = answer.split(",") || [];
         const speakActivityQuestion = await speakActivityQuestionRepository.create(question, audioUrl, answerArray, lessonId, questionNumber);
         return speakActivityQuestion;
     } catch (error) {

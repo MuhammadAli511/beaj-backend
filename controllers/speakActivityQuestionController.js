@@ -3,7 +3,7 @@ import service from '../services/speakActivityQuestionService.js';
 const createSpeakActivityQuestionController = async (req, res, next) => {
     try {
         const { question, answer, lessonId, questionNumber } = req.body;
-        const mediaFile = req.file;
+        const mediaFile = req.file || null;
         await service.createSpeakActivityQuestionService(question, mediaFile, answer, lessonId, questionNumber);
         res.status(200).send({ message: "Question created successfully" });
     } catch (error) {
