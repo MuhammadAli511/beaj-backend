@@ -67,7 +67,7 @@ const deleteLessonService = async (id) => {
         const activity = lesson.activity;
         await lessonRepository.deleteLesson(id);
 
-        if (activity == 'listenAndSpeak' || activity == 'postListenAndSpeak' || activity == 'preListenAndSpeak' || activity == 'watchAndSpeak') {
+        if (activity == 'listenAndSpeak' || activity == 'postListenAndSpeak' || activity == 'preListenAndSpeak' || activity == 'watchAndSpeak' || activity == 'conversationalBot') {
             await speakActivityQuestionRepository.deleteByLessonId(id);
         } else if (activity == 'mcqs' || activity == 'preMCQs' || activity == 'postMCQs') {
             const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonIds(id);
@@ -160,7 +160,7 @@ const migrateLessonService = async (lessonId, courseId) => {
                 }
             );
 
-            if (['listenAndSpeak', 'postListenAndSpeak', 'preListenAndSpeak', 'watchAndSpeak'].includes(lesson.activity)) {
+            if (['listenAndSpeak', 'postListenAndSpeak', 'preListenAndSpeak', 'watchAndSpeak', 'conversationalBot'].includes(lesson.activity)) {
                 const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonId(lesson.LessonId);
 
 
