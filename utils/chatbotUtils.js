@@ -1,35 +1,43 @@
-import axios from 'axios';
-import dotenv from 'dotenv';
+import axios from "axios";
+import dotenv from "dotenv";
+import waUsersMetadataRepository from "../repositories/waUsersMetadataRepository.js";
+import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
+import waUserActivityLogsRepository from "../repositories/waUserActivityLogsRepository.js";
+import waConstantsRepository from "../repositories/waConstantsRepository.js";
+import { mcqsResponse } from "../constants/chatbotConstants.js";
+import lessonRepository from '../repositories/lessonRepository.js';
+import azureBlobStorage from "./azureBlobStorage.js";
 
 dotenv.config();
 
 const whatsappToken = process.env.WHATSAPP_TOKEN;
 const whatsappPhoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
 
-
 const sendMessage = async (to, body) => {
     try {
         await axios.post(
             `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
             {
-                messaging_product: 'whatsapp',
+                messaging_product: "whatsapp",
                 to: to,
                 text: { body: body },
             },
             {
                 headers: {
                     Authorization: `Bearer ${whatsappToken}`,
-                    'Content-Type': 'application/json',
+                    "Content-Type": "application/json",
                 },
             }
         );
     } catch (error) {
-        console.error('Error sending message:', error.response ? error.response.data : error.message);
+        console.error(
+            "Error sending message:",
+            error.response ? error.response.data : error.message
+        );
     }
 };
 
-
-const retrieveAudioURL = async (mediaId) => {
+const retrieveMediaURL = async (mediaId) => {
     const mediaResponse = await axios.get(
         `https://graph.facebook.com/v20.0/${mediaId}`,
         {
@@ -42,7 +50,7 @@ const retrieveAudioURL = async (mediaId) => {
     const audioUrl = mediaResponse.data.url;
 
     const audioResponse = await axios.get(audioUrl, {
-        responseType: 'arraybuffer',
+        responseType: "arraybuffer",
         headers: {
             Authorization: `Bearer ${whatsappToken}`,
         },
@@ -51,12 +59,121 @@ const retrieveAudioURL = async (mediaId) => {
 };
 
 const greeting_message = async (userMobileNumber) => {
-    await sendMessage(userMobileNumber, "Assalam o Alaikum. 👋\nWelcome to your English course! Get ready for fun exercises & practice! 💬");
+    await sendMessage(
+        userMobileNumber,
+        "Assalam o Alaikum. 👋\nWelcome to your English course! Get ready for fun exercises & practice! 💬"
+    );
 };
 
+const createActivityLog = async (
+    phoneNumber,
+    actionType,
+    messageDirection,
+    messageContent,
+    metadata
+) => {
+    const userCurrentProgress = await waUserProgressRepository.getByPhoneNumber(
+        phoneNumber
+    );
+    let courseId = null,
+        lessonId = null,
+        weekNumber = null,
+        dayNumber = null,
+        questionId = null,
+        activityType = null,
+        retryCount = null;
+
+    if (userCurrentProgress) {
+        courseId = userCurrentProgress.currentCourseId || null;
+        lessonId = userCurrentProgress.currentLessonId || null;
+        weekNumber = userCurrentProgress.currentWeek || null;
+        dayNumber = userCurrentProgress.currentDay || null;
+        questionId = userCurrentProgress.questionId || null;
+        activityType = userCurrentProgress.activityType || null;
+        retryCount = userCurrentProgress.retryCounter || null;
+    }
+
+    let finalMessageContent = messageContent;
+
+    if (actionType === "image") {
+        const mediaId = messageContent.image.id;
+        const mediaResponse = await retrieveMediaURL(mediaId);
+        const azureUrl = await azureBlobStorage.uploadToBlobStorage(
+            mediaResponse.data,
+            mediaId
+        );
+        finalMessageContent = azureUrl;
+    } else if (actionType === "audio") {
+        const mediaId = messageContent.audio.id;
+        const mediaResponse = await retrieveMediaURL(mediaId);
+        const azureUrl = await azureBlobStorage.uploadToBlobStorage(
+            mediaResponse.data,
+            mediaId
+        );
+        finalMessageContent = azureUrl;
+    } else if (actionType === "video") {
+        const mediaId = messageContent.video.id;
+        const mediaResponse = await retrieveMediaURL(mediaId);
+        const azureUrl = await azureBlobStorage.uploadToBlobStorage(
+            mediaResponse.data,
+            mediaId
+        );
+        finalMessageContent = azureUrl;
+    } else if (actionType === "text") {
+        finalMessageContent = messageContent;
+    } else if (actionType === "button") {
+        finalMessageContent = messageContent;
+    }
+
+    await waUserActivityLogsRepository.create({
+        phoneNumber: phoneNumber,
+        actionType: actionType,
+        messageDirection: messageDirection,
+        messageContent: messageContent,
+        metadata: metadata,
+        courseId: courseId,
+        lessonId: lessonId,
+        weekNumber: weekNumber,
+        dayNumber: dayNumber,
+        questionId: questionId,
+        activityType: activityType,
+        retryCount: retryCount,
+    });
+};
+
+const extractConstantMessage = async (key) => {
+    const constantMessageObj = await waConstantsRepository.getByKey(key);
+    const constantMessage = constantMessageObj?.dataValues?.constantValue;
+    const formattedMessage = constantMessage.replace(/\\n/g, "\n");
+    return formattedMessage;
+};
+
+const onboarding_message = async (userMobileNumber) => {
+    waUsersMetadataRepository.create({ phoneNumber: userMobileNumber });
+    const startingLesson = await lessonRepository.getNextLesson(94, 4, null, null);
+    await waUserProgressRepository.create({
+        phoneNumber: userMobileNumber,
+        persona: "Teacher",
+        engagement_type: "Trial Course",
+        currentCourseId: getCourseId("Trial Course"),
+        currentWeek: startingLesson.dataValues.weekNumber,
+        currentDay: startingLesson.dataValues.dayNumber,
+        currentLesson_sequence: startingLesson.dataValues.SequenceNumber,
+        activityType: startingLesson.dataValues.activity,
+
+    });
+    await sendMessage(
+        userMobileNumber,
+        await extractConstantMessage("onboarding_first_message")
+    );
+    return;
+};
 
 export {
     sendMessage,
-    retrieveAudioURL,
+    retrieveMediaURL,
     greeting_message,
+    onboarding_message,
+    createActivityLog,
+    extractConstantMessage,
 };

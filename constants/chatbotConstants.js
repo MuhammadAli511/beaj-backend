@@ -1,3 +1,5 @@
+import waConstantsRepository from "../repositories/waConstantsRepository.js";
+
 const introLists = [
     "hello",
     "hi",
@@ -22,6 +24,4 @@ const mcqsResponse = {
     "1232": "See correct answers below:\n\n1. ✅ 'Impression' means: تاثر\n2. ✅ 'Professional' means: پیشہ ور\n3. ✅ Miss Saniha greets her students pleasantly every morning.\n4. ✅ We should stay alert during meetings.\n5. ✅ People often form the first impression of you within seconds.\n6. ✅ Anum is meeting Farah for the first time. She should make eye contact.\n7. ✅ Ali's father has a lot of meetings at his office today. He should leave early for office.\n8. ✅ Which is not right to do in a workplace: going to sleep\n\nKeep working hard!",
 }
 
-const firstMessage = 'I want to start the Beaj English course';
-
-export { introLists, personaDict, mcqsResponse, firstMessage };
+export { introLists, personaDict, mcqsResponse };

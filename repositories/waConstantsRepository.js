@@ -15,10 +15,11 @@ const getAll = async () => {
     return await WA_Constants.findAll();
 };
 
-// Get a constant by key
+// Get a constant by key, return only constantValue
 const getByKey = async (key) => {
     return await WA_Constants.findOne({
-        where: { key: key }
+        where: { key: key },
+        attributes: ['constantValue']
     });
 };
 

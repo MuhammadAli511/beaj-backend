@@ -162,8 +162,6 @@ const migrateLessonService = async (lessonId, courseId) => {
 
             if (['listenAndSpeak', 'postListenAndSpeak', 'preListenAndSpeak', 'watchAndSpeak', 'conversationalBot'].includes(lesson.activity)) {
                 const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonId(lesson.LessonId);
-
-
                 await Promise.all(speakActivityQuestionFiles.map(file => {
                     const answerArray = Array.isArray(file.answer) ? file.answer : [file.answer];
                     const formattedAnswer = `{${answerArray.map(answer => `"${answer}"`).join(',')}}`;

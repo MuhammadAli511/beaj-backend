@@ -71,7 +71,7 @@ const sendMessage = async (to, body) => {
     }
 };
 
-const retrieveAudioURL = async (mediaId) => {
+const retrieveMediaURL = async (mediaId) => {
     const mediaResponse = await axios.get(
         `https://graph.facebook.com/v20.0/${mediaId}`,
         {
@@ -81,15 +81,15 @@ const retrieveAudioURL = async (mediaId) => {
         }
     );
 
-    const audioUrl = mediaResponse.data.url;
+    const mediaoUrl = mediaResponse.data.url;
 
-    const audioResponse = await axios.get(audioUrl, {
+    const finalResponse = await axios.get(mediaoUrl, {
         responseType: 'arraybuffer',
         headers: {
             Authorization: `Bearer ${whatsappToken}`,
         },
     });
-    return audioResponse;
+    return finalResponse;
 };
 
 const sendMediaMessage = async (to, mediaUrl, mediaType) => {
@@ -214,7 +214,7 @@ const audio_feedback_message = async (message, userMobileNumber) => {
     if (message.type === 'audio') {
         try {
             const mediaId = message.audio.id;
-            const audioResponse = await retrieveAudioURL(mediaId);
+            const audioResponse = await retrieveMediaURL(mediaId);
             const audioBuffer = audioResponse.data;
 
             const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
@@ -413,7 +413,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
         } else if (message.type === 'audio') {
             const speakActivityQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(user.dataValues.lesson_id, user.dataValues.question_number);
             const mediaId = message.audio.id;
-            const audioResponse = await retrieveAudioURL(mediaId);
+            const audioResponse = await retrieveMediaURL(mediaId);
             const audioBuffer = audioResponse.data;
             const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
                 audioBuffer,
@@ -494,7 +494,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
                 return;
             }
             const mediaId = message.audio.id;
-            const audioResponse = await retrieveAudioURL(mediaId);
+            const audioResponse = await retrieveMediaURL(mediaId);
             const audioBuffer = audioResponse.data;
             const userAudioFileUrl = await azure_blob.uploadToBlobStorage(audioBuffer, "audioFile.opus");
             const submissionDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -547,7 +547,7 @@ const get_lessons = async (userMobileNumber, user, startingLesson, body, userMes
         // if audio
         else if (message.type === 'audio') {
             const mediaId = message.audio.id;
-            const audioResponse = await retrieveAudioURL(mediaId);
+            const audioResponse = await retrieveMediaURL(mediaId);
             const audioBuffer = audioResponse.data;
             const userAudioFileUrl = await azure_blob.uploadToBlobStorage(audioBuffer, "audioFile.opus");
             const submissionDate = new Date().toISOString().slice(0, 19).replace('T', ' ');

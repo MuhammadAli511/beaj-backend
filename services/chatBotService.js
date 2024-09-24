@@ -6,16 +6,17 @@ import cleanTextForSpeech from "../utils/cleanText.js";
 import azure_blob from "../utils/azureBlobStorage.js";
 import dotenv from 'dotenv';
 import { performance } from 'perf_hooks';
-import audioChatRepository from '../repositories/audioChatsRepository.js';
 import waUsersMetadataRepository from '../repositories/waUsersMetadataRepository.js';
+import audioChatRepository from '../repositories/audioChatsRepository.js';
+import waConstantsRepository from '../repositories/waConstantsRepository.js';
 import lessonRepository from '../repositories/lessonRepository.js';
 import documentFileRepository from '../repositories/documentFileRepository.js';
 import multipleChoiceQuestionRepository from '../repositories/multipleChoiceQuestionRepository.js';
 import multipleChoiceQuestionAnswerRepository from '../repositories/multipleChoiceQuestionAnswerRepository.js';
 import questionResponseRepository from '../repositories/questionResponseRepository.js';
 import speakActivityQuestionRepository from '../repositories/speakActivityQuestionRepository.js';
-import { mcqsResponse, firstMessage } from '../constants/chatbotConstants.js';
-import { sendMessage } from '../utils/chatbotUtils.js';
+import { mcqsResponse } from '../constants/chatbotConstants.js';
+import { sendMessage, onboarding_message, createActivityLog, extractConstantMessage } from '../utils/chatbotUtils.js';
 
 
 dotenv.config();
@@ -58,29 +59,29 @@ const webhookService = async (body, res) => {
             let userMessage;
             console.log('User:', userMobileNumber);
             if (message.type === 'image') {
-                console.log('Message: Image');
+                createActivityLog(userMobileNumber, 'image', 'inbound', message, null);
             } else if (message.type === 'audio') {
-                console.log('Message: Audio');
+                createActivityLog(userMobileNumber, 'audio', 'inbound', message, null);
             } else if (message.type === 'text') {
                 userMessage = message.text?.body.toLowerCase().trim() || "";
                 console.log('Message:', userMessage);
+                createActivityLog(userMobileNumber, 'text', 'inbound', userMessage, null);
             } else if (message.type === 'video') {
-                console.log('Message: Video');
+                createActivityLog(userMobileNumber, 'video', 'inbound', message, null);
             } else if (message.type === 'button') {
                 userMessage = message.button.text;
+                createActivityLog(userMobileNumber, 'button', 'inbound', userMessage, null);
             }
 
             // Check if user exists in the database
             let user = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
 
-            if (!user && userMessage == firstMessage.toLowerCase()) {
-                await waUsersMetadataRepository.create({ phoneNumber: userMobileNumber });
-                await sendMessage(userMobileNumber, "Assalam o Alaikum. 👋\nWelcome to your English course! Get ready for fun exercises & practice! 💬");
+            const onboardingFirstMessage = await extractConstantMessage('onboarding_first_message');
+            if (!user && onboardingFirstMessage.toLowerCase() === userMessage) {
+                await onboarding_message(userMobileNumber);
                 return;
             }
-
         }
-
     } catch (error) {
         console.error('Error in chatBotService:', error);
         error.fileName = 'chatBotService.js';
