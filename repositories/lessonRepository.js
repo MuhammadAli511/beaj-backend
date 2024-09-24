@@ -98,7 +98,8 @@ const getNextLesson = async (courseId, weekNumber, dayNumber, sequenceNumber) =>
             where: {
                 courseId: courseId,
                 weekNumber: weekNumber,
-                dayNumber: minDay
+                dayNumber: minDay,
+                status: 'Active'
             },
             order: [
                 ['SequenceNumber', 'ASC']
@@ -114,6 +115,7 @@ const getNextLesson = async (courseId, weekNumber, dayNumber, sequenceNumber) =>
                 courseId: courseId,
                 weekNumber: weekNumber,
                 dayNumber: dayNumber,
+                status: 'Active',
                 SequenceNumber: {
                     [Sequelize.Op.gt]: sequenceNumber
                 }
@@ -129,6 +131,7 @@ const getNextLesson = async (courseId, weekNumber, dayNumber, sequenceNumber) =>
                 where: {
                     courseId: courseId,
                     weekNumber: weekNumber,
+                    status: 'Active',
                     dayNumber: {
                         [Sequelize.Op.gt]: dayNumber
                     }
@@ -145,6 +148,7 @@ const getNextLesson = async (courseId, weekNumber, dayNumber, sequenceNumber) =>
             nextLesson = await Lesson.findOne({
                 where: {
                     courseId: courseId,
+                    status: 'Active',
                     weekNumber: {
                         [Sequelize.Op.gt]: weekNumber
                     }

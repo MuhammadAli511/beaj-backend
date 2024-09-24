@@ -5,7 +5,8 @@ import waUserProgressRepository from "../repositories/waUserProgressRepository.j
 import waUserActivityLogsRepository from "../repositories/waUserActivityLogsRepository.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import { mcqsResponse } from "../constants/chatbotConstants.js";
-import lessonRepository from '../repositories/lessonRepository.js';
+import lessonRepository from "../repositories/lessonRepository.js";
+import courseRepository from "../repositories/courseRepository.js";
 import azureBlobStorage from "./azureBlobStorage.js";
 
 dotenv.config();
@@ -56,13 +57,6 @@ const retrieveMediaURL = async (mediaId) => {
         },
     });
     return audioResponse;
-};
-
-const greeting_message = async (userMobileNumber) => {
-    await sendMessage(
-        userMobileNumber,
-        "Assalam o Alaikum. 👋\nWelcome to your English course! Get ready for fun exercises & practice! 💬"
-    );
 };
 
 const createActivityLog = async (
@@ -148,23 +142,34 @@ const extractConstantMessage = async (key) => {
     return formattedMessage;
 };
 
-const onboarding_message = async (userMobileNumber) => {
+const sendLessonToUser = async (
+    userMobileNumber,
+    currentUserState,
+    startingLesson,
+    messageType,
+    messageContent
+) => {
+
+};
+
+const onboardingMessage = async (userMobileNumber, startingLesson) => {
     waUsersMetadataRepository.create({ phoneNumber: userMobileNumber });
-    const startingLesson = await lessonRepository.getNextLesson(94, 4, null, null);
     await waUserProgressRepository.create({
         phoneNumber: userMobileNumber,
         persona: "Teacher",
         engagement_type: "Trial Course",
-        currentCourseId: getCourseId("Trial Course"),
+        currentCourseId: await courseRepository.getCourseIdByName(
+            "Trial Course - Teachers"
+        ),
         currentWeek: startingLesson.dataValues.weekNumber,
         currentDay: startingLesson.dataValues.dayNumber,
+        currentLessonId: startingLesson.dataValues.LessonId,
         currentLesson_sequence: startingLesson.dataValues.SequenceNumber,
         activityType: startingLesson.dataValues.activity,
-
     });
     await sendMessage(
         userMobileNumber,
-        await extractConstantMessage("onboarding_first_message")
+        await extractConstantMessage("onboarding_bot_introduction_message")
     );
     return;
 };
@@ -172,8 +177,8 @@ const onboarding_message = async (userMobileNumber) => {
 export {
     sendMessage,
     retrieveMediaURL,
-    greeting_message,
-    onboarding_message,
+    onboardingMessage,
     createActivityLog,
     extractConstantMessage,
+    sendLessonToUser,
 };

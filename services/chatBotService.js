@@ -16,7 +16,7 @@ import multipleChoiceQuestionAnswerRepository from '../repositories/multipleChoi
 import questionResponseRepository from '../repositories/questionResponseRepository.js';
 import speakActivityQuestionRepository from '../repositories/speakActivityQuestionRepository.js';
 import { mcqsResponse } from '../constants/chatbotConstants.js';
-import { sendMessage, onboarding_message, createActivityLog, extractConstantMessage } from '../utils/chatbotUtils.js';
+import { onboardingMessage, createActivityLog, extractConstantMessage, sendLessonToUser } from '../utils/chatbotUtils.js';
 
 
 dotenv.config();
@@ -56,29 +56,41 @@ const webhookService = async (body, res) => {
         ) {
             const message = body.entry[0].changes[0].value.messages[0];
             const userMobileNumber = "+" + message.from;
-            let userMessage;
+            let messageContent;
+            let messageType = message.type;
             console.log('User:', userMobileNumber);
+            console.log('Message Type:', message.type);
             if (message.type === 'image') {
                 createActivityLog(userMobileNumber, 'image', 'inbound', message, null);
+                messageContent = await retrieveMediaURL(message.image.id);
             } else if (message.type === 'audio') {
                 createActivityLog(userMobileNumber, 'audio', 'inbound', message, null);
-            } else if (message.type === 'text') {
-                userMessage = message.text?.body.toLowerCase().trim() || "";
-                console.log('Message:', userMessage);
-                createActivityLog(userMobileNumber, 'text', 'inbound', userMessage, null);
+                messageContent = await retrieveMediaURL(message.audio.id);
             } else if (message.type === 'video') {
                 createActivityLog(userMobileNumber, 'video', 'inbound', message, null);
+                messageContent = await retrieveMediaURL(message.video.id);
+            } else if (message.type === 'text') {
+                createActivityLog(userMobileNumber, 'text', 'inbound', messageContent, null);
+                messageContent = message.text?.body.toLowerCase().trim() || "";
             } else if (message.type === 'button') {
-                userMessage = message.button.text;
-                createActivityLog(userMobileNumber, 'button', 'inbound', userMessage, null);
+                messageContent = message.button.text;
+                createActivityLog(userMobileNumber, 'button', 'inbound', messageContent, null);
             }
 
             // Check if user exists in the database
             let user = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
 
             const onboardingFirstMessage = await extractConstantMessage('onboarding_first_message');
-            if (!user && onboardingFirstMessage.toLowerCase() === userMessage) {
-                await onboarding_message(userMobileNumber);
+            if (!user && onboardingFirstMessage.toLowerCase() === messageContent) {
+                const startingLesson = await lessonRepository.getNextLesson(
+                    await courseRepository.getCourseIdByName("Trial Course - Teachers"),
+                    1,
+                    null,
+                    null
+                );
+                await onboardingMessage(userMobileNumber, startingLesson);
+                let currentUserState = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
+                await sendLessonToUser(userMobileNumber, currentUserState, startingLesson, messageType, messageContent);
                 return;
             }
         }
