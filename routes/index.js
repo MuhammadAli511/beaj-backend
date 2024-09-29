@@ -12,6 +12,9 @@ import multipleChoiceQuestionRoutes from './multipleChoiceQuestionRoutes.js';
 import multipleChoiceQuestionAnswerRoutes from './multipleChoiceQuestionAnswerRoutes.js';
 import chatbotRoutes from './chatbotRoutes.js';
 import waUserRoutes from './waUserRoutes.js';
+import waUserActivityLogsRoutes from './waUserActivityLogsRoutes.js';
+import waUserMetadataRoutes from './waUserMetadataRoutes.js';
+import waConstantsRoutes from './waConstantsRoutes.js';
 
 const router = express.Router();
 
@@ -33,5 +36,8 @@ router.use('/multipleChoiceQuestion', multipleChoiceQuestionRoutes);
 router.use('/multipleChoiceQuestionAnswer', multipleChoiceQuestionAnswerRoutes);
 router.use('/chatbot', chatbotRoutes);
 router.use('/wauser', waUserRoutes);
+router.use('/waUserActivityLogs', waUserActivityLogsRoutes);
+router.use('/waUserMetadata', waUserMetadataRoutes);
+router.use('/waConstants', waConstantsRoutes);
 
 export default router;

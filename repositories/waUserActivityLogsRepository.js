@@ -29,10 +29,19 @@ const deleteById = async (id) => {
     });
 };
 
+const getByPhoneNumber = async (phoneNumber) => {
+    return await WA_UserActivityLogs.findAll({
+        where: {
+            phoneNumber: phoneNumber
+        }
+    });
+};
+
 export default {
     create,
     getAll,
     getById,
     update,
-    deleteById
+    deleteById,
+    getByPhoneNumber
 };

@@ -24,7 +24,7 @@ const whatsappToken = process.env.WHATSAPP_TOKEN;
 const whatsappPhoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
 const whatsappVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN;
 
-let activity_types_to_repeat = ['mcqs', 'watchAndSpeak', 'listenAndSpeak', 'postListenAndSpeak', 'preListenAndSpeak', 'postMCQs', 'preMCQs', 'read', 'conversationalBot'];
+let activity_types_to_repeat = ['mcqs', 'watchAndSpeak', 'listenAndSpeak', 'postListenAndSpeak', 'preListenAndSpeak', 'postMCQs', 'preMCQs', 'read', 'conversationalQuestionsBot'];
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -308,7 +308,7 @@ const sendSpeakActivityQuestion = async (userMobileNumber, user, speakActivityQu
             await sendMessage(userMobileNumber, speakActivityQuestionMessage);
         }
 
-    } else if (activity === 'conversationalBot') { }
+    } else if (activity === 'conversationalQuestionsBot') { }
 };
 
 const get_lessons = async (userMobileNumber, user, startingLesson, body, userMessage, message) => {

@@ -29,7 +29,7 @@ async function uploadToBlobStorage(exact_file, originalName = null) {
             });
         } else {
             await blockBlobClient.upload(exact_file.buffer, exact_file.size, {
-                blobHTTPHeaders: { blobContentType: "application/octet-stream" }
+                blobHTTPHeaders: { blobContentType: exact_file.mimetype }
             });
         }
 

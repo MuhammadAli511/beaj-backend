@@ -4,7 +4,7 @@ import waUsersMetadataRepository from "../repositories/waUsersMetadataRepository
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
 import waUserActivityLogsRepository from "../repositories/waUserActivityLogsRepository.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
-import { mcqsResponse } from "../constants/chatbotConstants.js";
+import documentFileRepository from "../repositories/documentFileRepository.js";
 import lessonRepository from "../repositories/lessonRepository.js";
 import courseRepository from "../repositories/courseRepository.js";
 import azureBlobStorage from "./azureBlobStorage.js";
@@ -13,6 +13,10 @@ dotenv.config();
 
 const whatsappToken = process.env.WHATSAPP_TOKEN;
 const whatsappPhoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 const sendMessage = async (to, body) => {
     try {
@@ -89,7 +93,8 @@ const createActivityLog = async (
 
     let finalMessageContent = messageContent;
 
-    if (actionType === "image") {
+    // Inbound
+    if (actionType === "image" && messageDirection == 'inbound') {
         const mediaId = messageContent.image.id;
         const mediaResponse = await retrieveMediaURL(mediaId);
         const azureUrl = await azureBlobStorage.uploadToBlobStorage(
@@ -97,7 +102,7 @@ const createActivityLog = async (
             mediaId
         );
         finalMessageContent = azureUrl;
-    } else if (actionType === "audio") {
+    } else if (actionType === "audio" && messageDirection == 'inbound') {
         const mediaId = messageContent.audio.id;
         const mediaResponse = await retrieveMediaURL(mediaId);
         const azureUrl = await azureBlobStorage.uploadToBlobStorage(
@@ -105,7 +110,7 @@ const createActivityLog = async (
             mediaId
         );
         finalMessageContent = azureUrl;
-    } else if (actionType === "video") {
+    } else if (actionType === "video" && messageDirection == 'inbound') {
         const mediaId = messageContent.video.id;
         const mediaResponse = await retrieveMediaURL(mediaId);
         const azureUrl = await azureBlobStorage.uploadToBlobStorage(
@@ -113,11 +118,18 @@ const createActivityLog = async (
             mediaId
         );
         finalMessageContent = azureUrl;
-    } else if (actionType === "text") {
+    } else if (actionType === "text" && messageDirection == 'inbound') {
         finalMessageContent = messageContent;
-    } else if (actionType === "button") {
+    } else if (actionType === "button" && messageDirection == 'inbound') {
         finalMessageContent = messageContent;
     }
+
+
+    // Outbound
+    if (messageDirection == 'outbound') {
+        finalMessageContent = messageContent;
+    }
+
 
     await waUserActivityLogsRepository.create({
         phoneNumber: phoneNumber,
@@ -142,6 +154,96 @@ const extractConstantMessage = async (key) => {
     return formattedMessage;
 };
 
+const sendMediaMessage = async (to, mediaUrl, mediaType) => {
+    console.log("To:", to);
+    console.log("Media URL:", mediaUrl);
+    console.log("Media Type:", mediaType);
+    try {
+        if (mediaType == 'video') {
+            await axios.post(
+                `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
+                {
+                    messaging_product: 'whatsapp',
+                    to: to,
+                    type: 'video',
+                    video: { link: mediaUrl },
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${whatsappToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+        } else if (mediaType == 'audio') {
+            await axios.post(
+                `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
+                {
+                    messaging_product: 'whatsapp',
+                    to: to,
+                    type: 'audio',
+                    audio: { link: mediaUrl },
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${whatsappToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+        } else if (mediaType == 'image') {
+            await axios.post(
+                `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
+                {
+                    messaging_product: 'whatsapp',
+                    to: to,
+                    type: 'image',
+                    image: { link: mediaUrl },
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${whatsappToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+        } else {
+            console.error('Invalid media type:', mediaType);
+        }
+    } catch (error) {
+        console.error('Error sending media message:', error.response ? error.response.data : error.message);
+    }
+};
+
+const sendNextLessonTemplateMessage = async (to) => {
+    try {
+        console.log("Phone Number:", to);
+        const response = await axios.post(
+            `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
+            {
+                messaging_product: 'whatsapp',
+                recipient_type: 'individual',
+                to: to,
+                type: 'template',
+                template: {
+                    name: 'next_lesson_emoji',
+                    language: {
+                        code: 'en',
+                    },
+                },
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${whatsappToken}`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+    } catch (error) {
+        console.error('Error sending Next Lesson template message:', error.response ? error.response.data : error.message);
+    }
+};
+
 const sendLessonToUser = async (
     userMobileNumber,
     currentUserState,
@@ -149,7 +251,35 @@ const sendLessonToUser = async (
     messageType,
     messageContent
 ) => {
+    try {
+        const activity = startingLesson.dataValues.activity;
+        if (activity === 'video') {
+            const firstLesson = lessonRepository.isFirstLessonOfDay(startingLesson.dataValues.LessonId);
+            if (firstLesson) {
+                let letStartLessonMessage = "Let's start Lesson #" + startingLesson.dataValues.dayNumber;
+                await sendMessage(userMobileNumber, letStartLessonMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", letStartLessonMessage, null);
+            }
+            // Send lesson message
+            let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias + "🎧";
+            lessonMessage += "\nListen to the dialogue and answer the questions. ";
+            await sendMessage(userMobileNumber, lessonMessage);
+            await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
+            // Send video content
+            const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
+            let videoURL = documentFile[0].dataValues.video;
+            await sendMediaMessage(userMobileNumber, videoURL, 'video');
+            await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
+            await sleep(10000);
+            // Next template for next lesson
+            await sendNextLessonTemplateMessage(userMobileNumber);
+        }
+    } catch (error) {
+        console.error('Error sending lesson to user:', error);
+        error.fileName = 'chatBotService.js';
+        throw error;
+    };
 };
 
 const onboardingMessage = async (userMobileNumber, startingLesson) => {
@@ -166,11 +296,10 @@ const onboardingMessage = async (userMobileNumber, startingLesson) => {
         currentLessonId: startingLesson.dataValues.LessonId,
         currentLesson_sequence: startingLesson.dataValues.SequenceNumber,
         activityType: startingLesson.dataValues.activity,
+        lastUpdated: new Date(),
     });
-    await sendMessage(
-        userMobileNumber,
-        await extractConstantMessage("onboarding_bot_introduction_message")
-    );
+    await sendMessage(userMobileNumber, await extractConstantMessage("onboarding_bot_introduction_message"));
+    await createActivityLog(userMobileNumber, "text", "outbound", await extractConstantMessage("onboarding_bot_introduction_message"), null);
     return;
 };
 

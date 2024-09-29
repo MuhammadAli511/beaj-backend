@@ -15,6 +15,7 @@ import multipleChoiceQuestionRepository from '../repositories/multipleChoiceQues
 import multipleChoiceQuestionAnswerRepository from '../repositories/multipleChoiceQuestionAnswerRepository.js';
 import questionResponseRepository from '../repositories/questionResponseRepository.js';
 import speakActivityQuestionRepository from '../repositories/speakActivityQuestionRepository.js';
+import courseRepository from "../repositories/courseRepository.js";
 import { mcqsResponse } from '../constants/chatbotConstants.js';
 import { onboardingMessage, createActivityLog, extractConstantMessage, sendLessonToUser } from '../utils/chatbotUtils.js';
 
@@ -70,8 +71,8 @@ const webhookService = async (body, res) => {
                 createActivityLog(userMobileNumber, 'video', 'inbound', message, null);
                 messageContent = await retrieveMediaURL(message.video.id);
             } else if (message.type === 'text') {
-                createActivityLog(userMobileNumber, 'text', 'inbound', messageContent, null);
                 messageContent = message.text?.body.toLowerCase().trim() || "";
+                createActivityLog(userMobileNumber, 'text', 'inbound', messageContent, null);
             } else if (message.type === 'button') {
                 messageContent = message.button.text;
                 createActivityLog(userMobileNumber, 'button', 'inbound', messageContent, null);

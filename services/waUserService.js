@@ -9,7 +9,7 @@ const getAllWaUsersService = async () => {
         const responses = await questionResponseRepository.getAllWhatsappUserResponses();
         const waUsers = [];
 
-        const activityTypes = ['listenAndSpeak', 'postListenAndSpeak', 'preListenAndSpeak', 'mcqs', 'preMCQs', 'postMCQs', 'conversationalBot'];
+        const activityTypes = ['listenAndSpeak', 'postListenAndSpeak', 'preListenAndSpeak', 'mcqs', 'preMCQs', 'postMCQs', 'conversationalQuestionsBot'];
         const lessonIdSequence = await lessonRepository.getLessonsArrayForWeek(94, 4);
 
         result.forEach(user => {

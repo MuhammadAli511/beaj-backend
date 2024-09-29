@@ -85,6 +85,25 @@ const getCurrentLesson = async (lesson_id) => {
     });
 };
 
+const isFirstLessonOfDay = async (lessonId) => {
+    const lesson = await Lesson.findByPk(lessonId);
+
+    if (!lesson) {
+        return false;
+    }
+
+    const minSequence = await Lesson.min('SequenceNumber', {
+        where: {
+            courseId: lesson.courseId,
+            weekNumber: lesson.weekNumber,
+            dayNumber: lesson.dayNumber,
+            status: 'Active'
+        }
+    });
+
+    return lesson.SequenceNumber === minSequence;
+};
+
 
 
 const getNextLesson = async (courseId, weekNumber, dayNumber, sequenceNumber) => {
@@ -182,5 +201,6 @@ export default {
     getNextLesson,
     getCurrentLesson,
     getByCourseActivity,
-    getLessonsArrayForWeek
+    getLessonsArrayForWeek,
+    isFirstLessonOfDay
 };
