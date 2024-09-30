@@ -51,6 +51,16 @@ const updateAcceptableMessagesList = async (phoneNumber, acceptableMessages) => 
     });
 };
 
+const updateQuestionNumber = async (phoneNumber, questionNumber) => {
+    return await WA_UserProgress.update({
+        questionNumber: questionNumber,
+        lastUpdated: new Date()
+    }, {
+        where: {
+            phoneNumber: phoneNumber
+        }
+    });
+};
 
 export default {
     create,
@@ -58,5 +68,6 @@ export default {
     getByPhoneNumber,
     update,
     deleteByPhoneNumber,
-    updateAcceptableMessagesList
+    updateAcceptableMessagesList,
+    updateQuestionNumber
 };

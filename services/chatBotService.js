@@ -103,7 +103,7 @@ const webhookService = async (body, res) => {
 
 
             let currentUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
-            if (userMessage.toLowerCase().includes('start next lesson')) {
+            if (messageContent.toLowerCase().includes('start next lesson')) {
                 // Get next lesson to send user
                 const nextLesson = await lessonRepository.getNextLesson(currentUserState.dataValues.currentCourseId, currentUserState.dataValues.currentWeek, currentUserState.dataValues.currentDay, currentUserState.dataValues.currentLesson_sequence);
 
@@ -118,7 +118,7 @@ const webhookService = async (body, res) => {
                 await waLessonsCompletedRepository.endLessonByPhoneNumberAndLessonId(userMobileNumber, currentLesson.dataValues.LessonId);
 
                 // Get acceptable messages for the next question/lesson
-                const acceptableMessagesList = getAcceptableMessagesList(nextLesson.dataValues.activity);
+                const acceptableMessagesList = await getAcceptableMessagesList(nextLesson.dataValues.activity);
 
                 // Update user progress to next lesson
                 await waUserProgressRepository.update(userMobileNumber, nextLesson.dataValues.courseId, nextLesson.dataValues.weekNumber, nextLesson.dataValues.dayNumber, nextLesson.dataValues.LessonId, nextLesson.dataValues.SequenceNumber, nextLesson.dataValues.activity, null, 0, acceptableMessagesList);
@@ -135,7 +135,7 @@ const webhookService = async (body, res) => {
                 const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
 
                 // Get acceptable messages for the next question
-                const acceptableMessagesList = getAcceptableMessagesList(currentLesson.dataValues.activity);
+                const acceptableMessagesList = await getAcceptableMessagesList(currentLesson.dataValues.activity);
 
                 // Update acceptable messages list for the user
                 await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, acceptableMessagesList);

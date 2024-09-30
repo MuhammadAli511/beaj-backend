@@ -7,6 +7,7 @@ import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import documentFileRepository from "../repositories/documentFileRepository.js";
 import lessonRepository from "../repositories/lessonRepository.js";
 import courseRepository from "../repositories/courseRepository.js";
+import speakActivityQuestionRepository from '../repositories/speakActivityQuestionRepository.js';
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import azureBlobStorage from "./azureBlobStorage.js";
 
@@ -302,6 +303,49 @@ const sendLessonToUser = async (
 
             // Next template for next lesson
             await sendNextLessonTemplateMessage(userMobileNumber);
+        } else if (activity === 'listenAndSpeak' || activity === 'preListenAndSpeak' || activity === 'postListenAndSpeak') {
+            if (startingLesson.dataValues.questionNumber === null) {
+                // Lesson Started Record
+                waLessonsCompletedRepository.create({
+                    phoneNumber: userMobileNumber,
+                    lessonId: startingLesson.dataValues.LessonId,
+                    courseId: currentUserState.currentCourseId,
+                    completionStatus: 'Started',
+                    startTime: new Date(),
+                });
+
+                // First lesson of the day custom message
+                const firstLesson = lessonRepository.isFirstLessonOfDay(startingLesson.dataValues.LessonId);
+                if (firstLesson) {
+                    let letStartLessonMessage = "Let's start Lesson #" + startingLesson.dataValues.dayNumber;
+                    await sendMessage(userMobileNumber, letStartLessonMessage);
+                    await createActivityLog(userMobileNumber, "text", "outbound", letStartLessonMessage, null);
+                }
+
+                // Send first Listen and Speak question
+                const firstListenAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(startingLesson.dataValues.LessonId, null);
+
+                // Update question number
+                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstListenAndSpeakQuestion.dataValues.questionNumber);
+
+                // Send question media file
+                await sendMediaMessage(userMobileNumber, firstListenAndSpeakQuestion.dataValues.mediaFile, 'audio');
+                await createActivityLog(userMobileNumber, "audio", "outbound", firstListenAndSpeakQuestion.dataValues.mediaFile, null);
+
+                await sleep(8000);
+
+                // Send question tex
+                await sendMessage(userMobileNumber, firstListenAndSpeakQuestion.dataValues.question);
+                await createActivityLog(userMobileNumber, "text", "outbound", firstListenAndSpeakQuestion.dataValues.question, null);
+
+                return;
+            } else if (messageType === 'audio') {
+                // Get the current Listen and Speak question
+                const currentListenAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(user.dataValues.lesson_id, user.dataValues.question_number);
+
+                // Extract buffer of audio
+                const audioBuffer = audioResponse.data;
+            }
         }
     } catch (error) {
         console.error('Error sending lesson to user:', error);
