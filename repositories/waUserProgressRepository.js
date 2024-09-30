@@ -13,8 +13,19 @@ const getByPhoneNumber = async (phoneNumber) => {
     return await WA_UserProgress.findByPk(phoneNumber);
 };
 
-const update = async (phoneNumber, data) => {
-    return await WA_UserProgress.update(data, {
+const update = async (phoneNumber, currentCourseId, currentWeek, currentDay, currentLessonId, currentLesson_sequence, activityType, questionNumber, retryCounter, acceptableMessages) => {
+    return await WA_UserProgress.update({
+        currentCourseId: currentCourseId,
+        currentWeek: currentWeek,
+        currentDay: currentDay,
+        currentLessonId: currentLessonId,
+        currentLesson_sequence: currentLesson_sequence,
+        activityType: activityType,
+        questionNumber: questionNumber,
+        retryCounter: retryCounter,
+        acceptableMessages: acceptableMessages,
+        lastUpdated: new Date()
+    }, {
         where: {
             phoneNumber: phoneNumber
         }
@@ -29,10 +40,23 @@ const deleteByPhoneNumber = async (phoneNumber) => {
     });
 };
 
+const updateAcceptableMessagesList = async (phoneNumber, acceptableMessages) => {
+    return await WA_UserProgress.update({
+        acceptableMessages: acceptableMessages,
+        lastUpdated: new Date()
+    }, {
+        where: {
+            phoneNumber: phoneNumber
+        }
+    });
+};
+
+
 export default {
     create,
     getAll,
     getByPhoneNumber,
     update,
-    deleteByPhoneNumber
+    deleteByPhoneNumber,
+    updateAcceptableMessagesList
 };

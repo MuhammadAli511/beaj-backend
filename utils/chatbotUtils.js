@@ -7,6 +7,7 @@ import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import documentFileRepository from "../repositories/documentFileRepository.js";
 import lessonRepository from "../repositories/lessonRepository.js";
 import courseRepository from "../repositories/courseRepository.js";
+import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import azureBlobStorage from "./azureBlobStorage.js";
 
 dotenv.config();
@@ -17,6 +18,14 @@ const whatsappPhoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+const getAcceptableMessagesList = async (activityType) => {
+    if (activityType === "listenAndSpeak" || activityType === "postListenAndSpeak" || activityType === "preListenAndSpeak" || activityType === "watchAndSpeak" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "read") {
+        return ["audio"];
+    } else if (activityType === "mcqs" || activityType === "preMCQs" || activityType === "postMCQs") {
+        return ["option a", "option b", "option c", "option d"];
+    }
+};
 
 const sendMessage = async (to, body) => {
     try {
@@ -135,7 +144,7 @@ const createActivityLog = async (
         phoneNumber: phoneNumber,
         actionType: actionType,
         messageDirection: messageDirection,
-        messageContent: messageContent,
+        messageContent: [finalMessageContent],
         metadata: metadata,
         courseId: courseId,
         lessonId: lessonId,
@@ -254,14 +263,25 @@ const sendLessonToUser = async (
     try {
         const activity = startingLesson.dataValues.activity;
         if (activity === 'video') {
+            // Lesson Started Record
+            waLessonsCompletedRepository.create({
+                phoneNumber: userMobileNumber,
+                lessonId: startingLesson.dataValues.LessonId,
+                courseId: currentUserState.currentCourseId,
+                completionStatus: 'Started',
+                startTime: new Date(),
+            });
+
+            // First lesson of the day custom message
             const firstLesson = lessonRepository.isFirstLessonOfDay(startingLesson.dataValues.LessonId);
             if (firstLesson) {
                 let letStartLessonMessage = "Let's start Lesson #" + startingLesson.dataValues.dayNumber;
                 await sendMessage(userMobileNumber, letStartLessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", letStartLessonMessage, null);
             }
+
             // Send lesson message
-            let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias + "🎧";
+            let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
             lessonMessage += "\nListen to the dialogue and answer the questions. ";
             await sendMessage(userMobileNumber, lessonMessage);
             await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
@@ -270,8 +290,16 @@ const sendLessonToUser = async (
             const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
             let videoURL = documentFile[0].dataValues.video;
             await sendMediaMessage(userMobileNumber, videoURL, 'video');
+
+            // Activity Logging
             await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
+
+            // Update acceptable messages list for the user
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next lesson"]);
+
+            // Sleep
             await sleep(10000);
+
             // Next template for next lesson
             await sendNextLessonTemplateMessage(userMobileNumber);
         }
@@ -310,4 +338,5 @@ export {
     createActivityLog,
     extractConstantMessage,
     sendLessonToUser,
+    getAcceptableMessagesList,
 };

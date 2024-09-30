@@ -22,7 +22,7 @@ WA_UserActivityLogs.init({
         allowNull: true,
     },
     messageContent: {
-        type: DataTypes.TEXT,
+        type: DataTypes.ARRAY(DataTypes.TEXT),
         allowNull: true,
     },
     courseId: {

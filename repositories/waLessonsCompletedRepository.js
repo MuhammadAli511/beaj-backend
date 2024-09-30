@@ -29,10 +29,23 @@ const deleteById = async (id) => {
     });
 };
 
+const endLessonByPhoneNumberAndLessonId = async (phoneNumber, lessonId) => {
+    return await WA_LessonsCompleted.update({
+        completionStatus: "Completed",
+        endTime: new Date()
+    }, {
+        where: {
+            phoneNumber: phoneNumber,
+            lessonId: lessonId
+        }
+    });
+};
+
 export default {
     create,
     getAll,
     getById,
     update,
-    deleteById
+    deleteById,
+    endLessonByPhoneNumberAndLessonId
 };

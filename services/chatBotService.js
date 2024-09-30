@@ -17,7 +17,9 @@ import questionResponseRepository from '../repositories/questionResponseReposito
 import speakActivityQuestionRepository from '../repositories/speakActivityQuestionRepository.js';
 import courseRepository from "../repositories/courseRepository.js";
 import { mcqsResponse } from '../constants/chatbotConstants.js';
-import { onboardingMessage, createActivityLog, extractConstantMessage, sendLessonToUser } from '../utils/chatbotUtils.js';
+import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
+import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
+import { onboardingMessage, createActivityLog, extractConstantMessage, sendLessonToUser, getAcceptableMessagesList } from '../utils/chatbotUtils.js';
 
 
 dotenv.config();
@@ -72,7 +74,7 @@ const webhookService = async (body, res) => {
                 messageContent = await retrieveMediaURL(message.video.id);
             } else if (message.type === 'text') {
                 messageContent = message.text?.body.toLowerCase().trim() || "";
-                createActivityLog(userMobileNumber, 'text', 'inbound', messageContent, null);
+                createActivityLog(userMobileNumber, 'text', 'inbound', message.text?.body, null);
             } else if (message.type === 'button') {
                 messageContent = message.button.text;
                 createActivityLog(userMobileNumber, 'button', 'inbound', messageContent, null);
@@ -90,8 +92,56 @@ const webhookService = async (body, res) => {
                     null
                 );
                 await onboardingMessage(userMobileNumber, startingLesson);
-                let currentUserState = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
+                let currentUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
                 await sendLessonToUser(userMobileNumber, currentUserState, startingLesson, messageType, messageContent);
+                return;
+            }
+
+
+            // TODO: If user exists add a acceptable messages checking mechanism here
+
+
+
+            let currentUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
+            if (userMessage.toLowerCase().includes('start next lesson')) {
+                // Get next lesson to send user
+                const nextLesson = await lessonRepository.getNextLesson(currentUserState.dataValues.currentCourseId, currentUserState.dataValues.currentWeek, currentUserState.dataValues.currentDay, currentUserState.dataValues.currentLesson_sequence);
+
+                // Course is completed
+                if (nextLesson === null) {
+                    await sendMessage(userMobileNumber, '❗️❗️🎉 CONGRATULATIONS 🎉❗️❗️\n 🌟 You have successfully completed the course! 🌟 \n Please contact your group admin to receive your certificate. 📜💬');
+                    return;
+                }
+
+                // Mark previous lesson as completed
+                const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
+                await waLessonsCompletedRepository.endLessonByPhoneNumberAndLessonId(userMobileNumber, currentLesson.dataValues.LessonId);
+
+                // Get acceptable messages for the next question/lesson
+                const acceptableMessagesList = getAcceptableMessagesList(nextLesson.dataValues.activity);
+
+                // Update user progress to next lesson
+                await waUserProgressRepository.update(userMobileNumber, nextLesson.dataValues.courseId, nextLesson.dataValues.weekNumber, nextLesson.dataValues.dayNumber, nextLesson.dataValues.LessonId, nextLesson.dataValues.SequenceNumber, nextLesson.dataValues.activity, null, 0, acceptableMessagesList);
+
+                // Send next lesson to user
+                await sendLessonToUser(userMobileNumber, currentUserState, nextLesson, messageType, messageContent);
+                return;
+            }
+
+
+
+            if (currentUserState.dataValues.activityType && activity_types_to_repeat.includes(currentUserState.dataValues.activityType)) {
+                // Get the current lesson for next question
+                const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
+
+                // Get acceptable messages for the next question
+                const acceptableMessagesList = getAcceptableMessagesList(currentLesson.dataValues.activity);
+
+                // Update acceptable messages list for the user
+                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, acceptableMessagesList);
+
+                // Update user progress to next question
+                await sendLessonToUser(userMobileNumber, currentUserState, currentLesson, messageType, messageContent);
                 return;
             }
         }
