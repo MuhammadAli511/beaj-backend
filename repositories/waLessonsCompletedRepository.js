@@ -1,7 +1,13 @@
 import WA_LessonsCompleted from '../models/WA_LessonsCompleted.js';
 
-const create = async (data) => {
-    const lessonCompleted = new WA_LessonsCompleted(data);
+const create = async (phoneNumber, lessonId, courseId, completionStatus, startTime) => {
+    const lessonCompleted = new WA_LessonsCompleted({
+        phoneNumber: phoneNumber,
+        lessonId: lessonId,
+        courseId: courseId,
+        completionStatus: completionStatus,
+        startTime: startTime
+    });
     return await lessonCompleted.save();
 };
 

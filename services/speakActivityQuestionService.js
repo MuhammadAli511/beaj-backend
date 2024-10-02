@@ -42,7 +42,8 @@ const getSpeakActivityQuestionByIdService = async (id) => {
 const updateSpeakActivityQuestionService = async (id, question, mediaFile, answer, lessonId, questionNumber) => {
     try {
         const audioUrl = await azure_blob.uploadToBlobStorage(mediaFile);
-        const speakActivityQuestion = await speakActivityQuestionRepository.update(id, question, audioUrl, answer, lessonId, questionNumber);
+        const answerArray = answer.split(",") || [];
+        const speakActivityQuestion = await speakActivityQuestionRepository.update(id, question, audioUrl, answerArray, lessonId, questionNumber);
         return speakActivityQuestion;
     } catch (error) {
         error.fileName = 'speakActivityQuestionService.js';

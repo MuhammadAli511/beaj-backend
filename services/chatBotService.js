@@ -19,13 +19,15 @@ import courseRepository from "../repositories/courseRepository.js";
 import { mcqsResponse } from '../constants/chatbotConstants.js';
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
-import { onboardingMessage, createActivityLog, extractConstantMessage, sendLessonToUser, getAcceptableMessagesList } from '../utils/chatbotUtils.js';
+import { onboardingMessage, createActivityLog, extractConstantMessage, retrieveMediaURL, sendLessonToUser, getAcceptableMessagesList } from '../utils/chatbotUtils.js';
 
 
 dotenv.config();
 const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
 const openai = new OpenAI(process.env.OPENAI_API_KEY);
 const whatsappVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN;
+
+let activity_types_to_repeat = ['mcqs', 'watchAndSpeak', 'listenAndSpeak', 'postListenAndSpeak', 'preListenAndSpeak', 'postMCQs', 'preMCQs', 'read', 'conversationalQuestionsBot', 'conversationalMonologueBot'];
 
 
 const verifyWebhookService = async (req, res) => {
@@ -103,7 +105,7 @@ const webhookService = async (body, res) => {
 
 
             let currentUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
-            if (messageContent.toLowerCase().includes('start next lesson')) {
+            if (message.type === 'text' && messageContent.toLowerCase().includes('start next lesson')) {
                 // Get next lesson to send user
                 const nextLesson = await lessonRepository.getNextLesson(currentUserState.dataValues.currentCourseId, currentUserState.dataValues.currentWeek, currentUserState.dataValues.currentDay, currentUserState.dataValues.currentLesson_sequence);
 
