@@ -124,9 +124,10 @@ const webhookService = async (body, res) => {
 
                 // Update user progress to next lesson
                 await waUserProgressRepository.update(userMobileNumber, nextLesson.dataValues.courseId, nextLesson.dataValues.weekNumber, nextLesson.dataValues.dayNumber, nextLesson.dataValues.LessonId, nextLesson.dataValues.SequenceNumber, nextLesson.dataValues.activity, null, 0, acceptableMessagesList);
+                const latestUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
 
                 // Send next lesson to user
-                await sendLessonToUser(userMobileNumber, currentUserState, nextLesson, messageType, messageContent);
+                await sendLessonToUser(userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
                 return;
             }
 

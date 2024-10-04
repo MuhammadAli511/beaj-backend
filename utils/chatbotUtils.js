@@ -7,6 +7,8 @@ import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import documentFileRepository from "../repositories/documentFileRepository.js";
 import lessonRepository from "../repositories/lessonRepository.js";
 import courseRepository from "../repositories/courseRepository.js";
+import multipleChoiceQuestionRepository from "../repositories/multipleChoiceQuestionRepository.js";
+import multipleChoiceQuestionAnswerRepository from "../repositories/multipleChoiceQuestionAnswerRepository.js";
 import speakActivityQuestionRepository from '../repositories/speakActivityQuestionRepository.js';
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRepository.js";
@@ -229,7 +231,6 @@ const sendMediaMessage = async (to, mediaUrl, mediaType) => {
 
 const sendNextLessonTemplateMessage = async (to) => {
     try {
-        console.log("Phone Number:", to);
         const response = await axios.post(
             `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
             {
@@ -239,6 +240,34 @@ const sendNextLessonTemplateMessage = async (to) => {
                 type: 'template',
                 template: {
                     name: 'next_lesson_emoji',
+                    language: {
+                        code: 'en',
+                    },
+                },
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${whatsappToken}`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+    } catch (error) {
+        console.error('Error sending Next Lesson template message:', error.response ? error.response.data : error.message);
+    }
+};
+
+const sendMCQTemplateMessage = async (to, template_id) => {
+    try {
+        const response = await axios.post(
+            `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
+            {
+                messaging_product: 'whatsapp',
+                recipient_type: 'individual',
+                to: to,
+                type: 'template',
+                template: {
+                    name: template_id,
                     language: {
                         code: 'en',
                     },
@@ -307,7 +336,7 @@ const sendLessonToUser = async (
             await sendNextLessonTemplateMessage(userMobileNumber);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start next lesson", null);
         }
-        else if (activity === 'listenAndSpeak' || activity === 'preListenAndSpeak' || activity === 'postListenAndSpeak') {
+        else if (activity == 'listenAndSpeak' || activity == 'preListenAndSpeak' || activity == 'postListenAndSpeak') {
             if (currentUserState.dataValues.questionNumber === null) {
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
@@ -511,6 +540,159 @@ const sendLessonToUser = async (
             // Next template for next lesson
             await sendNextLessonTemplateMessage(userMobileNumber);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start next lesson", null);
+        }
+        else if (activity == 'mcqs' || activity == 'postMCQs' || activity == 'preMCQs') {
+            if (currentUserState.dataValues.questionNumber === null) {
+                // Lesson Started Record
+                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
+
+                // First lesson of the day custom message
+                // const firstLesson = await lessonRepository.isFirstLessonOfDay(currentUserState.dataValues.currentLessonId);
+                // if (firstLesson) {
+                //     let letStartLessonMessage = "Let's start Lesson #" + currentUserState.dataValues.currentDay;
+                //     await sendMessage(userMobileNumber, letStartLessonMessage);
+                //     await createActivityLog(userMobileNumber, "text", "outbound", letStartLessonMessage, null);
+                // }
+
+                // Send first MCQs question
+                const firstMCQsQuestion = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, null);
+
+                // Update question number
+                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstMCQsQuestion.dataValues.QuestionNumber);
+
+                // Send question as mcq template where templateId is currentLessonId_QuestionNumber
+                await sendMCQTemplateMessage(userMobileNumber, `${currentUserState.dataValues.currentLessonId}_${firstMCQsQuestion.dataValues.QuestionNumber}`);
+                const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(firstMCQsQuestion.dataValues.Id);
+                let question = firstMCQsQuestion.dataValues.QuestionText;
+                let message = question + "\n";
+                for (let i = 0; i < mcqAnswers.length; i++) {
+                    message += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
+                }
+                await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+
+                return;
+            } else {
+                const currentMCQsQuestion = await multipleChoiceQuestionRepository.getCurrentMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+
+                const originalAnswer = messageContent;
+                const userAnswer = messageContent.toLowerCase();
+
+                const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(currentMCQsQuestion.dataValues.Id);
+
+                let isCorrectAnswer = false;
+                for (let i = 0; i < mcqAnswers.length; i++) {
+                    if (mcqAnswers[i].dataValues.IsCorrect === true && userAnswer === mcqAnswers[i].dataValues.AnswerText.toLowerCase()) {
+                        isCorrectAnswer = true;
+                        break;
+                    }
+                }
+
+                const submissionDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+                await waQuestionResponsesRepository.create(
+                    userMobileNumber,
+                    currentUserState.dataValues.currentLessonId,
+                    currentMCQsQuestion.dataValues.Id,
+                    activity,
+                    startingLesson.dataValues.activityAlias,
+                    [originalAnswer],
+                    null,
+                    null,
+                    null,
+                    null,
+                    [isCorrectAnswer],
+                    1,
+                    submissionDate
+                );
+
+                if (isCorrectAnswer) {
+                    await sendMessage(userMobileNumber, "✅ Great!");
+                    await createActivityLog(userMobileNumber, "text", "outbound", "✅ Great!", null);
+                } else {
+                    // Send correct here in mesassge like ❌ The correct answer is ___.
+                    let correctAnswer = "❌ The correct answer is ";
+                    for (let i = 0; i < mcqAnswers.length; i++) {
+                        if (mcqAnswers[i].dataValues.IsCorrect === true) {
+                            correctAnswer += mcqAnswers[i].dataValues.AnswerText;
+                        }
+                    }
+                    await sendMessage(userMobileNumber, correctAnswer);
+                    await createActivityLog(userMobileNumber, "text", "outbound", correctAnswer, null);
+                }
+
+                const nextMCQsQuestion = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                if (nextMCQsQuestion) {
+                    await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextMCQsQuestion.dataValues.QuestionNumber);
+                    await sendMCQTemplateMessage(userMobileNumber, `${currentUserState.dataValues.currentLessonId}_${nextMCQsQuestion.dataValues.QuestionNumber}`);
+                    const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(nextMCQsQuestion.dataValues.Id);
+                    let question = nextMCQsQuestion.dataValues.QuestionText;
+                    let message = question + "\n";
+                    for (let i = 0; i < mcqAnswers.length; i++) {
+                        message += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
+                    }
+                    await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+                } else {
+                    const totalScore = await waQuestionResponsesRepository.getTotalScore(userMobileNumber, currentUserState.dataValues.currentLessonId);
+                    const totalQuestions = await waQuestionResponsesRepository.getTotalQuestions(userMobileNumber, currentUserState.dataValues.currentLessonId);
+                    const scorePercentage = (totalScore / totalQuestions) * 100;
+                    let message = "❗️ RESULT ❗️\nYou scored " + totalScore + " out of " + totalQuestions + ".";
+                    if (scorePercentage >= 0 && scorePercentage <= 60) {
+                        message += "\nGood Effort! 👍🏽";
+                    } else if (scorePercentage >= 61 && scorePercentage <= 79) {
+                        message += "\nWell done! 🌟";
+                    } else if (scorePercentage >= 80) {
+                        message += "\nExcellent 🎉";
+                    }
+                    await sendMessage(userMobileNumber, message);
+                    await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+
+                    // Update acceptable messages list for the user
+                    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next lesson"]);
+
+                    // Sleep
+                    await sleep(2000);
+
+                    // Check if the lesson is the last lesson of the day
+                    // const lastLesson = await lessonRepository.isLastLessonOfDay(currentUserState.dataValues.currentLessonId);
+                    // if (lastLesson) {
+                    //     const totalLessons = await lessonRepository.getTotalDaysInCourse(currentUserState.currentCourseId);
+                    //     let endingMessage = "Lesson Completed 👏🏽\nYou have completed " + currentUserState.dataValues.currentDay + " out of " + totalLessons + " lessons! ⭐️";
+                    //     await sendMessage(userMobileNumber, endingMessage);
+                    //     await createActivityLog(userMobileNumber, "text", "outbound", endingMessage, null);
+                    // }
+
+                    // Next template for next lesson
+                    await sendNextLessonTemplateMessage(userMobileNumber);
+                    await createActivityLog(userMobileNumber, "template", "outbound", "Start next lesson", null);
+                }
+            }
+        }
+        else if (activity == 'watchAndSpeak') {
+            if (currentUserState.dataValues.questionNumber === null) {
+                // Lesson Started Record
+                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
+
+                // First lesson of the day custom message
+                // const firstLesson = await lessonRepository.isFirstLessonOfDay(currentUserState.dataValues.currentLessonId);
+                // if (firstLesson) {
+                //     let letStartLessonMessage = "Let's start Lesson #" + currentUserState.dataValues.currentDay;
+                //     await sendMessage(userMobileNumber, letStartLessonMessage);
+                //     await createActivityLog(userMobileNumber, "text", "outbound", letStartLessonMessage, null);
+                // }
+
+                // Send first Listen and Speak question
+                const firstWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
+
+                // Update question number
+                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.questionNumber);
+
+                // Send question media file
+                await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
+                await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
+                return;
+            } else if (messageType === 'audio') {
+
+            }
         }
     } catch (error) {
         console.error('Error sending lesson to user:', error);
