@@ -92,17 +92,66 @@ const isFirstLessonOfDay = async (lessonId) => {
         return false;
     }
 
-    const minSequence = await Lesson.min('SequenceNumber', {
+    const firstLessonOfDay = await Lesson.findOne({
         where: {
             courseId: lesson.courseId,
             weekNumber: lesson.weekNumber,
             dayNumber: lesson.dayNumber,
             status: 'Active'
+        },
+        order: [['SequenceNumber', 'ASC']],
+        limit: 1
+    });
+
+    return firstLessonOfDay && firstLessonOfDay.LessonId === lesson.LessonId;
+};
+
+
+const isLastLessonOfDay = async (lessonId) => {
+    const lesson = await Lesson.findByPk(lessonId);
+
+    if (!lesson) {
+        return false;
+    }
+
+    const lastLessonOfDay = await Lesson.findOne({
+        where: {
+            courseId: lesson.courseId,
+            weekNumber: lesson.weekNumber,
+            dayNumber: lesson.dayNumber,
+            status: 'Active'
+        },
+        order: [['SequenceNumber', 'DESC']],
+        limit: 1
+    });
+
+    return lastLessonOfDay && lastLessonOfDay.LessonId === lesson.LessonId;
+};
+
+
+const getTotalDaysInCourse = async (courseId) => {
+    const maxWeekNumber = await Lesson.max('weekNumber', {
+        where: {
+            courseId: courseId
         }
     });
 
-    return lesson.SequenceNumber === minSequence;
+    let totalDays = 0;
+
+    for (let week = 1; week <= maxWeekNumber; week++) {
+        const maxDayNumberInWeek = await Lesson.max('dayNumber', {
+            where: {
+                courseId: courseId,
+                weekNumber: week
+            }
+        });
+        totalDays += maxDayNumberInWeek || 0;
+    }
+
+    return totalDays;
 };
+
+
 
 
 
@@ -202,5 +251,7 @@ export default {
     getCurrentLesson,
     getByCourseActivity,
     getLessonsArrayForWeek,
-    isFirstLessonOfDay
+    isFirstLessonOfDay,
+    isLastLessonOfDay,
+    getTotalDaysInCourse
 };

@@ -9,6 +9,7 @@ import lessonRepository from "../repositories/lessonRepository.js";
 import courseRepository from "../repositories/courseRepository.js";
 import speakActivityQuestionRepository from '../repositories/speakActivityQuestionRepository.js';
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
+import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRepository.js";
 import azureBlobStorage from "./azureBlobStorage.js";
 import azureAIServices from '../utils/azureAIServices.js';
 
@@ -269,12 +270,12 @@ const sendLessonToUser = async (
             await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date());
 
             // First lesson of the day custom message
-            const firstLesson = await lessonRepository.isFirstLessonOfDay(currentUserState.dataValues.currentLessonId);
-            if (firstLesson) {
-                let letStartLessonMessage = "Let's start Lesson #" + currentUserState.dataValues.currentDay;
-                await sendMessage(userMobileNumber, letStartLessonMessage);
-                await createActivityLog(userMobileNumber, "text", "outbound", letStartLessonMessage, null);
-            }
+            // const firstLesson = await lessonRepository.isFirstLessonOfDay(currentUserState.dataValues.currentLessonId);
+            // if (firstLesson) {
+            //     let letStartLessonMessage = "Let's start Lesson #" + currentUserState.dataValues.currentDay;
+            //     await sendMessage(userMobileNumber, letStartLessonMessage);
+            //     await createActivityLog(userMobileNumber, "text", "outbound", letStartLessonMessage, null);
+            // }
 
             // Send lesson message
             let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
@@ -286,8 +287,6 @@ const sendLessonToUser = async (
             const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
             let videoURL = documentFile[0].dataValues.video;
             await sendMediaMessage(userMobileNumber, videoURL, 'video');
-
-            // Activity Logging
             await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
 
             // Update acceptable messages list for the user
@@ -296,21 +295,30 @@ const sendLessonToUser = async (
             // Sleep
             await sleep(10000);
 
+            // const lastLesson = await lessonRepository.isLastLessonOfDay(currentUserState.dataValues.currentLessonId);
+            // if (lastLesson) {
+            //     const totalLessons = await lessonRepository.getTotalDaysInCourse(currentUserState.currentCourseId);
+            //     let endingMessage = "Lesson Completed 👏🏽\nYou have completed " + currentUserState.dataValues.currentDay + " out of " + totalLessons + " lessons! ⭐️";
+            //     await sendMessage(userMobileNumber, endingMessage);
+            //     await createActivityLog(userMobileNumber, "text", "outbound", endingMessage, null);
+            // }
+
             // Next template for next lesson
             await sendNextLessonTemplateMessage(userMobileNumber);
-        } else if (activity === 'listenAndSpeak' || activity === 'preListenAndSpeak' || activity === 'postListenAndSpeak') {
+            await createActivityLog(userMobileNumber, "template", "outbound", "Start next lesson", null);
+        }
+        else if (activity === 'listenAndSpeak' || activity === 'preListenAndSpeak' || activity === 'postListenAndSpeak') {
             if (currentUserState.dataValues.questionNumber === null) {
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
 
                 // First lesson of the day custom message
-                const firstLesson = await lessonRepository.isFirstLessonOfDay(currentUserState.dataValues.currentLessonId);
-                console.log("First Lesson:", firstLesson);
-                if (firstLesson) {
-                    let letStartLessonMessage = "Let's start Lesson #" + currentUserState.dataValues.currentDay;
-                    await sendMessage(userMobileNumber, letStartLessonMessage);
-                    await createActivityLog(userMobileNumber, "text", "outbound", letStartLessonMessage, null);
-                }
+                // const firstLesson = await lessonRepository.isFirstLessonOfDay(currentUserState.dataValues.currentLessonId);
+                // if (firstLesson) {
+                //     let letStartLessonMessage = "Let's start Lesson #" + currentUserState.dataValues.currentDay;
+                //     await sendMessage(userMobileNumber, letStartLessonMessage);
+                //     await createActivityLog(userMobileNumber, "text", "outbound", letStartLessonMessage, null);
+                // }
 
                 // Send first Listen and Speak question
                 const firstListenAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
@@ -337,7 +345,7 @@ const sendLessonToUser = async (
                     const answersArray = currentListenAndSpeakQuestion.dataValues.answer;
                     let userAnswerIsCorrect = false;
                     for (let i = 0; i < answersArray.length; i++) {
-                        if (transcription.toLowerCase().includes(answersArray[i].toLowerCase())) {
+                        if (recognizedText.toLowerCase().includes(answersArray[i].toLowerCase())) {
                             userAnswerIsCorrect = true;
                             break;
                         }
@@ -345,15 +353,164 @@ const sendLessonToUser = async (
                     if (!userAnswerIsCorrect) {
                         userAnswerIsCorrect = false;
                     }
-                    if (userAnswerIsCorrect) {
-                        await sendMessage(userMobileNumber, "✅ Great!");
+                    const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, "audioFile.opus");
+                    const submissionDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+                    const retryCounter = currentUserState.dataValues.retryCounter;
+                    if (retryCounter == 0 || retryCounter == null) {
+                        await waUserProgressRepository.updateRetryCounter(userMobileNumber, 1);
+                        await waQuestionResponsesRepository.create(
+                            userMobileNumber,
+                            currentUserState.dataValues.currentLessonId,
+                            currentListenAndSpeakQuestion.dataValues.id,
+                            activity,
+                            startingLesson.dataValues.activityAlias,
+                            [recognizedText],
+                            [userAudioFileUrl],
+                            null,
+                            null,
+                            null,
+                            [userAnswerIsCorrect],
+                            retryCounter,
+                            submissionDate
+                        );
                     } else {
-                        await sendMessage(userMobileNumber, "❌ Try again");
+                        await waQuestionResponsesRepository.update(
+                            userMobileNumber,
+                            currentUserState.dataValues.currentLessonId,
+                            currentListenAndSpeakQuestion.dataValues.id,
+                            activity,
+                            startingLesson.dataValues.activityAlias,
+                            recognizedText,
+                            userAudioFileUrl,
+                            null,
+                            null,
+                            null,
+                            userAnswerIsCorrect,
+                            retryCounter,
+                            submissionDate
+                        );
+                    }
+                    if (userAnswerIsCorrect) {
+                        await waUserProgressRepository.updateRetryCounter(userMobileNumber, 0);
+                        await sendMessage(userMobileNumber, "✅ Great!");
+                        await createActivityLog(userMobileNumber, "text", "outbound", "✅ Great!", null);
+                    } else {
+                        if (retryCounter !== 2) {
+                            await waUserProgressRepository.updateRetryCounter(userMobileNumber, currentUserState.dataValues.retryCounter + 1);
+                            await sendMessage(userMobileNumber, "❌ Try again");
+                            await createActivityLog(userMobileNumber, "text", "outbound", "❌ Try again", null);
+                            return;
+                        } else if (retryCounter == 2) {
+                            await waUserProgressRepository.updateRetryCounter(userMobileNumber, 0);
+                            await sendMessage(userMobileNumber, "❌ The correct answer is: " + answersArray[0]);
+                            await createActivityLog(userMobileNumber, "text", "outbound", "❌ The correct answer is: " + answersArray[0], null);
+                        }
+                    }
+                    const nextListenAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                    if (nextListenAndSpeakQuestion) {
+                        await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextListenAndSpeakQuestion.dataValues.questionNumber);
+                        await sendMediaMessage(userMobileNumber, nextListenAndSpeakQuestion.dataValues.mediaFile, 'audio');
+                        await createActivityLog(userMobileNumber, "audio", "outbound", nextListenAndSpeakQuestion.dataValues.mediaFile, null);
+                        await sleep(4000);
+                        await sendMessage(userMobileNumber, nextListenAndSpeakQuestion.dataValues.question);
+                        await createActivityLog(userMobileNumber, "text", "outbound", nextListenAndSpeakQuestion.dataValues.question, null);
+                    } else {
+                        const totalScore = await waQuestionResponsesRepository.getTotalScore(userMobileNumber, currentUserState.dataValues.currentLessonId);
+                        const totalQuestions = await waQuestionResponsesRepository.getTotalQuestions(userMobileNumber, currentUserState.dataValues.currentLessonId);
+                        const scorePercentage = (totalScore / totalQuestions) * 100;
+                        let message = "❗️ RESULT ❗️\nYou scored " + totalScore + " out of " + totalQuestions + ".";
+                        if (scorePercentage >= 0 && scorePercentage <= 60) {
+                            message += "\nGood Effort! 👍🏽";
+                        } else if (scorePercentage >= 61 && scorePercentage <= 79) {
+                            message += "\nWell done! 🌟";
+                        } else if (scorePercentage >= 80) {
+                            message += "\nExcellent 🎉";
+                        }
+                        await sendMessage(userMobileNumber, message);
+                        await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+
+                        // Update acceptable messages list for the user
+                        await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next lesson"]);
+
+                        // Sleep
+                        await sleep(2000);
+
+                        // Check if the lesson is the last lesson of the day
+                        // const lastLesson = await lessonRepository.isLastLessonOfDay(currentUserState.dataValues.currentLessonId);
+                        // if (lastLesson) {
+                        //     const totalLessons = await lessonRepository.getTotalDaysInCourse(currentUserState.currentCourseId);
+                        //     let endingMessage = "Lesson Completed 👏🏽\nYou have completed " + currentUserState.dataValues.currentDay + " out of " + totalLessons + " lessons! ⭐️";
+                        //     await sendMessage(userMobileNumber, endingMessage);
+                        //     await createActivityLog(userMobileNumber, "text", "outbound", endingMessage, null);
+                        // }
+
+                        // Next template for next lesson
+                        await sendNextLessonTemplateMessage(userMobileNumber);
+                        await createActivityLog(userMobileNumber, "template", "outbound", "Start next lesson", null);
                     }
                 } else {
                     console.log("No speech recognized or an error occurred.");
                 }
             }
+        }
+        else if (activity == 'audio') {
+            // Lesson Started Record
+            await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date());
+
+            // First lesson of the day custom message
+            // const firstLesson = await lessonRepository.isFirstLessonOfDay(currentUserState.dataValues.currentLessonId);
+            // if (firstLesson) {
+            //     let letStartLessonMessage = "Let's start Lesson #" + currentUserState.dataValues.currentDay;
+            //     await sendMessage(userMobileNumber, letStartLessonMessage);
+            //     await createActivityLog(userMobileNumber, "text", "outbound", letStartLessonMessage, null);
+            // }
+
+            // Send lesson message
+            let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
+            lessonMessage += "\nListen to the audio and answer the questions. ";
+            await sendMessage(userMobileNumber, lessonMessage);
+            await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+
+            // Send audio content
+            const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
+            let audioUrl, imageUrl;
+            for (let i = 0; i < documentFile.length; i++) {
+                if (documentFile[i].dataValues.audio) {
+                    audioUrl = documentFile[i].dataValues.audio;
+                }
+                if (documentFile[i].dataValues.image) {
+                    imageUrl = documentFile[i].dataValues.image;
+                }
+            }
+
+            if (imageUrl) {
+                await sendMediaMessage(userMobileNumber, imageUrl, 'image');
+                await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
+            }
+            await sleep(4000);
+            if (audioUrl) {
+                await sendMediaMessage(userMobileNumber, audioUrl, 'audio');
+                await createActivityLog(userMobileNumber, "audio", "outbound", audioUrl, null);
+            }
+
+            // Update acceptable messages list for the user
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next lesson"]);
+
+            // Sleep
+            await sleep(10000);
+
+            // const lastLesson = await lessonRepository.isLastLessonOfDay(currentUserState.dataValues.currentLessonId);
+            // if (lastLesson) {
+            //     const totalLessons = await lessonRepository.getTotalDaysInCourse(currentUserState.currentCourseId);
+            //     let endingMessage = "Lesson Completed 👏🏽\nYou have completed " + currentUserState.dataValues.currentDay + " out of " + totalLessons + " lessons! ⭐️";
+            //     await sendMessage(userMobileNumber, endingMessage);
+            //     await createActivityLog(userMobileNumber, "text", "outbound", endingMessage, null);
+            // }
+
+            // Next template for next lesson
+            await sendNextLessonTemplateMessage(userMobileNumber);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Start next lesson", null);
         }
     } catch (error) {
         console.error('Error sending lesson to user:', error);

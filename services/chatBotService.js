@@ -105,7 +105,7 @@ const webhookService = async (body, res) => {
 
 
             let currentUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
-            if (message.type === 'text' && messageContent.toLowerCase().includes('start next lesson')) {
+            if ((message.type === 'button' || message.type === 'text') && messageContent.toLowerCase().includes('start next lesson')) {
                 // Get next lesson to send user
                 const nextLesson = await lessonRepository.getNextLesson(currentUserState.dataValues.currentCourseId, currentUserState.dataValues.currentWeek, currentUserState.dataValues.currentDay, currentUserState.dataValues.currentLesson_sequence);
 
@@ -129,8 +129,6 @@ const webhookService = async (body, res) => {
                 await sendLessonToUser(userMobileNumber, currentUserState, nextLesson, messageType, messageContent);
                 return;
             }
-
-
 
             if (currentUserState.dataValues.activityType && activity_types_to_repeat.includes(currentUserState.dataValues.activityType)) {
                 // Get the current lesson for next question

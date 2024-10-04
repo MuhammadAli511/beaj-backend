@@ -62,6 +62,30 @@ const updateQuestionNumber = async (phoneNumber, questionNumber) => {
     });
 };
 
+const updateRetryCounter = async (phoneNumber, retryCounter) => {
+    return await WA_UserProgress.update({
+        retryCounter: retryCounter,
+        lastUpdated: new Date()
+    }, {
+        where: {
+            phoneNumber: phoneNumber
+        }
+    });
+};
+
+const updateQuestionNumberRetryCounterActivityType = async (phoneNumber, questionNumber, retryCounter, activityType) => {
+    return await WA_UserProgress.update({
+        questionNumber: questionNumber,
+        retryCounter: retryCounter,
+        activityType: activityType,
+        lastUpdated: new Date()
+    }, {
+        where: {
+            phoneNumber: phoneNumber
+        }
+    });
+}
+
 export default {
     create,
     getAll,
@@ -69,5 +93,7 @@ export default {
     update,
     deleteByPhoneNumber,
     updateAcceptableMessagesList,
-    updateQuestionNumber
+    updateQuestionNumber,
+    updateRetryCounter,
+    updateQuestionNumberRetryCounterActivityType
 };

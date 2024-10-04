@@ -45,6 +45,10 @@ WA_QuestionResponses.init({
         type: DataTypes.ARRAY(DataTypes.TEXT),
         allowNull: true,
     },
+    submittedFeedbackJson: {
+        type: DataTypes.ARRAY(DataTypes.JSONB),
+        allowNull: true,
+    },
     correct: {
         type: DataTypes.ARRAY(DataTypes.BOOLEAN),
         allowNull: true,
