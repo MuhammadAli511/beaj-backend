@@ -134,7 +134,6 @@ async function azureSpeechToText(audioBuffer) {
             speechRecognizer.recognizeOnceAsync(result => {
                 switch (result.reason) {
                     case sdk.ResultReason.RecognizedSpeech:
-                        console.log(`RECOGNIZED: Text=${result.text}`);
                         resolve(result.text);
                         break;
                     case sdk.ResultReason.NoMatch:
@@ -209,18 +208,10 @@ async function azurePronunciationAssessment(audioBuffer, referenceText) {
             let jo = {};
 
             recognizer.recognizing = function (s, e) {
-                console.log(`(recognizing) Reason: ${sdk.ResultReason[e.result.reason]} Text: ${e.result.text}`);
             };
 
             recognizer.recognized = function (s, e) {
-                console.log("Pronunciation assessment for: ", e.result.text);
                 var pronunciation_result = sdk.PronunciationAssessmentResult.fromResult(e.result);
-                console.log(
-                    " Accuracy score: ", pronunciation_result.accuracyScore, '\n',
-                    "Pronunciation score: ", pronunciation_result.pronunciationScore, '\n',
-                    "Completeness score: ", pronunciation_result.completenessScore, '\n',
-                    "Fluency score: ", pronunciation_result.fluencyScore
-                );
 
                 jo = JSON.parse(e.result.properties.getProperty(sdk.PropertyId.SpeechServiceResponse_JsonResult));
                 const nb = jo["NBest"][0];
@@ -362,10 +353,7 @@ async function azurePronunciationAssessment(audioBuffer, referenceText) {
                     );
                 }
 
-                console.log("    Paragraph pronunciation score: ", scoreNumber.pronScore, ", accuracy score: ", scoreNumber.accuracyScore, ", completeness score: ", scoreNumber.compScore, ", fluency score: ", scoreNumber.fluencyScore, ", prosody score: ", scoreNumber.prosodyScore);
-
                 lastWords.forEach((word, ind) => {
-                    console.log("    ", ind + 1, ": word: ", word.Word, "\taccuracy score: ", word.PronunciationAssessment.AccuracyScore, "\terror type: ", word.PronunciationAssessment.ErrorType, ";");
                 });
 
                 return {
