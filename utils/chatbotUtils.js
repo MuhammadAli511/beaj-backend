@@ -691,7 +691,11 @@ const sendLessonToUser = async (
                 await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
                 return;
             } else if (messageType === 'audio') {
+                // Get the current Watch And Speak question
+                const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, currentWatchAndSpeakQuestion.dataValues.answer[0]);
 
+                console.log("Pronunciation Assessment:", pronunciationAssessment);
             }
         }
     } catch (error) {

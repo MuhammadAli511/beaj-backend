@@ -6,6 +6,8 @@ import { format } from 'date-fns';
 import { Readable, PassThrough } from 'stream';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegPath from 'ffmpeg-static';
+import _ from 'lodash';
+import { diffArrays } from 'diff';
 
 dotenv.config();
 ffmpeg.setFfmpegPath(ffmpegPath);
@@ -160,5 +162,224 @@ async function azureSpeechToText(audioBuffer) {
     });
 }
 
+async function azurePronunciationAssessment(audioBuffer, referenceText) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const wavBuffer = await convertOggToWav(audioBuffer);
 
-export default { azureTextToSpeechAndUpload, azureSpeechToText };
+            const speechConfig = sdk.SpeechConfig.fromSubscription(
+                process.env.AZURE_CUSTOM_VOICE_KEY,
+                process.env.AZURE_CUSTOM_VOICE_REGION
+            );
+            speechConfig.speechRecognitionLanguage = "en-US";
+
+            const audioFormat = sdk.AudioStreamFormat.getWaveFormatPCM(16000, 16, 1);
+
+            const pushStream = sdk.AudioInputStream.createPushStream(audioFormat);
+            pushStream.write(wavBuffer);
+            pushStream.close();
+
+            const audioConfig = sdk.AudioConfig.fromStreamInput(pushStream);
+
+            const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig);
+
+            const pronunciationAssessmentConfig = new sdk.PronunciationAssessmentConfig(
+                referenceText,
+                sdk.PronunciationAssessmentGradingSystem.HundredMark,
+                sdk.PronunciationAssessmentGranularity.Phoneme,
+                true
+            );
+            pronunciationAssessmentConfig.enableProsodyAssessment = true;
+            pronunciationAssessmentConfig.applyTo(recognizer);
+
+            const scoreNumber = {
+                accuracyScore: 0,
+                fluencyScore: 0,
+                compScore: 0,
+                prosodyScore: 0,
+                pronScore: 0,
+            };
+            const allWords = [];
+            let currentText = [];
+            let startOffset = 0;
+            const recognizedWords = [];
+            const fluencyScores = [];
+            const prosodyScores = [];
+            const durations = [];
+            let jo = {};
+
+            recognizer.recognizing = function (s, e) {
+                console.log(`(recognizing) Reason: ${sdk.ResultReason[e.result.reason]} Text: ${e.result.text}`);
+            };
+
+            recognizer.recognized = function (s, e) {
+                console.log("Pronunciation assessment for: ", e.result.text);
+                var pronunciation_result = sdk.PronunciationAssessmentResult.fromResult(e.result);
+                console.log(
+                    " Accuracy score: ", pronunciation_result.accuracyScore, '\n',
+                    "Pronunciation score: ", pronunciation_result.pronunciationScore, '\n',
+                    "Completeness score: ", pronunciation_result.completenessScore, '\n',
+                    "Fluency score: ", pronunciation_result.fluencyScore
+                );
+
+                jo = JSON.parse(e.result.properties.getProperty(sdk.PropertyId.SpeechServiceResponse_JsonResult));
+                const nb = jo["NBest"][0];
+                if (nb.Words && nb.Words.length > 0) {
+                    startOffset = nb.Words[0].Offset;
+                    const localtext = nb.Words.map((item) => item.Word.toLowerCase());
+                    currentText = currentText.concat(localtext);
+                    fluencyScores.push(nb.PronunciationAssessment.FluencyScore);
+                    prosodyScores.push(nb.PronunciationAssessment.ProsodyScore);
+                    const isSucceeded = jo.RecognitionStatus === 'Success';
+                    const nBestWords = jo.NBest[0].Words;
+                    const durationList = [];
+                    nBestWords.forEach((word) => {
+                        recognizedWords.push(word);
+                        durationList.push(word.Duration);
+                    });
+                    durations.push(_.sum(durationList));
+
+                    if (isSucceeded && nBestWords) {
+                        allWords.push(...nBestWords);
+                    }
+                }
+            };
+
+            recognizer.canceled = function (s, e) {
+                if (e.reason === sdk.CancellationReason.Error) {
+                    var str = `(cancel) Reason: ${sdk.CancellationReason[e.reason]}: ${e.errorDetails}`;
+                    console.log(str);
+                }
+                recognizer.stopContinuousRecognitionAsync();
+            };
+
+            recognizer.sessionStarted = function (s, e) { };
+
+            recognizer.sessionStopped = function (s, e) {
+                recognizer.stopContinuousRecognitionAsync();
+                recognizer.close();
+                const result = calculateOverallPronunciationScore();
+                resolve(result);
+            };
+
+            function calculateOverallPronunciationScore() {
+                const resText = currentText.join(" ");
+                let wholelyricsArry = [];
+                let resTextArray = [];
+
+                const language = speechConfig.speechRecognitionLanguage;
+                let resTextProcessed = (resText.toLocaleLowerCase() ?? "").replace(new RegExp("[!\"#$%&()*+,-./:;<=>?@[^_`{|}~]+", "g"), "").replace(new RegExp("]+", "g"), "");
+                let wholelyrics = (referenceText.toLocaleLowerCase() ?? "").replace(new RegExp("[!\"#$%&()*+,-./:;<=>?@[^_`{|}~]+", "g"), "").replace(new RegExp("]+", "g"), "");
+                wholelyricsArry = wholelyrics.split(" ").filter(item => item.trim());
+                resTextArray = resTextProcessed.split(" ").filter(item => item.trim());
+
+                const diffs = diffArrays(wholelyricsArry, resTextArray);
+                const lastWords = [];
+
+                diffs.forEach((part) => {
+                    if (part.added) {
+                        part.value.forEach((word) => {
+                            const indexInAllWords = currentText.indexOf(word);
+                            if (indexInAllWords !== -1 && allWords[indexInAllWords].PronunciationAssessment.ErrorType !== "Insertion") {
+                                allWords[indexInAllWords].PronunciationAssessment.ErrorType = "Insertion";
+                            }
+                            lastWords.push(allWords[indexInAllWords]);
+                        });
+                    } else if (part.removed) {
+                        part.value.forEach((word) => {
+                            const wordObj = {
+                                Word: word,
+                                PronunciationAssessment: {
+                                    ErrorType: "Omission",
+                                },
+                            };
+                            lastWords.push(wordObj);
+                        });
+                    } else {
+                        part.value.forEach((word) => {
+                            const indexInAllWords = currentText.indexOf(word);
+                            if (indexInAllWords !== -1) {
+                                if (allWords[indexInAllWords].PronunciationAssessment.ErrorType !== "None") {
+                                    allWords[indexInAllWords].PronunciationAssessment.ErrorType = "None";
+                                }
+                                lastWords.push(allWords[indexInAllWords]);
+                            }
+                        });
+                    }
+                });
+
+                const reference_words = wholelyricsArry;
+
+                let recognizedWordsRes = [];
+                recognizedWords.forEach((word) => {
+                    if (word.PronunciationAssessment.ErrorType === "None") {
+                        recognizedWordsRes.push(word);
+                    }
+                });
+
+                let compScore = Number(((recognizedWordsRes.length / reference_words.length) * 100).toFixed(0));
+                if (compScore > 100) {
+                    compScore = 100;
+                }
+                scoreNumber.compScore = compScore;
+
+                const accuracyScores = [];
+                lastWords.forEach((word) => {
+                    if (word && word?.PronunciationAssessment?.ErrorType !== "Insertion") {
+                        accuracyScores.push(Number(word?.PronunciationAssessment.AccuracyScore ?? 0));
+                    }
+                });
+                scoreNumber.accuracyScore = Number((_.sum(accuracyScores) / accuracyScores.length).toFixed(0));
+
+                if (startOffset) {
+                    const sumRes = [];
+                    fluencyScores.forEach((x, index) => {
+                        sumRes.push(x * durations[index]);
+                    });
+                    scoreNumber.fluencyScore = _.sum(sumRes) / _.sum(durations);
+                }
+                scoreNumber.prosodyScore = Number((_.sum(prosodyScores) / prosodyScores.length).toFixed(0));
+
+                const sortScore = Object.keys(scoreNumber).sort(function (a, b) {
+                    return scoreNumber[a] - scoreNumber[b];
+                });
+
+                if (
+                    jo.RecognitionStatus === "Success" ||
+                    jo.RecognitionStatus === "Failed"
+                ) {
+                    scoreNumber.pronScore = Number(
+                        (
+                            scoreNumber[sortScore[0]] * 0.4 +
+                            scoreNumber[sortScore[1]] * 0.2 +
+                            scoreNumber[sortScore[2]] * 0.2 +
+                            scoreNumber[sortScore[3]] * 0.2
+                        ).toFixed(0)
+                    );
+                } else {
+                    scoreNumber.pronScore = Number(
+                        (scoreNumber.accuracyScore * 0.5 + scoreNumber.fluencyScore * 0.5).toFixed(0)
+                    );
+                }
+
+                console.log("    Paragraph pronunciation score: ", scoreNumber.pronScore, ", accuracy score: ", scoreNumber.accuracyScore, ", completeness score: ", scoreNumber.compScore, ", fluency score: ", scoreNumber.fluencyScore, ", prosody score: ", scoreNumber.prosodyScore);
+
+                lastWords.forEach((word, ind) => {
+                    console.log("    ", ind + 1, ": word: ", word.Word, "\taccuracy score: ", word.PronunciationAssessment.AccuracyScore, "\terror type: ", word.PronunciationAssessment.ErrorType, ";");
+                });
+
+                return {
+                    scoreNumber,
+                    words: lastWords,
+                };
+            }
+
+            recognizer.startContinuousRecognitionAsync();
+        } catch (err) {
+            console.error("Error during pronunciation assessment:", err);
+            reject(err);
+        }
+    });
+}
+
+export default { azureTextToSpeechAndUpload, azureSpeechToText, azurePronunciationAssessment };

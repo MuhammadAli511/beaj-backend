@@ -52,12 +52,9 @@ const getSpeakActivityQuestionByIdService = async (id) => {
 
 const updateSpeakActivityQuestionService = async (id, question, mediaFile, answer, lessonId, questionNumber) => {
     try {
-        // if mediafile is a link, don't upload to blob storage, check for http or https
-        let audioUrl = null;
-        if (mediaFile && !mediaFile.includes('http')) {
+        let audioUrl = mediaFile;
+        if (mediaFile && typeof mediaFile === 'object') {
             audioUrl = await azure_blob.uploadToBlobStorage(mediaFile);
-        } else {
-            audioUrl = mediaFile;
         }
 
         const answerArray = parseAnswers(answer);
