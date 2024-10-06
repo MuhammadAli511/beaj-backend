@@ -8,6 +8,7 @@ import ffmpeg from 'fluent-ffmpeg';
 import ffmpegPath from 'ffmpeg-static';
 import _ from 'lodash';
 import { diffArrays } from 'diff';
+import openai_prompt from "../utils/prompts.js";
 
 dotenv.config();
 ffmpeg.setFfmpegPath(ffmpegPath);
@@ -370,4 +371,22 @@ async function azurePronunciationAssessment(audioBuffer, referenceText) {
     });
 }
 
-export default { azureTextToSpeechAndUpload, azureSpeechToText, azurePronunciationAssessment };
+async function openaiFeedback(userTranscript) {
+    const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
+    const apiKey = process.env.AZURE_OPENAI_API_KEY;
+    const apiVersion = "2023-03-15-preview";
+    const deployment = "gpt-4o-mini";
+
+    const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
+    const result = await client.chat.completions.create({
+        messages: [
+            { role: "system", content: await openai_prompt() },
+            { role: "user", content: userTranscript },
+        ],
+        model: "",
+    });
+
+    return result.choices[0].message.content;
+}
+
+export default { azureTextToSpeechAndUpload, azureSpeechToText, azurePronunciationAssessment, openaiFeedback };

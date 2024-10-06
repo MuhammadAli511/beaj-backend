@@ -1,4 +1,3 @@
-// fUNCTION TO INPUT STRING
 const openai_prompt = async () => {
     const prompt = `You are an AI assistant designed to help young users improve their spoken English skills. Your task is to analyze a transcript of user-spoken audio in English and provide constructive feedback to help the user enhance their language proficiency.
 
