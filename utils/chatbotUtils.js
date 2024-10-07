@@ -24,6 +24,16 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+const removeUser = async (phoneNumber) => {
+    await waUsersMetadataRepository.deleteByPhoneNumber(phoneNumber);
+    await waUserProgressRepository.deleteByPhoneNumber(phoneNumber);
+    await waUserActivityLogsRepository.deleteByPhoneNumber(phoneNumber);
+    await waLessonsCompletedRepository.deleteByPhoneNumber(phoneNumber);
+    await waQuestionResponsesRepository.deleteByPhoneNumber(phoneNumber);
+
+    await sendMessage(phoneNumber, "Your data has been removed. Please start again using the link provided.");
+};
+
 const generatePronunciationAssessmentMessage = async (pronunciationAssessment) => {
     const overallScores = pronunciationAssessment.scoreNumber;
     const words = pronunciationAssessment.words;
@@ -69,10 +79,8 @@ const extractUserTranscriptionFromWords = async (pronunciationAssessment) => {
 }
 
 const getAcceptableMessagesList = async (activityType) => {
-    if (activityType === "listenAndSpeak" || activityType === "postListenAndSpeak" || activityType === "preListenAndSpeak" || activityType === "watchAndSpeak" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "read") {
+    if (activityType === "listenAndSpeak" || activityType === "postListenAndSpeak" || activityType === "preListenAndSpeak" || activityType === "watchAndSpeak" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot") {
         return ["audio"];
-    } else if (activityType === "mcqs" || activityType === "preMCQs" || activityType === "postMCQs") {
-        return ["option a", "option b", "option c", "option d"];
     }
 };
 
@@ -273,6 +281,34 @@ const sendMediaMessage = async (to, mediaUrl, mediaType) => {
     }
 };
 
+const sendTemplateMessage = async (to, template_name) => {
+    try {
+        const response = await axios.post(
+            `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
+            {
+                messaging_product: 'whatsapp',
+                recipient_type: 'individual',
+                to: to,
+                type: 'template',
+                template: {
+                    name: template_name,
+                    language: {
+                        code: 'en',
+                    },
+                },
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${whatsappToken}`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+    } catch (error) {
+        console.error('Error sending template message:', error.response ? error.response.data : error.message);
+    }
+};
+
 const sendNextLessonTemplateMessage = async (to) => {
     try {
         const response = await axios.post(
@@ -361,8 +397,6 @@ const sendLessonToUser = async (
             let videoURL = documentFile[0].dataValues.video;
             await sendMediaMessage(userMobileNumber, videoURL, 'video');
             await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
-
-            // Update acceptable messages list for the user
             await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next lesson"]);
 
             // Sleep
@@ -392,6 +426,11 @@ const sendLessonToUser = async (
                 //     await sendMessage(userMobileNumber, letStartLessonMessage);
                 //     await createActivityLog(userMobileNumber, "text", "outbound", letStartLessonMessage, null);
                 // }
+                // Send lesson message
+                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
+                lessonMessage += "\nListen to the audio and answer the questions. ";
+                await sendMessage(userMobileNumber, lessonMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
                 // Send first Listen and Speak question
                 const firstListenAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
@@ -402,7 +441,7 @@ const sendLessonToUser = async (
                 // Send question media file
                 await sendMediaMessage(userMobileNumber, firstListenAndSpeakQuestion.dataValues.mediaFile, 'audio');
                 await createActivityLog(userMobileNumber, "audio", "outbound", firstListenAndSpeakQuestion.dataValues.mediaFile, null);
-
+                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
                 await sleep(4000);
 
                 // Send question text
@@ -484,6 +523,7 @@ const sendLessonToUser = async (
                         await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextListenAndSpeakQuestion.dataValues.questionNumber);
                         await sendMediaMessage(userMobileNumber, nextListenAndSpeakQuestion.dataValues.mediaFile, 'audio');
                         await createActivityLog(userMobileNumber, "audio", "outbound", nextListenAndSpeakQuestion.dataValues.mediaFile, null);
+                        await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
                         await sleep(4000);
                         await sendMessage(userMobileNumber, nextListenAndSpeakQuestion.dataValues.question);
                         await createActivityLog(userMobileNumber, "text", "outbound", nextListenAndSpeakQuestion.dataValues.question, null);
@@ -606,6 +646,7 @@ const sendLessonToUser = async (
 
                 // Send question as mcq template where templateId is currentLessonId_QuestionNumber
                 await sendMCQTemplateMessage(userMobileNumber, `${currentUserState.dataValues.currentLessonId}_${firstMCQsQuestion.dataValues.QuestionNumber}`);
+                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["option a", "option b", "option c", "option d"]);
                 const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(firstMCQsQuestion.dataValues.Id);
                 let question = firstMCQsQuestion.dataValues.QuestionText;
                 let message = question + "\n";
@@ -613,6 +654,14 @@ const sendLessonToUser = async (
                     message += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
                 }
                 await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+
+                // Update acceptable messages list for the user with answers for each question
+                let acceptableMessagesList = [];
+                for (let i = 0; i < mcqAnswers.length; i++) {
+                    acceptableMessagesList.push(mcqAnswers[i].dataValues.AnswerText.toLowerCase());
+                }
+                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, acceptableMessagesList);
+
 
                 return;
             } else {
@@ -674,6 +723,12 @@ const sendLessonToUser = async (
                         message += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
                     }
                     await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+                    // Update acceptable messages list for the user with answers for each question
+                    let acceptableMessagesList = [];
+                    for (let i = 0; i < mcqAnswers.length; i++) {
+                        acceptableMessagesList.push(mcqAnswers[i].dataValues.AnswerText.toLowerCase());
+                    }
+                    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, acceptableMessagesList);
                 } else {
                     const totalScore = await waQuestionResponsesRepository.getTotalScore(userMobileNumber, currentUserState.dataValues.currentLessonId);
                     const totalQuestions = await waQuestionResponsesRepository.getTotalQuestions(userMobileNumber, currentUserState.dataValues.currentLessonId);
@@ -724,6 +779,12 @@ const sendLessonToUser = async (
                 //     await createActivityLog(userMobileNumber, "text", "outbound", letStartLessonMessage, null);
                 // }
 
+                // Send lesson message
+                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
+                lessonMessage += "\nWatch the video and repeat the sentences. ";
+                await sendMessage(userMobileNumber, lessonMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+
                 // Send first Listen and Speak question
                 const firstWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
 
@@ -733,6 +794,7 @@ const sendLessonToUser = async (
                 // Send question media file
                 await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
                 await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
+                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
                 return;
             } else if (messageType === 'audio') {
                 // Get the current Watch And Speak question
@@ -794,6 +856,23 @@ const sendLessonToUser = async (
         }
         else if (activity == 'read') {
             if (messageType != 'audio') {
+                // Lesson Started Record
+                await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date());
+
+                // First lesson of the day custom message
+                // const firstLesson = await lessonRepository.isFirstLessonOfDay(currentUserState.dataValues.currentLessonId);
+                // if (firstLesson) {
+                //     let letStartLessonMessage = "Let's start Lesson #" + currentUserState.dataValues.currentDay;
+                //     await sendMessage(userMobileNumber, letStartLessonMessage);
+                //     await createActivityLog(userMobileNumber, "text", "outbound", letStartLessonMessage, null);
+                // }
+
+                // Send lesson message
+                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
+                lessonMessage += "\nRead the text and answer the questions. " + startingLesson.dataValues.text;
+                await sendMessage(userMobileNumber, lessonMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+
                 const readDocumentFiles = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
                 let englishAudio, image;
                 for (let i = 0; i < readDocumentFiles.length; i++) {
@@ -805,7 +884,7 @@ const sendLessonToUser = async (
                     }
                 }
 
-                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
+                lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
                 lessonMessage += "\nRead the text and answer the questions. " + startingLesson.dataValues.text;
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
@@ -839,7 +918,7 @@ const sendLessonToUser = async (
                 await createActivityLog(userMobileNumber, "template", "outbound", "Start next lesson", null);
             }
         }
-        else if (activity == 'conversationalBotQuestions') {
+        else if (activity == 'conversationalQuestionsBot') {
             if (currentUserState.dataValues.questionNumber === null) {
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
@@ -852,6 +931,12 @@ const sendLessonToUser = async (
                 //     await createActivityLog(userMobileNumber, "text", "outbound", letStartLessonMessage, null);
                 // }
 
+                // Send lesson message
+                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
+                lessonMessage += "\nChat with the bot and answer the questions. ";
+                await sendMessage(userMobileNumber, lessonMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+
                 // Send Conversation Bot Question
                 const firstConversationBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
 
@@ -861,6 +946,7 @@ const sendLessonToUser = async (
                 // Send question media file
                 await sendMediaMessage(userMobileNumber, firstConversationBotQuestion.dataValues.mediaFile, 'audio');
                 await createActivityLog(userMobileNumber, "audio", "outbound", firstConversationBotQuestion.dataValues.mediaFile, null);
+                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
                 return;
             }
             else if (messageType === 'audio') {
@@ -926,7 +1012,7 @@ const sendLessonToUser = async (
                 }
             }
         }
-        else if (activity == 'conversationalBotMonologue') {
+        else if (activity == 'conversationalMonologueBot') {
             if (currentUserState.dataValues.questionNumber === null) {
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
@@ -939,6 +1025,12 @@ const sendLessonToUser = async (
                 //     await createActivityLog(userMobileNumber, "text", "outbound", letStartLessonMessage, null);
                 // }
 
+                // Send lesson message
+                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
+                lessonMessage += "\nChat with the bot and answer the questions. ";
+                await sendMessage(userMobileNumber, lessonMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+
                 // Send Conversation Bot Monologue
                 const conversationBotMonologue = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
 
@@ -948,6 +1040,7 @@ const sendLessonToUser = async (
                 // Send question media file
                 await sendMediaMessage(userMobileNumber, conversationBotMonologue.dataValues.mediaFile, 'audio');
                 await createActivityLog(userMobileNumber, "audio", "outbound", conversationBotMonologue.dataValues.mediaFile, null);
+                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
                 return;
             }
             else if (messageType === 'audio') {
@@ -1028,33 +1121,156 @@ const sendLessonToUser = async (
     };
 };
 
-const onboardingMessage = async (userMobileNumber, startingLesson) => {
-    waUsersMetadataRepository.create({ phoneNumber: userMobileNumber });
+const outlineMessage = async (userMobileNumber) => {
     await waUserProgressRepository.create({
         phoneNumber: userMobileNumber,
         persona: "Teacher",
-        engagement_type: "Trial Course",
-        currentCourseId: await courseRepository.getCourseIdByName(
-            "Trial Course - Teachers"
-        ),
-        currentWeek: startingLesson.dataValues.weekNumber,
-        currentDay: startingLesson.dataValues.dayNumber,
-        currentLessonId: startingLesson.dataValues.LessonId,
-        currentLesson_sequence: startingLesson.dataValues.SequenceNumber,
-        activityType: startingLesson.dataValues.activity,
+        engagement_type: "Outline Message",
         lastUpdated: new Date(),
     });
-    await sendMessage(userMobileNumber, await extractConstantMessage("onboarding_bot_introduction_message"));
-    await createActivityLog(userMobileNumber, "text", "outbound", await extractConstantMessage("onboarding_bot_introduction_message"), null);
+    const botIntroMessage = await extractConstantMessage("onboarding_bot_introduction_message");
+    await sendMessage(userMobileNumber, botIntroMessage);
+    await createActivityLog(userMobileNumber, "text", "outbound", botIntroMessage, null);
+
+    const outlineImageLink = await extractConstantMessage("level_one_course_outline");
+    await sendMediaMessage(userMobileNumber, outlineImageLink, 'image');
+    await createActivityLog(userMobileNumber, "text", "outbound", outlineImageLink, null);
+    await sleep(2000);
+
+    await sendTemplateMessage(userMobileNumber, "apply_now_or_try_course_demo");
+    await createActivityLog(userMobileNumber, "template", "outbound", "Apply Now or Try Course Demo", null);
+
+    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["apply now", "try course demo"]);
     return;
 };
+
+const nameInputMessage = async (userMobileNumber) => {
+    await waUserProgressRepository.updateEngagementType(userMobileNumber, "Name Input");
+    await sendMessage(userMobileNumber, "Your Full Name\n(e.g. Saima Khan)");
+    await createActivityLog(userMobileNumber, "text", "outbound", "Your Full Name\n(e.g. Saima Khan)", null);
+    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["text"]);
+    return;
+};
+
+const districtInputMessage = async (userMobileNumber) => {
+    await waUserProgressRepository.updateEngagementType(userMobileNumber, "District Input");
+    await sendMessage(userMobileNumber, "Your District\n(e.g. Faisalabad, Punjab)");
+    await createActivityLog(userMobileNumber, "text", "outbound", "Your District\n(e.g. Faisalabad, Punjab)", null);
+    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["text"]);
+    return;
+};
+
+const preferredTimingInputMessage = async (userMobileNumber) => {
+    await waUserProgressRepository.updateEngagementType(userMobileNumber, "Preferred Timing Input");
+    await sendTemplateMessage(userMobileNumber, "live_class_timing");
+    await createActivityLog(userMobileNumber, "template", "outbound", "Live Class Timing", null);
+    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["text"]);
+    return;
+};
+
+const thankYouMessage = async (userMobileNumber) => {
+    const message = "Thank you for applying! This course starts on November 4, 2024.\n\nWithin 48 hours a Beaj Team Member will call you to confirm if you get selected for this batch."
+    await sendMessage(userMobileNumber, message);
+    await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next lesson"]);
+    const random = Math.floor(Math.random() * 3);
+    let targetGroup;
+    if (random === 0) {
+        targetGroup = 'T1';
+    }
+    if (random === 1) {
+        targetGroup = 'T2';
+    }
+    if (random === 2) {
+        targetGroup = 'Control';
+    }
+    await waUsersMetadataRepository.update(userMobileNumber, { targetGroup: targetGroup });
+    return;
+};
+
+const trialCourseStart = async (userMobileNumber, startingLesson) => {
+    await waUserProgressRepository.update(
+        userMobileNumber,
+        await courseRepository.getCourseIdByName(
+            "Trial Course - Teachers"
+        ),
+        startingLesson.dataValues.weekNumber,
+        startingLesson.dataValues.dayNumber,
+        startingLesson.dataValues.LessonId,
+        startingLesson.dataValues.SequenceNumber,
+        startingLesson.dataValues.activity,
+        null,
+        null,
+    );
+    await waUserProgressRepository.updateEngagementType(userMobileNumber, "Trial Course - Teachers");
+    await sendMessage(userMobileNumber, "Let's start your free trial. Here is your first lesson:");
+    await createActivityLog(userMobileNumber, "text", "outbound", "Let's start your free trial. Here is your first lesson:", null);
+    return;
+};
+
+const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUserState, currentLesson, messageType, messageContent) => {
+    const acceptableMessagesList = currentUserState.dataValues.acceptableMessages;
+    const activityType = currentUserState.dataValues.activity;
+    if (activityType === "listenAndSpeak" || activityType === "postListenAndSpeak" || activityType === "preListenAndSpeak" || activityType === "watchAndSpeak" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot") {
+        if (acceptableMessagesList.includes("audio") && messageType === "audio") {
+            return true;
+        }
+    }
+    if (acceptableMessagesList.includes(messageContent.toLowerCase())) {
+        return true;
+    } else {
+        // Write customized message based on the acceptable messages list
+        let message = "I'm sorry, I didn't understand that. Please try again.";
+        if (acceptableMessagesList.length > 1) {
+            message += "\n\nAcceptable messages are:";
+            for (let i = 0; i < acceptableMessagesList.length; i++) {
+                message += "\n" + acceptableMessagesList[i];
+            }
+        } else {
+            message += "\n\nAcceptable message is: " + acceptableMessagesList[0];
+        }
+        await sendMessage(userMobileNumber, message);
+        await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+        return false;
+    }
+};
+
+const continuePracticingMessage = async (userMobileNumber) => {
+    await sendMessage(userMobileNumber, 'To continue practicing, apply for the full course.\nSeats are limited!');
+    await createActivityLog(userMobileNumber, 'text', 'outbound', 'To continue practicing, apply for the full course.\nSeats are limited!', null);
+    await sleep(2000);
+    await sendTemplateMessage(userMobileNumber, 'apply_now');
+    await createActivityLog(userMobileNumber, 'template', 'outbound', 'Apply Now', null);
+    await waUserProgressRepository.update(
+        userMobileNumber,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+    )
+    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ['apply now']);
+    await waUserProgressRepository.updateEngagementType(userMobileNumber, 'Apply Now');
+    return;
+}
 
 export {
     sendMessage,
     retrieveMediaURL,
-    onboardingMessage,
+    outlineMessage,
     createActivityLog,
     extractConstantMessage,
     sendLessonToUser,
     getAcceptableMessagesList,
+    nameInputMessage,
+    districtInputMessage,
+    thankYouMessage,
+    preferredTimingInputMessage,
+    trialCourseStart,
+    continuePracticingMessage,
+    removeUser,
+    checkUserMessageAndAcceptableMessages
 };

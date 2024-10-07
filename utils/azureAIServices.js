@@ -9,6 +9,7 @@ import ffmpegPath from 'ffmpeg-static';
 import _ from 'lodash';
 import { diffArrays } from 'diff';
 import openai_prompt from "../utils/prompts.js";
+import { AzureOpenAI } from "openai";
 
 dotenv.config();
 ffmpeg.setFfmpegPath(ffmpegPath);

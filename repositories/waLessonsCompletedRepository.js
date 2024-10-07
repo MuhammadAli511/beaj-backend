@@ -47,11 +47,20 @@ const endLessonByPhoneNumberAndLessonId = async (phoneNumber, lessonId) => {
     });
 };
 
+const deleteByPhoneNumber = async (phoneNumber) => {
+    return await WA_LessonsCompleted.destroy({
+        where: {
+            phoneNumber: phoneNumber
+        }
+    });
+};
+
 export default {
     create,
     getAll,
     getById,
     update,
     deleteById,
-    endLessonByPhoneNumberAndLessonId
+    endLessonByPhoneNumberAndLessonId,
+    deleteByPhoneNumber
 };

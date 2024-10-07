@@ -127,6 +127,14 @@ const deleteById = async (id) => {
     });
 };
 
+const deleteByPhoneNumber = async (phoneNumber) => {
+    return await WA_QuestionResponses.destroy({
+        where: {
+            phoneNumber: phoneNumber
+        }
+    });
+};
+
 export default {
     create,
     getAll,
@@ -134,5 +142,6 @@ export default {
     update,
     deleteById,
     getTotalScore,
-    getTotalQuestions
+    getTotalQuestions,
+    deleteByPhoneNumber
 };

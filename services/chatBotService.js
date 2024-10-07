@@ -1,30 +1,35 @@
 import { createClient } from "@deepgram/sdk";
 import OpenAI from "openai";
-import axios from 'axios';
-import openai_prompt from "../utils/prompts.js";
 import cleanTextForSpeech from "../utils/cleanText.js";
 import azure_blob from "../utils/azureBlobStorage.js";
 import dotenv from 'dotenv';
 import { performance } from 'perf_hooks';
 import waUsersMetadataRepository from '../repositories/waUsersMetadataRepository.js';
 import audioChatRepository from '../repositories/audioChatsRepository.js';
-import waConstantsRepository from '../repositories/waConstantsRepository.js';
+import courseRepository from '../repositories/courseRepository.js';
 import lessonRepository from '../repositories/lessonRepository.js';
-import documentFileRepository from '../repositories/documentFileRepository.js';
-import multipleChoiceQuestionRepository from '../repositories/multipleChoiceQuestionRepository.js';
-import multipleChoiceQuestionAnswerRepository from '../repositories/multipleChoiceQuestionAnswerRepository.js';
-import questionResponseRepository from '../repositories/questionResponseRepository.js';
-import speakActivityQuestionRepository from '../repositories/speakActivityQuestionRepository.js';
-import courseRepository from "../repositories/courseRepository.js";
-import { mcqsResponse } from '../constants/chatbotConstants.js';
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
-import { onboardingMessage, createActivityLog, extractConstantMessage, retrieveMediaURL, sendLessonToUser, getAcceptableMessagesList } from '../utils/chatbotUtils.js';
+import {
+    outlineMessage,
+    createActivityLog,
+    extractConstantMessage,
+    retrieveMediaURL,
+    sendLessonToUser,
+    nameInputMessage,
+    districtInputMessage,
+    preferredTimingInputMessage,
+    thankYouMessage,
+    trialCourseStart,
+    getAcceptableMessagesList,
+    continuePracticingMessage,
+    removeUser,
+    checkUserMessageAndAcceptableMessages,
+    sendMessage
+} from '../utils/chatbotUtils.js';
 
 
 dotenv.config();
-const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
-const openai = new OpenAI(process.env.OPENAI_API_KEY);
 const whatsappVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN;
 
 let activity_types_to_repeat = ['mcqs', 'watchAndSpeak', 'listenAndSpeak', 'postListenAndSpeak', 'preListenAndSpeak', 'postMCQs', 'preMCQs', 'read', 'conversationalQuestionsBot', 'conversationalMonologueBot'];
@@ -84,33 +89,92 @@ const webhookService = async (body, res) => {
 
             // Check if user exists in the database
             let user = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
+            let currentUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
 
-            const onboardingFirstMessage = await extractConstantMessage('onboarding_first_message');
-            if (!user && onboardingFirstMessage.toLowerCase() === messageContent) {
-                const startingLesson = await lessonRepository.getNextLesson(
-                    await courseRepository.getCourseIdByName("Trial Course - Teachers"),
-                    1,
-                    null,
-                    null
-                );
-                await onboardingMessage(userMobileNumber, startingLesson);
-                let currentUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
-                await sendLessonToUser(userMobileNumber, currentUserState, startingLesson, messageType, messageContent);
+            // If message is reset, delete user from database
+            if (messageContent.toLowerCase() === 'reset') {
+                await removeUser(userMobileNumber);
                 return;
             }
 
 
-            // TODO: If user exists add a acceptable messages checking mechanism here
+            // Step 1: If user does not exist, check if the first message is the onboarding message
+            const onboardingFirstMessage = await extractConstantMessage('onboarding_first_message');
+            if (!user && onboardingFirstMessage.toLowerCase() === messageContent) {
+                await waUsersMetadataRepository.create({ phoneNumber: userMobileNumber });
+                await outlineMessage(userMobileNumber);
+                return;
+            }
+
+            // Step 2: User either clicks 'Apply Now' or 'Try Course Demo' button
+            if (message.type === 'button' && (messageContent.toLowerCase().includes('apply now'))) {
+                if (currentUserState.dataValues.engagement_type == 'Outline Message' || currentUserState.dataValues.engagement_type == 'Apply Now') {
+                    await nameInputMessage(userMobileNumber);
+                    return;
+                }
+            }
+
+            // Step 3: User enters their name, now ask for district
+            if (message.type === 'text' && currentUserState.dataValues.engagement_type == 'Name Input') {
+                await waUsersMetadataRepository.update(userMobileNumber, { name: messageContent });
+                await districtInputMessage(userMobileNumber);
+                return;
+            }
+
+            // Step 4: User enters their district, now ask for their preferred timing
+            if (message.type === 'text' && currentUserState.dataValues.engagement_type == 'District Input') {
+                await waUsersMetadataRepository.update(userMobileNumber, { city: messageContent });
+                await preferredTimingInputMessage(userMobileNumber);
+                return;
+            }
+
+            // Step 5: User enters their preferred timing, send them a thank you message
+            if (message.type === 'button' && currentUserState.dataValues.engagement_type == 'Preferred Timing Input') {
+                await waUsersMetadataRepository.update(userMobileNumber, { timingPreference: messageContent });
+                await thankYouMessage(userMobileNumber);
+                return;
+            };
+
+
+            // From step 2 if user clicks 'Try Course Demo' button
+            if (message.type === 'button' && (messageContent.toLowerCase().includes('try course demo'))) {
+                if (currentUserState.dataValues.engagement_type == 'Outline Message') {
+                    const startingLesson = await lessonRepository.getNextLesson(
+                        await courseRepository.getCourseIdByName("Trial Course - Teachers"),
+                        1,
+                        null,
+                        null
+                    );
+                    await trialCourseStart(userMobileNumber, startingLesson);
+                    let currentUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
+                    await sendLessonToUser(userMobileNumber, currentUserState, startingLesson, messageType, messageContent);
+                    return;
+                }
+            }
+
+
+            const messageAuth = await checkUserMessageAndAcceptableMessages(userMobileNumber, currentUserState, message, messageType, messageContent);
+            if (messageAuth === false) {
+                return;
+            }
 
 
 
-            let currentUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
             if ((message.type === 'button' || message.type === 'text') && messageContent.toLowerCase().includes('start next lesson')) {
                 // Get next lesson to send user
-                const nextLesson = await lessonRepository.getNextLesson(currentUserState.dataValues.currentCourseId, currentUserState.dataValues.currentWeek, currentUserState.dataValues.currentDay, currentUserState.dataValues.currentLesson_sequence);
+                const nextLesson = await lessonRepository.getNextLesson(
+                    currentUserState.dataValues.currentCourseId,
+                    currentUserState.dataValues.currentWeek,
+                    currentUserState.dataValues.currentDay,
+                    currentUserState.dataValues.currentLesson_sequence
+                );
 
                 // Course is completed
                 if (nextLesson === null) {
+                    if (currentUserState.dataValues.engagement_type === 'Trial Course - Teachers') {
+                        await continuePracticingMessage(userMobileNumber);
+                        return;
+                    }
                     await sendMessage(userMobileNumber, '❗️❗️🎉 CONGRATULATIONS 🎉❗️❗️\n 🌟 You have successfully completed the course! 🌟 \n Please contact your group admin to receive your certificate. 📜💬');
                     return;
                 }
@@ -123,7 +187,18 @@ const webhookService = async (body, res) => {
                 const acceptableMessagesList = await getAcceptableMessagesList(nextLesson.dataValues.activity);
 
                 // Update user progress to next lesson
-                await waUserProgressRepository.update(userMobileNumber, nextLesson.dataValues.courseId, nextLesson.dataValues.weekNumber, nextLesson.dataValues.dayNumber, nextLesson.dataValues.LessonId, nextLesson.dataValues.SequenceNumber, nextLesson.dataValues.activity, null, 0, acceptableMessagesList);
+                await waUserProgressRepository.update(
+                    userMobileNumber,
+                    nextLesson.dataValues.courseId,
+                    nextLesson.dataValues.weekNumber,
+                    nextLesson.dataValues.dayNumber,
+                    nextLesson.dataValues.LessonId,
+                    nextLesson.dataValues.SequenceNumber,
+                    nextLesson.dataValues.activity,
+                    null,
+                    0,
+                    acceptableMessagesList
+                );
                 const latestUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
 
                 // Send next lesson to user

@@ -37,11 +37,20 @@ const getByPhoneNumber = async (phoneNumber) => {
     });
 };
 
+const deleteByPhoneNumber = async (phoneNumber) => {
+    return await WA_UserActivityLogs.destroy({
+        where: {
+            phoneNumber: phoneNumber
+        }
+    });
+};
+
 export default {
     create,
     getAll,
     getById,
     update,
     deleteById,
-    getByPhoneNumber
+    getByPhoneNumber,
+    deleteByPhoneNumber
 };

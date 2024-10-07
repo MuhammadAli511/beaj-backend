@@ -51,6 +51,17 @@ const updateAcceptableMessagesList = async (phoneNumber, acceptableMessages) => 
     });
 };
 
+const updateEngagementType = async (phoneNumber, engagementType) => {
+    return await WA_UserProgress.update({
+        engagement_type: engagementType,
+        lastUpdated: new Date()
+    }, {
+        where: {
+            phoneNumber: phoneNumber
+        }
+    });
+};
+
 const updateQuestionNumber = async (phoneNumber, questionNumber) => {
     return await WA_UserProgress.update({
         questionNumber: questionNumber,
@@ -95,5 +106,6 @@ export default {
     updateAcceptableMessagesList,
     updateQuestionNumber,
     updateRetryCounter,
-    updateQuestionNumberRetryCounterActivityType
+    updateQuestionNumberRetryCounterActivityType,
+    updateEngagementType
 };

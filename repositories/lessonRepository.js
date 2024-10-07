@@ -151,10 +151,6 @@ const getTotalDaysInCourse = async (courseId) => {
     return totalDays;
 };
 
-
-
-
-
 const getNextLesson = async (courseId, weekNumber, dayNumber, sequenceNumber) => {
     // If weekNumber, dayNumber, and sequenceNumber are all null, return the first lesson in the course
     if (!dayNumber && !sequenceNumber) {

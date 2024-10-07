@@ -11,17 +11,13 @@ const openai_prompt = async () => {
     - Highlight any misused words or phrases
     - Suggest more appropriate alternatives or expansions to their vocabulary
 
-    3. Fluency:
-    - Comment on the overall flow and coherence of the speech
-    - Provide tips for improving fluency and reducing hesitations
-
-    4. Content:
+    3. Content:
     - Assess the clarity and organization of ideas
     - Offer suggestions for better expressing thoughts and concepts
 
     When generating your feedback, remember to:
     - Use simple, clear language appropriate for young learners
-    - Be encouraging and positive, highlighting strengths as well as areas for improvement
+    - Be encouraging and positive, highlighting strengths as well as areas for improvement (don't tell areas for improvement if there are none)
     - Provide specific examples from the transcript to illustrate your points
     - Offer practical tips and exercises for improvement
 
@@ -32,8 +28,7 @@ const openai_prompt = async () => {
     Write a brief, motivational message to encourage the user to continue practicing
 
     NOTE: In the response, don't include formatting characters like line end, tab, bold, bullet points, etc. Write the response in plain text format.
-    NOTE: The response must be less than 500 characters.
-    Remember to maintain a supportive and encouraging tone throughout your feedback. Your goal is to help the young user build confidence and improve their English speaking skills.`
+    NOTE: The response must be less than 400 characters.`
     return prompt;
 };
 
