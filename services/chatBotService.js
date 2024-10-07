@@ -92,7 +92,7 @@ const webhookService = async (body, res) => {
             let currentUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
 
             // If message is reset, delete user from database
-            if (messageContent.toLowerCase() === 'reset') {
+            if (message.type === 'text' && messageContent.toLowerCase() === 'reset') {
                 await removeUser(userMobileNumber);
                 return;
             }

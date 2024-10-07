@@ -1210,7 +1210,7 @@ const trialCourseStart = async (userMobileNumber, startingLesson) => {
 
 const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUserState, currentLesson, messageType, messageContent) => {
     const acceptableMessagesList = currentUserState.dataValues.acceptableMessages;
-    const activityType = currentUserState.dataValues.activity;
+    const activityType = currentUserState.dataValues.activityType;
     if (activityType === "listenAndSpeak" || activityType === "postListenAndSpeak" || activityType === "preListenAndSpeak" || activityType === "watchAndSpeak" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot") {
         if (acceptableMessagesList.includes("audio") && messageType === "audio") {
             return true;
