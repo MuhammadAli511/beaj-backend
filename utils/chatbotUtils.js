@@ -152,7 +152,7 @@ const createActivityLog = async (
         lessonId = userCurrentProgress.currentLessonId || null;
         weekNumber = userCurrentProgress.currentWeek || null;
         dayNumber = userCurrentProgress.currentDay || null;
-        questionId = userCurrentProgress.questionId || null;
+        questionId = userCurrentProgress.questionNumber || null;
         activityType = userCurrentProgress.activityType || null;
         retryCount = userCurrentProgress.retryCounter || null;
     }
@@ -856,66 +856,6 @@ const sendLessonToUser = async (
         }
         else if (activity == 'read') {
             if (messageType != 'audio') {
-                // Lesson Started Record
-                await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date());
-
-                // First lesson of the day custom message
-                // const firstLesson = await lessonRepository.isFirstLessonOfDay(currentUserState.dataValues.currentLessonId);
-                // if (firstLesson) {
-                //     let letStartLessonMessage = "Let's start Lesson #" + currentUserState.dataValues.currentDay;
-                //     await sendMessage(userMobileNumber, letStartLessonMessage);
-                //     await createActivityLog(userMobileNumber, "text", "outbound", letStartLessonMessage, null);
-                // }
-
-                // Send lesson message
-                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\nRead the text and answer the questions. " + startingLesson.dataValues.text;
-                await sendMessage(userMobileNumber, lessonMessage);
-                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
-
-                const readDocumentFiles = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
-                let englishAudio, image;
-                for (let i = 0; i < readDocumentFiles.length; i++) {
-                    if (documentFile[i].dataValues.language == 'English') {
-                        englishAudio = readDocumentFiles[i].dataValues.audio;
-                    }
-                    if (readDocumentFiles[i].dataValues.mediaType == 'image') {
-                        image = readDocumentFiles[i].dataValues.image;
-                    }
-                }
-
-                lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\nRead the text and answer the questions. " + startingLesson.dataValues.text;
-                await sendMessage(userMobileNumber, lessonMessage);
-                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
-
-                if (image) {
-                    await sendMediaMessage(userMobileNumber, image, 'image');
-                    await createActivityLog(userMobileNumber, "image", "outbound", image, null);
-                }
-                await sleep(4000);
-                if (englishAudio) {
-                    await sendMediaMessage(userMobileNumber, englishAudio, 'audio');
-                    await createActivityLog(userMobileNumber, "audio", "outbound", englishAudio, null);
-                }
-
-                // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next lesson"]);
-
-                // Sleep
-                await sleep(10000);
-
-                // const lastLesson = await lessonRepository.isLastLessonOfDay(currentUserState.dataValues.currentLessonId);
-                // if (lastLesson) {
-                //     const totalLessons = await lessonRepository.getTotalDaysInCourse(currentUserState.currentCourseId);
-                //     let endingMessage = "Lesson Completed 👏🏽\nYou have completed " + currentUserState.dataValues.currentDay + " out of " + totalLessons + " lessons! ⭐️
-                //     await sendMessage(userMobileNumber, endingMessage);
-                //     await createActivityLog(userMobileNumber, "text", "outbound", endingMessage, null);
-                // }
-
-                // Next template for next lesson
-                await sendNextLessonTemplateMessage(userMobileNumber);
-                await createActivityLog(userMobileNumber, "template", "outbound", "Start next lesson", null);
             }
         }
         else if (activity == 'conversationalQuestionsBot') {
@@ -1134,7 +1074,7 @@ const outlineMessage = async (userMobileNumber) => {
 
     const outlineImageLink = await extractConstantMessage("level_one_course_outline");
     await sendMediaMessage(userMobileNumber, outlineImageLink, 'image');
-    await createActivityLog(userMobileNumber, "text", "outbound", outlineImageLink, null);
+    await createActivityLog(userMobileNumber, "image", "outbound", outlineImageLink, null);
     await sleep(2000);
 
     await sendTemplateMessage(userMobileNumber, "apply_now_or_try_course_demo");

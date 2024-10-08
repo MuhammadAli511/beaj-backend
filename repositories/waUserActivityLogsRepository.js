@@ -33,7 +33,10 @@ const getByPhoneNumber = async (phoneNumber) => {
     return await WA_UserActivityLogs.findAll({
         where: {
             phoneNumber: phoneNumber
-        }
+        },
+        order: [
+            ['timestamp', 'ASC']
+        ]
     });
 };
 

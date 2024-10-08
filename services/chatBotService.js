@@ -84,7 +84,7 @@ const webhookService = async (body, res) => {
                 createActivityLog(userMobileNumber, 'text', 'inbound', message.text?.body, null);
             } else if (message.type === 'button') {
                 messageContent = message.button.text;
-                createActivityLog(userMobileNumber, 'button', 'inbound', messageContent, null);
+                createActivityLog(userMobileNumber, 'template', 'inbound', messageContent, null);
             }
 
             // Check if user exists in the database
