@@ -68,8 +68,8 @@ const webhookService = async (body, res) => {
             const userMobileNumber = "+" + message.from;
             let messageContent;
             let messageType = message.type;
-            console.log('User:', userMobileNumber);
-            console.log('Message Type:', message.type);
+            let logger = `Inbound Message: User: ${userMobileNumber}, Message Type: ${message.type}, Message Content: ${message.text?.body || message.image?.id || message.audio?.id || message.video?.id || message.button?.text}`;
+            console.log(logger);
             if (message.type === 'image') {
                 createActivityLog(userMobileNumber, 'image', 'inbound', message, null);
                 messageContent = await retrieveMediaURL(message.image.id);

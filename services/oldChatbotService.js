@@ -152,7 +152,6 @@ const sendMediaMessage = async (to, mediaUrl, mediaType) => {
 
 const sendNextLessonTemplateMessage = async (to) => {
     try {
-        console.log("Phone Number:", to);
         const response = await axios.post(
             `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
             {
@@ -629,16 +628,9 @@ const webhookService = async (body, res) => {
             const message = body.entry[0].changes[0].value.messages[0];
             const userMobileNumber = "+" + message.from;
             let userMessage;
-            console.log('User:', userMobileNumber);
             if (message.type === 'image') {
-                console.log('Message: Image');
-            } else if (message.type === 'audio') {
-                console.log('Message: Audio');
             } else if (message.type === 'text') {
                 userMessage = message.text?.body.toLowerCase().trim() || "";
-                console.log('Message:', userMessage);
-            } else if (message.type === 'video') {
-                console.log('Message: Video');
             } else if (message.type === 'button') {
                 userMessage = message.button.text;
             }

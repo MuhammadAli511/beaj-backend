@@ -65,8 +65,6 @@ async function azureTextToSpeechAndUpload(text) {
                             });
 
                             const blobUrl = blockBlobClient.url;
-
-                            console.log(`Audio successfully uploaded to Blob Storage: ${blobUrl}`);
                             resolve(blobUrl);
                         } catch (uploadError) {
                             console.error("Error uploading the audio data:", uploadError);
@@ -241,7 +239,6 @@ async function azurePronunciationAssessment(audioBuffer, referenceText) {
             recognizer.canceled = function (s, e) {
                 if (e.reason === sdk.CancellationReason.Error) {
                     var str = `(cancel) Reason: ${sdk.CancellationReason[e.reason]}: ${e.errorDetails}`;
-                    console.log(str);
                 }
                 recognizer.stopContinuousRecognitionAsync();
             };
