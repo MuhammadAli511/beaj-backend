@@ -429,7 +429,7 @@ const sendLessonToUser = async (
                             null,
                             null,
                             [userAnswerIsCorrect],
-                            retryCounter,
+                            retryCounter + 1,
                             submissionDate
                         );
                     } else {
@@ -445,7 +445,7 @@ const sendLessonToUser = async (
                             null,
                             null,
                             userAnswerIsCorrect,
-                            retryCounter,
+                            retryCounter + 1,
                             submissionDate
                         );
                     }

@@ -29,10 +29,19 @@ const deleteById = async (id) => {
     });
 };
 
+const getAllByPhoneNumber = async (phoneNumber) => {
+    return await WA_PurchasedCourses.findAll({
+        where: {
+            phoneNumber: phoneNumber
+        }
+    });
+};
+
 export default {
     create,
     getAll,
     getById,
     update,
-    deleteById
+    deleteById,
+    getAllByPhoneNumber
 };
