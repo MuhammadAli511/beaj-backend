@@ -140,7 +140,7 @@ const webhookService = async (body, res) => {
             if (message.type == 'text' && (messageContent.toLowerCase().includes('start free trial'))) {
                 if (currentUserState.dataValues.engagement_type == 'Outline Message') {
                     const startingLesson = await lessonRepository.getNextLesson(
-                        await courseRepository.getCourseIdByName("Trial Course - Teachers"),
+                        await courseRepository.getCourseIdByName("Free Trial"),
                         1,
                         null,
                         null
@@ -171,7 +171,7 @@ const webhookService = async (body, res) => {
 
                 // Course is completed
                 if (nextLesson === null) {
-                    if (currentUserState.dataValues.engagement_type === 'Trial Course - Teachers') {
+                    if (currentUserState.dataValues.engagement_type === 'Free Trial') {
                         await continuePracticingMessage(userMobileNumber);
                         return;
                     }

@@ -1,15 +1,20 @@
-import dotenv from 'dotenv';
-import sdk from 'microsoft-cognitiveservices-speech-sdk';
-import { v4 as uuidv4 } from 'uuid';
-import { BlobServiceClient } from '@azure/storage-blob';
-import { format } from 'date-fns';
-import { Readable, PassThrough } from 'stream';
-import ffmpeg from 'fluent-ffmpeg';
-import ffmpegPath from 'ffmpeg-static';
-import _ from 'lodash';
-import { diffArrays } from 'diff';
+import dotenv from "dotenv";
+import sdk from "microsoft-cognitiveservices-speech-sdk";
+import { v4 as uuidv4 } from "uuid";
+import { BlobServiceClient } from "@azure/storage-blob";
+import { format } from "date-fns";
+import { Readable, PassThrough } from "stream";
+import ffmpeg from "fluent-ffmpeg";
+import ffmpegPath from "ffmpeg-static";
+import _ from "lodash";
+import { diffArrays } from "diff";
 import openai_prompt from "../utils/prompts.js";
 import { AzureOpenAI } from "openai";
+import OpenAI from "openai";
+import fs from "fs";
+import { promisify } from "util";
+import { tmpdir } from "os";
+import { join } from "path";
 
 dotenv.config();
 ffmpeg.setFfmpegPath(ffmpegPath);
@@ -22,7 +27,8 @@ async function azureTextToSpeechAndUpload(text) {
                 process.env.AZURE_CUSTOM_VOICE_REGION
             );
 
-            speechConfig.speechSynthesisOutputFormat = sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
+            speechConfig.speechSynthesisOutputFormat =
+                sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
 
             speechConfig.speechSynthesisVoiceName = "en-IN-RehaanNeural";
 
@@ -37,24 +43,30 @@ async function azureTextToSpeechAndUpload(text) {
                             const audioData = Buffer.from(result.audioData);
 
                             // Generate a unique file name with timestamp and UUID
-                            const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
+                            const timestamp = format(new Date(), "yyyyMMddHHmmssSSS");
                             const uniqueID = uuidv4();
                             const baseFileName = `tts_audio_${uniqueID}.mp3`;
                             const filename = `${timestamp}-${uniqueID}-${baseFileName}`;
 
                             const containerName = "beajdocuments";
-                            const azureBlobConnectionString = process.env.AZURE_BLOB_CONNECTION_STRING;
+                            const azureBlobConnectionString =
+                                process.env.AZURE_BLOB_CONNECTION_STRING;
 
                             if (!azureBlobConnectionString) {
-                                throw new Error("Azure Blob Storage connection string is not defined in environment variables.");
+                                throw new Error(
+                                    "Azure Blob Storage connection string is not defined in environment variables."
+                                );
                             }
 
-                            const blobServiceClient = BlobServiceClient.fromConnectionString(azureBlobConnectionString);
+                            const blobServiceClient = BlobServiceClient.fromConnectionString(
+                                azureBlobConnectionString
+                            );
 
-                            const containerClient = blobServiceClient.getContainerClient(containerName);
+                            const containerClient =
+                                blobServiceClient.getContainerClient(containerName);
 
                             await containerClient.createIfNotExists({
-                                access: 'container',
+                                access: "container",
                             });
 
                             const blobClient = containerClient.getBlockBlobClient(filename);
@@ -87,7 +99,7 @@ async function azureTextToSpeechAndUpload(text) {
             reject(err);
         }
     });
-};
+}
 
 function convertOggToWav(oggBuffer) {
     return new Promise((resolve, reject) => {
@@ -96,18 +108,41 @@ function convertOggToWav(oggBuffer) {
 
         const wavData = [];
         const wavStream = new PassThrough();
-        wavStream.on('data', chunk => wavData.push(chunk));
-        wavStream.on('end', () => resolve(Buffer.concat(wavData)));
-        wavStream.on('error', err => reject(err));
+        wavStream.on("data", (chunk) => wavData.push(chunk));
+        wavStream.on("end", () => resolve(Buffer.concat(wavData)));
+        wavStream.on("error", (err) => reject(err));
 
         ffmpeg(oggStream)
-            .format('wav')
-            .audioCodec('pcm_s16le')
+            .format("wav")
+            .audioCodec("pcm_s16le")
             .audioChannels(1)
             .audioFrequency(16000)
-            .on('error', err => reject(err))
+            .on("error", (err) => reject(err))
             .pipe(wavStream);
     });
+}
+
+const writeFile = promisify(fs.writeFile);
+const unlink = promisify(fs.unlink);
+
+async function openaiSpeechToText(audioBuffer) {
+    const openai = new OpenAI(process.env.OPENAI_API_KEY);
+
+    const uniqueFileName = `audio-${uuidv4()}.ogg`;
+    const tempFilePath = join(tmpdir(), uniqueFileName);
+
+    try {
+        await writeFile(tempFilePath, audioBuffer);
+
+        const transcription = await openai.audio.transcriptions.create({
+            file: fs.createReadStream(tempFilePath),
+            model: "whisper-1",
+        });
+        console.log("Transcription:", transcription.text);
+        return transcription.text;
+    } finally {
+        await unlink(tempFilePath);
+    }
 }
 
 async function azureSpeechToText(audioBuffer) {
@@ -129,9 +164,12 @@ async function azureSpeechToText(audioBuffer) {
 
             const audioConfig = sdk.AudioConfig.fromStreamInput(pushStream);
 
-            const speechRecognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig);
+            const speechRecognizer = new sdk.SpeechRecognizer(
+                speechConfig,
+                audioConfig
+            );
 
-            speechRecognizer.recognizeOnceAsync(result => {
+            speechRecognizer.recognizeOnceAsync((result) => {
                 switch (result.reason) {
                     case sdk.ResultReason.RecognizedSpeech:
                         resolve(result.text);
@@ -146,10 +184,16 @@ async function azureSpeechToText(audioBuffer) {
 
                         if (cancellation.reason == sdk.CancellationReason.Error) {
                             console.log(`CANCELED: ErrorCode=${cancellation.ErrorCode}`);
-                            console.log(`CANCELED: ErrorDetails=${cancellation.errorDetails}`);
-                            console.log("CANCELED: Did you set the speech resource key and region values?");
+                            console.log(
+                                `CANCELED: ErrorDetails=${cancellation.errorDetails}`
+                            );
+                            console.log(
+                                "CANCELED: Did you set the speech resource key and region values?"
+                            );
                         }
-                        reject(new Error(`Speech recognition canceled: ${cancellation.reason}`));
+                        reject(
+                            new Error(`Speech recognition canceled: ${cancellation.reason}`)
+                        );
                         break;
                 }
                 speechRecognizer.close();
@@ -182,12 +226,13 @@ async function azurePronunciationAssessment(audioBuffer, referenceText) {
 
             const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig);
 
-            const pronunciationAssessmentConfig = new sdk.PronunciationAssessmentConfig(
-                referenceText,
-                sdk.PronunciationAssessmentGradingSystem.HundredMark,
-                sdk.PronunciationAssessmentGranularity.Phoneme,
-                true
-            );
+            const pronunciationAssessmentConfig =
+                new sdk.PronunciationAssessmentConfig(
+                    referenceText,
+                    sdk.PronunciationAssessmentGradingSystem.HundredMark,
+                    sdk.PronunciationAssessmentGranularity.Phoneme,
+                    true
+                );
             pronunciationAssessmentConfig.enableProsodyAssessment = true;
             pronunciationAssessmentConfig.applyTo(recognizer);
 
@@ -207,13 +252,18 @@ async function azurePronunciationAssessment(audioBuffer, referenceText) {
             const durations = [];
             let jo = {};
 
-            recognizer.recognizing = function (s, e) {
-            };
+            recognizer.recognizing = function (s, e) { };
 
             recognizer.recognized = function (s, e) {
-                var pronunciation_result = sdk.PronunciationAssessmentResult.fromResult(e.result);
+                var pronunciation_result = sdk.PronunciationAssessmentResult.fromResult(
+                    e.result
+                );
 
-                jo = JSON.parse(e.result.properties.getProperty(sdk.PropertyId.SpeechServiceResponse_JsonResult));
+                jo = JSON.parse(
+                    e.result.properties.getProperty(
+                        sdk.PropertyId.SpeechServiceResponse_JsonResult
+                    )
+                );
                 const nb = jo["NBest"][0];
                 if (nb.Words && nb.Words.length > 0) {
                     startOffset = nb.Words[0].Offset;
@@ -221,7 +271,7 @@ async function azurePronunciationAssessment(audioBuffer, referenceText) {
                     currentText = currentText.concat(localtext);
                     fluencyScores.push(nb.PronunciationAssessment.FluencyScore);
                     prosodyScores.push(nb.PronunciationAssessment.ProsodyScore);
-                    const isSucceeded = jo.RecognitionStatus === 'Success';
+                    const isSucceeded = jo.RecognitionStatus === "Success";
                     const nBestWords = jo.NBest[0].Words;
                     const durationList = [];
                     nBestWords.forEach((word) => {
@@ -238,7 +288,8 @@ async function azurePronunciationAssessment(audioBuffer, referenceText) {
 
             recognizer.canceled = function (s, e) {
                 if (e.reason === sdk.CancellationReason.Error) {
-                    var str = `(cancel) Reason: ${sdk.CancellationReason[e.reason]}: ${e.errorDetails}`;
+                    var str = `(cancel) Reason: ${sdk.CancellationReason[e.reason]}: ${e.errorDetails
+                        }`;
                 }
                 recognizer.stopContinuousRecognitionAsync();
             };
@@ -258,10 +309,16 @@ async function azurePronunciationAssessment(audioBuffer, referenceText) {
                 let resTextArray = [];
 
                 const language = speechConfig.speechRecognitionLanguage;
-                let resTextProcessed = (resText.toLocaleLowerCase() ?? "").replace(new RegExp("[!\"#$%&()*+,-./:;<=>?@[^_`{|}~]+", "g"), "").replace(new RegExp("]+", "g"), "");
-                let wholelyrics = (referenceText.toLocaleLowerCase() ?? "").replace(new RegExp("[!\"#$%&()*+,-./:;<=>?@[^_`{|}~]+", "g"), "").replace(new RegExp("]+", "g"), "");
-                wholelyricsArry = wholelyrics.split(" ").filter(item => item.trim());
-                resTextArray = resTextProcessed.split(" ").filter(item => item.trim());
+                let resTextProcessed = (resText.toLocaleLowerCase() ?? "")
+                    .replace(new RegExp('[!"#$%&()*+,-./:;<=>?@[^_`{|}~]+', "g"), "")
+                    .replace(new RegExp("]+", "g"), "");
+                let wholelyrics = (referenceText.toLocaleLowerCase() ?? "")
+                    .replace(new RegExp('[!"#$%&()*+,-./:;<=>?@[^_`{|}~]+', "g"), "")
+                    .replace(new RegExp("]+", "g"), "");
+                wholelyricsArry = wholelyrics.split(" ").filter((item) => item.trim());
+                resTextArray = resTextProcessed
+                    .split(" ")
+                    .filter((item) => item.trim());
 
                 const diffs = diffArrays(wholelyricsArry, resTextArray);
                 const lastWords = [];
@@ -270,8 +327,13 @@ async function azurePronunciationAssessment(audioBuffer, referenceText) {
                     if (part.added) {
                         part.value.forEach((word) => {
                             const indexInAllWords = currentText.indexOf(word);
-                            if (indexInAllWords !== -1 && allWords[indexInAllWords].PronunciationAssessment.ErrorType !== "Insertion") {
-                                allWords[indexInAllWords].PronunciationAssessment.ErrorType = "Insertion";
+                            if (
+                                indexInAllWords !== -1 &&
+                                allWords[indexInAllWords].PronunciationAssessment.ErrorType !==
+                                "Insertion"
+                            ) {
+                                allWords[indexInAllWords].PronunciationAssessment.ErrorType =
+                                    "Insertion";
                             }
                             lastWords.push(allWords[indexInAllWords]);
                         });
@@ -289,8 +351,12 @@ async function azurePronunciationAssessment(audioBuffer, referenceText) {
                         part.value.forEach((word) => {
                             const indexInAllWords = currentText.indexOf(word);
                             if (indexInAllWords !== -1) {
-                                if (allWords[indexInAllWords].PronunciationAssessment.ErrorType !== "None") {
-                                    allWords[indexInAllWords].PronunciationAssessment.ErrorType = "None";
+                                if (
+                                    allWords[indexInAllWords].PronunciationAssessment
+                                        .ErrorType !== "None"
+                                ) {
+                                    allWords[indexInAllWords].PronunciationAssessment.ErrorType =
+                                        "None";
                                 }
                                 lastWords.push(allWords[indexInAllWords]);
                             }
@@ -307,7 +373,11 @@ async function azurePronunciationAssessment(audioBuffer, referenceText) {
                     }
                 });
 
-                let compScore = Number(((recognizedWordsRes.length / reference_words.length) * 100).toFixed(0));
+                let compScore = Number(
+                    ((recognizedWordsRes.length / reference_words.length) * 100).toFixed(
+                        0
+                    )
+                );
                 if (compScore > 100) {
                     compScore = 100;
                 }
@@ -315,11 +385,18 @@ async function azurePronunciationAssessment(audioBuffer, referenceText) {
 
                 const accuracyScores = [];
                 lastWords.forEach((word) => {
-                    if (word && word?.PronunciationAssessment?.ErrorType !== "Insertion") {
-                        accuracyScores.push(Number(word?.PronunciationAssessment.AccuracyScore ?? 0));
+                    if (
+                        word &&
+                        word?.PronunciationAssessment?.ErrorType !== "Insertion"
+                    ) {
+                        accuracyScores.push(
+                            Number(word?.PronunciationAssessment.AccuracyScore ?? 0)
+                        );
                     }
                 });
-                scoreNumber.accuracyScore = Number((_.sum(accuracyScores) / accuracyScores.length).toFixed(0));
+                scoreNumber.accuracyScore = Number(
+                    (_.sum(accuracyScores) / accuracyScores.length).toFixed(0)
+                );
 
                 if (startOffset) {
                     const sumRes = [];
@@ -328,7 +405,9 @@ async function azurePronunciationAssessment(audioBuffer, referenceText) {
                     });
                     scoreNumber.fluencyScore = _.sum(sumRes) / _.sum(durations);
                 }
-                scoreNumber.prosodyScore = Number((_.sum(prosodyScores) / prosodyScores.length).toFixed(0));
+                scoreNumber.prosodyScore = Number(
+                    (_.sum(prosodyScores) / prosodyScores.length).toFixed(0)
+                );
 
                 const sortScore = Object.keys(scoreNumber).sort(function (a, b) {
                     return scoreNumber[a] - scoreNumber[b];
@@ -348,12 +427,14 @@ async function azurePronunciationAssessment(audioBuffer, referenceText) {
                     );
                 } else {
                     scoreNumber.pronScore = Number(
-                        (scoreNumber.accuracyScore * 0.5 + scoreNumber.fluencyScore * 0.5).toFixed(0)
+                        (
+                            scoreNumber.accuracyScore * 0.5 +
+                            scoreNumber.fluencyScore * 0.5
+                        ).toFixed(0)
                     );
                 }
 
-                lastWords.forEach((word, ind) => {
-                });
+                lastWords.forEach((word, ind) => { });
 
                 return {
                     scoreNumber,
@@ -387,4 +468,10 @@ async function openaiFeedback(userTranscript) {
     return result.choices[0].message.content;
 }
 
-export default { azureTextToSpeechAndUpload, azureSpeechToText, azurePronunciationAssessment, openaiFeedback };
+export default {
+    azureTextToSpeechAndUpload,
+    azureSpeechToText,
+    azurePronunciationAssessment,
+    openaiFeedback,
+    openaiSpeechToText,
+};

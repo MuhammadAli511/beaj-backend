@@ -399,7 +399,7 @@ const sendLessonToUser = async (
             } else if (messageType === 'audio') {
                 // Get the current Listen and Speak question
                 const currentListenAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
-                const recognizedText = await azureAIServices.azureSpeechToText(messageContent.data);
+                const recognizedText = await azureAIServices.openaiSpeechToText(messageContent.data);
                 if (recognizedText) {
                     const answersArray = currentListenAndSpeakQuestion.dataValues.answer;
                     let userAnswerIsCorrect = false;
@@ -736,7 +736,7 @@ const sendLessonToUser = async (
                 // Send question media file
                 await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
                 await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
-                await sleep(4000);
+                await sleep(7000);
                 let message = "Now you practice speaking by recording a voicenote."
                 await sendMessage(userMobileNumber, message);
                 await createActivityLog(userMobileNumber, "text", "outbound", message, null);
@@ -776,7 +776,7 @@ const sendLessonToUser = async (
                     await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.questionNumber);
                     await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
                     await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
-                    await sleep(4000);
+                    await sleep(7000);
                     let message = "Now you practice speaking by recording a voicenote."
                     await sendMessage(userMobileNumber, message);
                     await createActivityLog(userMobileNumber, "text", "outbound", message, null);
@@ -831,6 +831,10 @@ const sendLessonToUser = async (
                 await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
                 await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
 
+                const lessonText = startingLesson.dataValues.text;
+                await sendMessage(userMobileNumber, lessonText);
+                await createActivityLog(userMobileNumber, "text", "outbound", lessonText, null);
+
                 // const lastLesson = await lessonRepository.isLastLessonOfDay(currentUserState.dataValues.currentLessonId);
                 // if (lastLesson) {
                 //     const totalLessons = await lessonRepository.getTotalDaysInCourse(currentUserState.currentCourseId);
@@ -841,7 +845,8 @@ const sendLessonToUser = async (
             } else if (messageType == 'audio') {
                 // Get the current Read question text
                 const lessonText = startingLesson.dataValues.text;
-                const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, lessonText);
+                const textWithoutPunctuation = lessonText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
+                const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, textWithoutPunctuation);
                 const userTranscription = await extractUserTranscriptionFromWords(pronunciationAssessment);
                 const assessmentMessage = await generatePronunciationAssessmentMessage(pronunciationAssessment);
 
@@ -913,7 +918,7 @@ const sendLessonToUser = async (
             else if (messageType === 'audio') {
                 // Get the current Conversation Bot question
                 const currentConversationBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
-                const recognizedText = await azureAIServices.azureSpeechToText(messageContent.data);
+                const recognizedText = await azureAIServices.openaiSpeechToText(messageContent.data);
                 if (recognizedText) {
                     const message = `Please wait for an answer. \n\nYou said: ${recognizedText}`;
                     await sendMessage(userMobileNumber, message);
@@ -1018,7 +1023,7 @@ const sendLessonToUser = async (
                 // Get the current Conversation Bot Monologue
                 // This will have both openai feedback and pronunciation assessment
                 const currentConversationBotMonologue = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
-                const recognizedText = await azureAIServices.azureSpeechToText(messageContent.data);
+                const recognizedText = await azureAIServices.openaiSpeechToText(messageContent.data);
                 if (recognizedText) {
                     const message = `Please wait for an answer. \n\nYou said: ${recognizedText}`;
                     await sendMessage(userMobileNumber, message);
@@ -1171,7 +1176,7 @@ const trialCourseStart = async (userMobileNumber, startingLesson) => {
     await waUserProgressRepository.update(
         userMobileNumber,
         await courseRepository.getCourseIdByName(
-            "Trial Course - Teachers"
+            "Free Trial"
         ),
         startingLesson.dataValues.weekNumber,
         startingLesson.dataValues.dayNumber,
@@ -1181,7 +1186,7 @@ const trialCourseStart = async (userMobileNumber, startingLesson) => {
         null,
         null,
     );
-    await waUserProgressRepository.updateEngagementType(userMobileNumber, "Trial Course - Teachers");
+    await waUserProgressRepository.updateEngagementType(userMobileNumber, "Free Trial");
     await sendMessage(userMobileNumber, "Great! Let's start your free trial! 🤩 Here is your first lesson.");
     await createActivityLog(userMobileNumber, "text", "outbound", "Great! Let's start your free trial! 🤩 Here is your first lesson.", null);
     return;
@@ -1190,7 +1195,7 @@ const trialCourseStart = async (userMobileNumber, startingLesson) => {
 const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUserState, currentLesson, messageType, messageContent) => {
     const acceptableMessagesList = currentUserState.dataValues.acceptableMessages;
     const activityType = currentUserState.dataValues.activityType;
-    if (activityType === "listenAndSpeak" || activityType === "postListenAndSpeak" || activityType === "preListenAndSpeak" || activityType === "watchAndSpeak" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot") {
+    if (activityType === "listenAndSpeak" || activityType === "postListenAndSpeak" || activityType === "preListenAndSpeak" || activityType === "watchAndSpeak" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "read") {
         if (acceptableMessagesList.includes("audio") && messageType === "audio") {
             return true;
         }
