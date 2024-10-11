@@ -107,7 +107,7 @@ const webhookService = async (body, res) => {
             }
 
             // Step 2: User either clicks 'Apply for English Course' or 'Start Free Trial' button
-            if (message.type === 'button' && (messageContent.toLowerCase().includes('apply for english course'))) {
+            if (message.type === 'text' && (messageContent.toLowerCase().includes('apply for english course'))) {
                 if (currentUserState.dataValues.engagement_type == 'Outline Message' || currentUserState.dataValues.engagement_type == 'Apply for English Course') {
                     await nameInputMessage(userMobileNumber);
                     return;
@@ -129,7 +129,7 @@ const webhookService = async (body, res) => {
             }
 
             // Step 5: User enters their preferred timing, send them a thank you message
-            if (message.type === 'button' && currentUserState.dataValues.engagement_type == 'Preferred Timing Input') {
+            if (message.type == 'text' && currentUserState.dataValues.engagement_type == 'Preferred Timing Input') {
                 await waUsersMetadataRepository.update(userMobileNumber, { timingPreference: messageContent });
                 await thankYouMessage(userMobileNumber);
                 return;
@@ -137,7 +137,7 @@ const webhookService = async (body, res) => {
 
 
             // From step 2 if user clicks 'Start Free Trial' button
-            if (message.type === 'button' && (messageContent.toLowerCase().includes('start free trial'))) {
+            if (message.type == 'text' && (messageContent.toLowerCase().includes('start free trial'))) {
                 if (currentUserState.dataValues.engagement_type == 'Outline Message') {
                     const startingLesson = await lessonRepository.getNextLesson(
                         await courseRepository.getCourseIdByName("Trial Course - Teachers"),
@@ -160,7 +160,7 @@ const webhookService = async (body, res) => {
 
 
 
-            if ((message.type === 'button' || message.type === 'text') && messageContent.toLowerCase().includes('start next lesson')) {
+            if ((message.type === 'text' || message.type === 'text') && messageContent.toLowerCase().includes('start next lesson')) {
                 // Get next lesson to send user
                 const nextLesson = await lessonRepository.getNextLesson(
                     currentUserState.dataValues.currentCourseId,

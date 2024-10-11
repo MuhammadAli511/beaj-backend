@@ -358,7 +358,8 @@ const sendLessonToUser = async (
             // }
 
             // Next template for next lesson
-            await sendTemplateMessage(userMobileNumber, "next_lesson_emoji");
+            // await sendTemplateMessage(userMobileNumber, "next_lesson_emoji");
+            await sendMessage(userMobileNumber, 'Type "Start next lesson" to continue.');
             await createActivityLog(userMobileNumber, "template", "outbound", "Start next lesson", null);
         }
         else if (activity == 'listenAndSpeak' || activity == 'preListenAndSpeak' || activity == 'postListenAndSpeak') {
@@ -505,7 +506,8 @@ const sendLessonToUser = async (
                         // }
 
                         // Next template for next lesson
-                        await sendTemplateMessage(userMobileNumber, "next_lesson_emoji");
+                        // await sendTemplateMessage(userMobileNumber, "next_lesson_emoji");
+                        await sendMessage(userMobileNumber, 'Type "Start next lesson" to continue.');
                         await createActivityLog(userMobileNumber, "template", "outbound", "Start next lesson", null);
                     }
                 } else {
@@ -568,7 +570,8 @@ const sendLessonToUser = async (
             // }
 
             // Next template for next lesson
-            await sendTemplateMessage(userMobileNumber, "next_lesson_emoji");
+            // await sendTemplateMessage(userMobileNumber, "next_lesson_emoji");
+            await sendMessage(userMobileNumber, 'Type "Start next lesson" to continue.');
             await createActivityLog(userMobileNumber, "template", "outbound", "Start next lesson", null);
         }
         else if (activity == 'mcqs' || activity == 'postMCQs' || activity == 'preMCQs') {
@@ -598,7 +601,8 @@ const sendLessonToUser = async (
                 }
                 await sendMessage(userMobileNumber, mcqMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", mcqMessage, null);
-                await sendTemplateMessage(userMobileNumber, "mcq_options");
+                // await sendTemplateMessage(userMobileNumber, "mcq_options");
+                await sendMessage(userMobileNumber, "Type 'Option A', 'Option B', or 'Option C' to answer.");
                 await createActivityLog(userMobileNumber, "template", "outbound", "Option A\nOption B\nOption C", null);
 
                 await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["option a", "option b", "option c"]);
@@ -660,7 +664,8 @@ const sendLessonToUser = async (
                     }
                     await sendMessage(userMobileNumber, mcqMessage);
                     await createActivityLog(userMobileNumber, "text", "outbound", mcqMessage, null);
-                    await sendTemplateMessage(userMobileNumber, "mcq_options");
+                    // await sendTemplateMessage(userMobileNumber, "mcq_options");
+                    await sendMessage(userMobileNumber, "Type 'Option A', 'Option B', or 'Option C' to answer.");
                     await createActivityLog(userMobileNumber, "template", "outbound", "Option A\nOption B\nOption C", null);
 
                     await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["option a", "option b", "option c"]);
@@ -697,7 +702,8 @@ const sendLessonToUser = async (
                     // }
 
                     // Next template for next lesson
-                    await sendTemplateMessage(userMobileNumber, "next_lesson_emoji");
+                    // await sendTemplateMessage(userMobileNumber, "next_lesson_emoji");
+                    await sendMessage(userMobileNumber, 'Type "Start next lesson" to continue.');
                     await createActivityLog(userMobileNumber, "template", "outbound", "Start next lesson", null);
                 }
             }
@@ -793,7 +799,8 @@ const sendLessonToUser = async (
                     // }
 
                     // Next template for next lesson
-                    await sendTemplateMessage(userMobileNumber, "next_lesson_emoji");
+                    // await sendTemplateMessage(userMobileNumber, "next_lesson_emoji");
+                    await sendMessage(userMobileNumber, 'Type "Start next lesson" to continue.');
                     await createActivityLog(userMobileNumber, "template", "outbound", "Start next lesson", null);
                 }
             }
@@ -866,7 +873,8 @@ const sendLessonToUser = async (
                 await sleep(2000);
 
                 // Next template for next lesson
-                await sendTemplateMessage(userMobileNumber, "next_lesson_emoji");
+                // await sendTemplateMessage(userMobileNumber, "next_lesson_emoji");
+                await sendMessage(userMobileNumber, 'Type "Start next lesson" to continue.');
                 await createActivityLog(userMobileNumber, "template", "outbound", "Start next lesson", null);
                 return;
             }
@@ -968,7 +976,8 @@ const sendLessonToUser = async (
                         // }
 
                         // Next template for next lesson
-                        await sendTemplateMessage(userMobileNumber, "next_lesson_emoji");
+                        // await sendTemplateMessage(userMobileNumber, "next_lesson_emoji");
+                        await sendMessage(userMobileNumber, 'Type "Start next lesson" to continue.');
                         await createActivityLog(userMobileNumber, "template", "outbound", "Start next lesson", null);
                     }
                 }
@@ -1070,7 +1079,8 @@ const sendLessonToUser = async (
                         // }
 
                         // Next template for next lesson
-                        await sendTemplateMessage(userMobileNumber, "next_lesson_emoji");
+                        // await sendTemplateMessage(userMobileNumber, "next_lesson_emoji");
+                        await sendMessage(userMobileNumber, 'Type "Start next lesson" to continue.');
                         await createActivityLog(userMobileNumber, "template", "outbound", "Start next lesson", null);
                     }
                 }
@@ -1104,7 +1114,8 @@ const outlineMessage = async (userMobileNumber) => {
     await createActivityLog(userMobileNumber, "image", "outbound", outlineImageLink, null);
     await sleep(2000);
 
-    await sendTemplateMessage(userMobileNumber, "apply_now_or_try_course_demo");
+    // await sendTemplateMessage(userMobileNumber, "apply_now_or_try_course_demo");
+    await sendMessage(userMobileNumber, 'Type "Apply for English Course" or "Start Free Trial" to continue.');
     await createActivityLog(userMobileNumber, "template", "outbound", "Apply for English Course or Start Free Trial", null);
 
     await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["apply for english course", "start free trial"]);
@@ -1129,7 +1140,8 @@ const districtInputMessage = async (userMobileNumber) => {
 
 const preferredTimingInputMessage = async (userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(userMobileNumber, "Preferred Timing Input");
-    await sendTemplateMessage(userMobileNumber, "live_class_timing");
+    // await sendTemplateMessage(userMobileNumber, "live_class_timing");
+    await sendMessage(userMobileNumber, 'Type "5:00 PM", 6:00 PM", "7:00 PM" or "9:00 PM" to select your preferred timing.');
     await createActivityLog(userMobileNumber, "template", "outbound", "Live Class Timing", null);
     await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["text"]);
     return;
@@ -1206,7 +1218,8 @@ const continuePracticingMessage = async (userMobileNumber) => {
     await sendMessage(userMobileNumber, 'To continue practicing, apply for the full course.\nSeats are limited!');
     await createActivityLog(userMobileNumber, 'text', 'outbound', 'To continue practicing, apply for the full course.\nSeats are limited!', null);
     await sleep(2000);
-    await sendTemplateMessage(userMobileNumber, 'apply_now');
+    // await sendTemplateMessage(userMobileNumber, 'apply_now');
+    await sendMessage(userMobileNumber, 'To apply, type "Apply for English Course"');
     await createActivityLog(userMobileNumber, 'template', 'outbound', 'Apply for English Course', null);
     await waUserProgressRepository.update(
         userMobileNumber,
