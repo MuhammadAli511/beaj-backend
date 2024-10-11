@@ -24,7 +24,7 @@ async function azureTextToSpeechAndUpload(text) {
 
             speechConfig.speechSynthesisOutputFormat = sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
 
-            speechConfig.speechSynthesisVoiceName = "en-US-SerenaMultilingualNeural";
+            speechConfig.speechSynthesisVoiceName = "en-IN-RehaanNeural";
 
             const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
 

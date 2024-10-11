@@ -106,9 +106,9 @@ const webhookService = async (body, res) => {
                 return;
             }
 
-            // Step 2: User either clicks 'Apply Now' or 'Try Course Demo' button
-            if (message.type === 'button' && (messageContent.toLowerCase().includes('apply now'))) {
-                if (currentUserState.dataValues.engagement_type == 'Outline Message' || currentUserState.dataValues.engagement_type == 'Apply Now') {
+            // Step 2: User either clicks 'Apply for English Course' or 'Start Free Trial' button
+            if (message.type === 'button' && (messageContent.toLowerCase().includes('apply for english course'))) {
+                if (currentUserState.dataValues.engagement_type == 'Outline Message' || currentUserState.dataValues.engagement_type == 'Apply for English Course') {
                     await nameInputMessage(userMobileNumber);
                     return;
                 }
@@ -136,8 +136,8 @@ const webhookService = async (body, res) => {
             };
 
 
-            // From step 2 if user clicks 'Try Course Demo' button
-            if (message.type === 'button' && (messageContent.toLowerCase().includes('try course demo'))) {
+            // From step 2 if user clicks 'Start Free Trial' button
+            if (message.type === 'button' && (messageContent.toLowerCase().includes('start free trial'))) {
                 if (currentUserState.dataValues.engagement_type == 'Outline Message') {
                     const startingLesson = await lessonRepository.getNextLesson(
                         await courseRepository.getCourseIdByName("Trial Course - Teachers"),
