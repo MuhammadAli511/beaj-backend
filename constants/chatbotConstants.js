@@ -1,3 +1,5 @@
+import waConstantsRepository from "../repositories/waConstantsRepository.js";
+
 const introLists = [
     "hello",
     "hi",

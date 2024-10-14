@@ -81,6 +81,15 @@ const deleteByCourseCategoryId = async (courseCategoryId) => {
     });
 };
 
+const getCourseIdByName = async (courseName) => {
+    const course = await Course.findOne({
+        where: {
+            CourseName: courseName
+        }
+    });
+    return course.CourseId;
+};
+
 export default {
     totalCoursesRepository,
     create,
@@ -91,5 +100,6 @@ export default {
     addOneInCourseWeeks,
     deleteOneInCourseWeeks,
     getByCourseCategoryId,
-    deleteByCourseCategoryId
+    deleteByCourseCategoryId,
+    getCourseIdByName
 };

@@ -1,12 +1,28 @@
-// services/speakActivityQuestionService.js
 import azure_blob from '../utils/azureBlobStorage.js';
+import azureAIServices from '../utils/azureAIServices.js';
+import parseAnswers from '../utils/parseAnswers.js';
 import speakActivityQuestionRepository from '../repositories/speakActivityQuestionRepository.js';
 
 const createSpeakActivityQuestionService = async (question, mediaFile, answer, lessonId, questionNumber) => {
     try {
-        const audioUrl = await azure_blob.uploadToBlobStorage(mediaFile);
-        const answerArray = answer.split(",");
-        const speakActivityQuestion = await speakActivityQuestionRepository.create(question, audioUrl, answerArray, lessonId, questionNumber);
+        let audioUrl = null;
+        if (mediaFile) {
+            audioUrl = await azure_blob.uploadToBlobStorage(mediaFile);
+        } else {
+            audioUrl = await azureAIServices.azureTextToSpeechAndUpload(question);
+        }
+
+        // Use a regex to correctly handle double-quoted answers with commas inside
+        const answerArray = parseAnswers(answer);
+
+        const speakActivityQuestion = await speakActivityQuestionRepository.create(
+            question,
+            audioUrl,
+            answerArray,
+            lessonId,
+            questionNumber
+        );
+
         return speakActivityQuestion;
     } catch (error) {
         error.fileName = 'speakActivityQuestionService.js';
@@ -36,8 +52,22 @@ const getSpeakActivityQuestionByIdService = async (id) => {
 
 const updateSpeakActivityQuestionService = async (id, question, mediaFile, answer, lessonId, questionNumber) => {
     try {
-        const audioUrl = await azure_blob.uploadToBlobStorage(mediaFile);
-        const speakActivityQuestion = await speakActivityQuestionRepository.update(id, question, audioUrl, answer, lessonId, questionNumber);
+        let audioUrl = mediaFile;
+        if (mediaFile && typeof mediaFile === 'object') {
+            audioUrl = await azure_blob.uploadToBlobStorage(mediaFile);
+        }
+
+        const answerArray = parseAnswers(answer);
+
+        const speakActivityQuestion = await speakActivityQuestionRepository.update(
+            id,
+            question,
+            audioUrl,
+            answerArray,
+            lessonId,
+            questionNumber
+        );
+
         return speakActivityQuestion;
     } catch (error) {
         error.fileName = 'speakActivityQuestionService.js';

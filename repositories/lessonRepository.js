@@ -85,7 +85,71 @@ const getCurrentLesson = async (lesson_id) => {
     });
 };
 
+const isFirstLessonOfDay = async (lessonId) => {
+    const lesson = await Lesson.findByPk(lessonId);
 
+    if (!lesson) {
+        return false;
+    }
+
+    const firstLessonOfDay = await Lesson.findOne({
+        where: {
+            courseId: lesson.courseId,
+            weekNumber: lesson.weekNumber,
+            dayNumber: lesson.dayNumber,
+            status: 'Active'
+        },
+        order: [['SequenceNumber', 'ASC']],
+        limit: 1
+    });
+
+    return firstLessonOfDay && firstLessonOfDay.LessonId === lesson.LessonId;
+};
+
+
+const isLastLessonOfDay = async (lessonId) => {
+    const lesson = await Lesson.findByPk(lessonId);
+
+    if (!lesson) {
+        return false;
+    }
+
+    const lastLessonOfDay = await Lesson.findOne({
+        where: {
+            courseId: lesson.courseId,
+            weekNumber: lesson.weekNumber,
+            dayNumber: lesson.dayNumber,
+            status: 'Active'
+        },
+        order: [['SequenceNumber', 'DESC']],
+        limit: 1
+    });
+
+    return lastLessonOfDay && lastLessonOfDay.LessonId === lesson.LessonId;
+};
+
+
+const getTotalDaysInCourse = async (courseId) => {
+    const maxWeekNumber = await Lesson.max('weekNumber', {
+        where: {
+            courseId: courseId
+        }
+    });
+
+    let totalDays = 0;
+
+    for (let week = 1; week <= maxWeekNumber; week++) {
+        const maxDayNumberInWeek = await Lesson.max('dayNumber', {
+            where: {
+                courseId: courseId,
+                weekNumber: week
+            }
+        });
+        totalDays += maxDayNumberInWeek || 0;
+    }
+
+    return totalDays;
+};
 
 const getNextLesson = async (courseId, weekNumber, dayNumber, sequenceNumber) => {
     // If weekNumber, dayNumber, and sequenceNumber are all null, return the first lesson in the course
@@ -98,7 +162,8 @@ const getNextLesson = async (courseId, weekNumber, dayNumber, sequenceNumber) =>
             where: {
                 courseId: courseId,
                 weekNumber: weekNumber,
-                dayNumber: minDay
+                dayNumber: minDay,
+                status: 'Active'
             },
             order: [
                 ['SequenceNumber', 'ASC']
@@ -114,6 +179,7 @@ const getNextLesson = async (courseId, weekNumber, dayNumber, sequenceNumber) =>
                 courseId: courseId,
                 weekNumber: weekNumber,
                 dayNumber: dayNumber,
+                status: 'Active',
                 SequenceNumber: {
                     [Sequelize.Op.gt]: sequenceNumber
                 }
@@ -129,6 +195,7 @@ const getNextLesson = async (courseId, weekNumber, dayNumber, sequenceNumber) =>
                 where: {
                     courseId: courseId,
                     weekNumber: weekNumber,
+                    status: 'Active',
                     dayNumber: {
                         [Sequelize.Op.gt]: dayNumber
                     }
@@ -145,6 +212,7 @@ const getNextLesson = async (courseId, weekNumber, dayNumber, sequenceNumber) =>
             nextLesson = await Lesson.findOne({
                 where: {
                     courseId: courseId,
+                    status: 'Active',
                     weekNumber: {
                         [Sequelize.Op.gt]: weekNumber
                     }
@@ -178,5 +246,8 @@ export default {
     getNextLesson,
     getCurrentLesson,
     getByCourseActivity,
-    getLessonsArrayForWeek
+    getLessonsArrayForWeek,
+    isFirstLessonOfDay,
+    isLastLessonOfDay,
+    getTotalDaysInCourse
 };
