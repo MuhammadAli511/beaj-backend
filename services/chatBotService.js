@@ -18,14 +18,15 @@ import {
     sendLessonToUser,
     nameInputMessage,
     districtInputMessage,
-    preferredTimingInputMessage,
+    scholarshipInputMessage,
     thankYouMessage,
     trialCourseStart,
     getAcceptableMessagesList,
     continuePracticingMessage,
     removeUser,
     checkUserMessageAndAcceptableMessages,
-    sendMessage
+    sendMessage,
+    sendWrongMessages
 } from '../utils/chatbotUtils.js';
 
 
@@ -68,7 +69,7 @@ const webhookService = async (body, res) => {
             const userMobileNumber = "+" + message.from;
             let messageContent;
             let messageType = message.type;
-            let logger = `Inbound Message: User: ${userMobileNumber}, Message Type: ${message.type}, Message Content: ${message.text?.body || message.image?.id || message.audio?.id || message.video?.id || message.button?.text}`;
+            let logger = `Inbound Message: User: ${userMobileNumber}, Message Type: ${message.type}, Message Content: ${message.text?.body || message.image?.id || message.audio?.id || message.video?.id || message.interactive?.button_reply?.title}`;
             console.log(logger);
             if (message.type === 'image') {
                 createActivityLog(userMobileNumber, 'image', 'inbound', message, null);
@@ -82,8 +83,8 @@ const webhookService = async (body, res) => {
             } else if (message.type === 'text') {
                 messageContent = message.text?.body.toLowerCase().trim() || "";
                 createActivityLog(userMobileNumber, 'text', 'inbound', message.text?.body, null);
-            } else if (message.type === 'button') {
-                messageContent = message.button.text;
+            } else if (message.type === 'interactive') {
+                messageContent = message.interactive.button_reply.title.toLowerCase().trim();
                 createActivityLog(userMobileNumber, 'template', 'inbound', messageContent, null);
             }
 
@@ -92,11 +93,10 @@ const webhookService = async (body, res) => {
             let currentUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
 
             // If message is reset, delete user from database
-            if (message.type === 'text' && messageContent.toLowerCase() === 'reset') {
+            if ((message.type === 'text' || message.type === 'interactive') && messageContent.toLowerCase() === 'reset') {
                 await removeUser(userMobileNumber);
                 return;
             }
-
 
             // Step 1: If user does not exist, check if the first message is the onboarding message
             const onboardingFirstMessage = await extractConstantMessage('onboarding_first_message');
@@ -104,11 +104,14 @@ const webhookService = async (body, res) => {
                 await waUsersMetadataRepository.create({ phoneNumber: userMobileNumber });
                 await outlineMessage(userMobileNumber);
                 return;
+            } else if (!user && onboardingFirstMessage.toLowerCase() !== messageContent) {
+                await sendWrongMessages(userMobileNumber);
+                return;
             }
 
-            // Step 2: User either clicks 'Apply for English Course' or 'Start Free Trial' button
-            if (message.type === 'text' && (messageContent.toLowerCase().includes('apply for english course'))) {
-                if (currentUserState.dataValues.engagement_type == 'Outline Message' || currentUserState.dataValues.engagement_type == 'Apply for English Course') {
+            // Step 2: User either clicks 'Apply for Course' or 'Start Free Trial' button
+            if ((message.type === 'text' || message.type === 'interactive') && (messageContent.toLowerCase().includes('apply for course'))) {
+                if (currentUserState.dataValues.engagement_type == 'Outline Message' || currentUserState.dataValues.engagement_type == 'Apply for Course') {
                     await nameInputMessage(userMobileNumber);
                     return;
                 }
@@ -124,20 +127,24 @@ const webhookService = async (body, res) => {
             // Step 4: User enters their district, now ask for their preferred timing
             if (message.type === 'text' && currentUserState.dataValues.engagement_type == 'District Input') {
                 await waUsersMetadataRepository.update(userMobileNumber, { city: messageContent });
-                await preferredTimingInputMessage(userMobileNumber);
+                await scholarshipInputMessage(userMobileNumber);
                 return;
             }
 
-            // Step 5: User enters their preferred timing, send them a thank you message
-            if (message.type == 'text' && currentUserState.dataValues.engagement_type == 'Preferred Timing Input') {
-                await waUsersMetadataRepository.update(userMobileNumber, { timingPreference: messageContent });
+            // Step 5: User enters their scholarship, send them a thank you message
+            if (message.type == 'text' && currentUserState.dataValues.engagement_type == 'Scholarship') {
+                const messageAuth = await checkUserMessageAndAcceptableMessages(userMobileNumber, currentUserState, message, messageType, messageContent);
+                if (messageAuth === false) {
+                    return;
+                }
+                await waUsersMetadataRepository.update(userMobileNumber, { scholarshipValue: messageContent });
                 await thankYouMessage(userMobileNumber);
                 return;
             };
 
 
             // From step 2 if user clicks 'Start Free Trial' button
-            if (message.type == 'text' && (messageContent.toLowerCase().includes('start free trial'))) {
+            if (message.type == 'interactive' && (messageContent.toLowerCase().includes('start free trial'))) {
                 if (currentUserState.dataValues.engagement_type == 'Outline Message') {
                     const startingLesson = await lessonRepository.getNextLesson(
                         await courseRepository.getCourseIdByName("Free Trial"),
@@ -160,7 +167,7 @@ const webhookService = async (body, res) => {
 
 
 
-            if ((message.type === 'text' || message.type === 'text') && messageContent.toLowerCase().includes('start next lesson')) {
+            if ((message.type === 'text' || message.type === 'interactive') && messageContent.toLowerCase().includes('start next lesson')) {
                 // Get next lesson to send user
                 const nextLesson = await lessonRepository.getNextLesson(
                     currentUserState.dataValues.currentCourseId,
