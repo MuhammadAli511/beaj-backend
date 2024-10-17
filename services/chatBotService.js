@@ -145,7 +145,7 @@ const webhookService = async (body, res) => {
                 if (messageAuth === false) {
                     return;
                 }
-                await waUsersMetadataRepository.update(userMobileNumber, { scholarshipValue: messageContent });
+                await waUsersMetadataRepository.update(userMobileNumber, { scholarshipvalue: messageContent });
                 await thankYouMessage(userMobileNumber);
                 return;
             };

@@ -15,13 +15,19 @@ import azureBlobStorage from "./azureBlobStorage.js";
 import azureAIServices from '../utils/azureAIServices.js';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
-import { createCanvas, loadImage } from 'canvas';
-import fs from 'fs';
+import { createCanvas, loadImage, registerFont } from 'canvas';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
 dotenv.config();
 
 const whatsappToken = process.env.WHATSAPP_TOKEN;
 const whatsappPhoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Register the Arial font
+registerFont(join(__dirname, '../fonts/arial.ttf'), { family: 'Arial' });
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -112,7 +118,7 @@ async function createAndUploadScoreImage(pronunciationAssessment) {
 
         // Add score text inside the bar
         ctx.fillStyle = '#000000';
-        ctx.fillText(`${pronounciationScoreNumber}%`, 50 + 790 * (pronounciationScoreNumber / 100) - 60, 187);
+        ctx.fillText(`${pronounciationScoreNumber}%`, 50 + 790 * (pronounciationScoreNumber / 100) - 70, 187);
 
         // Add "Fluency" Bar with dynamic score
         ctx.fillText('Fluency', 50, 250);
@@ -127,7 +133,7 @@ async function createAndUploadScoreImage(pronunciationAssessment) {
 
         // Add score text inside the bar
         ctx.fillStyle = '#000000';
-        ctx.fillText(`${fluencyScoreNumber}%`, 50 + 790 * (fluencyScoreNumber / 100) - 60, 287);
+        ctx.fillText(`${fluencyScoreNumber}%`, 50 + 790 * (fluencyScoreNumber / 100) - 70, 287);
 
         // Add "You said" section
         ctx.font = 'bold 30px Arial';
@@ -1297,7 +1303,10 @@ const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUs
             return true;
         }
     }
-    if (acceptableMessagesList.includes(messageContent.toLowerCase())) {
+    else if (messageType === "text" && acceptableMessagesList.includes("text")) {
+        return true;
+    }
+    else if (acceptableMessagesList.includes(messageContent.toLowerCase())) {
         return true;
     } else {
         // If acceptable message list size is more than 2999 then "0 - 3000 tak koi number type kerain."
