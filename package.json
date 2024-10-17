@@ -19,6 +19,7 @@
     "@azure/storage-blob": "^12.23.0",
     "@deepgram/sdk": "^3.3.4",
     "bcryptjs": "^2.4.3",
+    "canvas": "^2.11.2",
     "cors": "^2.8.5",
     "date-fns": "^3.6.0",
     "diff": "^7.0.0",

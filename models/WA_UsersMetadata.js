@@ -23,6 +23,10 @@ WA_UsersMetadata.init({
     targetGroup: {
         type: DataTypes.TEXT,
         allowNull: true,
+    },
+    scholarshipvalue: {
+        type: DataTypes.TEXT,
+        allowNull: true,
     }
 }, {
     sequelize,

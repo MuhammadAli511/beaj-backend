@@ -5,6 +5,35 @@ import { format } from 'date-fns';
 
 dotenv.config();
 
+async function uploadImageToBlobStorage(imageBuffer, imageName = 'output-score.jpg') {
+    try {
+        const containerName = "beajdocuments";
+        const azureBlobConnectionString = process.env.AZURE_BLOB_CONNECTION_STRING;
+        const blobServiceClient = BlobServiceClient.fromConnectionString(azureBlobConnectionString);
+
+        // Create a unique filename with a timestamp and UUID
+        const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
+        const uniqueID = uuidv4();
+        const filename = `${timestamp}-${uniqueID}-${imageName}`;
+
+        // Get container and blob clients
+        const containerClient = blobServiceClient.getContainerClient(containerName);
+        const blobClient = containerClient.getBlobClient(filename);
+        const blockBlobClient = blobClient.getBlockBlobClient();
+
+        // Upload the image buffer to Blob Storage with appropriate headers
+        await blockBlobClient.upload(imageBuffer, imageBuffer.byteLength, {
+            blobHTTPHeaders: { blobContentType: 'image/jpeg' }
+        });
+
+        // Return the URL of the uploaded image
+        return `https://${blobServiceClient.accountName}.blob.core.windows.net/${containerName}/${filename}`;
+    } catch (ex) {
+        console.error(`uploadImageToBlobStorage: ${ex.message}`);
+        throw new Error('Failed to upload image to Blob Storage');
+    }
+}
+
 
 async function uploadToBlobStorage(exact_file, originalName = null) {
     try {
@@ -57,4 +86,4 @@ async function deleteFromBlobStorage(fileUrl) {
     }
 }
 
-export default { uploadToBlobStorage, deleteFromBlobStorage };
+export default { uploadToBlobStorage, deleteFromBlobStorage, uploadImageToBlobStorage };

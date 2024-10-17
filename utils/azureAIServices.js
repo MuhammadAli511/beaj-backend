@@ -138,7 +138,6 @@ async function openaiSpeechToText(audioBuffer) {
             file: fs.createReadStream(tempFilePath),
             model: "whisper-1",
         });
-        console.log("Transcription:", transcription.text);
         return transcription.text;
     } finally {
         await unlink(tempFilePath);
