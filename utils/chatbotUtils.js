@@ -43,46 +43,11 @@ const removeUser = async (phoneNumber) => {
     await sendMessage(phoneNumber, "Your data has been removed. Please start again using the link provided.");
 };
 
-// const generatePronunciationAssessmentMessage = async (pronunciationAssessment) => {
-//     const overallScores = pronunciationAssessment.scoreNumber;
-//     const words = pronunciationAssessment.words;
-
-//     // Create the overall score part of the message
-//     let message = `Pronunciation Assessment Results:\n\nOverall Scores:\n`;
-//     message += `- Accuracy: ${overallScores.accuracyScore}\n`;
-//     message += `- Fluency: ${overallScores.fluencyScore}\n`;
-//     message += `- Comprehension: ${overallScores.compScore}\n`;
-//     message += `- Prosody: ${overallScores.prosodyScore}\n`;
-//     message += `- Pronunciation: ${overallScores.pronScore}\n\n`;
-
-//     // Create the word breakdown part of the message
-//     message += `Word Breakdown:\n`;
-
-//     words.forEach((wordData, index) => {
-//         let wordLine = `${index + 1}. *${wordData.Word}*`;
-
-//         // If there's an AccuracyScore, append it
-//         if (wordData.PronunciationAssessment && wordData.PronunciationAssessment.AccuracyScore) {
-//             wordLine += ` - Accuracy: ${wordData.PronunciationAssessment.AccuracyScore}%`;
-//         }
-
-//         // If there's an ErrorType that is not "None", append it
-//         if (wordData.PronunciationAssessment && wordData.PronunciationAssessment.ErrorType && wordData.PronunciationAssessment.ErrorType !== "None") {
-//             wordLine += ` - Error: ${wordData.PronunciationAssessment.ErrorType}`;
-//         }
-
-//         // Add the word line to the message
-//         message += wordLine + `\n`;
-//     });
-
-//     return message;
-// }
-
 
 async function createAndUploadScoreImage(pronunciationAssessment) {
     try {
-        const pronounciationScoreNumber = pronunciationAssessment.scoreNumber.pronScore;
-        const fluencyScoreNumber = pronunciationAssessment.scoreNumber.fluencyScore;
+        const pronounciationScoreNumber = Math.round(pronunciationAssessment.scoreNumber.pronScore);
+        const fluencyScoreNumber = Math.round(pronunciationAssessment.scoreNumber.fluencyScore);
         const words = pronunciationAssessment.words;
 
         // Set up canvas dimensions
@@ -607,8 +572,9 @@ const sendLessonToUser = async (
                         await waUserProgressRepository.updateRetryCounter(userMobileNumber, 0);
 
                         // Text message
-                        await sendMessage(userMobileNumber, "✅ Great!");
-                        await createActivityLog(userMobileNumber, "text", "outbound", "✅ Great!", null);
+                        let correctMessage = "You said:\n" + recognizedText + "\n✅ Great!";
+                        await sendMessage(userMobileNumber, correctMessage);
+                        await createActivityLog(userMobileNumber, "text", "outbound", correctMessage, null);
                     }
                     // If user response is incorrect
                     else {
@@ -617,7 +583,7 @@ const sendLessonToUser = async (
                             await waUserProgressRepository.updateRetryCounter(userMobileNumber, currentUserState.dataValues.retryCounter + 1);
 
                             // Text message
-                            let wrongMessage = "You said:\n" + recognizedText + "\n❌ Try again!";
+                            let wrongMessage = "You said:\n" + recognizedText + "\n❌ Try Again!";
                             await sendMessage(userMobileNumber, wrongMessage);
                             await createActivityLog(userMobileNumber, "text", "outbound", wrongMessage, null);
                             return;
@@ -626,8 +592,9 @@ const sendLessonToUser = async (
                             await waUserProgressRepository.updateRetryCounter(userMobileNumber, 0);
 
                             // Text message
-                            await sendMessage(userMobileNumber, "❌ The correct answer is: " + answersArray[0]);
-                            await createActivityLog(userMobileNumber, "text", "outbound", "❌ The correct answer is: " + answersArray[0], null);
+                            let wrongMessage = "You said:\n" + recognizedText + "\n❌ The correct answer is: " + answersArray[0];
+                            await sendMessage(userMobileNumber, wrongMessage);
+                            await createActivityLog(userMobileNumber, "text", "outbound", wrongMessage, null);
                         }
                     }
                     const nextListenAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
@@ -800,7 +767,7 @@ const sendLessonToUser = async (
                     let correctAnswer = "❌ The correct answer is ";
                     for (let i = 0; i < mcqAnswers.length; i++) {
                         if (mcqAnswers[i].dataValues.IsCorrect === true) {
-                            correctAnswer += "Option " + String.fromCharCode(65 + i) + ".\n" + mcqAnswers[i].dataValues.AnswerText;
+                            correctAnswer += "Option " + String.fromCharCode(65 + i) + ": " + mcqAnswers[i].dataValues.AnswerText;
                         }
                     }
                     // Text message
@@ -1051,14 +1018,26 @@ const sendLessonToUser = async (
                 );
 
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try next activity", "apply for course"]);
+                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["apply for course"]);
+                await waUserProgressRepository.update(
+                    userMobileNumber,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                )
+                await waUserProgressRepository.updateEngagementType(userMobileNumber, 'Apply for Course');
 
                 // Sleep
                 await sleep(2000);
 
                 // Reply Buttons
-                await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'try_next_activity', title: 'Try Next Activity' }, { id: 'apply_for_course', title: 'Apply for Course' }]);
-                await createActivityLog(userMobileNumber, "template", "outbound", "Try Next Activity or Apply for Course", null);
+                await sendButtonMessage(userMobileNumber, '👏🏽Demo Complete! 🤓', [{ id: 'apply_for_course', title: 'Apply for Course' }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Apply for Course", null);
                 return;
             }
         }
@@ -1338,30 +1317,6 @@ const sendWrongMessages = async (userMobileNumber) => {
     return;
 };
 
-const continuePracticingMessage = async (userMobileNumber) => {
-    await sendMessage(userMobileNumber, 'To continue practicing, apply for the full course.\nSeats are limited!');
-    await createActivityLog(userMobileNumber, 'text', 'outbound', 'To continue practicing, apply for the full course.\nSeats are limited!', null);
-    await sleep(2000);
-    // await sendTemplateMessage(userMobileNumber, 'apply_now');
-    // await sendMessage(userMobileNumber, 'To apply, type "Apply for Course"');
-    await sendButtonMessage(userMobileNumber, 'To take the full course, Apply Now. 🤳🏼', [{ id: 'apply_for_english_course', title: 'Apply for Course' }]);
-    await createActivityLog(userMobileNumber, 'template', 'outbound', 'To take the full course, Apply Now. 🤳🏼', null);
-    await waUserProgressRepository.update(
-        userMobileNumber,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-    )
-    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ['apply for course']);
-    await waUserProgressRepository.updateEngagementType(userMobileNumber, 'Apply for Course');
-    return;
-}
-
 export {
     sendMessage,
     retrieveMediaURL,
@@ -1375,7 +1330,6 @@ export {
     thankYouMessage,
     scholarshipInputMessage,
     demoCourseStart,
-    continuePracticingMessage,
     removeUser,
     checkUserMessageAndAcceptableMessages,
     sendWrongMessages

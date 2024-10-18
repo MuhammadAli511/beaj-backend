@@ -22,7 +22,6 @@ import {
     thankYouMessage,
     demoCourseStart,
     getAcceptableMessagesList,
-    continuePracticingMessage,
     removeUser,
     checkUserMessageAndAcceptableMessages,
     sendMessage,
@@ -181,10 +180,6 @@ const webhookService = async (body, res) => {
 
                     // Course is completed
                     if (nextLesson === null) {
-                        if (currentUserState.dataValues.engagement_type === 'Free Demo') {
-                            await continuePracticingMessage(userMobileNumber);
-                            return;
-                        }
                         await sendMessage(userMobileNumber, '❗️❗️🎉 CONGRATULATIONS 🎉❗️❗️\n 🌟 You have successfully completed the course! 🌟 \n Please contact your group admin to receive your certificate. 📜💬');
                         return;
                     }
