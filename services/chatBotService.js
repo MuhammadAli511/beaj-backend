@@ -10,6 +10,7 @@ import courseRepository from '../repositories/courseRepository.js';
 import lessonRepository from '../repositories/lessonRepository.js';
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
+import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import {
     outlineMessage,
     createActivityLog,
@@ -87,6 +88,12 @@ const webhookService = async (body, res) => {
                 createActivityLog(userMobileNumber, 'template', 'inbound', messageContent, null);
             }
 
+            const botStatus = await waConstantsRepository.getByKey("BOT_STATUS");
+            if (!botStatus || botStatus.dataValues.constantValue != 'Active') {
+                await sendMessage(userMobileNumber, 'Sorry, We are currently not accepting any messages. Please try again later.');
+                return;
+            }
+
             // Check if user exists in the database
             let user = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
             let currentUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
@@ -118,6 +125,10 @@ const webhookService = async (body, res) => {
             // Step 2: User either clicks 'Apply for Course'
             if ((message.type === 'text' || message.type === 'interactive') && (messageContent.toLowerCase().includes('apply for course'))) {
                 const validEngagementTypes = ['Outline Message', 'Apply for Course', 'Free Demo'];
+                const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
+                if (currentLesson) {
+                    await waLessonsCompletedRepository.endLessonByPhoneNumberAndLessonId(userMobileNumber, currentLesson.dataValues.LessonId);
+                }
                 if (validEngagementTypes.includes(currentUserState.dataValues.engagement_type)) {
                     await nameInputMessage(userMobileNumber);
                     return;
