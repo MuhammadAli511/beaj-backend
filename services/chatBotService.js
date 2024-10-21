@@ -1,11 +1,5 @@
-import { createClient } from "@deepgram/sdk";
-import OpenAI from "openai";
-import cleanTextForSpeech from "../utils/cleanText.js";
-import azure_blob from "../utils/azureBlobStorage.js";
 import dotenv from 'dotenv';
-import { performance } from 'perf_hooks';
 import waUsersMetadataRepository from '../repositories/waUsersMetadataRepository.js';
-import audioChatRepository from '../repositories/audioChatsRepository.js';
 import courseRepository from '../repositories/courseRepository.js';
 import lessonRepository from '../repositories/lessonRepository.js';
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
@@ -245,72 +239,4 @@ const webhookService = async (body, res) => {
     }
 };
 
-const feedbackService = async (prompt, userAudioFile) => {
-    let startTime, endTime, userSpeechToTextTime, modelFeedbackTime, modelTextToSpeechTime, finalStartTime, finalEndTime, totalTime;
-
-    finalStartTime = performance.now();
-    const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
-    const openai = new OpenAI(process.env.OPENAI_API_KEY);
-    const userFileUrl = await azure_blob.uploadToBlobStorage(userAudioFile);
-
-
-    startTime = performance.now();
-    const audioBuffer = userAudioFile.buffer;
-    const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
-        audioBuffer,
-        {
-            model: "nova-2",
-            smart_format: false,
-        }
-    );
-    endTime = performance.now();
-    userSpeechToTextTime = (endTime - startTime).toFixed(2) / 1000;
-
-    if (error) {
-        console.error('Error transcribing audio:', error);
-        return;
-    }
-
-    const transcription = result.results.channels[0].alternatives[0].transcript;
-
-    startTime = performance.now();
-    const completion = await openai.chat.completions.create({
-        messages: [
-            { role: "system", content: prompt },
-            { role: "user", content: transcription },
-        ],
-        model: "gpt-4o",
-    });
-    const model_response = completion.choices[0].message.content;
-    const cleaned_response = await cleanTextForSpeech(model_response);
-    endTime = performance.now();
-    modelFeedbackTime = (endTime - startTime).toFixed(2) / 1000;
-
-    startTime = performance.now();
-    const mp3 = await openai.audio.speech.create({
-        model: "tts-1-hd",
-        voice: "nova",
-        input: cleaned_response,
-        response_format: "opus",
-    });
-    const buffer = Buffer.from(await mp3.arrayBuffer());
-    const audioFileUrl = await azure_blob.uploadToBlobStorage(buffer, "feedback.opus");
-    endTime = performance.now();
-    modelTextToSpeechTime = (endTime - startTime).toFixed(2) / 1000;
-
-    finalEndTime = performance.now();
-    totalTime = (finalEndTime - finalStartTime).toFixed(2) / 1000;
-    audioChatRepository.create(userFileUrl, audioFileUrl, userSpeechToTextTime, modelFeedbackTime, modelTextToSpeechTime, totalTime, prompt, model_response);
-    if (audioFileUrl) {
-        return "Feedback successfully submitted";
-    } else {
-        return "Failed to submit feedback";
-    }
-};
-
-const getAllFeedbackService = async () => {
-    const feedback = await audioChatRepository.getAll();
-    return feedback;
-};
-
-export default { webhookService, feedbackService, getAllFeedbackService, verifyWebhookService };
+export default { webhookService, verifyWebhookService };

@@ -5,9 +5,8 @@ const getAllWaConstants = async (req, res) => {
         const waConstants = await service.getAllWaConstantsService();
         res.status(200).send(waConstants);
     } catch (error) {
-        res.status(500).send({
-            message: error.message || "Some error occurred while retrieving constants."
-        });
+        error.fileName = 'waConstantsController.js';
+        next(error);
     }
 };
 
@@ -16,33 +15,33 @@ const getWaConstantByConstantName = async (req, res) => {
         const waConstant = await service.getWaConstantByConstantNameService(req.params.constantName);
         res.status(200).send(waConstant);
     } catch (error) {
-        res.status(500).send({
-            message: error.message || "Some error occurred while retrieving constant."
-        });
+        error.fileName = 'waConstantsController.js';
+        next(error);
     }
 };
 
 const createWaConstant = async (req, res) => {
     try {
-        const waConstant = req.body;
-        const result = await service.createWaConstantService(waConstant);
-        res.status(201).send(result);
+        const { key, category } = req.body;
+        const constantValue = req.file ? req.file : req.body.constantValue;
+        const result = await service.createWaConstantService({ key, constantValue, category });
+        res.status(201).send({ message: "Constant created successfully", result });
     } catch (error) {
-        res.status(500).send({
-            message: error.message || "Some error occurred while creating the constant."
-        });
+        error.fileName = 'waConstantsController.js';
+        next(error);
     }
 };
 
 const updateWaConstant = async (req, res) => {
     try {
-        const waConstant = req.body;
-        const result = await service.updateWaConstantService(waConstant);
-        res.status(200).send(result);
+        const key = req.params.key;
+        const { category } = req.body;
+        const constantValue = req.file ? req.file : req.body.constantValue;
+        const result = await service.updateWaConstantService({ key, constantValue, category });
+        res.status(200).send({ message: "Constant updated successfully", result });
     } catch (error) {
-        res.status(500).send({
-            message: error.message || "Some error occurred while updating the constant."
-        });
+        error.fileName = 'waConstantsController.js';
+        next(error);
     }
 };
 
@@ -51,9 +50,8 @@ const deleteWaConstant = async (req, res) => {
         const result = await service.deleteWaConstantService(req.params.constantName);
         res.status(200).send(result);
     } catch (error) {
-        res.status(500).send({
-            message: error.message || "Some error occurred while deleting the constant."
-        });
+        error.fileName = 'waConstantsController.js';
+        next(error);
     }
 };
 

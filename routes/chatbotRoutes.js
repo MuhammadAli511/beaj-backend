@@ -17,11 +17,6 @@ router.post('/webhook', chatBotController.webhookController);
 // GET /chatbot/webhook
 router.get('/webhook', chatBotController.verifyWebhookController);
 
-// POST /chatbot/feedback
-router.post('/feedback', beajEmployeesAuth, upload.single('file'), chatBotController.feedbackController);
-
-// GET /chatbot/getAllFeedback
-router.get('/getAllFeedback', beajEmployeesAuth, chatBotController.getAllFeedback);
 
 // Use error handler middleware
 router.use(errorHandler);

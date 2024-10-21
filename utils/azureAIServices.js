@@ -467,10 +467,32 @@ async function openaiFeedback(userTranscript) {
     return result.choices[0].message.content;
 }
 
+
+async function openaiCustomFeedback(userTranscript, modelPrompt) {
+    const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
+    const apiKey = process.env.AZURE_OPENAI_API_KEY;
+    const apiVersion = "2023-03-15-preview";
+    const deployment = "gpt-4o-mini";
+
+    const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
+    const result = await client.chat.completions.create({
+        messages: [
+            { role: "system", content: modelPrompt },
+            { role: "user", content: userTranscript },
+        ],
+        model: "",
+    });
+    console.log("Here")
+    console.log(result.choices[0].message.content);
+
+    return result.choices[0].message.content;
+}
+
 export default {
     azureTextToSpeechAndUpload,
     azureSpeechToText,
     azurePronunciationAssessment,
     openaiFeedback,
     openaiSpeechToText,
+    openaiCustomFeedback
 };

@@ -1,6 +1,7 @@
 import express from 'express';
 import beajEmployeesAuth from '../middlewares/beajEmployeesAuth.js';
 import waConstantsController from '../controllers/waConstantsController.js';
+import upload from '../config/multerConfig.js';
 import errorHandler from '../middlewares/errorHandler.js';
 
 const router = express.Router();
@@ -11,7 +12,7 @@ router.get('/status', (req, res) => {
 });
 
 // POST  api/waConstants/create
-router.post('/create', beajEmployeesAuth, waConstantsController.createWaConstant);
+router.post('/create', beajEmployeesAuth, upload.single('file'), waConstantsController.createWaConstant);
 
 // GET  api/waConstants/getAll
 router.get('/getAll', beajEmployeesAuth, waConstantsController.getAllWaConstants);
@@ -20,7 +21,7 @@ router.get('/getAll', beajEmployeesAuth, waConstantsController.getAllWaConstants
 router.get('/getByKey/:key', beajEmployeesAuth, waConstantsController.getWaConstantByConstantName);
 
 // PUT  api/waConstants/update/:key
-router.put('/update/:key', beajEmployeesAuth, waConstantsController.updateWaConstant);
+router.put('/update/:key', beajEmployeesAuth, upload.single('file'), waConstantsController.updateWaConstant);
 
 // DELETE  api/waConstants/delete/:key
 router.delete('/delete/:key', beajEmployeesAuth, waConstantsController.deleteWaConstant);

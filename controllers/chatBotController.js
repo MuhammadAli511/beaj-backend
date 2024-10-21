@@ -19,31 +19,7 @@ const verifyWebhookController = async (req, res, next) => {
     }
 };
 
-const feedbackController = async (req, res, next) => {
-    try {
-        const prompt = req.body.prompt;
-        const userAudioFile = req.file;
-        const status = await service.feedbackService(prompt, userAudioFile);
-        res.status(200).json(status);
-    } catch (error) {
-        error.fileName = 'chatBotController.js';
-        next(error);
-    }
-};
-
-const getAllFeedback = async (req, res, next) => {
-    try {
-        const feedback = await service.getAllFeedbackService();
-        res.status(200).json(feedback);
-    } catch (error) {
-        error.fileName = 'chatBotController.js';
-        next(error);
-    }
-};
-
 export default {
     webhookController,
-    feedbackController,
-    getAllFeedback,
     verifyWebhookController
 };
