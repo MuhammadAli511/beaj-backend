@@ -1,8 +1,9 @@
 import AudioChats from '../models/AudioChats.js';
 
-const create = async (userAudio, modelAudio, userSpeechToTextTime, modelFeedbackTime, modelTextToSpeechTime, totalTime, modelPrompt, modelText) => {
+const create = async (userAudio, userText, modelAudio, userSpeechToTextTime, modelFeedbackTime, modelTextToSpeechTime, totalTime, modelPrompt, modelText) => {
     const audioChat = new AudioChats({
         userAudio,
+        userText,
         modelAudio,
         userSpeechToTextTime,
         modelFeedbackTime,

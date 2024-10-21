@@ -13,6 +13,10 @@ AudioChats.init({
         type: DataTypes.STRING,
         allowNull: true
     },
+    userText: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
     modelAudio: {
         type: DataTypes.STRING,
         allowNull: true
