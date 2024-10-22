@@ -29,10 +29,21 @@ const deleteByPhoneNumber = async (phoneNumber) => {
     });
 };
 
+const assignTargetGroup = async (phoneNumber, targetGroup) => {
+    return await WA_UsersMetadata.update({
+        targetGroup: targetGroup
+    }, {
+        where: {
+            phoneNumber: phoneNumber
+        }
+    });
+};
+
 export default {
     create,
     getAll,
     getByPhoneNumber,
     update,
-    deleteByPhoneNumber
+    deleteByPhoneNumber,
+    assignTargetGroup
 };

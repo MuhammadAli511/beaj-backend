@@ -16,6 +16,8 @@ router.get('/getAll', beajEmployeesAuth, waUserMetaDataController.getAllWaUserMe
 // GET api/waUserMetaData/getByPhoneNumber/:phoneNumber
 router.get('/getByPhoneNumber/:phoneNumber', beajEmployeesAuth, waUserMetaDataController.getWaUserMetaDataByPhoneNumberController);
 
+// POST api/waUserMetaData/assignTargetGroup
+router.post('/assignTargetGroup', beajEmployeesAuth, waUserMetaDataController.assignTargetGroupController);
 
 // Use error handler middleware
 router.use(errorHandler);

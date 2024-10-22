@@ -16,6 +16,7 @@ import waUserActivityLogsRoutes from './waUserActivityLogsRoutes.js';
 import waUserMetadataRoutes from './waUserMetadataRoutes.js';
 import waConstantsRoutes from './waConstantsRoutes.js';
 import audioChatRoutes from './audioChatRoutes.js';
+import waPurchasedCoursesRoutes from './waPurchasedCoursesRoutes.js';
 
 const router = express.Router();
 
@@ -41,5 +42,6 @@ router.use('/waUserActivityLogs', waUserActivityLogsRoutes);
 router.use('/waUserMetadata', waUserMetadataRoutes);
 router.use('/waConstants', waConstantsRoutes);
 router.use('/audioChat', audioChatRoutes);
+router.use('/waPurchasedCourses', waPurchasedCoursesRoutes);
 
 export default router;

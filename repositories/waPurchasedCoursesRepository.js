@@ -37,11 +37,22 @@ const getAllByPhoneNumber = async (phoneNumber) => {
     });
 };
 
+const getPurchasedCoursesByPhoneNumber = async (phoneNumber) => {
+    return await WA_PurchasedCourses.findAll({
+        where: {
+            phoneNumber: phoneNumber
+        }
+    });
+};
+
+
+
 export default {
     create,
     getAll,
     getById,
     update,
     deleteById,
-    getAllByPhoneNumber
+    getAllByPhoneNumber,
+    getPurchasedCoursesByPhoneNumber,
 };
