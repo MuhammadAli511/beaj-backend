@@ -13,6 +13,9 @@ router.get('/status', (req, res) => {
 // GET  api/stats/totalContentStats
 router.get('/totalContentStats', beajEmployeesAuth, statsController.totalContentStatsController);
 
+// GET api/stats/dashboardCardsFunnel
+router.get('/dashboardCardsFunnel', beajEmployeesAuth, statsController.dashboardCardsFunnelController);
+
 // Use error handler middleware
 router.use(errorHandler);
 

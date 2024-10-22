@@ -1,5 +1,17 @@
 import service from '../services/waPurchasedCoursesService.js';
 
+const getAllCoursesByPhoneNumberController = async (req, res, next) => {
+    try {
+        const phoneNumber = req.params.phoneNumber;
+        const result = await service.getAllCoursesByPhoneNumberService(phoneNumber);
+        res.status(200).send(result);
+    }
+    catch (error) {
+        error.fileName = 'waPurchasedCoursesController.js';
+        next(error);
+    }
+};
+
 const getPurchasedCoursesByPhoneNumberController = async (req, res, next) => {
     try {
         const phoneNumber = req.params.phoneNumber;
@@ -50,5 +62,6 @@ export default {
     getPurchasedCoursesByPhoneNumberController,
     getUnpurchasedCoursesByPhoneNumberController,
     purchaseCourseController,
-    getCompletedCourseController
+    getCompletedCourseController,
+    getAllCoursesByPhoneNumberController
 };

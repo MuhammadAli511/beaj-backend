@@ -45,7 +45,12 @@ const getPurchasedCoursesByPhoneNumber = async (phoneNumber) => {
     });
 };
 
-
+const getPurchasedCount = async () => {
+    return await WA_PurchasedCourses.count({
+        distinct: true,
+        col: 'phoneNumber'
+    });
+};
 
 export default {
     create,
@@ -55,4 +60,5 @@ export default {
     deleteById,
     getAllByPhoneNumber,
     getPurchasedCoursesByPhoneNumber,
+    getPurchasedCount
 };

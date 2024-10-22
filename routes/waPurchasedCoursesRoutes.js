@@ -10,6 +10,9 @@ router.get('/status', (req, res) => {
     res.status(200).send("Wa Purchased Courses Route Status : Working");
 });
 
+// GET api/waPurchasedCourses/getAllCoursesByPhoneNumber/:phoneNumber
+router.get('/getAllCoursesByPhoneNumber/:phoneNumber', beajEmployeesAuth, waPurchasedCoursesController.getAllCoursesByPhoneNumberController);
+
 // GET  api/waPurchasedCourses/getPurchasedCoursesByPhoneNumber/:phoneNumber
 router.get('/getPurchasedCoursesByPhoneNumber/:phoneNumber', beajEmployeesAuth, waPurchasedCoursesController.getPurchasedCoursesByPhoneNumberController);
 
@@ -20,7 +23,7 @@ router.get('/getUnpurchasedCoursesByPhoneNumber/:phoneNumber', beajEmployeesAuth
 router.post('/purchaseCourse', beajEmployeesAuth, waPurchasedCoursesController.purchaseCourseController);
 
 // GET api/waPurchasedCourses/getCompletedCourse/:phoneNumber
-router.get('/getCompletedCourse/:phoneNumber', beajEmployeesAuth, waPurchasedCoursesController.getCompletedCourseController);
+router.get('/getCompletedCourses/:phoneNumber', beajEmployeesAuth, waPurchasedCoursesController.getCompletedCourseController);
 
 // Use error handler middleware
 router.use(errorHandler);

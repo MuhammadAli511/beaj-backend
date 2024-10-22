@@ -29,6 +29,14 @@ const deleteById = async (id) => {
     });
 };
 
+const getCountBySpeciifcMessage = async (message) => {
+    return await WA_UserActivityLogs.count({
+        where: {
+            messageContent: [message]
+        }
+    });
+};
+
 const getByPhoneNumber = async (phoneNumber) => {
     return await WA_UserActivityLogs.findAll({
         where: {
@@ -55,5 +63,6 @@ export default {
     update,
     deleteById,
     getByPhoneNumber,
-    deleteByPhoneNumber
+    deleteByPhoneNumber,
+    getCountBySpeciifcMessage
 };

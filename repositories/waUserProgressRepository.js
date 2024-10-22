@@ -13,6 +13,14 @@ const getByPhoneNumber = async (phoneNumber) => {
     return await WA_UserProgress.findByPk(phoneNumber);
 };
 
+const getCountByEngagementType = async (engagementType) => {
+    return await WA_UserProgress.count({
+        where: {
+            engagement_type: engagementType
+        }
+    });
+};
+
 const update = async (phoneNumber, currentCourseId, currentWeek, currentDay, currentLessonId, currentLesson_sequence, activityType, questionNumber, retryCounter, acceptableMessages) => {
     return await WA_UserProgress.update({
         currentCourseId: currentCourseId,
@@ -107,5 +115,6 @@ export default {
     updateQuestionNumber,
     updateRetryCounter,
     updateQuestionNumberRetryCounterActivityType,
-    updateEngagementType
+    updateEngagementType,
+    getCountByEngagementType
 };

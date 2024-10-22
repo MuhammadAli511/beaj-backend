@@ -10,6 +10,17 @@ const totalContentStatsController = async (req, res, next) => {
     }
 };
 
+const dashboardCardsFunnelController = async (req, res, next) => {
+    try {
+        const dashboardCardsFunnel = await service.dashboardCardsFunnelService();
+        res.status(200).send(dashboardCardsFunnel);
+    } catch (error) {
+        error.fileName = 'statsController.js';
+        next(error);
+    }
+};
+
 export default {
-    totalContentStatsController
+    totalContentStatsController,
+    dashboardCardsFunnelController
 };

@@ -75,7 +75,7 @@ const getAllWhatsappUserResponses = async () => {
     const questionResponses = await QuestionResponse.findAll({
         where: {
             UserId: {
-                [Op.like]: '+%'
+                [Sequelize.Op.like]: '+%'
             }
         }
     });

@@ -27,7 +27,17 @@ WA_UsersMetadata.init({
     scholarshipvalue: {
         type: DataTypes.TEXT,
         allowNull: true,
-    }
+    },
+    freeDemoStarted: {
+        type: DataTypes.BOOLEAN,
+        allowNull: true,
+        defaultValue: false,
+    },
+    freeDemoEnded: {
+        type: DataTypes.BOOLEAN,
+        allowNull: true,
+        defaultValue: false,
+    },
 }, {
     sequelize,
     modelName: 'WA_UsersMetadata',

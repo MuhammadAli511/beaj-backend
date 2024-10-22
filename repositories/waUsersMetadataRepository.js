@@ -1,4 +1,5 @@
 import WA_UsersMetadata from '../models/WA_UsersMetadata.js';
+import Sequelize from 'sequelize';
 
 const create = async (data) => {
     const userMetadata = new WA_UsersMetadata(data);
@@ -39,11 +40,65 @@ const assignTargetGroup = async (phoneNumber, targetGroup) => {
     });
 };
 
+const getTotalUsersCount = async () => {
+    return await WA_UsersMetadata.count();
+};
+
+const getRegisteredUsersCount = async () => {
+    return await WA_UsersMetadata.count({
+        where: {
+            phoneNumber: {
+                [Sequelize.Op.not]: null
+            },
+            name: {
+                [Sequelize.Op.not]: null
+            },
+            city: {
+                [Sequelize.Op.not]: null
+            },
+            scholarshipvalue: {
+                [Sequelize.Op.not]: null
+            }
+        }
+    });
+};
+
+const getSelectedUsersCount = async () => {
+    return await WA_UsersMetadata.count({
+        where: {
+            targetGroup: {
+                [Sequelize.Op.or]: ['T1', 'T2']
+            }
+        }
+    });
+};
+
+const getFreeDemoStartedUsersCount = async () => {
+    return await WA_UsersMetadata.count({
+        where: {
+            freeDemoStarted: true
+        }
+    });
+};
+
+const getFreeDemoEndedUsersCount = async () => {
+    return await WA_UsersMetadata.count({
+        where: {
+            freeDemoEnded: true
+        }
+    });
+};
+
 export default {
     create,
     getAll,
     getByPhoneNumber,
     update,
     deleteByPhoneNumber,
-    assignTargetGroup
+    assignTargetGroup,
+    getTotalUsersCount,
+    getRegisteredUsersCount,
+    getSelectedUsersCount,
+    getFreeDemoStartedUsersCount,
+    getFreeDemoEndedUsersCount
 };

@@ -1,6 +1,6 @@
 import service from '../services/waConstantsService.js';
 
-const getAllWaConstants = async (req, res) => {
+const getAllWaConstants = async (req, res, next) => {
     try {
         const waConstants = await service.getAllWaConstantsService();
         res.status(200).send(waConstants);
@@ -10,9 +10,9 @@ const getAllWaConstants = async (req, res) => {
     }
 };
 
-const getWaConstantByConstantName = async (req, res) => {
+const getWaConstantByConstantName = async (req, res, next) => {
     try {
-        const waConstant = await service.getWaConstantByConstantNameService(req.params.constantName);
+        const waConstant = await service.getWaConstantByConstantNameService(req.params.key);
         res.status(200).send(waConstant);
     } catch (error) {
         error.fileName = 'waConstantsController.js';
@@ -20,7 +20,7 @@ const getWaConstantByConstantName = async (req, res) => {
     }
 };
 
-const createWaConstant = async (req, res) => {
+const createWaConstant = async (req, res, next) => {
     try {
         const { key, category } = req.body;
         const constantValue = req.file ? req.file : req.body.constantValue;
@@ -32,7 +32,7 @@ const createWaConstant = async (req, res) => {
     }
 };
 
-const updateWaConstant = async (req, res) => {
+const updateWaConstant = async (req, res, next) => {
     try {
         const key = req.params.key;
         const { category } = req.body;
@@ -45,7 +45,7 @@ const updateWaConstant = async (req, res) => {
     }
 };
 
-const deleteWaConstant = async (req, res) => {
+const deleteWaConstant = async (req, res, next) => {
     try {
         const result = await service.deleteWaConstantService(req.params.constantName);
         res.status(200).send(result);

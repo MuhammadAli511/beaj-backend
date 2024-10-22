@@ -124,6 +124,9 @@ const webhookService = async (body, res) => {
                     await waLessonsCompletedRepository.endLessonByPhoneNumberAndLessonId(userMobileNumber, currentLesson.dataValues.LessonId);
                 }
                 if (validEngagementTypes.includes(currentUserState.dataValues.engagement_type)) {
+                    if (currentUserState.dataValues.engagement_type == 'Free Demo') {
+                        await waUsersMetadataRepository.update(userMobileNumber, { freeDemoEnded: true });
+                    }
                     await nameInputMessage(userMobileNumber);
                     return;
                 }
@@ -157,7 +160,7 @@ const webhookService = async (body, res) => {
             // From step 2 if user clicks 'Start Free Demo' button
             if ((message.type == 'interactive' || message.type == 'text') && (messageContent.toLowerCase().includes('start free demo'))) {
                 if (currentUserState.dataValues.engagement_type == 'Outline Message') {
-                    // Get the first lesson of the course
+                    await waUsersMetadataRepository.update(userMobileNumber, { freeDemoStarted: true });
                     const startingLesson = await lessonRepository.getNextLesson(
                         await courseRepository.getCourseIdByName("Free Trial"),
                         1,
