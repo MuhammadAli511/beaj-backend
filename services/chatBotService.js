@@ -101,7 +101,7 @@ const webhookService = async (body, res) => {
             // Step 1: If user does not exist, check if the first message is the onboarding message
             const onboardingFirstMessage = await extractConstantMessage('onboarding_first_message');
             if (!user && onboardingFirstMessage.toLowerCase() === messageContent) {
-                await waUsersMetadataRepository.create({ phoneNumber: userMobileNumber });
+                await waUsersMetadataRepository.create({ phoneNumber: userMobileNumber, userClickedLink: new Date() });
                 await outlineMessage(userMobileNumber);
                 return;
             } else if (!user && onboardingFirstMessage.toLowerCase() !== messageContent) {
@@ -124,8 +124,8 @@ const webhookService = async (body, res) => {
                     await waLessonsCompletedRepository.endLessonByPhoneNumberAndLessonId(userMobileNumber, currentLesson.dataValues.LessonId);
                 }
                 if (validEngagementTypes.includes(currentUserState.dataValues.engagement_type)) {
-                    if (currentUserState.dataValues.engagement_type == 'Free Demo') {
-                        await waUsersMetadataRepository.update(userMobileNumber, { freeDemoEnded: true });
+                    if (currentUserState.dataValues.engagement_type != 'Outline Message') {
+                        await waUsersMetadataRepository.update(userMobileNumber, { freeDemoEnded: new Date() });
                     }
                     await nameInputMessage(userMobileNumber);
                     return;
@@ -152,7 +152,7 @@ const webhookService = async (body, res) => {
                 if (messageAuth === false) {
                     return;
                 }
-                await waUsersMetadataRepository.update(userMobileNumber, { scholarshipvalue: messageContent });
+                await waUsersMetadataRepository.update(userMobileNumber, { scholarshipvalue: messageContent, userRegistrationComplete: new Date() });
                 await thankYouMessage(userMobileNumber);
                 return;
             };
@@ -160,7 +160,7 @@ const webhookService = async (body, res) => {
             // From step 2 if user clicks 'Start Free Demo' button
             if ((message.type == 'interactive' || message.type == 'text') && (messageContent.toLowerCase().includes('start free demo'))) {
                 if (currentUserState.dataValues.engagement_type == 'Outline Message') {
-                    await waUsersMetadataRepository.update(userMobileNumber, { freeDemoStarted: true });
+                    await waUsersMetadataRepository.update(userMobileNumber, { freeDemoStarted: new Date() });
                     const startingLesson = await lessonRepository.getNextLesson(
                         await courseRepository.getCourseIdByName("Free Trial"),
                         1,

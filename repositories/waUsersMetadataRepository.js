@@ -76,7 +76,9 @@ const getSelectedUsersCount = async () => {
 const getFreeDemoStartedUsersCount = async () => {
     return await WA_UsersMetadata.count({
         where: {
-            freeDemoStarted: true
+            freeDemoStarted: {
+                [Sequelize.Op.not]: null
+            },
         }
     });
 };
@@ -84,7 +86,9 @@ const getFreeDemoStartedUsersCount = async () => {
 const getFreeDemoEndedUsersCount = async () => {
     return await WA_UsersMetadata.count({
         where: {
-            freeDemoEnded: true
+            freeDemoEnded: {
+                [Sequelize.Op.not]: null
+            },
         }
     });
 };

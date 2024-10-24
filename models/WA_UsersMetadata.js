@@ -29,14 +29,20 @@ WA_UsersMetadata.init({
         allowNull: true,
     },
     freeDemoStarted: {
-        type: DataTypes.BOOLEAN,
+        type: DataTypes.DATE,
         allowNull: true,
-        defaultValue: false,
     },
     freeDemoEnded: {
-        type: DataTypes.BOOLEAN,
+        type: DataTypes.DATE,
         allowNull: true,
-        defaultValue: false,
+    },
+    userClickedLink: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
+    userRegistrationComplete: {
+        type: DataTypes.DATE,
+        allowNull: true,
     },
 }, {
     sequelize,

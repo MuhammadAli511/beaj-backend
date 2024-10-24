@@ -15,7 +15,7 @@ import azureBlobStorage from "./azureBlobStorage.js";
 import azureAIServices from '../utils/azureAIServices.js';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
-import { createCanvas, loadImage, registerFont } from 'canvas';
+import { createCanvas, registerFont } from 'canvas';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -527,7 +527,7 @@ const sendLessonToUser = async (
                     const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
 
                     // Save user response to the database
-                    const submissionDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+                    const submissionDate = new Date();
                     const retryCounter = currentUserState.dataValues.retryCounter;
                     // User first attempt
                     if (retryCounter == 0 || retryCounter == null) {
@@ -739,7 +739,7 @@ const sendLessonToUser = async (
                 }
 
                 // Save user response to the database
-                const submissionDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+                const submissionDate = new Date();
                 await waQuestionResponsesRepository.create(
                     userMobileNumber,
                     currentUserState.dataValues.currentLessonId,
@@ -884,7 +884,7 @@ const sendLessonToUser = async (
                 const uniqueID = uuidv4();
                 const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
                 const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
-                const submissionDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+                const submissionDate = new Date();
                 await waQuestionResponsesRepository.create(
                     userMobileNumber,
                     currentUserState.dataValues.currentLessonId,
@@ -1000,7 +1000,7 @@ const sendLessonToUser = async (
                 const uniqueID = uuidv4();
                 const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
                 const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
-                const submissionDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+                const submissionDate = new Date();
                 await waQuestionResponsesRepository.create(
                     userMobileNumber,
                     startingLesson.dataValues.LessonId,
@@ -1107,7 +1107,7 @@ const sendLessonToUser = async (
                     const uniqueID = uuidv4();
                     const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
                     const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
-                    const submissionDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+                    const submissionDate = new Date();
                     await waQuestionResponsesRepository.create(
                         userMobileNumber,
                         currentUserState.dataValues.currentLessonId,
