@@ -1,9 +1,9 @@
 import courseRepository from "../repositories/courseRepository.js";
 import courseWeekRepository from "../repositories/courseWeekRepository.js";
 
-const createCourseService = async (courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription) => {
+const createCourseService = async (courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription, courseStartDate) => {
     try {
-        const course = await courseRepository.create(courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription);
+        const course = await courseRepository.create(courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription, courseStartDate);
         for (let i = 1; i <= parseInt(courseWeeks); i++) {
             await courseWeekRepository.create(i, course.CourseId, null, null);
         }
@@ -33,9 +33,9 @@ const getCourseByIdService = async (id) => {
     }
 };
 
-const updateCourseService = async (id, courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription) => {
+const updateCourseService = async (id, courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription, courseStartDate) => {
     try {
-        await courseRepository.update(id, courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription);
+        await courseRepository.update(id, courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription, courseStartDate);
     } catch (error) {
         error.fileName = 'courseService.js';
         throw error;
