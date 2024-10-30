@@ -4,7 +4,7 @@ const totalCoursesRepository = async () => {
     return await Course.count();
 }
 
-const create = async (courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription) => {
+const create = async (courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription, courseStartDate) => {
     const course = new Course({
         CourseName: courseName,
         CoursePrice: coursePrice,
@@ -12,7 +12,8 @@ const create = async (courseName, coursePrice, courseWeeks, courseCategoryId, st
         CourseCategoryId: courseCategoryId,
         status: status,
         SequenceNumber: sequenceNumber,
-        CourseDescription: courseDescription
+        CourseDescription: courseDescription,
+        courseStartDate: courseStartDate
     });
     return await course.save();
 };
@@ -41,7 +42,7 @@ const deleteOneInCourseWeeks = async (courseId) => {
     return await course.save();
 };
 
-const update = async (id, courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription) => {
+const update = async (id, courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription, courseStartDate) => {
     return await Course.update({
         CourseName: courseName,
         CoursePrice: coursePrice,
@@ -49,7 +50,8 @@ const update = async (id, courseName, coursePrice, courseWeeks, courseCategoryId
         CourseCategoryId: courseCategoryId,
         status: status,
         SequenceNumber: sequenceNumber,
-        CourseDescription: courseDescription
+        CourseDescription: courseDescription,
+        courseStartDate: courseStartDate
     }, {
         where: {
             CourseId: id

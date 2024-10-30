@@ -2,8 +2,8 @@ import service from '../services/courseService.js';
 
 const createCourseController = async (req, res, next) => {
     try {
-        const { courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription } = req.body;
-        await service.createCourseService(courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription);
+        const { courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription, courseStartDate } = req.body;
+        await service.createCourseService(courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription, courseStartDate);
         res.status(200).send({ message: "Course created successfully" });
     } catch (error) {
         error.fileName = 'courseController.js';
@@ -35,8 +35,8 @@ const getCourseByIdController = async (req, res, next) => {
 const updateCourseController = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription } = req.body;
-        await service.updateCourseService(id, courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription);
+        const { courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription, courseStartDate } = req.body;
+        await service.updateCourseService(id, courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription, courseStartDate);
         res.status(200).send({ message: "Course updated successfully" });
     } catch (error) {
         error.fileName = 'courseController.js';
