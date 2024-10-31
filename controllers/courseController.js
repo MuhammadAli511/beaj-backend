@@ -66,11 +66,23 @@ const getCourseByCourseCategoryIdController = async (req, res, next) => {
     }
 };
 
+const duplicateCourseController = async (req, res, next) => {
+    try {
+        const { courseId } = req.body;
+        await service.duplicateCourseService(courseId);
+        res.status(200).send({ message: "Course duplicated successfully" });
+    } catch (error) {
+        error.fileName = 'courseController.js';
+        next(error);
+    }
+};
+
 export default {
     createCourseController,
     getAllCourseController,
     getCourseByIdController,
     updateCourseController,
     deleteCourseController,
-    getCourseByCourseCategoryIdController
+    getCourseByCourseCategoryIdController,
+    duplicateCourseController
 };

@@ -13,7 +13,7 @@ const create = async (courseName, coursePrice, courseWeeks, courseCategoryId, st
         status: status,
         SequenceNumber: sequenceNumber,
         CourseDescription: courseDescription,
-        courseStartDate: courseStartDate
+        courseStartDate: new Date(courseStartDate).setHours(13)
     });
     return await course.save();
 };
@@ -51,7 +51,7 @@ const update = async (id, courseName, coursePrice, courseWeeks, courseCategoryId
         status: status,
         SequenceNumber: sequenceNumber,
         CourseDescription: courseDescription,
-        courseStartDate: courseStartDate
+        courseStartDate: new Date(courseStartDate).setHours(13)
     }, {
         where: {
             CourseId: id

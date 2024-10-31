@@ -67,6 +67,16 @@ const deleteByQuestionId = async (multipleChoiceQuestionId) => {
     });
 };
 
+const getByQuestionIds = async (multipleChoiceQuestionIds) => {
+    return await MultipleChoiceQuestionAnswer.findAll({
+        where: {
+            MultipleChoiceQuestionId: {
+                [Sequelize.Op.in]: multipleChoiceQuestionIds
+            }
+        }
+    });
+};
+
 export default {
     create,
     getAll,
@@ -74,5 +84,6 @@ export default {
     update,
     deleteMultipleChoiceQuestionAnswer,
     getByQuestionId,
-    deleteByQuestionId
+    deleteByQuestionId,
+    getByQuestionIds
 };
