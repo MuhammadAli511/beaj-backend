@@ -1247,7 +1247,7 @@ const thankYouMessage = async (userMobileNumber) => {
     const message = "Thank you for applying! We will call you by Nov 5th to confirm if you get selected for this batch."
     await sendMessage(userMobileNumber, message);
     await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next lesson"]);
+    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["i want to start my course"]);
     return;
 };
 
