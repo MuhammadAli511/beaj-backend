@@ -482,8 +482,6 @@ async function openaiCustomFeedback(userTranscript, modelPrompt) {
         ],
         model: "",
     });
-    console.log("Here")
-    console.log(result.choices[0].message.content);
 
     return result.choices[0].message.content;
 }

@@ -91,7 +91,7 @@ const duplicateCourseService = async (id) => {
 
         // LESSONS
         // Get original lessons
-        const lessons = await lessonRepository.getLessonsByCouse(id);
+        const lessons = await lessonRepository.getLessonsByCourse(id);
         // Create new lessons
         for (let i = 0; i < lessons.length; i++) {
             const lesson = lessons[i].dataValues;

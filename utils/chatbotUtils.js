@@ -174,7 +174,6 @@ async function createAndUploadScoreImage(pronunciationAssessment) {
 
         // Upload to Azure Blob Storage
         const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
-        console.log('Image URL:', imageUrl);
         return imageUrl;
     } catch (err) {
         console.error('Error creating and uploading image:', err);

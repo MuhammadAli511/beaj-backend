@@ -276,6 +276,16 @@ const migrateLessonService = async (lessonId, courseId) => {
     }
 };
 
+const getLessonByCourseIdService = async (id) => {
+    try {
+        const lessons = await lessonRepository.getLessonsByCourse(id);
+        return lessons;
+    } catch (error) {
+        error.fileName = 'lessonService.js';
+        throw error;
+    }
+};
+
 
 
 export default {
@@ -285,5 +295,6 @@ export default {
     updateLessonService,
     deleteLessonService,
     getLessonsByActivity,
-    migrateLessonService
+    migrateLessonService,
+    getLessonByCourseIdService
 };

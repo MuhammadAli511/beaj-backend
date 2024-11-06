@@ -235,7 +235,7 @@ const getNextLesson = async (courseId, weekNumber, dayNumber, sequenceNumber) =>
 };
 
 
-const getLessonsByCouse = async (courseId) => {
+const getLessonsByCourse = async (courseId) => {
     return await Lesson.findAll({
         where: {
             courseId: courseId
@@ -258,5 +258,5 @@ export default {
     isFirstLessonOfDay,
     isLastLessonOfDay,
     getTotalDaysInCourse,
-    getLessonsByCouse
+    getLessonsByCourse,
 };
