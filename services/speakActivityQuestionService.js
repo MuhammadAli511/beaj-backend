@@ -5,19 +5,22 @@ import speakActivityQuestionRepository from '../repositories/speakActivityQuesti
 
 const createSpeakActivityQuestionService = async (question, mediaFile, answer, lessonId, questionNumber) => {
     try {
-        let audioUrl = null;
+        let mediaUrl = null;
         if (mediaFile) {
-            audioUrl = await azure_blob.uploadToBlobStorage(mediaFile);
+            mediaUrl = await azure_blob.uploadToBlobStorage(mediaFile);
         } else {
-            audioUrl = await azureAIServices.azureTextToSpeechAndUpload(question);
+            mediaUrl = await azureAIServices.azureTextToSpeechAndUpload(question);
         }
 
         // Use a regex to correctly handle double-quoted answers with commas inside
-        const answerArray = parseAnswers(answer);
+        let answerArray = [];
+        if (answer) {
+            answerArray = parseAnswers(answer);
+        }
 
         const speakActivityQuestion = await speakActivityQuestionRepository.create(
             question,
-            audioUrl,
+            mediaUrl,
             answerArray,
             lessonId,
             questionNumber
