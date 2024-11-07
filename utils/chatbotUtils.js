@@ -11,6 +11,7 @@ import multipleChoiceQuestionAnswerRepository from "../repositories/multipleChoi
 import speakActivityQuestionRepository from '../repositories/speakActivityQuestionRepository.js';
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRepository.js";
+import waPurchasedCoursesRepository from '../repositories/waPurchasedCoursesRepository.js';
 import azureBlobStorage from "./azureBlobStorage.js";
 import azureAIServices from '../utils/azureAIServices.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -42,6 +43,15 @@ const removeUser = async (phoneNumber) => {
 
     await sendMessage(phoneNumber, "Your data has been removed. Please start again using the link provided.");
 };
+
+const removeUserTillCourse = async (phoneNumber) => {
+    await waUserProgressRepository.update(phoneNumber, null, null, null, null, null, null, null, null, ["i want to start my course"]);
+    await waUserProgressRepository.updateEngagementType(phoneNumber, "Scholarship");
+    await waLessonsCompletedRepository.deleteByPhoneNumber(phoneNumber);
+    await waQuestionResponsesRepository.deleteByPhoneNumber(phoneNumber);
+    await sendMessage(phoneNumber, "Your data has been removed. Please start again using the link provided.");
+};
+
 
 
 async function createAndUploadScoreImage(pronunciationAssessment) {
@@ -375,7 +385,24 @@ const sendMediaMessage = async (to, mediaUrl, mediaType) => {
                     },
                 }
             );
-        } else {
+        } else if (mediaType == 'sticker') {
+            await axios.post(
+                `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
+                {
+                    messaging_product: 'whatsapp',
+                    to: to,
+                    type: 'sticker',
+                    sticker: { link: mediaUrl },
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${whatsappToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+        }
+        else {
             console.error('Invalid media type:', mediaType);
         }
         let logger = `Outbound Message: User: ${to}, Message Type: ${mediaType}, Message Content: ${mediaUrl}`;
@@ -429,7 +456,7 @@ const removeHTMLTags = (text) => {
     return text.replace(/<[^>]*>?/gm, '');
 };
 
-const sendLessonToUser = async (
+const sendDemoLessonToUser = async (
     userMobileNumber,
     currentUserState,
     startingLesson,
@@ -1317,13 +1344,310 @@ const sendWrongMessages = async (userMobileNumber) => {
     return;
 };
 
+const getNextCourse = async (userMobileNumber) => {
+    const purchaseCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByPhoneNumber(userMobileNumber);
+    const courses = await courseRepository.getAll();
+    const notCompletedPurchasedCourse = purchaseCourses.filter(purchaseCourse => purchaseCourse.dataValues.courseEndDate === null);
+    if (notCompletedPurchasedCourse) {
+        // Add sequence number to the courses
+        for (let i = 0; i < notCompletedPurchasedCourse.length; i++) {
+            for (let j = 0; j < courses.length; j++) {
+                if (notCompletedPurchasedCourse[i].dataValues.courseId === courses[j].dataValues.CourseId) {
+                    notCompletedPurchasedCourse[i].dataValues.sequenceNumber = courses[j].dataValues.SequenceNumber;
+                    notCompletedPurchasedCourse[i].dataValues.courseStartDate = courses[j].dataValues.courseStartDate;
+                    notCompletedPurchasedCourse[i].dataValues.courseName = courses[j].dataValues.CourseName;
+                    break;
+                }
+            }
+        }
+    }
+    const sortedNotCompletedPurchasedCourse = purchaseCourses.sort((a, b) => a.dataValues.sequenceNumber - b.dataValues.sequenceNumber);
+    const nextCourse = sortedNotCompletedPurchasedCourse[0];
+    return nextCourse;
+};
+
+const startCourseForUser = async (userMobileNumber) => {
+    const nextCourse = await getNextCourse(userMobileNumber);
+    // Get today's date
+    const today = new Date() + 5;
+    // Check if today < course start date
+    if (today < nextCourse.dataValues.courseStartDate) {
+        const formattedStartDate = format(new Date(nextCourse.dataValues.courseStartDate), 'MMMM do, yyyy');
+        const message = "Your course will start on " + formattedStartDate + ". Please wait for the course to start.";
+        await sendMessage(userMobileNumber, message);
+        await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+        return;
+    }
+    // Update engagment type
+    await waUserProgressRepository.updateEngagementType(userMobileNumber, "Course Start");
+
+    // Update user progress
+    await waUserProgressRepository.update(
+        userMobileNumber,
+        nextCourse.dataValues.courseId,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+    );
+
+
+    // Send course_bot_introduction_message
+    const courseBotIntroductionMessage = await extractConstantMessage("course_bot_introduction_message");
+    await sendMessage(userMobileNumber, courseBotIntroductionMessage);
+    await createActivityLog(userMobileNumber, "text", "outbound", courseBotIntroductionMessage, null);
+
+    // Send demo_video
+    const demoVideoLink = await extractConstantMessage("demo_video");
+    await sendMediaMessage(userMobileNumber, demoVideoLink, 'video');
+    await createActivityLog(userMobileNumber, "video", "outbound", demoVideoLink, null);
+    await sleep(10000);
+
+    // Extract Level from courseName
+    const courseName = nextCourse.dataValues.courseName.split("-");
+    const level = courseName[0].trim();
+
+    // Send Button Message
+    // "Are you ready to start level"
+    await sendButtonMessage(userMobileNumber, "Are you ready to start " + level + "?", [{ id: "lets_start", title: "Let's Start!" }]);
+    await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start " + level + "?", null);
+
+    // Update acceptable messages list for the user
+    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["lets start!", "let's start!"]);
+    return;
+};
+
+const levelCourseStart = async (userMobileNumber, startingLesson, courseId) => {
+    // Update user progress
+    await waUserProgressRepository.update(
+        userMobileNumber,
+        courseId,
+        startingLesson.dataValues.weekNumber,
+        startingLesson.dataValues.dayNumber,
+        startingLesson.dataValues.LessonId,
+        startingLesson.dataValues.SequenceNumber,
+        startingLesson.dataValues.activity,
+        null,
+        null,
+    );
+
+    // Extract Level from courseName using courseId
+    const courseName = await courseRepository.getCourseNameById(courseId);
+    const level = courseName.split("-")[0].trim();
+
+
+    // Text Message
+    await sendMessage(userMobileNumber, "Great! Let's start " + level + "! 🤩 Here is your first lesson.");
+    await createActivityLog(userMobileNumber, "text", "outbound", "Great! Let's start " + level + "! 🤩 Here is your first lesson.", null);
+    return;
+};
+
+
+const sendCourseLessonToUser = async (userMobileNumber, currentUserState, startingLesson, messageType, messageContent) => {
+    try {
+        const activity = startingLesson.dataValues.activity;
+        if (activity === 'video') {
+            // Lesson Started Record
+            await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date());
+
+            // Send lesson message
+            let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
+            lessonMessage += "\n" + removeHTMLTags(startingLesson.dataValues.text);
+
+            // Text message
+            await sendMessage(userMobileNumber, lessonMessage);
+            await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+
+            // Send video content
+            const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
+            let videoURL = documentFile[0].dataValues.video;
+
+            // Media message
+            await sendMediaMessage(userMobileNumber, videoURL, 'video');
+            await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
+
+            // Sleep
+            await sleep(10000);
+
+            // Reply buttons to move forward
+            await sendMessage(userMobileNumber, "After listening to the dialogue, start questions👇🏽");
+            await createActivityLog(userMobileNumber, "text", "outbound", "After listening to the dialogue, start questions👇🏽", null);
+        } else if (activity == 'mcqs' || activity == 'postMCQs' || activity == 'preMCQs') {
+            if (currentUserState.dataValues.questionNumber === null) {
+                // Lesson Started Record
+                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
+
+                // Send first MCQs question
+                const firstMCQsQuestion = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, null);
+
+                // Update question number
+                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstMCQsQuestion.dataValues.QuestionNumber);
+
+                // Send question
+                const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(firstMCQsQuestion.dataValues.Id);
+                let mcqMessage = firstMCQsQuestion.dataValues.QuestionText + "\n" + "Choose the correct answer.\n";
+                for (let i = 0; i < mcqAnswers.length; i++) {
+                    mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
+                }
+
+
+                // Reply buttons to answer
+                await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })));
+                await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
+
+                // Update acceptable messages list for the user
+                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["option a", "option b", "option c"]);
+                return;
+            } else {
+                // Get current MCQ question
+                const currentMCQsQuestion = await multipleChoiceQuestionRepository.getCurrentMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+
+                // Upper and Lower case answers
+                const originalAnswer = messageContent;
+                const userAnswer = messageContent.toLowerCase();
+
+                // Get all answers against the question
+                const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(currentMCQsQuestion.dataValues.Id);
+
+                // Check if the user answer is correct
+                let isCorrectAnswer = false;
+                for (let i = 0; i < mcqAnswers.length; i++) {
+                    let matchWith = `option ${String.fromCharCode(65 + i)}`.toLowerCase();
+                    if (mcqAnswers[i].dataValues.IsCorrect === true && userAnswer == matchWith) {
+                        isCorrectAnswer = true;
+                        break;
+                    }
+                }
+
+                // Save user response to the database
+                const submissionDate = new Date();
+                await waQuestionResponsesRepository.create(
+                    userMobileNumber,
+                    currentUserState.dataValues.currentLessonId,
+                    currentMCQsQuestion.dataValues.Id,
+                    activity,
+                    startingLesson.dataValues.activityAlias,
+                    [originalAnswer],
+                    null,
+                    null,
+                    null,
+                    null,
+                    [isCorrectAnswer],
+                    1,
+                    submissionDate
+                );
+
+                // Correct Answer Feedback
+                if (isCorrectAnswer) {
+                    // Text message
+                    await sendMessage(userMobileNumber, "✅ Great!");
+                    await createActivityLog(userMobileNumber, "text", "outbound", "✅ Great!", null);
+                }
+                // Incorrect Answer Feedback
+                else {
+                    let correctAnswer = "❌ The correct answer is ";
+                    for (let i = 0; i < mcqAnswers.length; i++) {
+                        if (mcqAnswers[i].dataValues.IsCorrect === true) {
+                            correctAnswer += "Option " + String.fromCharCode(65 + i) + ": " + mcqAnswers[i].dataValues.AnswerText;
+                        }
+                    }
+                    // Text message
+                    await sendMessage(userMobileNumber, correctAnswer);
+                    await createActivityLog(userMobileNumber, "text", "outbound", correctAnswer, null);
+                }
+
+                // Get next MCQ question
+                const nextMCQsQuestion = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                if (nextMCQsQuestion) {
+                    // Update question number
+                    await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextMCQsQuestion.dataValues.QuestionNumber);
+
+                    // Send question
+                    const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(nextMCQsQuestion.dataValues.Id);
+                    let mcqMessage = nextMCQsQuestion.dataValues.QuestionText + "\n" + "Choose the correct answer.\n";
+                    for (let i = 0; i < mcqAnswers.length; i++) {
+                        mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
+                    }
+
+                    // Reply buttons to answer
+                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })));
+                    await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
+
+                    // Update acceptable messages list for the user
+                    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["option a", "option b", "option c"]);
+                    return;
+                } else {
+                    // Calculate total score and send message
+                    const totalScore = await waQuestionResponsesRepository.getTotalScore(userMobileNumber, currentUserState.dataValues.currentLessonId);
+                    const totalQuestions = await waQuestionResponsesRepository.getTotalQuestions(userMobileNumber, currentUserState.dataValues.currentLessonId);
+                    const scorePercentage = (totalScore / totalQuestions) * 100;
+                    let message = "*Your score " + totalScore + "/" + totalQuestions + ".*";
+                    if (scorePercentage >= 0 && scorePercentage <= 60) {
+                        message += "\nGood Effort! 👍🏽";
+                        // Text message
+                        await sendMessage(userMobileNumber, message);
+                        await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+
+                        // Sticker
+                        const stickerURL = await extractConstantMessage("good_effort_sticker");
+                        await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
+                        await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
+
+                    } else if (scorePercentage >= 61 && scorePercentage <= 79) {
+                        message += "\nWell done! 🌟";
+                        // Text message
+                        await sendMessage(userMobileNumber, message);
+                        await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+
+                        // Sticker
+                        const stickerURL = await extractConstantMessage("well_done_sticker");
+                        await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
+                        await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
+                    } else if (scorePercentage >= 80) {
+                        message += "\nExcellent 🎉";
+                        // Text message
+                        await sendMessage(userMobileNumber, message);
+                        await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+
+                        // Sticker
+                        const stickerURL = await extractConstantMessage("excellent_sticker");
+                        await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
+                        await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
+                    }
+
+
+                    // Reset Question Number, Retry Counter, and Activity Type
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+
+                    // Update acceptable messages list for the user
+                    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next activity"]);
+
+                    // Sleep
+                    await sleep(2000);
+
+                    // Reply Buttons
+                    await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'start_next_activity', title: 'Start Next Activity' }]);
+                    await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity", null);
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error sending lesson to user:', error);
+        error.fileName = 'chatBotService.js';
+        throw error;
+    }
+};
+
 export {
     sendMessage,
     retrieveMediaURL,
     outlineMessage,
     createActivityLog,
     extractConstantMessage,
-    sendLessonToUser,
+    sendDemoLessonToUser,
     getAcceptableMessagesList,
     nameInputMessage,
     districtInputMessage,
@@ -1332,5 +1656,10 @@ export {
     demoCourseStart,
     removeUser,
     checkUserMessageAndAcceptableMessages,
-    sendWrongMessages
+    sendWrongMessages,
+    getNextCourse,
+    startCourseForUser,
+    levelCourseStart,
+    sendCourseLessonToUser,
+    removeUserTillCourse
 };
