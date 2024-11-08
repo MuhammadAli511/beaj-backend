@@ -449,6 +449,71 @@ async function azurePronunciationAssessment(audioBuffer, referenceText) {
     });
 }
 
+async function azurePronunciationSpeakingAssessment(audioBuffer) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const wavBuffer = await convertOggToWav(audioBuffer);
+
+            const speechConfig = sdk.SpeechConfig.fromSubscription(
+                process.env.AZURE_CUSTOM_VOICE_KEY,
+                process.env.AZURE_CUSTOM_VOICE_REGION
+            );
+            speechConfig.speechRecognitionLanguage = "en-US";
+
+            const audioFormat = sdk.AudioStreamFormat.getWaveFormatPCM(16000, 16, 1);
+
+            const pushStream = sdk.AudioInputStream.createPushStream(audioFormat);
+            pushStream.write(wavBuffer);
+            pushStream.close();
+
+            const audioConfig = sdk.AudioConfig.fromStreamInput(pushStream);
+
+            const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig);
+
+            const pronunciationAssessmentConfig =
+                new sdk.PronunciationAssessmentConfig(
+                    "",
+                    sdk.PronunciationAssessmentGradingSystem.HundredMark,
+                    sdk.PronunciationAssessmentGranularity.Phoneme,
+                    false
+                );
+            pronunciationAssessmentConfig.enableProsodyAssessment = true;
+            pronunciationAssessmentConfig.applyTo(recognizer);
+
+            var results = [];
+            var recognizedText = "";
+
+            recognizer.recognized = function (s, e) {
+                var jo = JSON.parse(e.result.properties.getProperty(sdk.PropertyId.SpeechServiceResponse_JsonResult));
+                if (jo.DisplayText != ".") {
+                    console.log(`Recognizing: ${jo.DisplayText}`);
+                    recognizedText += jo.DisplayText + " ";
+                }
+                results.push(jo);
+            };
+
+            recognizer.canceled = function (s, e) {
+                if (e.reason === sdk.CancellationReason.Error) {
+                    var str = `(cancel) Reason: ${sdk.CancellationReason[e.reason]}: ${e.errorDetails
+                        }`;
+                }
+                recognizer.stopContinuousRecognitionAsync();
+            };
+
+            recognizer.sessionStopped = function (s, e) {
+                recognizer.stopContinuousRecognitionAsync();
+                recognizer.close();
+                resolve(results);
+            };
+
+            recognizer.startContinuousRecognitionAsync();
+        } catch (err) {
+            console.error("Error during pronunciation assessment:", err);
+            reject(err);
+        }
+    });
+}
+
 async function openaiFeedback(userTranscript) {
     const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
     const apiKey = process.env.AZURE_OPENAI_API_KEY;
@@ -492,5 +557,6 @@ export default {
     azurePronunciationAssessment,
     openaiFeedback,
     openaiSpeechToText,
-    openaiCustomFeedback
+    openaiCustomFeedback,
+    azurePronunciationSpeakingAssessment
 };

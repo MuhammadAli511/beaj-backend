@@ -84,6 +84,8 @@ const webhookService = async (body, res) => {
             } else if (message.type === 'interactive') {
                 messageContent = message.interactive.button_reply.title.toLowerCase().trim();
                 createActivityLog(userMobileNumber, 'template', 'inbound', messageContent, null);
+            } else {
+                return;
             }
 
             const botStatus = await waConstantsRepository.getByKey("BOT_STATUS");
