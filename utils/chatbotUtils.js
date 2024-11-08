@@ -54,6 +54,77 @@ const removeUserTillCourse = async (phoneNumber) => {
     await sendMessage(phoneNumber, "Your data has been removed. Please start again using the link provided.");
 };
 
+const weekEndImage = async (score, week) => {
+    try {
+        // Set up canvas dimensions
+        const width = 900;
+        const height = 800;
+        const canvas = createCanvas(width, height);
+        const ctx = canvas.getContext('2d');
+
+        // Define colors
+        const backgroundColor = '#51bccc';
+        const chartColor = '#e6f035';
+        const whiteColor = '#FFFFFF';
+
+
+        // Draw background
+        ctx.fillStyle = backgroundColor;
+        ctx.fillRect(0, 0, width, height);
+
+        // Draw title
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 60px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Week ${week}`, width / 2, 100);
+        ctx.fillStyle = 'black';
+        ctx.font = 'bold 50px Arial';
+        ctx.fillText('Your End-of-Week Score', width / 2, 170);
+
+        // Draw circular progress chart (donut shape)
+        const centerX = width / 2;
+        const centerY = height / 2 + 50;
+        const outerRadius = 200;
+        const innerRadius = 120;
+        const scorePercentage = score / 100;
+
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, outerRadius, 0, 2 * Math.PI);
+        ctx.fillStyle = whiteColor;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, outerRadius, -Math.PI / 2, -Math.PI / 2 + 2 * Math.PI * scorePercentage);
+        ctx.lineTo(centerX, centerY);
+        ctx.fillStyle = chartColor;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
+        ctx.fillStyle = backgroundColor;
+        ctx.fill();
+
+        ctx.fillStyle = chartColor;
+        ctx.font = 'bold 60px Arial';
+        ctx.fillText(`${score}%`, centerX, centerY + 20);
+
+
+        // Convert the canvas to a buffer
+        const buffer = canvas.toBuffer('image/jpeg');
+
+        // Upload to Azure Blob Storage
+        const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
+        return imageUrl;
+    } catch (err) {
+        console.error('Error creating and uploading image:', err);
+        throw new Error('Failed to create and upload image');
+    }
+}
+
+const weekEndScoreCalculation = async (phoneNumber, week) => {
+};
+
 const createAndUploadScoreImage = async (pronunciationAssessment) => {
     try {
         if (pronunciationAssessment === undefined || pronunciationAssessment == [] || pronunciationAssessment == null) {
@@ -1403,11 +1474,30 @@ const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUs
     }
     else if (acceptableMessagesList.includes(messageContent.toLowerCase())) {
         return true;
-    } else {
+    }
+    else {
         // If acceptable message list size is more than 2999 then "0 - 3000 tak koi number type kerain."
         if (acceptableMessagesList.length > 2999) {
             await sendMessage(userMobileNumber, "0 - 3000 tak koi number type kerain.");
             await createActivityLog(userMobileNumber, "text", "outbound", "0 - 3000 tak koi number type kerain.", null);
+            return false;
+        }
+        // If list has "option a", "option b", "option c" then "option a", "option b", "option c" type kerain.
+        else if (acceptableMessagesList.includes("option a") && acceptableMessagesList.includes("option b") && acceptableMessagesList.includes("option c")) {
+            await sendMessage(userMobileNumber, "option a, option b, ya option c mein se koi aik button press kerain.");
+            await createActivityLog(userMobileNumber, "text", "outbound", "option a, option b, ya option c mein se koi aik button press kerain.", null);
+            return false;
+        }
+        // If list has "audio"
+        else if (acceptableMessagesList.includes("audio")) {
+            await sendMessage(userMobileNumber, "Voice message record karke bhejain.");
+            await createActivityLog(userMobileNumber, "text", "outbound", "Voice message record karke bhejain.", null);
+            return false;
+        }
+        // If list has "text"
+        else if (acceptableMessagesList.includes("text")) {
+            await sendMessage(userMobileNumber, "Text message type kerain.");
+            await createActivityLog(userMobileNumber, "text", "outbound", "Text message type kerain.", null);
             return false;
         }
         // Write customized message based on the acceptable messages list
@@ -1449,14 +1539,21 @@ const getNextCourse = async (userMobileNumber) => {
                 }
             }
         }
+        const sortedNotCompletedPurchasedCourse = purchaseCourses.sort((a, b) => a.dataValues.sequenceNumber - b.dataValues.sequenceNumber);
+        const nextCourse = sortedNotCompletedPurchasedCourse[0];
+        return nextCourse;
     }
-    const sortedNotCompletedPurchasedCourse = purchaseCourses.sort((a, b) => a.dataValues.sequenceNumber - b.dataValues.sequenceNumber);
-    const nextCourse = sortedNotCompletedPurchasedCourse[0];
-    return nextCourse;
+    return null;
+
 };
 
 const startCourseForUser = async (userMobileNumber) => {
     const nextCourse = await getNextCourse(userMobileNumber);
+    if (!nextCourse) {
+        await sendMessage(userMobileNumber, "No available purchased courses. Kindly contact beaj support.");
+        await createActivityLog(userMobileNumber, "text", "outbound", "No available purchased courses. Kindly contact beaj support.", null);
+        return;
+    }
     // Get today's date
     const today = new Date() + 5;
     // Check if today < course start date
@@ -1611,7 +1708,6 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity", null);
     }
 };
-
 
 const sendCourseLessonToUser = async (userMobileNumber, currentUserState, startingLesson, messageType, messageContent) => {
     try {

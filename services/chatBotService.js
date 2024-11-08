@@ -91,6 +91,7 @@ const webhookService = async (body, res) => {
             const botStatus = await waConstantsRepository.getByKey("BOT_STATUS");
             if (!botStatus || botStatus.dataValues.constantValue != 'Active') {
                 await sendMessage(userMobileNumber, 'Sorry, We are currently not accepting any messages. Please try again later.');
+                await createActivityLog(userMobileNumber, 'text', 'outbound', 'Sorry, We are currently not accepting any messages. Please try again later.', null);
                 return;
             }
 
@@ -320,6 +321,21 @@ const webhookService = async (body, res) => {
                         currentUserState.dataValues.currentDay,
                         currentUserState.dataValues.currentLesson_sequence
                     );
+
+                    if (!nextLesson) {
+                        // Check if current lesson 
+                        const lessonNumberCheck = (currentUserState.dataValues.currentWeek - 1) * 6 + currentUserState.dataValues.currentDay;
+                        if (lessonNumberCheck >= 24) {
+                            await sendMessage(userMobileNumber, 'You have completed all the lessons in this course. Please wait for the next course to start.');
+                            await createActivityLog(userMobileNumber, 'text', 'outbound', 'You have completed all the lessons in this course. Please wait for the next course to start.', null);
+                            // update acceptable messages list for the user
+                            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["i want to start my course"]);
+                            return;
+                        }
+                        await sendMessage(userMobileNumber, 'Please wait for the next lesson to start.');
+                        await createActivityLog(userMobileNumber, 'text', 'outbound', 'Please wait for the next lesson to start.', null);
+                        return;
+                    }
 
                     // Mark previous lesson as completed
                     const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
