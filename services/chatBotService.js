@@ -345,16 +345,17 @@ const webhookService = async (body, res) => {
 
                     // Send next lesson to user
                     await sendCourseLessonToUser(userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
-                    if (startingLesson.dataValues.activity == "video") {
+
+                    if (nextLesson.dataValues.activity == "video") {
                         const nextLesson = await lessonRepository.getNextLesson(
-                            currentUserState.dataValues.currentCourseId,
-                            currentUserState.dataValues.currentWeek,
-                            currentUserState.dataValues.currentDay,
-                            currentUserState.dataValues.currentLesson_sequence
+                            latestUserState.dataValues.currentCourseId,
+                            latestUserState.dataValues.currentWeek,
+                            latestUserState.dataValues.currentDay,
+                            latestUserState.dataValues.currentLesson_sequence
                         );
 
                         // Mark previous lesson as completed
-                        const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
+                        const currentLesson = await lessonRepository.getCurrentLesson(latestUserState.dataValues.currentLessonId);
                         await waLessonsCompletedRepository.endLessonByPhoneNumberAndLessonId(userMobileNumber, currentLesson.dataValues.LessonId);
 
                         // Get acceptable messages for the next question/lesson
@@ -373,7 +374,7 @@ const webhookService = async (body, res) => {
                             0,
                             acceptableMessagesList
                         );
-                        const latestUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
+                        latestUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
 
                         // Send next lesson to user
                         await sendCourseLessonToUser(userMobileNumber, latestUserState, nextLesson, messageType, messageContent);

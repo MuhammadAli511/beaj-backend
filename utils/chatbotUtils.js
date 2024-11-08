@@ -1555,23 +1555,26 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
     const lessonLast = await lessonRepository.isLastLessonOfDay(startingLesson.dataValues.LessonId);
 
     if (lessonLast) {
+        const courseName = await courseRepository.getCourseNameById(currentUserState.currentCourseId);
+        const strippedCourseName = courseName.split("-")[0].trim();
         // Lesson Number
         const lessonNumber = (startingLesson.dataValues.weekNumber - 1) * 6 + startingLesson.dataValues.dayNumber;
 
         // Lesson Complete Image
-        const imageTag = "lesson_complete_image" + lessonNumber.toString();
-        const lessonCompleteImage = await extractConstantMessage(imageTag);
-        if (lessonCompleteImage) {
-            await sendMediaMessage(userMobileNumber, lessonCompleteImage, 'image');
-            await createActivityLog(userMobileNumber, "image", "outbound", lessonCompleteImage, null);
-            // Sleep
-            await sleep(5000);
-        }
+        // Gold Bars
+        const smallCourseName = strippedCourseName.replace(/\s/g, '').toLowerCase();
+        const imageTag = "lesson_complete_image_lesson_" + lessonNumber.toString() + "_" + smallCourseName;
+        const lessonCompleteImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/" + imageTag + ".jpeg";
+        console.log(lessonCompleteImage);
+        await sendMediaMessage(userMobileNumber, lessonCompleteImage, 'image');
+        await createActivityLog(userMobileNumber, "image", "outbound", lessonCompleteImage, null);
+        // Sleep
+        await sleep(5000);
+
 
         // Lesson Complete Message
         // You have completed 1 out of 24 lessons in Level 1! ⭐️
-        const courseName = await courseRepository.getCourseNameById(currentUserState.currentCourseId);
-        const lessonCompleteMessage = "You have completed " + lessonNumber + " out of 24 lessons in " + courseName + "!";
+        const lessonCompleteMessage = "You have completed " + lessonNumber + " out of 24 lessons in " + strippedCourseName + "!";
         await sendMessage(userMobileNumber, lessonCompleteMessage);
         await createActivityLog(userMobileNumber, "text", "outbound", lessonCompleteMessage, null);
 
