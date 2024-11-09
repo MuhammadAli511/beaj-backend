@@ -357,7 +357,7 @@ const webhookService = async (body, res) => {
                         0,
                         acceptableMessagesList
                     );
-                    const latestUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
+                    let latestUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
 
                     // Send next lesson to user
                     await sendCourseLessonToUser(userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
