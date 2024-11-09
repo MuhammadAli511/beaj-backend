@@ -243,6 +243,18 @@ const getLessonsByCourse = async (courseId) => {
     });
 };
 
+const getLessonIdsByCourseAndWeekAndActivityType = async (courseId, weekNumber, activityType) => {
+    const lessons = await Lesson.findAll({
+        where: {
+            courseId: courseId,
+            weekNumber: weekNumber,
+            activity: activityType
+        },
+        attributes: ['LessonId']
+    });
+    return lessons.map(lesson => lesson.LessonId);
+};
+
 
 export default {
     totalLessonsRepository,
@@ -259,4 +271,5 @@ export default {
     isLastLessonOfDay,
     getTotalDaysInCourse,
     getLessonsByCourse,
+    getLessonIdsByCourseAndWeekAndActivityType
 };

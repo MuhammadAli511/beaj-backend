@@ -24,7 +24,8 @@ import {
     startCourseForUser,
     levelCourseStart,
     sendCourseLessonToUser,
-    removeUserTillCourse
+    removeUserTillCourse,
+    weekEndScoreCalculation
 } from '../utils/chatbotUtils.js';
 
 
@@ -33,6 +34,10 @@ const whatsappVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN;
 
 let activity_types_to_repeat = ['mcqs', 'watchAndSpeak', 'listenAndSpeak', 'postListenAndSpeak', 'preListenAndSpeak', 'postMCQs', 'preMCQs', 'read', 'conversationalQuestionsBot', 'conversationalMonologueBot'];
 
+const testService = async (req, res) => {
+    const userMobileNumber = "+923225036358";
+    await weekEndScoreCalculation(userMobileNumber, 1, 104);
+};
 
 const verifyWebhookService = async (req, res) => {
     try {
@@ -421,4 +426,4 @@ const webhookService = async (body, res) => {
     }
 };
 
-export default { webhookService, verifyWebhookService };
+export default { webhookService, verifyWebhookService, testService };

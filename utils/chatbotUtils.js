@@ -121,7 +121,34 @@ const weekEndImage = async (score, week) => {
     }
 }
 
-const weekEndScoreCalculation = async (phoneNumber, week) => {
+const weekEndScoreCalculation = async (phoneNumber, weekNumber, courseId) => {
+    // Get lessonIds for mcqs of that week
+    const mcqLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'mcqs');
+    const correctMcqs = await waQuestionResponsesRepository.getTotalScoreForList(phoneNumber, mcqLessonIds);
+    const totalMcqs = await waQuestionResponsesRepository.getTotalQuestionsForList(phoneNumber, mcqLessonIds);
+    console.log(correctMcqs, totalMcqs);
+
+    // Get lessonIds for listenAndSpeak of that week
+    const listenAndSpeakLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'listenAndSpeak');
+    const correctListenAndSpeak = await waQuestionResponsesRepository.getTotalScoreForList(phoneNumber, listenAndSpeakLessonIds);
+    const totalListenAndSpeak = await waQuestionResponsesRepository.getTotalQuestionsForList(phoneNumber, listenAndSpeakLessonIds);
+    console.log(correctListenAndSpeak, totalListenAndSpeak);
+
+
+    // Get lessonIds for watchAndSpeak of that week
+    const watchAndSpeakLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'watchAndSpeak');
+    const correctWatchAndSpeak = await waQuestionResponsesRepository.watchAndSpeakScoreForList(phoneNumber, watchAndSpeakLessonIds);
+    console.log(correctWatchAndSpeak.score, correctWatchAndSpeak.total);
+
+
+    // Get lessonIds for read of that week
+    const readLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'read');
+    const correctRead = await waQuestionResponsesRepository.readScoreForList(phoneNumber, readLessonIds);
+    console.log(correctRead.score, correctRead.total);
+
+
+    // Get lessonIds for conversationalMonologueBot of that week
+    console.log("Hello");
 };
 
 const createAndUploadScoreImage = async (pronunciationAssessment) => {
@@ -2422,5 +2449,6 @@ export {
     startCourseForUser,
     levelCourseStart,
     sendCourseLessonToUser,
-    removeUserTillCourse
+    removeUserTillCourse,
+    weekEndScoreCalculation
 };
