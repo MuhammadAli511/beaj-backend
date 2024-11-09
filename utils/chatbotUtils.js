@@ -126,29 +126,33 @@ const weekEndScoreCalculation = async (phoneNumber, weekNumber, courseId) => {
     const mcqLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'mcqs');
     const correctMcqs = await waQuestionResponsesRepository.getTotalScoreForList(phoneNumber, mcqLessonIds);
     const totalMcqs = await waQuestionResponsesRepository.getTotalQuestionsForList(phoneNumber, mcqLessonIds);
-    console.log(correctMcqs, totalMcqs);
 
     // Get lessonIds for listenAndSpeak of that week
     const listenAndSpeakLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'listenAndSpeak');
     const correctListenAndSpeak = await waQuestionResponsesRepository.getTotalScoreForList(phoneNumber, listenAndSpeakLessonIds);
     const totalListenAndSpeak = await waQuestionResponsesRepository.getTotalQuestionsForList(phoneNumber, listenAndSpeakLessonIds);
-    console.log(correctListenAndSpeak, totalListenAndSpeak);
 
 
     // Get lessonIds for watchAndSpeak of that week
     const watchAndSpeakLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'watchAndSpeak');
     const correctWatchAndSpeak = await waQuestionResponsesRepository.watchAndSpeakScoreForList(phoneNumber, watchAndSpeakLessonIds);
-    console.log(correctWatchAndSpeak.score, correctWatchAndSpeak.total);
 
 
     // Get lessonIds for read of that week
     const readLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'read');
     const correctRead = await waQuestionResponsesRepository.readScoreForList(phoneNumber, readLessonIds);
-    console.log(correctRead.score, correctRead.total);
 
 
     // Get lessonIds for conversationalMonologueBot of that week
-    console.log("Hello");
+    const monologueLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'conversationalMonologueBot');
+    const correctMonologue = await waQuestionResponsesRepository.monologueScoreForList(phoneNumber, monologueLessonIds);
+
+
+    // Calculate sum of scores and sum of total scores and give percentage out of 100
+    const totalScore = correctMcqs + correctListenAndSpeak + correctWatchAndSpeak.score + correctRead.score + correctMonologue.score;
+    const totalQuestions = totalMcqs + totalListenAndSpeak + correctWatchAndSpeak.total + correctRead.total + correctMonologue.total;
+    const percentage = Math.round((totalScore / totalQuestions) * 100);
+    return percentage;
 };
 
 const createAndUploadScoreImage = async (pronunciationAssessment) => {
@@ -1700,6 +1704,19 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         const lessonCompleteMessage = "You have completed " + lessonNumber + " out of 24 lessons in " + strippedCourseName + "!";
         await sendMessage(userMobileNumber, lessonCompleteMessage);
         await createActivityLog(userMobileNumber, "text", "outbound", lessonCompleteMessage, null);
+
+        // Week end score image
+        if (startingLesson.dataValues.dayNumber == 6) {
+            const weekEndScore = await weekEndScoreCalculation(userMobileNumber, currentUserState.currentCourseId, startingLesson.dataValues.weekNumber);
+            const weekEndScoreImage = await createAndUploadScoreImage(weekEndScore);
+            await sendMediaMessage(userMobileNumber, weekEndScoreImage, 'image');
+            await createActivityLog(userMobileNumber, "image", "outbound", weekEndScoreImage, null);
+            await sleep(5000);
+
+            let weekMessage = "You have unlocked this week's challenge 🧩\nGo to your class-group to solve it. All the best! 👍🏽";
+            await sendMessage(userMobileNumber, weekMessage);
+            await createActivityLog(userMobileNumber, "text", "outbound", weekMessage, null);
+        }
 
         // Day Ending Message
         if (startingLesson.dataValues.dayNumber == 1 || startingLesson.dataValues.dayNumber == 2 || startingLesson.dataValues.dayNumber == 3 || startingLesson.dataValues.dayNumber == 5) {

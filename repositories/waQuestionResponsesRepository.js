@@ -293,6 +293,61 @@ const readScoreForList = async (phoneNumber, lessonIdList) => {
     };
 };
 
+const monologueScoreForList = async (phoneNumber, lessonIdList) => {
+    const submittedFeedbackJson = await WA_QuestionResponses.findAll({
+        where: {
+            phoneNumber: phoneNumber,
+            lessonId: {
+                [Sequelize.Op.in]: lessonIdList
+            }
+        },
+        attributes: [
+            'lessonId', // Include lessonId to identify each result
+            'submittedFeedbackJson' // Retrieve the column directly
+        ]
+    });
+
+    // Initialize variables for score accumulation
+    let totalScore = 0;
+    let maxScore = 0;
+
+    // Mapping through the results to extract, calculate, and sum the score data
+    const individualScores = submittedFeedbackJson.map(response => {
+        const jsonArray = response.get('submittedFeedbackJson'); // Get the JSON array
+
+        // Directly access the PronScore and FluencyScore if the JSON structure is valid
+        let pronScore = 0;
+        let fluencyScore = 0;
+
+        if (jsonArray && jsonArray.length > 0) {
+            const parsedJson = jsonArray[0][0]; // Access the first JSON object directly
+            if (parsedJson && parsedJson.NBest && parsedJson.NBest.length > 0) {
+                const assessment = parsedJson.NBest[0].PronunciationAssessment;
+                if (assessment) {
+                    pronScore = assessment.PronScore;
+                    fluencyScore = assessment.FluencyScore;
+                }
+            }
+        }
+        // Calculate the combined score for this entry with weightage of 5
+        const combinedScore = (pronScore + fluencyScore) / 200 * 5;
+        totalScore += combinedScore; // Accumulate the total score
+        maxScore += 5; // Each entry now has a max score of 5
+
+        return {
+            lessonId: response.get('lessonId'),
+            pronScore: pronScore,
+            fluencyScore: fluencyScore,
+            combinedScore: combinedScore
+        };
+    });
+
+    // Final output with the total score and the maximum possible score
+    return {
+        score: parseFloat(totalScore.toFixed(2)),
+        total: parseFloat(maxScore.toFixed(2))
+    };
+};
 
 
 
@@ -311,5 +366,6 @@ export default {
     getTotalQuestionsForList,
     watchAndSpeakScore,
     watchAndSpeakScoreForList,
-    readScoreForList
+    readScoreForList,
+    monologueScoreForList,
 };
