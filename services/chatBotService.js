@@ -327,6 +327,29 @@ const webhookService = async (body, res) => {
                         currentUserState.dataValues.currentLesson_sequence
                     );
 
+                    // Weekly blocking
+                    const course = await courseRepository.getById(currentUserState.dataValues.currentCourseId);
+                    const courseStartDate = course.dataValues.courseStartDate;
+                    const today = new Date();
+
+                    // Calculate the number of days from the start date needed for the current week's content to be accessible
+                    const daysRequiredForCurrentWeek = (nextLesson.dataValues.weekNumber - 1) * 7;
+                    const weekUnlockDate = new Date(courseStartDate);
+                    weekUnlockDate.setDate(courseStartDate.getDate() + daysRequiredForCurrentWeek);
+
+                    console.log('Course Start Date:', courseStartDate);
+                    console.log('Week Unlock Date:', weekUnlockDate);
+                    console.log('Today:', today);
+
+                    if (today < weekUnlockDate) {
+                        const message = 'Please wait for the next week to start.';
+                        await sendMessage(userMobileNumber, message);
+                        await createActivityLog(userMobileNumber, 'text', 'outbound', message, null);
+                        return;
+                    }
+
+
+
                     if (!nextLesson) {
                         // Check if current lesson 
                         const lessonNumberCheck = (currentUserState.dataValues.currentWeek - 1) * 6 + currentUserState.dataValues.currentDay;

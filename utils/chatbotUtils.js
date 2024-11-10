@@ -1594,9 +1594,22 @@ const startCourseForUser = async (userMobileNumber) => {
         return;
     }
     // Get today's date
-    const today = new Date() + 5;
+    const today = new Date();
+    const courseStartDate = new Date(nextCourse.dataValues.courseStartDate);
+
+    // Extract only the year, month, and day to ensure accurate local date comparison
+    const todayYear = today.getFullYear();
+    const todayMonth = today.getMonth();
+    const todayDate = today.getDate();
+
+    const courseStartYear = courseStartDate.getFullYear();
+    const courseStartMonth = courseStartDate.getMonth();
+    const courseStartDateOnly = courseStartDate.getDate();
+
+    console.log(todayYear, todayMonth, todayDate);
+    console.log(courseStartYear, courseStartMonth, courseStartDateOnly);
     // Check if today < course start date
-    if (today < nextCourse.dataValues.courseStartDate) {
+    if (todayYear < courseStartYear || (todayYear === courseStartYear && todayMonth < courseStartMonth) || (todayYear === courseStartYear && todayMonth === courseStartMonth && todayDate < courseStartDateOnly)) {
         const formattedStartDate = format(new Date(nextCourse.dataValues.courseStartDate), 'MMMM do, yyyy');
         const message = "Your course will start on " + formattedStartDate + ". Please wait for the course to start.";
         await sendMessage(userMobileNumber, message);
@@ -1819,18 +1832,22 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                 // Activity Alias
                 const activityAlias = startingLesson.dataValues.activityAlias;
-                // contains
                 if (activityAlias == "*End of Week Challenge!* 💪🏽") {
                     // Send lesson message
                     let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
                     lessonMessage += "\n" + "Answer the following questions\n\n Let's Start Questions👇🏽";
-
                     // Text message
                     await sendMessage(userMobileNumber, lessonMessage);
                     await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
                 }
 
-
+                // Lesson Text
+                let lessonText = startingLesson.dataValues.text;
+                lessonText = removeHTMLTags(lessonText);
+                if (lessonText == "After listening to the dialogue, start questions👇🏽" || lessonText == "Answer the following questions about the reading passage\n\nLet’s Start Questions👇🏽") {
+                    await sendMessage(userMobileNumber, lessonText);
+                    await createActivityLog(userMobileNumber, "text", "outbound", lessonText, null);
+                }
 
                 // Send first MCQs question
                 const firstMCQsQuestion = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, null);
@@ -2082,6 +2099,14 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
             if (currentUserState.dataValues.questionNumber === null) {
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
+
+                // Lesson Text
+                let lessonText = startingLesson.dataValues.text;
+                lessonText = removeHTMLTags(lessonText);
+                if (lessonText == "Let’s Start Questions👇🏽") {
+                    await sendMessage(userMobileNumber, lessonText);
+                    await createActivityLog(userMobileNumber, "text", "outbound", lessonText, null);
+                }
 
                 // Send lesson message
                 let lessonMessage = "Listen to the audio question and send your answer as a voice message.💬";
