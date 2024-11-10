@@ -1687,9 +1687,11 @@ const getDayEndingMessage = (dayNumber) => {
     if (dayNumber == 1) {
         return "Now go to your class-group to *practise vocabulary with your teacher and group!* See you tomorrow!👋🏽";
     } else if (dayNumber == 2 || dayNumber == 3) {
-        return "Now go to your class-group to learn 'Teaching Expressions' with your teacher and group!";
+        return "Now go to your class-group to *learn 'Teaching Expressions' with your teacher and group!* See you tomorrow!👋🏽";
+    } else if (dayNumber == 4) {
+        return "See you tomorrow!👋🏽";
     } else if (dayNumber == 5) {
-        return "Now go to your class-group to reflect with your teacher and group!";
+        return "Now go to your class-group to *reflect with your teacher and group!* See you tomorrow!👋🏽";
     }
 };
 
@@ -1713,22 +1715,20 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         // Lesson Number
         const lessonNumber = (startingLesson.dataValues.weekNumber - 1) * 6 + startingLesson.dataValues.dayNumber;
 
+        // Lesson Complete Message
+        const lessonCompleteMessage = "You have completed *" + lessonNumber + " out of 24* lessons in " + strippedCourseName + "!⭐️";
+        await sendMessage(userMobileNumber, lessonCompleteMessage);
+        await createActivityLog(userMobileNumber, "text", "outbound", lessonCompleteMessage, null);
+
         // Lesson Complete Image
         // Gold Bars
         const smallCourseName = strippedCourseName.replace(/\s/g, '').toLowerCase();
         const imageTag = "lesson_complete_image_lesson_" + lessonNumber.toString() + "_" + smallCourseName;
         const lessonCompleteImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/" + imageTag + ".jpeg";
-        console.log(lessonCompleteImage);
         await sendMediaMessage(userMobileNumber, lessonCompleteImage, 'image');
         await createActivityLog(userMobileNumber, "image", "outbound", lessonCompleteImage, null);
         // Sleep
         await sleep(5000);
-
-
-        // Lesson Complete Message
-        const lessonCompleteMessage = "You have completed *" + lessonNumber + " out of 24* lessons in " + strippedCourseName + "!⭐️";
-        await sendMessage(userMobileNumber, lessonCompleteMessage);
-        await createActivityLog(userMobileNumber, "text", "outbound", lessonCompleteMessage, null);
 
         // Week end score image
         if (startingLesson.dataValues.dayNumber == 6) {
@@ -1832,19 +1832,31 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                 // Activity Alias
                 const activityAlias = startingLesson.dataValues.activityAlias;
+                let lessonText = startingLesson.dataValues.text;
+                lessonText = removeHTMLTags(lessonText);
                 if (activityAlias == "*End of Week Challenge!* 💪🏽") {
                     // Send lesson message
                     let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                    lessonMessage += "\n" + "Answer the following questions\n\n Let's Start Questions👇🏽";
+                    lessonMessage += "\n" + "Answer the following questions.";
                     // Text message
                     await sendMessage(userMobileNumber, lessonMessage);
                     await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+
+                    await sendMessage(userMobileNumber, "Let's Start Questions👇🏽");
+                    await createActivityLog(userMobileNumber, "text", "outbound", "Let's Start Questions👇🏽", null);
+                } else if (activityAlias == "*Reading Comprehension* 📖") {
+                    let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
+                    lessonMessage += "\n" + "Answer the following questions about the reading passage.";
+                    // Text message
+                    await sendMessage(userMobileNumber, lessonMessage);
+                    await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+
+                    await sendMessage(userMobileNumber, "Let's Start Questions👇🏽");
+                    await createActivityLog(userMobileNumber, "text", "outbound", "Let's Start Questions👇🏽", null);
                 }
 
                 // Lesson Text
-                let lessonText = startingLesson.dataValues.text;
-                lessonText = removeHTMLTags(lessonText);
-                if (lessonText == "After listening to the dialogue, start questions👇🏽" || lessonText == "Answer the following questions about the reading passage\n\nLet’s Start Questions👇🏽") {
+                if (lessonText.includes("After listening to the dialogue")) {
                     await sendMessage(userMobileNumber, lessonText);
                     await createActivityLog(userMobileNumber, "text", "outbound", lessonText, null);
                 }
@@ -1963,6 +1975,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         const stickerURL = await extractConstantMessage("good_effort_sticker");
                         await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
                         await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
+                        await sleep(3000);
 
                     } else if (scorePercentage >= 61 && scorePercentage <= 79) {
                         // message += "\nWell done! 🌟";
@@ -1974,6 +1987,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         const stickerURL = await extractConstantMessage("well_done_sticker");
                         await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
                         await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
+                        await sleep(3000);
                     } else if (scorePercentage >= 80) {
                         // message += "\nExcellent 🎉";
                         // Text message
@@ -1984,6 +1998,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         const stickerURL = await extractConstantMessage("excellent_sticker");
                         await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
                         await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
+                        await sleep(3000);
                     }
 
 
@@ -2263,6 +2278,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                             const stickerURL = await extractConstantMessage("good_effort_sticker");
                             await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
                             await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
+                            await sleep(3000);
                         } else if (scorePercentage >= 61 && scorePercentage <= 79) {
                             // message += "\nWell done! 🌟";
                             // Text message
@@ -2273,6 +2289,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                             const stickerURL = await extractConstantMessage("well_done_sticker");
                             await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
                             await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
+                            await sleep(3000);
                         } else if (scorePercentage >= 80) {
                             // message += "\nExcellent 🎉";
                             // Text message
@@ -2283,6 +2300,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                             const stickerURL = await extractConstantMessage("excellent_sticker");
                             await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
                             await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
+                            await sleep(3000);
                         }
 
                         // Reset Question Number, Retry Counter, and Activity Type
