@@ -740,7 +740,7 @@ const sendDemoLessonToUser = async (
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
 
                 // Send lesson message
-                let lessonMessage = "Listen to the audio question and record your answer as a voice note.💬";
+                let lessonMessage = "Listen to the audio question and send your answer as a voice message.💬";
 
                 // Text message
                 await sendMessage(userMobileNumber, lessonMessage);
@@ -1021,7 +1021,7 @@ const sendDemoLessonToUser = async (
                     const totalScore = await waQuestionResponsesRepository.getTotalScore(userMobileNumber, currentUserState.dataValues.currentLessonId);
                     const totalQuestions = await waQuestionResponsesRepository.getTotalQuestions(userMobileNumber, currentUserState.dataValues.currentLessonId);
                     const scorePercentage = (totalScore / totalQuestions) * 100;
-                    let message = "*Your score " + totalScore + "/" + totalQuestions + ".*";
+                    let message = "*Your score: " + totalScore + "/" + totalQuestions + ".*";
                     if (scorePercentage >= 0 && scorePercentage <= 60) {
                         message += "\nGood Effort! 👍🏽";
                     } else if (scorePercentage >= 61 && scorePercentage <= 79) {
@@ -1071,7 +1071,7 @@ const sendDemoLessonToUser = async (
                 await sleep(10000);
 
                 // Send question text
-                let message = "Ab aap iss video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
+                let message = "Puri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
                 await sendMessage(userMobileNumber, message);
                 await createActivityLog(userMobileNumber, "text", "outbound", message, null);
 
@@ -1135,7 +1135,7 @@ const sendDemoLessonToUser = async (
                     await sleep(10000);
 
                     // Send question text
-                    let message = "Ab aap iss video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
+                    let message = "Puri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
 
                     // Text message
                     await sendMessage(userMobileNumber, message);
@@ -1672,7 +1672,7 @@ const levelCourseStart = async (userMobileNumber, startingLesson, courseId) => {
 
 const getDayEndingMessage = (dayNumber) => {
     if (dayNumber == 1) {
-        return "Now go to your class-group to practise vocabulary with your teacher and group!";
+        return "Now go to your class-group to *practise vocabulary with your teacher and group!*";
     } else if (dayNumber == 2 || dayNumber == 3) {
         return "Now go to your class-group to learn 'Teaching Expressions' with your teacher and group!";
     } else if (dayNumber == 5) {
@@ -1685,6 +1685,10 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
     if (startingLesson.dataValues.activity === 'video') {
         return;
     }
+
+    // Activity Complete Sticker
+    const activityCompleteSticker = await extractConstantMessage("activity_complete_sticker");
+    await sendMediaMessage(userMobileNumber, activityCompleteSticker, 'sticker');
 
     // FOR ALL ACTIVITIES
     // Check if the lesson is the last lesson of the day
@@ -1709,8 +1713,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
 
 
         // Lesson Complete Message
-        // You have completed 1 out of 24 lessons in Level 1! ⭐️
-        const lessonCompleteMessage = "You have completed " + lessonNumber + " out of 24 lessons in " + strippedCourseName + "!";
+        const lessonCompleteMessage = "You have completed *" + lessonNumber + " out of 24* lessons in " + strippedCourseName + "!⭐️";
         await sendMessage(userMobileNumber, lessonCompleteMessage);
         await createActivityLog(userMobileNumber, "text", "outbound", lessonCompleteMessage, null);
 
@@ -1744,10 +1747,6 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         await sendButtonMessage(userMobileNumber, 'Are you ready to start your next lesson?', [{ id: 'start_next_lesson', title: 'Start Next Lesson' }]);
         await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Lesson", null);
     } else {
-        // Activity Complete Sticker
-        const activityCompleteSticker = await extractConstantMessage("activity_complete_sticker");
-        await sendMediaMessage(userMobileNumber, activityCompleteSticker, 'sticker');
-
         // Update acceptable messages list for the user
         await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next activity"]);
 
@@ -1940,9 +1939,9 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     const totalScore = await waQuestionResponsesRepository.getTotalScore(userMobileNumber, currentUserState.dataValues.currentLessonId);
                     const totalQuestions = await waQuestionResponsesRepository.getTotalQuestions(userMobileNumber, currentUserState.dataValues.currentLessonId);
                     const scorePercentage = (totalScore / totalQuestions) * 100;
-                    let message = "*Your score " + totalScore + "/" + totalQuestions + ".*";
+                    let message = "*Your score: " + totalScore + "/" + totalQuestions + ".*";
                     if (scorePercentage >= 0 && scorePercentage <= 60) {
-                        message += "\nGood Effort! 👍🏽";
+                        // message += "\nGood Effort! 👍🏽";
                         // Text message
                         await sendMessage(userMobileNumber, message);
                         await createActivityLog(userMobileNumber, "text", "outbound", message, null);
@@ -1953,7 +1952,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
 
                     } else if (scorePercentage >= 61 && scorePercentage <= 79) {
-                        message += "\nWell done! 🌟";
+                        // message += "\nWell done! 🌟";
                         // Text message
                         await sendMessage(userMobileNumber, message);
                         await createActivityLog(userMobileNumber, "text", "outbound", message, null);
@@ -1963,7 +1962,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
                         await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
                     } else if (scorePercentage >= 80) {
-                        message += "\nExcellent 🎉";
+                        // message += "\nExcellent 🎉";
                         // Text message
                         await sendMessage(userMobileNumber, message);
                         await createActivityLog(userMobileNumber, "text", "outbound", message, null);
@@ -2006,7 +2005,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 await sleep(10000);
 
                 // Send question text
-                let message = "Ab aap iss video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
+                let message = "Puri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
                 await sendMessage(userMobileNumber, message);
                 await createActivityLog(userMobileNumber, "text", "outbound", message, null);
 
@@ -2069,7 +2068,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     await sleep(10000);
 
                     // Send question text
-                    let message = "Ab aap iss video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
+                    let message = "Puri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
 
                     // Text message
                     await sendMessage(userMobileNumber, message);
@@ -2089,7 +2088,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
 
                 // Send lesson message
-                let lessonMessage = "Listen to the audio question and record your answer as a voice note.💬";
+                let lessonMessage = "Listen to the audio question and send your answer as a voice message.💬";
 
                 // Text message
                 await sendMessage(userMobileNumber, lessonMessage);
@@ -2234,7 +2233,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         const scorePercentage = (totalScore / totalQuestions) * 100;
                         let message = "*Your score: " + totalScore + "/" + totalQuestions + ".*";
                         if (scorePercentage >= 0 && scorePercentage <= 60) {
-                            message += "\nGood Effort! 👍🏽";
+                            // message += "\nGood Effort! 👍🏽";
                             // Text message
                             await sendMessage(userMobileNumber, message);
                             await createActivityLog(userMobileNumber, "text", "outbound", message, null);
@@ -2244,7 +2243,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                             await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
                             await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
                         } else if (scorePercentage >= 61 && scorePercentage <= 79) {
-                            message += "\nWell done! 🌟";
+                            // message += "\nWell done! 🌟";
                             // Text message
                             await sendMessage(userMobileNumber, message);
                             await createActivityLog(userMobileNumber, "text", "outbound", message, null);
@@ -2254,7 +2253,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                             await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
                             await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
                         } else if (scorePercentage >= 80) {
-                            message += "\nExcellent 🎉";
+                            // message += "\nExcellent 🎉";
                             // Text message
                             await sendMessage(userMobileNumber, message);
                             await createActivityLog(userMobileNumber, "text", "outbound", message, null);
