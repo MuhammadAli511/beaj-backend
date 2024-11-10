@@ -728,7 +728,7 @@ const sendDemoLessonToUser = async (
             await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["next"]);
 
             // Sleep
-            await sleep(10000);
+            await sleep(12000);
 
             // Reply buttons to move forward
             await sendButtonMessage(userMobileNumber, 'Let’s Start Questions👇🏽', [{ id: 'next', title: 'Next' }]);
@@ -1068,7 +1068,7 @@ const sendDemoLessonToUser = async (
                 // Send question media file
                 await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
                 await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
-                await sleep(10000);
+                await sleep(12000);
 
                 // Send question text
                 let message = "Puri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
@@ -1132,7 +1132,7 @@ const sendDemoLessonToUser = async (
                     // Send question media file
                     await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
                     await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
-                    await sleep(10000);
+                    await sleep(12000);
 
                     // Send question text
                     let message = "Puri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
@@ -1178,7 +1178,7 @@ const sendDemoLessonToUser = async (
 
                 // Update acceptable messages list for the user
                 await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
-                await sleep(10000);
+                await sleep(12000);
 
                 // Text message
                 await sendMessage(userMobileNumber, "Send us a voice note of you reading this passage.💬");
@@ -1399,7 +1399,7 @@ const outlineMessage = async (userMobileNumber) => {
     await createActivityLog(userMobileNumber, "video", "outbound", introVideoLink, null);
 
     // Sleep
-    await sleep(10000);
+    await sleep(12000);
 
     // Text Message
     await sendMessage(userMobileNumber, "Here is the Course Outline");
@@ -1629,7 +1629,7 @@ const startCourseForUser = async (userMobileNumber) => {
     const demoVideoLink = await extractConstantMessage("demo_video");
     await sendMediaMessage(userMobileNumber, demoVideoLink, 'video');
     await createActivityLog(userMobileNumber, "video", "outbound", demoVideoLink, null);
-    await sleep(10000);
+    await sleep(12000);
 
     // Extract Level from courseName
     const courseName = nextCourse.dataValues.courseName.split("-");
@@ -1672,7 +1672,7 @@ const levelCourseStart = async (userMobileNumber, startingLesson, courseId) => {
 
 const getDayEndingMessage = (dayNumber) => {
     if (dayNumber == 1) {
-        return "Now go to your class-group to *practise vocabulary with your teacher and group!*";
+        return "Now go to your class-group to *practise vocabulary with your teacher and group!* See you tomorrow!👋🏽";
     } else if (dayNumber == 2 || dayNumber == 3) {
         return "Now go to your class-group to learn 'Teaching Expressions' with your teacher and group!";
     } else if (dayNumber == 5) {
@@ -1784,11 +1784,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
             await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
 
             // Sleep
-            await sleep(10000);
-
-            // Reply buttons to move forward
-            await sendMessage(userMobileNumber, "After listening to the dialogue, start questions👇🏽");
-            await createActivityLog(userMobileNumber, "text", "outbound", "After listening to the dialogue, start questions👇🏽", null);
+            await sleep(12000);
         }
         else if (activity === 'videoEnd') {
             // Lesson Started Record
@@ -1811,7 +1807,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
             await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
 
             // Sleep
-            await sleep(10000);
+            await sleep(12000);
 
             // Ending Message
             await endingMessage(userMobileNumber, currentUserState, startingLesson);
@@ -2002,7 +1998,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 // Send question media file
                 await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
                 await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
-                await sleep(10000);
+                await sleep(12000);
 
                 // Send question text
                 let message = "Puri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
@@ -2065,7 +2061,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     // Send question media file
                     await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
                     await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
-                    await sleep(10000);
+                    await sleep(12000);
 
                     // Send question text
                     let message = "Puri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
@@ -2384,7 +2380,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                 // Update acceptable messages list for the user
                 await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
-                await sleep(10000);
+                await sleep(12000);
 
                 // Remove html tags from the text
                 const lessonText = startingLesson.dataValues.text;
