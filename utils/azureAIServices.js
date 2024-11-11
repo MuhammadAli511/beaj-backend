@@ -15,91 +15,82 @@ import fs from "fs";
 import { promisify } from "util";
 import { tmpdir } from "os";
 import { join } from "path";
+import { ElevenLabsClient } from "elevenlabs";
 
 dotenv.config();
 ffmpeg.setFfmpegPath(ffmpegPath);
 
+async function uploadAudioToAzure(audioData) {
+    // Generate a unique file name with timestamp and UUID
+    const timestamp = format(new Date(), "yyyyMMddHHmmssSSS");
+    const uniqueID = uuidv4();
+    const baseFileName = `tts_audio_${uniqueID}.mp3`;
+    const filename = `${timestamp}-${uniqueID}-${baseFileName}`;
+
+    const containerName = "beajdocuments";
+    const azureBlobConnectionString =
+        process.env.AZURE_BLOB_CONNECTION_STRING;
+
+    if (!azureBlobConnectionString) {
+        throw new Error(
+            "Azure Blob Storage connection string is not defined in environment variables."
+        );
+    }
+
+    const blobServiceClient = BlobServiceClient.fromConnectionString(
+        azureBlobConnectionString
+    );
+
+    const containerClient =
+        blobServiceClient.getContainerClient(containerName);
+
+    await containerClient.createIfNotExists({
+        access: "container",
+    });
+
+    const blobClient = containerClient.getBlockBlobClient(filename);
+    const blockBlobClient = blobClient.getBlockBlobClient();
+
+    await blockBlobClient.uploadData(audioData, {
+        blobHTTPHeaders: { blobContentType: "audio/mpeg" },
+    });
+
+    const blobUrl = blockBlobClient.url;
+    return blobUrl;
+};
+
 async function azureTextToSpeechAndUpload(text) {
+    const client = new ElevenLabsClient({
+        apiKey: process.env.ELEVENLABS_API_KEY,
+    });
+    const audio = await client.generate({
+        voice: "NH0AbpVpD8W8R6jnEwVU",
+        model_id: "eleven_turbo_v2_5",
+        text,
+    });
+
+    // Save to temporary file and then read it as a buffer
+    const tempFileName = `temp-${uuidv4()}.mp3`;
+    const tempFilePath = join(tmpdir(), tempFileName);
+    const tempFileStream = fs.createWriteStream(tempFilePath);
+    audio.pipe(tempFileStream);
+
     return new Promise((resolve, reject) => {
-        try {
-            const speechConfig = sdk.SpeechConfig.fromSubscription(
-                process.env.AZURE_CUSTOM_VOICE_KEY,
-                process.env.AZURE_CUSTOM_VOICE_REGION
-            );
-
-            speechConfig.speechSynthesisOutputFormat =
-                sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
-
-            speechConfig.speechSynthesisVoiceName = "en-IN-RehaanNeural";
-
-            const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
-
-            synthesizer.speakTextAsync(
-                text,
-                async (result) => {
-                    if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
-                        try {
-                            // Convert the audio data to a Buffer
-                            const audioData = Buffer.from(result.audioData);
-
-                            // Generate a unique file name with timestamp and UUID
-                            const timestamp = format(new Date(), "yyyyMMddHHmmssSSS");
-                            const uniqueID = uuidv4();
-                            const baseFileName = `tts_audio_${uniqueID}.mp3`;
-                            const filename = `${timestamp}-${uniqueID}-${baseFileName}`;
-
-                            const containerName = "beajdocuments";
-                            const azureBlobConnectionString =
-                                process.env.AZURE_BLOB_CONNECTION_STRING;
-
-                            if (!azureBlobConnectionString) {
-                                throw new Error(
-                                    "Azure Blob Storage connection string is not defined in environment variables."
-                                );
-                            }
-
-                            const blobServiceClient = BlobServiceClient.fromConnectionString(
-                                azureBlobConnectionString
-                            );
-
-                            const containerClient =
-                                blobServiceClient.getContainerClient(containerName);
-
-                            await containerClient.createIfNotExists({
-                                access: "container",
-                            });
-
-                            const blobClient = containerClient.getBlockBlobClient(filename);
-                            const blockBlobClient = blobClient.getBlockBlobClient();
-
-                            await blockBlobClient.uploadData(audioData, {
-                                blobHTTPHeaders: { blobContentType: "audio/mpeg" },
-                            });
-
-                            const blobUrl = blockBlobClient.url;
-                            resolve(blobUrl);
-                        } catch (uploadError) {
-                            console.error("Error uploading the audio data:", uploadError);
-                            reject(uploadError);
-                        }
-                    } else {
-                        console.error("Speech synthesis canceled:", result.errorDetails);
-                        reject(new Error("Synthesis failed"));
-                    }
-                    synthesizer.close();
-                },
-                (err) => {
-                    console.error("Error during speech synthesis:", err);
-                    synthesizer.close();
-                    reject(err);
-                }
-            );
-        } catch (err) {
-            console.error("Unexpected error:", err);
-            reject(err);
-        }
+        tempFileStream.on("finish", async () => {
+            try {
+                const audioBuffer = fs.readFileSync(tempFilePath);
+                const audioUrl = await uploadAudioToAzure(audioBuffer);
+                resolve(audioUrl);
+            } catch (err) {
+                reject(err);
+            } finally {
+                fs.unlinkSync(tempFilePath);
+            }
+        });
     });
 }
+
+
 
 function convertOggToWav(oggBuffer) {
     return new Promise((resolve, reject) => {
@@ -137,6 +128,7 @@ async function openaiSpeechToText(audioBuffer) {
         const transcription = await openai.audio.transcriptions.create({
             file: fs.createReadStream(tempFilePath),
             model: "whisper-1",
+            language: 'en'
         });
         return transcription.text;
     } finally {
@@ -449,6 +441,71 @@ async function azurePronunciationAssessment(audioBuffer, referenceText) {
     });
 }
 
+async function azurePronunciationSpeakingAssessment(audioBuffer) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const wavBuffer = await convertOggToWav(audioBuffer);
+
+            const speechConfig = sdk.SpeechConfig.fromSubscription(
+                process.env.AZURE_CUSTOM_VOICE_KEY,
+                process.env.AZURE_CUSTOM_VOICE_REGION
+            );
+            speechConfig.speechRecognitionLanguage = "en-US";
+
+            const audioFormat = sdk.AudioStreamFormat.getWaveFormatPCM(16000, 16, 1);
+
+            const pushStream = sdk.AudioInputStream.createPushStream(audioFormat);
+            pushStream.write(wavBuffer);
+            pushStream.close();
+
+            const audioConfig = sdk.AudioConfig.fromStreamInput(pushStream);
+
+            const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig);
+
+            const pronunciationAssessmentConfig =
+                new sdk.PronunciationAssessmentConfig(
+                    "",
+                    sdk.PronunciationAssessmentGradingSystem.HundredMark,
+                    sdk.PronunciationAssessmentGranularity.Phoneme,
+                    false
+                );
+            pronunciationAssessmentConfig.enableProsodyAssessment = true;
+            pronunciationAssessmentConfig.applyTo(recognizer);
+
+            var results = [];
+            var recognizedText = "";
+
+            recognizer.recognized = function (s, e) {
+                var jo = JSON.parse(e.result.properties.getProperty(sdk.PropertyId.SpeechServiceResponse_JsonResult));
+                if (jo.DisplayText != ".") {
+                    console.log(`Recognizing: ${jo.DisplayText}`);
+                    recognizedText += jo.DisplayText + " ";
+                }
+                results.push(jo);
+            };
+
+            recognizer.canceled = function (s, e) {
+                if (e.reason === sdk.CancellationReason.Error) {
+                    var str = `(cancel) Reason: ${sdk.CancellationReason[e.reason]}: ${e.errorDetails
+                        }`;
+                }
+                recognizer.stopContinuousRecognitionAsync();
+            };
+
+            recognizer.sessionStopped = function (s, e) {
+                recognizer.stopContinuousRecognitionAsync();
+                recognizer.close();
+                resolve(results);
+            };
+
+            recognizer.startContinuousRecognitionAsync();
+        } catch (err) {
+            console.error("Error during pronunciation assessment:", err);
+            reject(err);
+        }
+    });
+}
+
 async function openaiFeedback(userTranscript) {
     const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
     const apiKey = process.env.AZURE_OPENAI_API_KEY;
@@ -492,5 +549,6 @@ export default {
     azurePronunciationAssessment,
     openaiFeedback,
     openaiSpeechToText,
-    openaiCustomFeedback
+    openaiCustomFeedback,
+    azurePronunciationSpeakingAssessment
 };

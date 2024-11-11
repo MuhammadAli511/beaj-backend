@@ -92,6 +92,11 @@ const getCourseIdByName = async (courseName) => {
     return course.CourseId;
 };
 
+const getCourseNameById = async (courseId) => {
+    const course = await Course.findByPk(courseId);
+    return course.CourseName;
+};
+
 export default {
     totalCoursesRepository,
     create,
@@ -103,5 +108,6 @@ export default {
     deleteOneInCourseWeeks,
     getByCourseCategoryId,
     deleteByCourseCategoryId,
-    getCourseIdByName
+    getCourseIdByName,
+    getCourseNameById
 };

@@ -103,7 +103,7 @@ const isFirstLessonOfDay = async (lessonId) => {
         limit: 1
     });
 
-    return firstLessonOfDay && firstLessonOfDay.LessonId === lesson.LessonId;
+    return firstLessonOfDay && firstLessonOfDay.dataValues.LessonId == lesson.dataValues.LessonId;
 };
 
 
@@ -125,7 +125,7 @@ const isLastLessonOfDay = async (lessonId) => {
         limit: 1
     });
 
-    return lastLessonOfDay && lastLessonOfDay.LessonId === lesson.LessonId;
+    return lastLessonOfDay && lastLessonOfDay.dataValues.LessonId == lesson.dataValues.LessonId;
 };
 
 
@@ -243,6 +243,18 @@ const getLessonsByCourse = async (courseId) => {
     });
 };
 
+const getLessonIdsByCourseAndWeekAndActivityType = async (courseId, weekNumber, activityType) => {
+    const lessons = await Lesson.findAll({
+        where: {
+            courseId: courseId,
+            weekNumber: weekNumber,
+            activity: activityType
+        },
+        attributes: ['LessonId']
+    });
+    return lessons.map(lesson => lesson.LessonId);
+};
+
 
 export default {
     totalLessonsRepository,
@@ -259,4 +271,5 @@ export default {
     isLastLessonOfDay,
     getTotalDaysInCourse,
     getLessonsByCourse,
+    getLessonIdsByCourseAndWeekAndActivityType
 };

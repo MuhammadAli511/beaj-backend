@@ -24,6 +24,7 @@
     "date-fns": "^3.6.0",
     "diff": "^7.0.0",
     "dotenv": "^16.4.5",
+    "elevenlabs": "^0.18.0",
     "express": "^4.19.2",
     "ffmpeg-static": "^5.2.0",
     "fluent-ffmpeg": "^2.1.3",

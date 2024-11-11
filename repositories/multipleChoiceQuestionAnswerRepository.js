@@ -50,7 +50,13 @@ const deleteMultipleChoiceQuestionAnswer = async (id) => {
 const getByQuestionId = async (multipleChoiceQuestionId) => {
     const multipleChoiceQuestionAnswers = await MultipleChoiceQuestionAnswer.findAll({
         where: {
-            MultipleChoiceQuestionId: multipleChoiceQuestionId
+            MultipleChoiceQuestionId: multipleChoiceQuestionId,
+            AnswerText: {
+                [Sequelize.Op.and]: {
+                    [Sequelize.Op.ne]: null,
+                    [Sequelize.Op.ne]: ""
+                }
+            }
         },
         order: [
             ['SequenceNumber', 'ASC']

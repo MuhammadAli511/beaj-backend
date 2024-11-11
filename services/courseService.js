@@ -104,7 +104,7 @@ const duplicateCourseService = async (id) => {
                 // Create new speak activity questions
                 for (let j = 0; j < speakActivityQuestions.length; j++) {
                     const speakActivityQuestion = speakActivityQuestions[j].dataValues;
-                    await speakActivityQuestionRepository.create(newLesson.question, speakActivityQuestion.mediaFile, speakActivityQuestion.answer, newLesson.LessonId, speakActivityQuestion.questionNumber);
+                    await speakActivityQuestionRepository.create(speakActivityQuestion.question, speakActivityQuestion.mediaFile, speakActivityQuestion.answer, newLesson.LessonId, speakActivityQuestion.questionNumber);
                 }
             } else if (lesson.activity == 'mcqs' || lesson.activity == 'preMCQs' || lesson.activity == 'postMCQs') {
                 // MULTIPLE CHOICE QUESTIONS
