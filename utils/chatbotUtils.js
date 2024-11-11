@@ -432,7 +432,7 @@ const createAndUploadSpeakingScoreImage = async (results) => {
 }
 
 const getAcceptableMessagesList = async (activityType) => {
-    if (activityType === "listenAndSpeak" || activityType === "postListenAndSpeak" || activityType === "preListenAndSpeak" || activityType === "watchAndSpeak" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot") {
+    if (activityType === "listenAndSpeak" || activityType === "postListenAndSpeak" || activityType === "preListenAndSpeak" || activityType === "watchAndSpeak" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot") {
         return ["audio"];
     }
 };
@@ -926,7 +926,10 @@ const sendDemoLessonToUser = async (
 
                 // Send question
                 const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(firstMCQsQuestion.dataValues.Id);
-                let mcqMessage = firstMCQsQuestion.dataValues.QuestionText + "\n" + "Choose the correct answer.\n";
+                let mcqMessage = firstMCQsQuestion.dataValues.QuestionText + "\n";
+                if (firstMCQsQuestion.dataValues.QuestionText != "Choose the correct sentence.") {
+                    mcqMessage += "Choose the correct answer.\n";
+                }
                 for (let i = 0; i < mcqAnswers.length; i++) {
                     mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
                 }
@@ -1004,7 +1007,10 @@ const sendDemoLessonToUser = async (
 
                     // Send question
                     const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(nextMCQsQuestion.dataValues.Id);
-                    let mcqMessage = nextMCQsQuestion.dataValues.QuestionText + "\n" + "Choose the correct answer.\n";
+                    let mcqMessage = nextMCQsQuestion.dataValues.QuestionText + "\n";
+                    if (nextMCQsQuestion.dataValues.QuestionText != "Choose the correct sentence.") {
+                        mcqMessage += "Choose the correct answer.\n";
+                    }
                     for (let i = 0; i < mcqAnswers.length; i++) {
                         mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
                     }
@@ -1503,7 +1509,7 @@ const demoCourseStart = async (userMobileNumber, startingLesson) => {
 const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUserState, currentLesson, messageType, messageContent) => {
     const acceptableMessagesList = currentUserState.dataValues.acceptableMessages;
     const activityType = currentUserState.dataValues.activityType;
-    if (activityType === "listenAndSpeak" || activityType === "postListenAndSpeak" || activityType === "preListenAndSpeak" || activityType === "watchAndSpeak" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "read") {
+    if (activityType === "listenAndSpeak" || activityType === "postListenAndSpeak" || activityType === "preListenAndSpeak" || activityType === "watchAndSpeak" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "read") {
         if (acceptableMessagesList.includes("audio") && messageType === "audio") {
             return true;
         }
@@ -1705,6 +1711,8 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
     const activityCompleteSticker = await extractConstantMessage("activity_complete_sticker");
     await sendMediaMessage(userMobileNumber, activityCompleteSticker, 'sticker');
 
+    await sleep(3000);
+
     // FOR ALL ACTIVITIES
     // Check if the lesson is the last lesson of the day
     const lessonLast = await lessonRepository.isLastLessonOfDay(startingLesson.dataValues.LessonId);
@@ -1869,7 +1877,10 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                 // Send question
                 const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(firstMCQsQuestion.dataValues.Id);
-                let mcqMessage = firstMCQsQuestion.dataValues.QuestionText + "\n" + "Choose the correct answer.\n";
+                let mcqMessage = firstMCQsQuestion.dataValues.QuestionText + "\n";
+                if (firstMCQsQuestion.dataValues.QuestionText != "Choose the correct sentence.") {
+                    mcqMessage += "Choose the correct answer.\n";
+                }
                 for (let i = 0; i < mcqAnswers.length; i++) {
                     mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
                 }
@@ -1948,7 +1959,10 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                     // Send question
                     const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(nextMCQsQuestion.dataValues.Id);
-                    let mcqMessage = nextMCQsQuestion.dataValues.QuestionText + "\n" + "Choose the correct answer.\n";
+                    let mcqMessage = nextMCQsQuestion.dataValues.QuestionText + "\n";
+                    if (nextMCQsQuestion.dataValues.QuestionText != "Choose the correct sentence.") {
+                        mcqMessage += "Choose the correct answer.\n";
+                    }
                     for (let i = 0; i < mcqAnswers.length; i++) {
                         mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
                     }
@@ -2145,8 +2159,9 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 await sleep(5000);
 
                 // Send question text
-                await sendMessage(userMobileNumber, firstListenAndSpeakQuestion.dataValues.question);
-                await createActivityLog(userMobileNumber, "text", "outbound", firstListenAndSpeakQuestion.dataValues.question, null);
+                const questionText = firstListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
+                await sendMessage(userMobileNumber, questionText);
+                await createActivityLog(userMobileNumber, "text", "outbound", questionText, null);
 
                 return;
             } else if (messageType === 'audio') {
@@ -2159,8 +2174,10 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     // Checking if user response is correct or not
                     const answersArray = currentListenAndSpeakQuestion.dataValues.answer;
                     let userAnswerIsCorrect = false;
+                    const recognizedTextWithoutPunctuation = recognizedText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"‘’“”?]/g, "").toLowerCase();
                     for (let i = 0; i < answersArray.length; i++) {
-                        if (recognizedText.toLowerCase().includes(answersArray[i].toLowerCase())) {
+                        const answerWithoutPunctuation = answersArray[i].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"‘’“”?]/g, "").toLowerCase();
+                        if (recognizedTextWithoutPunctuation == answerWithoutPunctuation) {
                             userAnswerIsCorrect = true;
                             break;
                         }
@@ -2260,8 +2277,9 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         await sleep(5000);
 
                         // Text message
-                        await sendMessage(userMobileNumber, nextListenAndSpeakQuestion.dataValues.question);
-                        await createActivityLog(userMobileNumber, "text", "outbound", nextListenAndSpeakQuestion.dataValues.question, null);
+                        const questionText = nextListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
+                        await sendMessage(userMobileNumber, questionText);
+                        await createActivityLog(userMobileNumber, "text", "outbound", questionText, null);
                     } else {
                         // Calculate total score and send message
                         const totalScore = await waQuestionResponsesRepository.getTotalScore(userMobileNumber, currentUserState.dataValues.currentLessonId);

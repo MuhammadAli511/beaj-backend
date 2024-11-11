@@ -3,13 +3,15 @@ import azureAIServices from '../utils/azureAIServices.js';
 import parseAnswers from '../utils/parseAnswers.js';
 import speakActivityQuestionRepository from '../repositories/speakActivityQuestionRepository.js';
 
-const createSpeakActivityQuestionService = async (question, mediaFile, answer, lessonId, questionNumber) => {
+const createSpeakActivityQuestionService = async (question, mediaFile, answer, lessonId, questionNumber, activityType) => {
     try {
         let mediaUrl = null;
         if (mediaFile) {
             mediaUrl = await azure_blob.uploadToBlobStorage(mediaFile);
         } else {
-            mediaUrl = await azureAIServices.azureTextToSpeechAndUpload(question);
+            if (activityType != 'conversationalAgencyBot') {
+                mediaUrl = await azureAIServices.azureTextToSpeechAndUpload(question);
+            }
         }
 
         // Use a regex to correctly handle double-quoted answers with commas inside

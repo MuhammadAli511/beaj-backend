@@ -32,7 +32,7 @@ import {
 dotenv.config();
 const whatsappVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN;
 
-let activity_types_to_repeat = ['mcqs', 'watchAndSpeak', 'listenAndSpeak', 'postListenAndSpeak', 'preListenAndSpeak', 'postMCQs', 'preMCQs', 'read', 'conversationalQuestionsBot', 'conversationalMonologueBot'];
+let activity_types_to_repeat = ['mcqs', 'watchAndSpeak', 'listenAndSpeak', 'postListenAndSpeak', 'preListenAndSpeak', 'postMCQs', 'preMCQs', 'read', 'conversationalQuestionsBot', 'conversationalMonologueBot', 'conversationalAgencyBot'];
 
 const testService = async (req, res) => {
     const userMobileNumber = "+923225036358";
