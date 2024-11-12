@@ -225,6 +225,7 @@ async function azureSpeechToTextAnyLanguage(audioBuffer) {
                 process.env.AZURE_CUSTOM_VOICE_KEY,
                 process.env.AZURE_CUSTOM_VOICE_REGION
             );
+            const autoDetectSourceLanguageConfig = sdk.AutoDetectSourceLanguageConfig.fromLanguages(["en-US", "ur-IN"]);
 
             const audioFormat = sdk.AudioStreamFormat.getWaveFormatPCM(16000, 16, 1);
 
@@ -234,36 +235,16 @@ async function azureSpeechToTextAnyLanguage(audioBuffer) {
 
             const audioConfig = sdk.AudioConfig.fromStreamInput(pushStream);
 
-            const speechRecognizer = new sdk.SpeechRecognizer(
+            const speechRecognizer = sdk.SpeechRecognizer.FromConfig(
                 speechConfig,
+                autoDetectSourceLanguageConfig,
                 audioConfig
             );
 
             speechRecognizer.recognizeOnceAsync((result) => {
                 switch (result.reason) {
                     case sdk.ResultReason.RecognizedSpeech:
-                        resolve(result.text);
-                        break;
-                    case sdk.ResultReason.NoMatch:
-                        console.log("NOMATCH: Speech could not be recognized.");
-                        resolve(null);
-                        break;
-                    case sdk.ResultReason.Canceled:
-                        const cancellation = sdk.CancellationDetails.fromResult(result);
-                        console.log(`CANCELED: Reason=${cancellation.reason}`);
-
-                        if (cancellation.reason == sdk.CancellationReason.Error) {
-                            console.log(`CANCELED: ErrorCode=${cancellation.ErrorCode}`);
-                            console.log(
-                                `CANCELED: ErrorDetails=${cancellation.errorDetails}`
-                            );
-                            console.log(
-                                "CANCELED: Did you set the speech resource key and region values?"
-                            );
-                        }
-                        reject(
-                            new Error(`Speech recognition canceled: ${cancellation.reason}`)
-                        );
+                        resolve(result);
                         break;
                 }
                 speechRecognizer.close();

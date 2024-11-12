@@ -161,25 +161,31 @@ const webhookService = async (body, res) => {
 
             // Step 4: User enters their district, now ask for their preferred timing
             if (message.type === 'text' && currentUserState.dataValues.engagement_type == 'District Input') {
-                await waUsersMetadataRepository.update(userMobileNumber, { city: messageContent });
-                await scholarshipInputMessage(userMobileNumber);
-                return;
+                if (!messageContent.toLowerCase().includes('i want to start my course')) {
+                    if (!user.dataValues.city) {
+                        await waUsersMetadataRepository.update(userMobileNumber, { city: messageContent, userRegistrationComplete: new Date() });
+                        await thankYouMessage(userMobileNumber);
+                    } else {
+                        await thankYouMessage(userMobileNumber);
+                    }
+                    return;
+                }
             }
 
             // Step 5: User enters their scholarship, send them a thank you message
-            if (message.type == 'text' && currentUserState.dataValues.engagement_type == 'Scholarship') {
-                if (!messageContent.toLowerCase().includes('i want to start my course')) {
-                    const messageAuth = await checkUserMessageAndAcceptableMessages(userMobileNumber, currentUserState, message, messageType, messageContent);
-                    if (messageAuth === false) {
-                        return;
-                    }
-                    if (parseInt(messageContent) >= 0 && parseInt(messageContent) <= 3000) {
-                        await waUsersMetadataRepository.update(userMobileNumber, { scholarshipvalue: messageContent, userRegistrationComplete: new Date() });
-                    }
-                    await thankYouMessage(userMobileNumber);
-                    return;
-                }
-            };
+            // if (message.type == 'text' && currentUserState.dataValues.engagement_type == 'Scholarship') {
+            //     
+            //         const messageAuth = await checkUserMessageAndAcceptableMessages(userMobileNumber, currentUserState, message, messageType, messageContent);
+            //         if (messageAuth === false) {
+            //             return;
+            //         }
+            //         if (parseInt(messageContent) >= 0 && parseInt(messageContent) <= 3000) {
+            //             await waUsersMetadataRepository.update(userMobileNumber, { scholarshipvalue: messageContent, userRegistrationComplete: new Date() });
+            //         }
+            //         await thankYouMessage(userMobileNumber);
+            //         return;
+            //     }
+            // };
 
             // From step 2 if user clicks 'Start Free Demo' button
             if ((message.type == 'interactive' || message.type == 'text') && (messageContent.toLowerCase().includes('start free demo'))) {
@@ -327,6 +333,22 @@ const webhookService = async (body, res) => {
                         currentUserState.dataValues.currentLesson_sequence
                     );
 
+
+                    if (!nextLesson) {
+                        // Check if current lesson 
+                        const lessonNumberCheck = (currentUserState.dataValues.currentWeek - 1) * 6 + currentUserState.dataValues.currentDay;
+                        if (lessonNumberCheck >= 24) {
+                            await sendMessage(userMobileNumber, 'You have completed all the lessons in this course. Please wait for the next course to start.');
+                            await createActivityLog(userMobileNumber, 'text', 'outbound', 'You have completed all the lessons in this course. Please wait for the next course to start.', null);
+                            // update acceptable messages list for the user
+                            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["i want to start my course"]);
+                            return;
+                        }
+                        await sendMessage(userMobileNumber, 'Please wait for the next lesson to start.');
+                        await createActivityLog(userMobileNumber, 'text', 'outbound', 'Please wait for the next lesson to start.', null);
+                        return;
+                    }
+
                     // Weekly blocking
                     const course = await courseRepository.getById(currentUserState.dataValues.currentCourseId);
                     const courseStartDate = course.dataValues.courseStartDate;
@@ -345,23 +367,6 @@ const webhookService = async (body, res) => {
                         const message = 'Please wait for the next week to start.';
                         await sendMessage(userMobileNumber, message);
                         await createActivityLog(userMobileNumber, 'text', 'outbound', message, null);
-                        return;
-                    }
-
-
-
-                    if (!nextLesson) {
-                        // Check if current lesson 
-                        const lessonNumberCheck = (currentUserState.dataValues.currentWeek - 1) * 6 + currentUserState.dataValues.currentDay;
-                        if (lessonNumberCheck >= 24) {
-                            await sendMessage(userMobileNumber, 'You have completed all the lessons in this course. Please wait for the next course to start.');
-                            await createActivityLog(userMobileNumber, 'text', 'outbound', 'You have completed all the lessons in this course. Please wait for the next course to start.', null);
-                            // update acceptable messages list for the user
-                            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["i want to start my course"]);
-                            return;
-                        }
-                        await sendMessage(userMobileNumber, 'Please wait for the next lesson to start.');
-                        await createActivityLog(userMobileNumber, 'text', 'outbound', 'Please wait for the next lesson to start.', null);
                         return;
                     }
 

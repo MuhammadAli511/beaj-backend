@@ -1479,7 +1479,7 @@ const scholarshipInputMessage = async (userMobileNumber) => {
 };
 
 const thankYouMessage = async (userMobileNumber) => {
-    const message = "Thank you for applying! We will call you by Nov 5th to confirm if you get selected for this batch."
+    const message = "Your registration is complete. Thank you for applying! We will contact you by December, 15th."
     await sendMessage(userMobileNumber, message);
     await createActivityLog(userMobileNumber, "text", "outbound", message, null);
     await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["i want to start my course"]);
@@ -2720,7 +2720,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
                         return;
                     }
-                    else if (currentUserState.dataValues.question == 2) {
+                    else if (currentUserState.dataValues.questionNumber == 2) {
                         let chatThread = await waUserProgressRepository.getOpenaiThreadId(userMobileNumber);
                         chatThread = chatThread.dataValues.openaiThreadId;
                         let secondPrompt = currentConversationalAgencyBotQuestion.dataValues.question;
