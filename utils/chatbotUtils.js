@@ -1172,7 +1172,7 @@ const sendDemoLessonToUser = async (
 
                 // Send lesson message
                 let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\nListen to the passage carefully and then practice reading it.";
+                lessonMessage += "\nListen to the passage carefully";
                 // Text message
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
@@ -1189,17 +1189,18 @@ const sendDemoLessonToUser = async (
                 await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
                 await sleep(12000);
 
-                // Text message
-                await sendMessage(userMobileNumber, "Send us a voice note of you reading this passage.💬");
-                await createActivityLog(userMobileNumber, "text", "outbound", "Send us a voice note of you reading this passage.💬", null);
-
                 // Remove html tags from the text
                 const lessonText = startingLesson.dataValues.text;
                 const cleanedLessonText = removeHTMLTags(lessonText);
 
                 // Text message
-                await sendMessage(userMobileNumber, cleanedLessonText);
-                await createActivityLog(userMobileNumber, "text", "outbound", cleanedLessonText, null);
+                await sendMessage(userMobileNumber, "Send us a voice note of you reading this passage.💬");
+                await createActivityLog(userMobileNumber, "text", "outbound", "Send us a voice note of you reading this passage.💬", null);
+
+
+                // Text message
+                await sendMessage(userMobileNumber, "Send us a voice message of you reading this passage:\n\n" + cleanedLessonText);
+                await createActivityLog(userMobileNumber, "text", "outbound", "Send us a voice message of you reading this passage:\n\n" + cleanedLessonText, null);
             } else if (messageType == 'audio') {
                 // Get the current Read question text
                 const lessonText = startingLesson.dataValues.text;
@@ -2517,15 +2518,8 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         // Reset Question Number, Retry Counter, and Activity Type
                         await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
 
-                        // Update acceptable messages list for the user
-                        await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try next activity", "apply for course"]);
-
-                        // Sleep
-                        await sleep(2000);
-
-                        // Reply Buttons
-                        await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'try_next_activity', title: 'Try Next Activity' }, { id: 'apply_for_course', title: 'Apply for Course' }]);
-                        await createActivityLog(userMobileNumber, "template", "outbound", "Try Next Activity or Apply for Course", null);
+                        // ENDING MESSAGE
+                        await endingMessage(userMobileNumber, currentUserState, startingLesson);
                     }
                 }
             }
