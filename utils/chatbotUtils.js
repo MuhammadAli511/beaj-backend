@@ -19,9 +19,12 @@ import { format } from 'date-fns';
 import { createCanvas, registerFont } from 'canvas';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import OpenAI from "openai";
 import lessonRepository from "../repositories/lessonRepository.js";
 
 dotenv.config();
+
+const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
 const whatsappToken = process.env.WHATSAPP_TOKEN;
 const whatsappPhoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
@@ -1169,7 +1172,7 @@ const sendDemoLessonToUser = async (
 
                 // Send lesson message
                 let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\nListen to the passage carefully and then practice reading it.";
+                lessonMessage += "\nListen to the passage carefully";
                 // Text message
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
@@ -1186,17 +1189,18 @@ const sendDemoLessonToUser = async (
                 await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
                 await sleep(12000);
 
-                // Text message
-                await sendMessage(userMobileNumber, "Send us a voice note of you reading this passage.💬");
-                await createActivityLog(userMobileNumber, "text", "outbound", "Send us a voice note of you reading this passage.💬", null);
-
                 // Remove html tags from the text
                 const lessonText = startingLesson.dataValues.text;
                 const cleanedLessonText = removeHTMLTags(lessonText);
 
                 // Text message
-                await sendMessage(userMobileNumber, cleanedLessonText);
-                await createActivityLog(userMobileNumber, "text", "outbound", cleanedLessonText, null);
+                await sendMessage(userMobileNumber, "Send us a voice note of you reading this passage.💬");
+                await createActivityLog(userMobileNumber, "text", "outbound", "Send us a voice note of you reading this passage.💬", null);
+
+
+                // Text message
+                await sendMessage(userMobileNumber, "Send us a voice message of you reading this passage:\n\n" + cleanedLessonText);
+                await createActivityLog(userMobileNumber, "text", "outbound", "Send us a voice message of you reading this passage:\n\n" + cleanedLessonText, null);
             } else if (messageType == 'audio') {
                 // Get the current Read question text
                 const lessonText = startingLesson.dataValues.text;
@@ -1476,7 +1480,7 @@ const scholarshipInputMessage = async (userMobileNumber) => {
 };
 
 const thankYouMessage = async (userMobileNumber) => {
-    const message = "Thank you for applying! We will call you by Nov 5th to confirm if you get selected for this batch."
+    const message = "Your registration is complete. Thank you for applying! We will contact you by December, 15th."
     await sendMessage(userMobileNumber, message);
     await createActivityLog(userMobileNumber, "text", "outbound", message, null);
     await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["i want to start my course"]);
@@ -1753,7 +1757,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         }
 
         // Day Ending Message
-        if (startingLesson.dataValues.dayNumber == 1 || startingLesson.dataValues.dayNumber == 2 || startingLesson.dataValues.dayNumber == 3 || startingLesson.dataValues.dayNumber == 5) {
+        if (startingLesson.dataValues.dayNumber == 1 || startingLesson.dataValues.dayNumber == 2 || startingLesson.dataValues.dayNumber == 3 || startingLesson.dataValues.dayNumber == 4 || startingLesson.dataValues.dayNumber == 5) {
             const dayEndingMessage = getDayEndingMessage(startingLesson.dataValues.dayNumber);
             await sendMessage(userMobileNumber, dayEndingMessage);
             await createActivityLog(userMobileNumber, "text", "outbound", dayEndingMessage, null);
@@ -2333,6 +2337,193 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 }
             }
         }
+        else if (activity == 'read') {
+            if (messageType != 'audio') {
+                // Lesson Started Record
+                await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date());
+
+                // Send lesson message
+                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
+                lessonMessage += "\nListen to the passage carefully.";
+                // Text message
+                await sendMessage(userMobileNumber, lessonMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+
+                // Send video content
+                const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
+                let videoURL = documentFile[0].dataValues.video;
+
+                // Media message
+                await sendMediaMessage(userMobileNumber, videoURL, 'video');
+                await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
+
+                // Update acceptable messages list for the user
+                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
+                await sleep(12000);
+
+                // Remove html tags from the text
+                const lessonText = startingLesson.dataValues.text;
+                const cleanedLessonText = removeHTMLTags(lessonText);
+
+                // Text message
+                await sendMessage(userMobileNumber, "Send us a voice message of you reading this passage:\n\n" + cleanedLessonText);
+                await createActivityLog(userMobileNumber, "text", "outbound", "Send us a voice message of you reading this passage:\n\n" + cleanedLessonText, null);
+            } else if (messageType == 'audio') {
+                // Get the current Read question text
+                const lessonText = startingLesson.dataValues.text;
+
+                // Remove punctuation from the text
+                const textWithoutPunctuation = lessonText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"‘’“”]/g, "");
+
+                // Remove HTML tags from the text
+                const textWithoutPunctuationAndHtmlTags = removeHTMLTags(textWithoutPunctuation);
+
+                // Extract user transcription from words
+                const userTranscription = await azureAIServices.openaiSpeechToText(messageContent.data);
+
+                // Text message
+                await sendMessage(userMobileNumber, "You said: " + userTranscription);
+                await createActivityLog(userMobileNumber, "text", "outbound", "You said: " + userTranscription, null);
+
+                // Azure Pronunciation Assessment
+                const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, textWithoutPunctuationAndHtmlTags);
+
+                const imageUrl = await createAndUploadScoreImage(pronunciationAssessment);
+
+                if (imageUrl) {
+                    // Media message
+                    await sendMediaMessage(userMobileNumber, imageUrl, 'image');
+                    await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
+                    await sleep(5000);
+                }
+
+                // Save user response to the database
+                const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
+                const uniqueID = uuidv4();
+                const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
+                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                const submissionDate = new Date();
+                await waQuestionResponsesRepository.create(
+                    userMobileNumber,
+                    startingLesson.dataValues.LessonId,
+                    null,
+                    activity,
+                    startingLesson.dataValues.activityAlias,
+                    [userTranscription],
+                    [userAudioFileUrl],
+                    null,
+                    null,
+                    [pronunciationAssessment],
+                    null,
+                    1,
+                    submissionDate
+                );
+
+                // Ending Message
+                await endingMessage(userMobileNumber, currentUserState, startingLesson);
+            }
+        }
+        else if (activity == 'conversationalQuestionsBot') {
+            if (currentUserState.dataValues.questionNumber === null) {
+                // Lesson Started Record
+                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
+
+                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
+                lessonMessage += "\nListen to the audio and send your answer as a voice message.";
+
+                // Text message
+                await sendMessage(userMobileNumber, lessonMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+
+                // Send Conversation Bot Question
+                const firstConversationBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
+
+                // Update question number
+                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstConversationBotQuestion.dataValues.questionNumber);
+
+                // Send question media file
+                await sendMediaMessage(userMobileNumber, firstConversationBotQuestion.dataValues.mediaFile, 'audio');
+                await createActivityLog(userMobileNumber, "audio", "outbound", firstConversationBotQuestion.dataValues.mediaFile, null);
+
+                // Update acceptable messages list for the user
+                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
+                return;
+            }
+            else if (messageType === 'audio') {
+                // Get the current Conversation Bot question
+                const currentConversationBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+
+                // OpenAI Speech to Text
+                const recognizedText = await azureAIServices.openaiSpeechToText(messageContent.data);
+                if (recognizedText) {
+                    const message = `Please wait for an answer. \n\nYou said: ${recognizedText}`;
+                    await sendMessage(userMobileNumber, message);
+                    await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+
+                    // OpenAI Feedback
+                    let openaiFeedbackTranscript = await azureAIServices.openaiFeedback(recognizedText);
+
+                    // Extract corrected version of the answer
+                    const correctedVersion = openaiFeedbackTranscript.match(/\[CORRECTED\](.*?)\[\/CORRECTED\]/);
+                    if (correctedVersion) {
+                        openaiFeedbackTranscript = openaiFeedbackTranscript.replace(/\[CORRECTED\](.*?)\[\/CORRECTED\]/, '');
+                    }
+
+                    // Azure Text to Speech
+                    const openaiFeedbackAudio = await azureAIServices.azureTextToSpeechAndUpload(openaiFeedbackTranscript);
+
+                    // Media message
+                    await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
+                    await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
+                    await sleep(5000);
+
+                    // Send corrected version of the answer
+                    if (correctedVersion) {
+                        let correctMessage = "A corrected version of your answer is: " + correctedVersion[1];
+                        await sendMessage(userMobileNumber, correctMessage);
+                        await createActivityLog(userMobileNumber, "text", "outbound", correctMessage, null);
+                    }
+
+                    // Save user response to the database
+                    const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
+                    const uniqueID = uuidv4();
+                    const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
+                    const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                    const submissionDate = new Date();
+                    await waQuestionResponsesRepository.create(
+                        userMobileNumber,
+                        currentUserState.dataValues.currentLessonId,
+                        currentConversationBotQuestion.dataValues.id,
+                        activity,
+                        startingLesson.dataValues.activityAlias,
+                        [recognizedText],
+                        [userAudioFileUrl],
+                        [openaiFeedbackTranscript],
+                        [openaiFeedbackAudio],
+                        null,
+                        null,
+                        1,
+                        submissionDate
+                    );
+
+                    const nextConversationBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                    if (nextConversationBotQuestion) {
+                        // Update question number
+                        await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextConversationBotQuestion.dataValues.questionNumber);
+
+                        // Media message
+                        await sendMediaMessage(userMobileNumber, nextConversationBotQuestion.dataValues.mediaFile, 'audio');
+                        await createActivityLog(userMobileNumber, "audio", "outbound", nextConversationBotQuestion.dataValues.mediaFile, null);
+                    } else {
+                        // Reset Question Number, Retry Counter, and Activity Type
+                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+
+                        // ENDING MESSAGE
+                        await endingMessage(userMobileNumber, currentUserState, startingLesson);
+                    }
+                }
+            }
+        }
         else if (activity == 'conversationalMonologueBot') {
             if (currentUserState.dataValues.questionNumber === null) {
                 // Lesson Started Record
@@ -2419,90 +2610,181 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 }
             }
         }
-        else if (activity == 'read') {
-            if (messageType != 'audio') {
+        else if (activity == 'conversationalAgencyBot') {
+            if (currentUserState.dataValues.questionNumber === null) {
                 // Lesson Started Record
-                await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date());
+                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
 
                 // Send lesson message
                 let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\nListen to the passage carefully.";
-                // Text message
+                lessonMessage += "\nWatch the video and practice speaking by sending a voice message.💬";
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
-                // Send video content
-                const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
-                let videoURL = documentFile[0].dataValues.video;
+                // Send first Conversational Agency Bot question
+                const firstConversationalAgencyBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
 
-                // Media message
-                await sendMediaMessage(userMobileNumber, videoURL, 'video');
-                await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
+                // Extract text between <question></question> tags from firstConversationalAgencyBotQuestion.question
+                const questionText = firstConversationalAgencyBotQuestion.dataValues.question.match(/<question>(.*?)<\/question>/s)[1].trim();
+                const questionAudio = await azureAIServices.azureTextToSpeechAndUpload(questionText);
+
+                // Update question number
+                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstConversationalAgencyBotQuestion.dataValues.questionNumber);
+
+                // Send question media file
+                await sendMediaMessage(userMobileNumber, questionAudio, 'audio');
+                await createActivityLog(userMobileNumber, "audio", "outbound", questionAudio, null);
 
                 // Update acceptable messages list for the user
                 await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
-                await sleep(12000);
+            }
+            else if (messageType === 'audio') {
+                // Get the current Conversational Agency Bot question
+                const currentConversationalAgencyBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                const recognizedText = await azureAIServices.openaiSpeechToTextAnyLanguage(messageContent.data);
+                if (recognizedText) {
+                    console.log("Recognized Text: ", recognizedText);
+                    if (currentUserState.dataValues.questionNumber == 1) {
+                        const chatThread = await openai.beta.threads.create();
+                        await waUserProgressRepository.updateOpenaiThreadId(userMobileNumber, chatThread.id);
+                        let firstPrompt = currentConversationalAgencyBotQuestion.dataValues.question;
+                        firstPrompt += "\n\n\nMy response: " + recognizedText;
 
-                // Remove html tags from the text
-                const lessonText = startingLesson.dataValues.text;
-                const cleanedLessonText = removeHTMLTags(lessonText);
+                        await openai.beta.threads.messages.create(
+                            chatThread.id,
+                            {
+                                role: "user", content: firstPrompt
+                            }
+                        );
 
-                // Text message
-                await sendMessage(userMobileNumber, "Send us a voice message of you reading this passage:\n\n" + cleanedLessonText);
-                await createActivityLog(userMobileNumber, "text", "outbound", "Send us a voice message of you reading this passage:\n\n" + cleanedLessonText, null);
-            } else if (messageType == 'audio') {
-                // Get the current Read question text
-                const lessonText = startingLesson.dataValues.text;
+                        const run = await openai.beta.threads.runs.create(
+                            chatThread.id,
+                            { assistant_id: "asst_6zTBy1Esn6WuM9pLujyfT3y8" }
+                        );
 
-                // Remove punctuation from the text
-                const textWithoutPunctuation = lessonText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"‘’“”]/g, "");
+                        let run1 = await openai.beta.threads.runs.retrieve(
+                            chatThread.id,
+                            run.id
+                        );
 
-                // Remove HTML tags from the text
-                const textWithoutPunctuationAndHtmlTags = removeHTMLTags(textWithoutPunctuation);
+                        while (run1.status === "in_progress") {
+                            console.log("The thread is still running.");
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            run1 = await openai.beta.threads.runs.retrieve(
+                                chatThread.id,
+                                run.id
+                            );
+                        }
 
-                // Extract user transcription from words
-                const userTranscription = await azureAIServices.openaiSpeechToText(messageContent.data);
+                        const threadMessages1 = await openai.beta.threads.messages.list(
+                            chatThread.id
+                        );
 
-                // Text message
-                await sendMessage(userMobileNumber, "You said: " + userTranscription);
-                await createActivityLog(userMobileNumber, "text", "outbound", "You said: " + userTranscription, null);
+                        // console.log(threadMessages1.data[0].content[0].text.value);
+                        const audioLink = await azureAIServices.azureTextToSpeechAndUpload(threadMessages1.data[0].content[0].text.value);
+                        await sendMediaMessage(userMobileNumber, audioLink, 'audio');
+                        await createActivityLog(userMobileNumber, "audio", "outbound", audioLink, null);
 
-                // Azure Pronunciation Assessment
-                const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, textWithoutPunctuationAndHtmlTags);
+                        // Save to question responses
+                        const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
+                        const uniqueID = uuidv4();
+                        const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
+                        const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                        const submissionDate = new Date();
+                        await waQuestionResponsesRepository.create(
+                            userMobileNumber,
+                            currentUserState.dataValues.currentLessonId,
+                            currentConversationalAgencyBotQuestion.dataValues.id,
+                            activity,
+                            startingLesson.dataValues.activityAlias,
+                            [recognizedText],
+                            [userAudioFileUrl],
+                            [threadMessages1.data[0].content[0].text.value],
+                            [audioLink],
+                            null,
+                            null,
+                            1,
+                            submissionDate
+                        );
 
-                const imageUrl = await createAndUploadScoreImage(pronunciationAssessment);
+                        // Update question number
+                        await waUserProgressRepository.updateQuestionNumber(userMobileNumber, 2);
 
-                if (imageUrl) {
-                    // Media message
-                    await sendMediaMessage(userMobileNumber, imageUrl, 'image');
-                    await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
-                    await sleep(5000);
+                        // Update acceptable messages list for the user
+                        await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
+                        return;
+                    }
+                    else if (currentUserState.dataValues.questionNumber == 2) {
+                        let chatThread = await waUserProgressRepository.getOpenaiThreadId(userMobileNumber);
+                        chatThread = chatThread.dataValues.openaiThreadId;
+                        let secondPrompt = currentConversationalAgencyBotQuestion.dataValues.question;
+                        secondPrompt += "\n\n\nMy response: " + recognizedText;
+
+                        await openai.beta.threads.messages.create(
+                            chatThread,
+                            {
+                                role: "user", content: secondPrompt
+                            }
+                        );
+
+                        const run = await openai.beta.threads.runs.create(
+                            chatThread,
+                            { assistant_id: "asst_6zTBy1Esn6WuM9pLujyfT3y8" }
+                        );
+
+                        let run1 = await openai.beta.threads.runs.retrieve(
+                            chatThread,
+                            run.id
+                        );
+
+                        while (run1.status === "in_progress") {
+                            console.log("The thread is still running.");
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            run1 = await openai.beta.threads.runs.retrieve(
+                                chatThread,
+                                run.id
+                            );
+                        }
+
+                        const threadMessages1 = await openai.beta.threads.messages.list(
+                            chatThread
+                        );
+
+                        // console.log(threadMessages1.data[0].content[0].text.value);
+
+                        const audioLink = await azureAIServices.azureTextToSpeechAndUpload(threadMessages1.data[0].content[0].text.value);
+                        await sendMediaMessage(userMobileNumber, audioLink, 'audio');
+                        await createActivityLog(userMobileNumber, "audio", "outbound", audioLink, null);
+
+                        // Save to question responses
+                        const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
+                        const uniqueID = uuidv4();
+                        const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
+                        const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                        const submissionDate = new Date();
+                        await waQuestionResponsesRepository.create(
+                            userMobileNumber,
+                            currentUserState.dataValues.currentLessonId,
+                            currentConversationalAgencyBotQuestion.dataValues.id,
+                            activity,
+                            startingLesson.dataValues.activityAlias,
+                            [recognizedText],
+                            [userAudioFileUrl],
+                            [threadMessages1.data[0].content[0].text.value],
+                            [audioLink],
+                            null,
+                            null,
+                            1,
+                            submissionDate
+                        );
+
+                        // Reset Question Number, Retry Counter, and Activity Type
+                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+
+                        // ENDING MESSAGE
+                        await endingMessage(userMobileNumber, currentUserState, startingLesson);
+                    }
                 }
-
-                // Save user response to the database
-                const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
-                const uniqueID = uuidv4();
-                const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
-                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
-                const submissionDate = new Date();
-                await waQuestionResponsesRepository.create(
-                    userMobileNumber,
-                    startingLesson.dataValues.LessonId,
-                    null,
-                    activity,
-                    startingLesson.dataValues.activityAlias,
-                    [userTranscription],
-                    [userAudioFileUrl],
-                    null,
-                    null,
-                    [pronunciationAssessment],
-                    null,
-                    1,
-                    submissionDate
-                );
-
-                // Ending Message
-                await endingMessage(userMobileNumber, currentUserState, startingLesson);
             }
         }
     } catch (error) {

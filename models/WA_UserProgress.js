@@ -52,6 +52,10 @@ WA_UserProgress.init({
         type: DataTypes.ARRAY(DataTypes.TEXT),
         allowNull: true,
     },
+    openaiThreadId: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
     lastUpdated: {
         type: DataTypes.DATE,
         allowNull: true,

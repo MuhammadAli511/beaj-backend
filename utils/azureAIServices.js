@@ -134,7 +134,27 @@ async function openaiSpeechToText(audioBuffer) {
     } finally {
         await unlink(tempFilePath);
     }
-}
+};
+
+async function openaiSpeechToTextAnyLanguage(audioBuffer) {
+    const openai = new OpenAI(process.env.OPENAI_API_KEY);
+
+    const uniqueFileName = `audio-${uuidv4()}.ogg`;
+    const tempFilePath = join(tmpdir(), uniqueFileName);
+
+    try {
+        await writeFile(tempFilePath, audioBuffer);
+
+        const transcription = await openai.audio.transcriptions.create({
+            file: fs.createReadStream(tempFilePath),
+            model: "whisper-1",
+            language: 'en'
+        });
+        return transcription.text;
+    } finally {
+        await unlink(tempFilePath);
+    }
+};
 
 async function azureSpeechToText(audioBuffer) {
     return new Promise(async (resolve, reject) => {
@@ -185,6 +205,46 @@ async function azureSpeechToText(audioBuffer) {
                         reject(
                             new Error(`Speech recognition canceled: ${cancellation.reason}`)
                         );
+                        break;
+                }
+                speechRecognizer.close();
+            });
+        } catch (err) {
+            console.error("Error during speech recognition:", err);
+            reject(err);
+        }
+    });
+}
+
+async function azureSpeechToTextAnyLanguage(audioBuffer) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const wavBuffer = await convertOggToWav(audioBuffer);
+
+            const speechConfig = sdk.SpeechConfig.fromSubscription(
+                process.env.AZURE_CUSTOM_VOICE_KEY,
+                process.env.AZURE_CUSTOM_VOICE_REGION
+            );
+            const autoDetectSourceLanguageConfig = sdk.AutoDetectSourceLanguageConfig.fromLanguages(["en-US", "ur-IN"]);
+
+            const audioFormat = sdk.AudioStreamFormat.getWaveFormatPCM(16000, 16, 1);
+
+            const pushStream = sdk.AudioInputStream.createPushStream(audioFormat);
+            pushStream.write(wavBuffer);
+            pushStream.close();
+
+            const audioConfig = sdk.AudioConfig.fromStreamInput(pushStream);
+
+            const speechRecognizer = sdk.SpeechRecognizer.FromConfig(
+                speechConfig,
+                autoDetectSourceLanguageConfig,
+                audioConfig
+            );
+
+            speechRecognizer.recognizeOnceAsync((result) => {
+                switch (result.reason) {
+                    case sdk.ResultReason.RecognizedSpeech:
+                        resolve(result);
                         break;
                 }
                 speechRecognizer.close();
@@ -550,5 +610,7 @@ export default {
     openaiFeedback,
     openaiSpeechToText,
     openaiCustomFeedback,
-    azurePronunciationSpeakingAssessment
+    azurePronunciationSpeakingAssessment,
+    openaiSpeechToTextAnyLanguage,
+    azureSpeechToTextAnyLanguage
 };

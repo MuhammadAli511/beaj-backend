@@ -105,6 +105,26 @@ const updateQuestionNumberRetryCounterActivityType = async (phoneNumber, questio
     });
 }
 
+const updateOpenaiThreadId = async (phoneNumber, openaiThreadId) => {
+    return await WA_UserProgress.update({
+        openaiThreadId: openaiThreadId,
+        lastUpdated: new Date()
+    }, {
+        where: {
+            phoneNumber: phoneNumber
+        }
+    });
+};
+
+const getOpenaiThreadId = async (phoneNumber) => {
+    return await WA_UserProgress.findOne({
+        where: {
+            phoneNumber: phoneNumber
+        },
+        attributes: ['openaiThreadId']
+    });
+};
+
 export default {
     create,
     getAll,
@@ -116,5 +136,7 @@ export default {
     updateRetryCounter,
     updateQuestionNumberRetryCounterActivityType,
     updateEngagementType,
-    getCountByEngagementType
+    getCountByEngagementType,
+    getOpenaiThreadId,
+    updateOpenaiThreadId
 };
