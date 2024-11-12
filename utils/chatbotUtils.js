@@ -1172,7 +1172,7 @@ const sendDemoLessonToUser = async (
 
                 // Send lesson message
                 let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\nListen to the passage carefully";
+                lessonMessage += "\nListen to the passage carefully.";
                 // Text message
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
@@ -1480,9 +1480,14 @@ const scholarshipInputMessage = async (userMobileNumber) => {
 };
 
 const thankYouMessage = async (userMobileNumber) => {
-    const message = "Your registration is complete. Thank you for applying! We will contact you by December, 15th."
+    const message = "Your registration is *complete*. Thank you for applying! We will contact you by December, 15th."
     await sendMessage(userMobileNumber, message);
     await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+
+    // Extract image registration
+    const registrationImage = await extractConstantMessage("registration");
+    await sendMediaMessage(userMobileNumber, registrationImage, 'image');
+    await createActivityLog(userMobileNumber, "image", "outbound", registrationImage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["i want to start my course"]);
     return;
 };
