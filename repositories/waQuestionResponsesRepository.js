@@ -48,7 +48,7 @@ const update = async (
 
     if (submittedAnswerText) {
         updateFields.submittedAnswerText = sequelize.literal(
-            `ARRAY_APPEND("submittedAnswerText", '${submittedAnswerText}')`
+            `ARRAY_APPEND("submittedAnswerText", ${sequelize.escape(submittedAnswerText)})`
         );
     }
     if (submittedUserAudio) {
@@ -58,7 +58,7 @@ const update = async (
     }
     if (submittedFeedbackText) {
         updateFields.submittedFeedbackText = sequelize.literal(
-            `ARRAY_APPEND("submittedFeedbackText", '${submittedFeedbackText}')`
+            `ARRAY_APPEND("submittedFeedbackText", '${sequelize.escape(submittedFeedbackText)}')`
         );
     }
     if (submittedFeedbackAudio) {
@@ -73,7 +73,7 @@ const update = async (
     }
     if (submittedFeedbackJson) {
         updateFields.submittedFeedbackJson = sequelize.literal(
-            `ARRAY_APPEND("submittedFeedbackJson", '${JSON.stringify(submittedFeedbackJson)}')`
+            `ARRAY_APPEND("submittedFeedbackJson", ${sequelize.escape(JSON.stringify(submittedFeedbackJson))})`
         );
     }
 
