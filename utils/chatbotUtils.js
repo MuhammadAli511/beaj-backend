@@ -1529,45 +1529,43 @@ const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUs
     else if (acceptableMessagesList.includes(messageContent.toLowerCase())) {
         return true;
     }
-    else {
-        // If acceptable message list size is more than 2999 then "0 - 3000 tak koi number type kerain."
-        if (acceptableMessagesList.length > 2999) {
-            await sendMessage(userMobileNumber, "0 - 3000 tak koi number type kerain.");
-            await createActivityLog(userMobileNumber, "text", "outbound", "0 - 3000 tak koi number type kerain.", null);
-            return false;
-        }
-        // If list has "option a", "option b", "option c" then "option a", "option b", "option c" type kerain.
-        else if (acceptableMessagesList.includes("option a") && acceptableMessagesList.includes("option b") && acceptableMessagesList.includes("option c")) {
-            await sendMessage(userMobileNumber, "option a, option b, ya option c mein se koi aik button press kerain.");
-            await createActivityLog(userMobileNumber, "text", "outbound", "option a, option b, ya option c mein se koi aik button press kerain.", null);
-            return false;
-        }
-        // If list has "audio"
-        else if (acceptableMessagesList.includes("audio")) {
-            await sendMessage(userMobileNumber, "Voice message record karke bhejain.");
-            await createActivityLog(userMobileNumber, "text", "outbound", "Voice message record karke bhejain.", null);
-            return false;
-        }
-        // If list has "text"
-        else if (acceptableMessagesList.includes("text")) {
-            await sendMessage(userMobileNumber, "Text message type kerain.");
-            await createActivityLog(userMobileNumber, "text", "outbound", "Text message type kerain.", null);
-            return false;
-        }
-        // Write customized message based on the acceptable messages list
-        let message = "I'm sorry, I didn't understand that. Please try again.";
-        if (acceptableMessagesList.length > 1) {
-            message += "\n\nAcceptable messages are:";
-            for (let i = 0; i < acceptableMessagesList.length; i++) {
-                message += "\n" + acceptableMessagesList[i];
-            }
-        } else {
-            message += "\n\nAcceptable message is: " + acceptableMessagesList[0];
-        }
-        await sendMessage(userMobileNumber, message);
-        await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+    // If acceptable message list size is more than 2999 then "0 - 3000 tak koi number type kerain."
+    if (acceptableMessagesList.length > 2999) {
+        await sendMessage(userMobileNumber, "0 - 3000 tak koi number type kerain.");
+        await createActivityLog(userMobileNumber, "text", "outbound", "0 - 3000 tak koi number type kerain.", null);
         return false;
     }
+    // If list has "option a", "option b", "option c" then "option a", "option b", "option c" type kerain.
+    else if (acceptableMessagesList.includes("option a") && acceptableMessagesList.includes("option b") && acceptableMessagesList.includes("option c")) {
+        await sendMessage(userMobileNumber, "option a, option b, ya option c mein se koi aik button press kerain.");
+        await createActivityLog(userMobileNumber, "text", "outbound", "option a, option b, ya option c mein se koi aik button press kerain.", null);
+        return false;
+    }
+    // If list has "audio"
+    else if (acceptableMessagesList.includes("audio")) {
+        await sendMessage(userMobileNumber, "Voice message record karke bhejain.");
+        await createActivityLog(userMobileNumber, "text", "outbound", "Voice message record karke bhejain.", null);
+        return false;
+    }
+    // If list has "text"
+    else if (acceptableMessagesList.includes("text")) {
+        await sendMessage(userMobileNumber, "Text message type kerain.");
+        await createActivityLog(userMobileNumber, "text", "outbound", "Text message type kerain.", null);
+        return false;
+    }
+    // Write customized message based on the acceptable messages list
+    let message = "I'm sorry, I didn't understand that. Please try again.";
+    if (acceptableMessagesList.length > 1) {
+        message += "\n\nAcceptable messages are:";
+        for (let i = 0; i < acceptableMessagesList.length; i++) {
+            message += "\n" + acceptableMessagesList[i];
+        }
+    } else {
+        message += "\n\nAcceptable message is: " + acceptableMessagesList[0];
+    }
+    await sendMessage(userMobileNumber, message);
+    await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+    return false;
 };
 
 const sendWrongMessages = async (userMobileNumber) => {
