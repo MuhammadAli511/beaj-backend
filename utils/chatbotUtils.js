@@ -50,7 +50,8 @@ const removeUser = async (phoneNumber) => {
 
 const removeUserTillCourse = async (phoneNumber) => {
     await waUserProgressRepository.update(phoneNumber, null, null, null, null, null, null, null, null, ["i want to start my course"]);
-    await waUserProgressRepository.updateEngagementType(phoneNumber, "Scholarship");
+    await waUserProgressRepository.updateEngagementType(phoneNumber, "District Input");
+    await waUserActivityLogsRepository.deleteByPhoneNumber(phoneNumber);
     await waLessonsCompletedRepository.deleteByPhoneNumber(phoneNumber);
     await waQuestionResponsesRepository.deleteByPhoneNumber(phoneNumber);
     await sendMessage(phoneNumber, "Your data has been removed. Please start again using the link provided.");
@@ -1837,6 +1838,9 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
             // Sleep
             await sleep(12000);
 
+            // Reset Question Number, Retry Counter, and Activity Type
+            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+
             // Ending Message
             await endingMessage(userMobileNumber, currentUserState, startingLesson);
         }
@@ -2421,6 +2425,9 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     1,
                     submissionDate
                 );
+
+                // Reset Question Number, Retry Counter, and Activity Type
+                await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
 
                 // Ending Message
                 await endingMessage(userMobileNumber, currentUserState, startingLesson);
