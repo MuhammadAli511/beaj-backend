@@ -2755,11 +2755,16 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                             );
                         }
 
-                        const threadMessages1 = await openai.beta.threads.messages.list(
+                        let threadMessages1 = await openai.beta.threads.messages.list(
                             chatThread
                         );
 
-                        // console.log(threadMessages1.data[0].content[0].text.value);
+                        if (currentConversationalAgencyBotQuestion.dataValues.question == threadMessages1.data[0].content[0].text.value) {
+                            await new Promise(resolve => setTimeout(resolve, 3000));
+                            threadMessages1 = await openai.beta.threads.messages.list(
+                                chatThread
+                            );
+                        }
 
                         const audioLink = await azureAIServices.azureTextToSpeechAndUpload(threadMessages1.data[0].content[0].text.value);
                         await sendMediaMessage(userMobileNumber, audioLink, 'audio');
