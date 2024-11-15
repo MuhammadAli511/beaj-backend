@@ -47,18 +47,9 @@ const getTotalUsersCount = async () => {
 const getRegisteredUsersCount = async () => {
     return await WA_UsersMetadata.count({
         where: {
-            phoneNumber: {
+            userRegistrationComplete: {
                 [Sequelize.Op.not]: null
             },
-            name: {
-                [Sequelize.Op.not]: null
-            },
-            city: {
-                [Sequelize.Op.not]: null
-            },
-            scholarshipvalue: {
-                [Sequelize.Op.not]: null
-            }
         }
     });
 };
