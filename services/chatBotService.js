@@ -333,6 +333,10 @@ const webhookService = async (body, res) => {
                         currentUserState.dataValues.currentLesson_sequence
                     );
 
+                    // Mark previous lesson as completed
+                    const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
+                    await waLessonsCompletedRepository.endLessonByPhoneNumberAndLessonId(userMobileNumber, currentLesson.dataValues.LessonId);
+
 
                     if (!nextLesson) {
                         // Check if current lesson 
@@ -369,10 +373,6 @@ const webhookService = async (body, res) => {
                         await createActivityLog(userMobileNumber, 'text', 'outbound', message, null);
                         return;
                     }
-
-                    // Mark previous lesson as completed
-                    const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
-                    await waLessonsCompletedRepository.endLessonByPhoneNumberAndLessonId(userMobileNumber, currentLesson.dataValues.LessonId);
 
                     // Get acceptable messages for the next question/lesson
                     const acceptableMessagesList = await getAcceptableMessagesList(nextLesson.dataValues.activity);

@@ -1481,7 +1481,7 @@ const scholarshipInputMessage = async (userMobileNumber) => {
 };
 
 const thankYouMessage = async (userMobileNumber) => {
-    const message = "Your registration is *complete*. Thank you for applying! We will contact you by December, 15th."
+    const message = "Your registration is *complete*. Thank you for applying!\nWe will contact you by December, 15th."
     await sendMessage(userMobileNumber, message);
     await createActivityLog(userMobileNumber, "text", "outbound", message, null);
 
@@ -1555,14 +1555,13 @@ const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUs
         return false;
     }
     // Write customized message based on the acceptable messages list
-    let message = "I'm sorry, I didn't understand that. Please try again.";
+    let message = "Please write: \n\n";
     if (acceptableMessagesList.length > 1) {
-        message += "\n\nAcceptable messages are:";
         for (let i = 0; i < acceptableMessagesList.length; i++) {
             message += "\n" + acceptableMessagesList[i];
         }
     } else {
-        message += "\n\nAcceptable message is: " + acceptableMessagesList[0];
+        message += acceptableMessagesList[0];
     }
     await sendMessage(userMobileNumber, message);
     await createActivityLog(userMobileNumber, "text", "outbound", message, null);
@@ -1570,7 +1569,7 @@ const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUs
 };
 
 const sendWrongMessages = async (userMobileNumber) => {
-    let message = "I'm sorry, I didn't understand that. Please try again.\n\nAcceptable messages are:\nI want to learn English with Beaj";
+    let message = "Please write: \n\nI want to learn English with Beaj";
     await sendMessage(userMobileNumber, message);
     await createActivityLog(userMobileNumber, "text", "outbound", message, null);
     return;
