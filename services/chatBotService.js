@@ -353,22 +353,24 @@ const webhookService = async (body, res) => {
                         return;
                     }
 
-                    // Weekly blocking
+                    // Daily blocking
                     const course = await courseRepository.getById(currentUserState.dataValues.currentCourseId);
                     const courseStartDate = course.dataValues.courseStartDate;
                     const today = new Date();
 
-                    // Calculate the number of days from the start date needed for the current week's content to be accessible
-                    const daysRequiredForCurrentWeek = (nextLesson.dataValues.weekNumber - 1) * 7;
-                    const weekUnlockDate = new Date(courseStartDate);
-                    weekUnlockDate.setDate(courseStartDate.getDate() + daysRequiredForCurrentWeek);
+                    // Calculate the number of days from the start date needed for the current day's content
+                    const lessonDayNumber = (nextLesson.dataValues.weekNumber - 1) * 6 + nextLesson.dataValues.dayNumber;
+                    const daysRequiredForCurrentLesson = lessonDayNumber - 1; // Subtract 1 since day 1 content is available on start date
+
+                    const dayUnlockDate = new Date(courseStartDate);
+                    dayUnlockDate.setDate(courseStartDate.getDate() + daysRequiredForCurrentLesson);
 
                     console.log('Course Start Date:', courseStartDate);
-                    console.log('Week Unlock Date:', weekUnlockDate);
+                    console.log('Day Unlock Date:', dayUnlockDate);
                     console.log('Today:', today);
 
-                    if (today < weekUnlockDate) {
-                        const message = 'Please wait for the next week to start.';
+                    if (today < dayUnlockDate) {
+                        const message = 'Please wait for the next day\'s content to unlock.';
                         await sendMessage(userMobileNumber, message);
                         await createActivityLog(userMobileNumber, 'text', 'outbound', message, null);
                         return;
