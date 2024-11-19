@@ -354,26 +354,29 @@ const webhookService = async (body, res) => {
                     }
 
                     // Daily blocking
-                    const course = await courseRepository.getById(currentUserState.dataValues.currentCourseId);
-                    const courseStartDate = course.dataValues.courseStartDate;
-                    const today = new Date();
+                    let numbers_to_ignore = ['+923225036358', '+923331432681', '+923008400080', '+923303418882', '+923345520552', '+923170729640']
+                    if (!numbers_to_ignore.includes(userMobileNumber)) {
+                        const course = await courseRepository.getById(currentUserState.dataValues.currentCourseId);
+                        const courseStartDate = course.dataValues.courseStartDate;
+                        const today = new Date();
 
-                    // Calculate the number of days from the start date needed for the current day's content
-                    const lessonDayNumber = (nextLesson.dataValues.weekNumber - 1) * 6 + nextLesson.dataValues.dayNumber;
-                    const daysRequiredForCurrentLesson = lessonDayNumber - 1; // Subtract 1 since day 1 content is available on start date
+                        // Calculate the number of days from the start date needed for the current day's content
+                        const lessonDayNumber = (nextLesson.dataValues.weekNumber - 1) * 6 + nextLesson.dataValues.dayNumber;
+                        const daysRequiredForCurrentLesson = lessonDayNumber - 1; // Subtract 1 since day 1 content is available on start date
 
-                    const dayUnlockDate = new Date(courseStartDate);
-                    dayUnlockDate.setDate(courseStartDate.getDate() + daysRequiredForCurrentLesson);
+                        const dayUnlockDate = new Date(courseStartDate);
+                        dayUnlockDate.setDate(courseStartDate.getDate() + daysRequiredForCurrentLesson);
 
-                    console.log('Course Start Date:', courseStartDate);
-                    console.log('Day Unlock Date:', dayUnlockDate);
-                    console.log('Today:', today);
+                        console.log('Course Start Date:', courseStartDate);
+                        console.log('Day Unlock Date:', dayUnlockDate);
+                        console.log('Today:', today);
 
-                    if (today < dayUnlockDate) {
-                        const message = 'Please wait for the next day\'s content to unlock.';
-                        await sendMessage(userMobileNumber, message);
-                        await createActivityLog(userMobileNumber, 'text', 'outbound', message, null);
-                        return;
+                        if (today < dayUnlockDate) {
+                            const message = 'Please wait for the next day\'s content to unlock.';
+                            await sendMessage(userMobileNumber, message);
+                            await createActivityLog(userMobileNumber, 'text', 'outbound', message, null);
+                            return;
+                        }
                     }
 
                     // Get acceptable messages for the next question/lesson
