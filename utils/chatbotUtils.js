@@ -2655,6 +2655,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     console.log("Recognized Text: ", recognizedText);
                     if (currentUserState.dataValues.questionNumber == 1) {
                         const chatThread = await openai.beta.threads.create();
+                        await waUserProgressRepository.updateOpenaiThreadId(userMobileNumber, null);
                         await waUserProgressRepository.updateOpenaiThreadId(userMobileNumber, chatThread.id);
                         let firstPrompt = currentConversationalAgencyBotQuestion.dataValues.question;
                         firstPrompt += "\n\n\nMy response: " + recognizedText;
@@ -2666,28 +2667,24 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                             }
                         );
 
-                        const run = await openai.beta.threads.runs.create(
+                        await openai.beta.threads.runs.create(
                             chatThread.id,
                             { assistant_id: "asst_6zTBy1Esn6WuM9pLujyfT3y8" }
                         );
 
-                        let run1 = await openai.beta.threads.runs.retrieve(
-                            chatThread.id,
-                            run.id
-                        );
-
-                        while (run1.status === "in_progress") {
-                            console.log("The thread is still running.");
+                        let threadMessages1 = await openai.beta.threads.messages.list(chatThread.id);
+                        let attempts = 0;
+                        while ((!threadMessages1.data[0].content[0] || threadMessages1.data[0].content[0].text.value == firstPrompt) && attempts < 10) {
+                            console.log("Thinking...");
                             await new Promise(resolve => setTimeout(resolve, 1000));
-                            run1 = await openai.beta.threads.runs.retrieve(
-                                chatThread.id,
-                                run.id
-                            );
+                            threadMessages1 = await openai.beta.threads.messages.list(chatThread.id);
+                            attempts++;
+                            if (attempts >= 10) {
+                                await sendMessage(userMobileNumber, "Please try again.");
+                                await createActivityLog(userMobileNumber, "text", "outbound", "Please try again.", null);
+                                return;
+                            }
                         }
-
-                        const threadMessages1 = await openai.beta.threads.messages.list(
-                            chatThread.id
-                        );
 
                         // console.log(threadMessages1.data[0].content[0].text.value);
                         const audioLink = await azureAIServices.azureTextToSpeechAndUpload(threadMessages1.data[0].content[0].text.value);
@@ -2736,34 +2733,23 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                             }
                         );
 
-                        const run = await openai.beta.threads.runs.create(
+                        await openai.beta.threads.runs.create(
                             chatThread,
                             { assistant_id: "asst_6zTBy1Esn6WuM9pLujyfT3y8" }
                         );
 
-                        let run1 = await openai.beta.threads.runs.retrieve(
-                            chatThread,
-                            run.id
-                        );
-
-                        while (run1.status === "in_progress") {
-                            console.log("The thread is still running.");
+                        let threadMessages1 = await openai.beta.threads.messages.list(chatThread);
+                        let attempts = 0;
+                        while ((!threadMessages1.data[0].content[0] || threadMessages1.data[0].content[0].text.value == secondPrompt) && attempts < 10) {
+                            console.log("Thinking...");
                             await new Promise(resolve => setTimeout(resolve, 1000));
-                            run1 = await openai.beta.threads.runs.retrieve(
-                                chatThread,
-                                run.id
-                            );
-                        }
-
-                        let threadMessages1 = await openai.beta.threads.messages.list(
-                            chatThread
-                        );
-
-                        if (currentConversationalAgencyBotQuestion.dataValues.question == threadMessages1.data[0].content[0].text.value) {
-                            await new Promise(resolve => setTimeout(resolve, 3000));
-                            threadMessages1 = await openai.beta.threads.messages.list(
-                                chatThread
-                            );
+                            threadMessages1 = await openai.beta.threads.messages.list(chatThread);
+                            attempts++;
+                            if (attempts >= 10) {
+                                await sendMessage(userMobileNumber, "Please try again.");
+                                await createActivityLog(userMobileNumber, "text", "outbound", "Please try again.", null);
+                                return;
+                            }
                         }
 
                         const audioLink = await azureAIServices.azureTextToSpeechAndUpload(threadMessages1.data[0].content[0].text.value);
