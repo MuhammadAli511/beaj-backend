@@ -354,24 +354,31 @@ const webhookService = async (body, res) => {
                     }
 
                     // Daily blocking
-                    let numbers_to_ignore = ['+923225036358', '+923331432681', '+923008400080', '+923303418882', '+923345520552', '+923170729640']
+                    let numbers_to_ignore = ['+923331432681', '+923008400080', '+923303418882', '+923345520552', '+923225036358']
                     if (!numbers_to_ignore.includes(userMobileNumber)) {
                         const course = await courseRepository.getById(currentUserState.dataValues.currentCourseId);
-                        const courseStartDate = course.dataValues.courseStartDate;
+                        const courseStartDate = new Date(course.dataValues.courseStartDate);
                         const today = new Date();
 
                         // Calculate the number of days from the start date needed for the current day's content
                         const lessonDayNumber = (nextLesson.dataValues.weekNumber - 1) * 6 + nextLesson.dataValues.dayNumber;
-                        const daysRequiredForCurrentLesson = lessonDayNumber - 1; // Subtract 1 since day 1 content is available on start date
+                        const daysRequiredForCurrentLesson = lessonDayNumber - 1; // As before
 
-                        const dayUnlockDate = new Date(courseStartDate);
-                        dayUnlockDate.setDate(courseStartDate.getDate() + daysRequiredForCurrentLesson);
+                        // Add days using milliseconds to avoid month rollover issues
+                        const dayUnlockDate = new Date(courseStartDate.getTime() + daysRequiredForCurrentLesson * 24 * 60 * 60 * 1000);
 
-                        console.log('Course Start Date:', courseStartDate);
-                        console.log('Day Unlock Date:', dayUnlockDate);
-                        console.log('Today:', today);
+                        const todayYear = today.getFullYear();
+                        const todayMonth = today.getMonth();
+                        const todayDate = today.getDate();
 
-                        if (today < dayUnlockDate) {
+                        const dayUnlockDateYear = dayUnlockDate.getFullYear();
+                        const dayUnlockDateMonth = dayUnlockDate.getMonth();
+                        const dayUnlockDateDate = dayUnlockDate.getDate();
+
+                        console.log('Day Unlock Date:', dayUnlockDateYear, dayUnlockDateMonth, dayUnlockDateDate);
+                        console.log('Today:', todayYear, todayMonth, todayDate);
+
+                        if (todayYear < dayUnlockDateYear || (todayYear == dayUnlockDateYear && todayMonth < dayUnlockDateMonth) || (todayYear == dayUnlockDateYear && todayMonth == dayUnlockDateMonth && todayDate < dayUnlockDateDate)) {
                             const message = 'Please wait for the next day\'s content to unlock.';
                             await sendMessage(userMobileNumber, message);
                             await createActivityLog(userMobileNumber, 'text', 'outbound', message, null);
