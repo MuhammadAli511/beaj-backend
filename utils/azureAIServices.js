@@ -65,7 +65,7 @@ async function azureTextToSpeechAndUpload(text) {
     });
     const audio = await client.generate({
         voice: "NH0AbpVpD8W8R6jnEwVU",
-        model_id: "eleven_turbo_v2_5",
+        model_id: "eleven_multilingual_v2",
         text,
     });
 
