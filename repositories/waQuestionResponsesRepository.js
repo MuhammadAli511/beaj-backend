@@ -62,7 +62,9 @@ const update = async (
 
   if (submittedAnswerText) {
     updateFields.submittedAnswerText = sequelize.literal(
-      `ARRAY_APPEND("submittedAnswerText", '${submittedAnswerText}')`
+      `ARRAY_APPEND("submittedAnswerText", ${sequelize.escape(
+        submittedAnswerText
+      )})`
     );
   }
   if (submittedUserAudio) {
@@ -72,7 +74,9 @@ const update = async (
   }
   if (submittedFeedbackText) {
     updateFields.submittedFeedbackText = sequelize.literal(
-      `ARRAY_APPEND("submittedFeedbackText", '${submittedFeedbackText}')`
+      `ARRAY_APPEND("submittedFeedbackText", '${sequelize.escape(
+        submittedFeedbackText
+      )}')`
     );
   }
   if (submittedFeedbackAudio) {
@@ -87,9 +91,9 @@ const update = async (
   }
   if (submittedFeedbackJson) {
     updateFields.submittedFeedbackJson = sequelize.literal(
-      `ARRAY_APPEND("submittedFeedbackJson", '${JSON.stringify(
-        submittedFeedbackJson
-      )}')`
+      `ARRAY_APPEND("submittedFeedbackJson", ${sequelize.escape(
+        JSON.stringify(submittedFeedbackJson)
+      )})`
     );
   }
 
@@ -125,11 +129,38 @@ const getTotalScore = async (phoneNumber, lessonId) => {
   return totalScore;
 };
 
+const getTotalScoreForList = async (phoneNumber, lessonIdList) => {
+  const totalScore = await WA_QuestionResponses.count({
+    where: {
+      phoneNumber: phoneNumber,
+      lessonId: {
+        [Sequelize.Op.in]: lessonIdList,
+      },
+      correct: {
+        [Sequelize.Op.contains]: [true],
+      },
+    },
+  });
+  return totalScore;
+};
+
 const getTotalQuestions = async (phoneNumber, lessonId) => {
   const totalQuestions = await WA_QuestionResponses.count({
     where: {
       phoneNumber: phoneNumber,
       lessonId: lessonId,
+    },
+  });
+  return totalQuestions;
+};
+
+const getTotalQuestionsForList = async (phoneNumber, lessonIdList) => {
+  const totalQuestions = await WA_QuestionResponses.count({
+    where: {
+      phoneNumber: phoneNumber,
+      lessonId: {
+        [Sequelize.Op.in]: lessonIdList,
+      },
     },
   });
   return totalQuestions;
@@ -151,31 +182,37 @@ const deleteByPhoneNumber = async (phoneNumber) => {
   });
 };
 
-const getTotalScoreForList = async (phoneNumber, lessonIdList) => {
-  const totalScore = await WA_QuestionResponses.count({
+const watchAndSpeakScore = async (phoneNumber, lessonId) => {
+  const submittedFeedbackJson = await WA_QuestionResponses.findAll({
     where: {
       phoneNumber: phoneNumber,
-      lessonId: {
-        [Sequelize.Op.in]: lessonIdList,
-      },
-      correct: {
-        [Sequelize.Op.contains]: [true],
-      },
+      lessonId: lessonId,
     },
+    attributes: [
+      [
+        sequelize.json("submittedFeedbackJson->0->'scoreNumber'"),
+        "scoreNumber",
+      ],
+    ],
   });
-  return totalScore;
-};
 
-const getTotalQuestionsForList = async (phoneNumber, lessonIdList) => {
-  const totalQuestions = await WA_QuestionResponses.count({
-    where: {
-      phoneNumber: phoneNumber,
-      lessonId: {
-        [Sequelize.Op.in]: lessonIdList,
-      },
-    },
+  // Extracting the scoreNumber data from the result
+  const scoreData = submittedFeedbackJson.map((response) =>
+    response.get("scoreNumber")
+  );
+
+  // Formatting it to return only the extracted scores in JSON format
+  const formattedScores = scoreData.map((scores) => {
+    return {
+      compScore: scores.compScore,
+      pronScore: scores.pronScore,
+      fluencyScore: scores.fluencyScore,
+      prosodyScore: scores.prosodyScore,
+      accuracyScore: scores.accuracyScore,
+    };
   });
-  return totalQuestions;
+
+  return formattedScores;
 };
 
 const watchAndSpeakScoreForList = async (phoneNumber, lessonIdList) => {
@@ -347,6 +384,7 @@ export default {
   deleteByPhoneNumber,
   getTotalScoreForList,
   getTotalQuestionsForList,
+  watchAndSpeakScore,
   watchAndSpeakScoreForList,
   readScoreForList,
   monologueScoreForList,

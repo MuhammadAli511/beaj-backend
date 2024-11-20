@@ -43,7 +43,11 @@ Course.init({
   CourseDescription: {
     type: DataTypes.TEXT,
     allowNull: true
-  }
+  },
+  courseStartDate: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
 }, {
   sequelize,
   modelName: 'Course',

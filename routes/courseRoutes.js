@@ -28,6 +28,9 @@ router.put('/update/:id', beajEmployeesAuth, courseController.updateCourseContro
 // DELETE  api/course/delete/:id
 router.delete('/delete/:id', beajEmployeesAuth, courseController.deleteCourseController);
 
+// POST api/course/duplicateCourse
+router.post('/duplicateCourse', beajEmployeesAuth, courseController.duplicateCourseController);
+
 // Use error handler middleware
 router.use(errorHandler);
 

@@ -77,6 +77,17 @@ const migrateLessonController = async (req, res, next) => {
     }
 };
 
+const getLessonByCourseIdController = async (req, res, next) => {
+    try {
+        const id = req.params.courseId;
+        const result = await service.getLessonByCourseIdService(id);
+        res.status(200).send(result);
+    } catch (error) {
+        error.fileName = 'lessonController.js';
+        next(error);
+    }
+};
+
 export default {
     createLessonController,
     getAllLessonController,
@@ -84,5 +95,6 @@ export default {
     updateLessonController,
     deleteLessonController,
     getLessonsByActivityController,
-    migrateLessonController
+    migrateLessonController,
+    getLessonByCourseIdController
 };
