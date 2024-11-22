@@ -364,9 +364,18 @@ const webhookService = async (body, res) => {
                         const lessonDayNumber = (nextLesson.dataValues.weekNumber - 1) * 6 + nextLesson.dataValues.dayNumber;
                         const daysRequiredForCurrentLesson = lessonDayNumber - 1; // As before
 
-                        // Add days using milliseconds to avoid month rollover issues
-                        const dayUnlockDate = new Date(courseStartDate.getTime() + daysRequiredForCurrentLesson * 24 * 60 * 60 * 1000);
+                        // Add days to course start date, skipping Sundays
+                        let dayUnlockDate = new Date(courseStartDate);
+                        let daysAdded = 0;
 
+                        while (daysAdded < daysRequiredForCurrentLesson) {
+                            dayUnlockDate.setDate(dayUnlockDate.getDate() + 1);
+                            if (dayUnlockDate.getDay() !== 0) {
+                                daysAdded++;
+                            }
+                        }
+
+                        // Extract year, month, and date for comparison
                         const todayYear = today.getFullYear();
                         const todayMonth = today.getMonth();
                         const todayDate = today.getDate();
@@ -378,7 +387,10 @@ const webhookService = async (body, res) => {
                         console.log('Day Unlock Date:', dayUnlockDateYear, dayUnlockDateMonth, dayUnlockDateDate);
                         console.log('Today:', todayYear, todayMonth, todayDate);
 
-                        if (todayYear < dayUnlockDateYear || (todayYear == dayUnlockDateYear && todayMonth < dayUnlockDateMonth) || (todayYear == dayUnlockDateYear && todayMonth == dayUnlockDateMonth && todayDate < dayUnlockDateDate)) {
+                        // Check if today is before the unlock date
+                        if (todayYear < dayUnlockDateYear ||
+                            (todayYear == dayUnlockDateYear && todayMonth < dayUnlockDateMonth) ||
+                            (todayYear == dayUnlockDateYear && todayMonth == dayUnlockDateMonth && todayDate < dayUnlockDateDate)) {
                             const message = 'Please wait for the next day\'s content to unlock.';
                             await sendMessage(userMobileNumber, message);
                             await createActivityLog(userMobileNumber, 'text', 'outbound', message, null);
