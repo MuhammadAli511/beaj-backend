@@ -28,6 +28,9 @@ router.delete('/delete/:id', beajEmployeesAuth, lessonController.deleteLessonCon
 // POST  api/lesson/getLessonsByActivity
 router.post('/getLessonsByActivity', beajEmployeesAuth, lessonController.getLessonsByActivityController);
 
+// GET api/lesson/getByCourseId/:courseId
+router.get('/getByCourseId/:courseId', beajEmployeesAuth, lessonController.getLessonByCourseIdController);
+
 // POST api/lesson/migrateLesson
 router.post('/migrateLesson', beajEmployeesAuth, lessonController.migrateLessonController);
 

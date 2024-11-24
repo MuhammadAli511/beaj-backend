@@ -178,7 +178,7 @@ const getWeeklyDate = async (grp, courseid) => {
           courseid,
           4
         );
-      // console.log("Activity total for week 4:", activity_total);
+      console.log("Activity total for week 4:", activity_total);
 
       const activityMap = new Map(
         activity_total.map((entry) => [
@@ -186,12 +186,12 @@ const getWeeklyDate = async (grp, courseid) => {
           entry.completion_match,
         ])
       );
-      // console.log("Activity Map for week 4:", activityMap);
+      console.log("Activity Map for week 4:", activityMap);
 
       scoreCount = [];
       for (const phoneNumber of phoneNumbers) {
         const completion_match = activityMap.get(phoneNumber) || 0;
-        // console.log(`Phone: ${phoneNumber}, Match: ${completion_match}`);
+        console.log(`Phone: ${phoneNumber}, Match: ${completion_match}`);
 
         let score_pert;
         if (completion_match === 0) {
@@ -202,19 +202,19 @@ const getWeeklyDate = async (grp, courseid) => {
             4,
             courseid
           );
-          // console.log(
-          //   `Calculated score for phone ${phoneNumber}:`,
-          //   calculatedScore
-          // );
+          console.log(
+            `Calculated score for phone ${phoneNumber}:`,
+            calculatedScore
+          );
           score_pert = isNaN(calculatedScore) ? "0%" : `${calculatedScore}%`;
         }
         scoreCount.push(score_pert);
       }
-      // console.log("Score Count for week 4:", scoreCount);
+      console.log("Score Count for week 4:", scoreCount);
       totalcount.push(scoreCount);
     }
 
-    // console.log(totalcount);
+    console.log(totalcount);
     return totalcount;
   } catch (error) {
     error.fileName = "getWeeklyDate.js";

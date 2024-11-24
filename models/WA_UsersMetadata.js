@@ -30,12 +30,20 @@ WA_UsersMetadata.init(
       allowNull: true,
     },
     freeDemoStarted: {
-      type: DataTypes.DATE,
-      allowNull: true,
+        type: DataTypes.DATE,
+        allowNull: true,
     },
     freeDemoEnded: {
-      type: DataTypes.DATE,
-      allowNull: true,
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
+    userClickedLink: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
+    userRegistrationComplete: {
+        type: DataTypes.DATE,
+        allowNull: true,
     },
     userClickedLink: {
       type: DataTypes.DATE,

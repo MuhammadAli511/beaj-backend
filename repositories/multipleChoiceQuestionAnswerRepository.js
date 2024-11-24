@@ -50,7 +50,13 @@ const deleteMultipleChoiceQuestionAnswer = async (id) => {
 const getByQuestionId = async (multipleChoiceQuestionId) => {
     const multipleChoiceQuestionAnswers = await MultipleChoiceQuestionAnswer.findAll({
         where: {
-            MultipleChoiceQuestionId: multipleChoiceQuestionId
+            MultipleChoiceQuestionId: multipleChoiceQuestionId,
+            AnswerText: {
+                [Sequelize.Op.and]: {
+                    [Sequelize.Op.ne]: null,
+                    [Sequelize.Op.ne]: ""
+                }
+            }
         },
         order: [
             ['SequenceNumber', 'ASC']
@@ -67,6 +73,16 @@ const deleteByQuestionId = async (multipleChoiceQuestionId) => {
     });
 };
 
+const getByQuestionIds = async (multipleChoiceQuestionIds) => {
+    return await MultipleChoiceQuestionAnswer.findAll({
+        where: {
+            MultipleChoiceQuestionId: {
+                [Sequelize.Op.in]: multipleChoiceQuestionIds
+            }
+        }
+    });
+};
+
 export default {
     create,
     getAll,
@@ -74,5 +90,6 @@ export default {
     update,
     deleteMultipleChoiceQuestionAnswer,
     getByQuestionId,
-    deleteByQuestionId
+    deleteByQuestionId,
+    getByQuestionIds
 };

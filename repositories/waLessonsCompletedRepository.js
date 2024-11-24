@@ -1,6 +1,20 @@
 import WA_LessonsCompleted from '../models/WA_LessonsCompleted.js';
+import Sequelize from 'sequelize';
 
 const create = async (phoneNumber, lessonId, courseId, completionStatus, startTime) => {
+    const existingLesson = await WA_LessonsCompleted.findOne({
+        where: {
+            phoneNumber: phoneNumber,
+            lessonId: lessonId,
+            courseId: courseId,
+            completionStatus: completionStatus
+        }
+    });
+
+    if (existingLesson) {
+        return existingLesson;
+    }
+
     const lessonCompleted = new WA_LessonsCompleted({
         phoneNumber: phoneNumber,
         lessonId: lessonId,
@@ -36,6 +50,21 @@ const deleteById = async (id) => {
 };
 
 const endLessonByPhoneNumberAndLessonId = async (phoneNumber, lessonId) => {
+    const lesson = await WA_LessonsCompleted.findOne({
+        where: {
+            phoneNumber: phoneNumber,
+            lessonId: lessonId,
+            completionStatus: "Completed",
+            endTime: {
+                [Sequelize.Op.ne]: null
+            }
+        }
+    });
+
+    if (lesson) {
+        return lesson;
+    }
+
     return await WA_LessonsCompleted.update({
         completionStatus: "Completed",
         endTime: new Date()

@@ -4,7 +4,7 @@ const totalCoursesRepository = async () => {
     return await Course.count();
 }
 
-const create = async (courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription) => {
+const create = async (courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription, courseStartDate) => {
     const course = new Course({
         CourseName: courseName,
         CoursePrice: coursePrice,
@@ -12,7 +12,8 @@ const create = async (courseName, coursePrice, courseWeeks, courseCategoryId, st
         CourseCategoryId: courseCategoryId,
         status: status,
         SequenceNumber: sequenceNumber,
-        CourseDescription: courseDescription
+        CourseDescription: courseDescription,
+        courseStartDate: new Date(courseStartDate).setHours(13)
     });
     return await course.save();
 };
@@ -41,7 +42,7 @@ const deleteOneInCourseWeeks = async (courseId) => {
     return await course.save();
 };
 
-const update = async (id, courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription) => {
+const update = async (id, courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription, courseStartDate) => {
     return await Course.update({
         CourseName: courseName,
         CoursePrice: coursePrice,
@@ -49,7 +50,8 @@ const update = async (id, courseName, coursePrice, courseWeeks, courseCategoryId
         CourseCategoryId: courseCategoryId,
         status: status,
         SequenceNumber: sequenceNumber,
-        CourseDescription: courseDescription
+        CourseDescription: courseDescription,
+        courseStartDate: new Date(courseStartDate).setHours(13)
     }, {
         where: {
             CourseId: id
@@ -90,6 +92,11 @@ const getCourseIdByName = async (courseName) => {
     return course.CourseId;
 };
 
+const getCourseNameById = async (courseId) => {
+    const course = await Course.findByPk(courseId);
+    return course.CourseName;
+};
+
 export default {
     totalCoursesRepository,
     create,
@@ -101,5 +108,6 @@ export default {
     deleteOneInCourseWeeks,
     getByCourseCategoryId,
     deleteByCourseCategoryId,
-    getCourseIdByName
+    getCourseIdByName,
+    getCourseNameById
 };
