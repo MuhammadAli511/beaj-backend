@@ -1,5 +1,5 @@
 import { google, tasks_v1 } from "googleapis";
-import creds from "../credentials/beaj-etl-pipeline-439508-f4f6048a542a.json" assert { type: "json" };
+import creds from "../cred/my_cred.json" assert { type: "json" };
 import getWeeklyDate from "../google_sheet_utils/weekscore_getdate.js";
 import courseId_gSheet from "../google_sheet_utils/courseId_gSheet.js";
 const sheets = google.sheets("v4");
@@ -10,7 +10,11 @@ const loadDataToGoogleSheets = async (
   t1,
   t2,
   week_sore_list1,
-  week_sore_list2
+  week_sore_list2,
+  activityMap1,
+  activityMap2,
+  new_weeklyCntT1,
+  new_weeklyCntT2,
 ) => {
   try {
     const auth = new google.auth.GoogleAuth({
@@ -159,7 +163,7 @@ const loadDataToGoogleSheets = async (
     // await sheets.spreadsheets.values.update({
     //   auth: authClient,
     //   spreadsheetId,
-    //   range: "T1 Weekly-score!B5:AN5",
+    //   range: "T1 Weekly-score!B5:AJ5",
     //   valueInputOption: "RAW",
     //   resource: {
     //     values: phoneno1,
@@ -169,7 +173,7 @@ const loadDataToGoogleSheets = async (
     // await sheets.spreadsheets.values.update({
     //   auth: authClient,
     //   spreadsheetId,
-    //   range: "T2 Weekly-score!B5:AM5",
+    //   range: "T2 Weekly-score!B5:AJ5",
     //   valueInputOption: "RAW",
     //   resource: {
     //     values: phoneno2,
@@ -204,7 +208,7 @@ const loadDataToGoogleSheets = async (
     // await sheets.spreadsheets.values.update({
     //   auth: authClient,
     //   spreadsheetId,
-    //   range: "T1 Weekly-score!B4:AM4",
+    //   range: "T1 Weekly-score!B4:AJ4",
     //   valueInputOption: "RAW",
     //   resource: {
     //     values: name1,
@@ -213,7 +217,7 @@ const loadDataToGoogleSheets = async (
     // await sheets.spreadsheets.values.update({
     //   auth: authClient,
     //   spreadsheetId,
-    //   range: "T2 Weekly-score!B4:AM4",
+    //   range: "T2 Weekly-score!B4:AJ4",
     //   valueInputOption: "RAW",
     //   resource: {
     //     values: name2,
@@ -266,7 +270,7 @@ const loadDataToGoogleSheets = async (
     await sheets.spreadsheets.values.update({
       auth: authClient,
       spreadsheetId,
-      range: "T1-Level 1 activity!E10:AN",
+      range: "T1-Level 1 activity!E10:AM",
       valueInputOption: "RAW",
       resource: {
         values: formattedData,
@@ -282,6 +286,44 @@ const loadDataToGoogleSheets = async (
       },
     });
 
+    await sheets.spreadsheets.values.update({
+      auth: authClient,
+      spreadsheetId,
+      range: "New T1-Level activity!D6:G",
+      valueInputOption: "RAW",
+      resource: {
+        values: activityMap1,
+      },
+    });
+    
+
+    await sheets.spreadsheets.values.update({
+      auth: authClient,
+      spreadsheetId,
+      range: "New T2-Level activity!D6:G",
+      valueInputOption: "RAW",
+      resource: {
+        values: activityMap2,
+      },
+    });
+    await sheets.spreadsheets.values.update({
+      auth: authClient,
+      spreadsheetId,
+      range: "New T1 Weekly Score!D6:G",
+      valueInputOption: "RAW",
+      resource: {
+        values: new_weeklyCntT1,
+      },
+    });
+    await sheets.spreadsheets.values.update({
+      auth: authClient,
+      spreadsheetId,
+      range: "New T2 Weekly Score!D6:G",
+      valueInputOption: "RAW",
+      resource: {
+        values: new_weeklyCntT2,
+      },
+    });
     // const weekscore = week_sore_list1.map((row) => {
     //   if (!Array.isArray(row)) {
     //     throw new Error("Each row must be an array");
@@ -360,11 +402,14 @@ const loadDataToGoogleSheets = async (
         },
       });
     }
+    // const week1_ = week_sore_list1.flat();
+    // const week2_ = week_sore_list2.flat();
 
+    // console.log(week_sore_list1.flat());
     await sheets.spreadsheets.values.update({
       auth: authClient,
       spreadsheetId,
-      range: "T1 Weekly-score!B9:AK",
+      range: "T1 Weekly-score!B9:AJ",
       valueInputOption: "RAW",
       resource: {
         values: week_sore_list1,

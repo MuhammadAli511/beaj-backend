@@ -52,6 +52,7 @@
 // export default getWeeklyDate;
 
 import getDataFromPostgres1 from "../repositories/etl_weeklyScoreRepository.js";
+import getDataActivityComplete1 from "../repositories/etl_weeklyScoreRepository.js";
 import { weekEndScoreCalculation } from "../utils/chatbotUtils.js";
 const getWeeklyDate = async (grp, courseid) => {
   try {
@@ -62,57 +63,154 @@ const getWeeklyDate = async (grp, courseid) => {
     const phoneNumbers = phone_list.map((item) => item.phoneNumber);
     const currentDate1 = new Date();
     const currentDate = currentDate1.toISOString().split("T")[0];
+    // console.log(currentDate);
+    // const currentDate = "2024-12-02";
     var scoreCount = [],
       totalcount = [];
-    if (currentDate >= "2024-11-11" && currentDate <= "2024-11-17") {
-      for (const phoneNumber of phoneNumbers) {
-        const score_pert = await weekEndScoreCalculation(
-          phoneNumber,
-          1,
-          courseid
+    // const dateRanges = [
+    //   { endDate: "2024-11-17", weekNum: 1 },
+    //   { endDate: "2024-11-24", weekNum: 2 },
+    //   { endDate: "2024-12-01", weekNum: 3 },
+    //   { endDate: "2024-12-08", weekNum: 4 },
+    // ];
+
+    if (currentDate >= "2024-11-11") {
+      const activity_total =
+        await getDataActivityComplete1.getDataActivityComplete(
+          "2024-11-17",
+          grp,
+          courseid,
+          1
         );
-        const scoreToAdd = isNaN(score_pert) ? "0%" : `${score_pert}%`;
-        scoreCount.push(scoreToAdd);
+      const activityMap = new Map(
+        activity_total.map((entry) => [
+          entry.phoneNumber,
+          entry.completion_match,
+        ])
+      );
+      // console.log(activity_total);
+      scoreCount = [];
+      for (const phoneNumber of phoneNumbers) {
+        const completion_match = activityMap.get(phoneNumber) || 0;
+        // console.log(phoneNumber);
+        let score_pert;
+        if (completion_match === 0) {
+          score_pert = "0%";
+        } else {
+          const calculatedScore = await weekEndScoreCalculation(
+            phoneNumber,
+            1,
+            courseid
+          );
+          score_pert = isNaN(calculatedScore) ? "0%" : `${calculatedScore}%`;
+        }
+        scoreCount.push(score_pert);
+      }
+      // console.log(scoreCount);
+
+      totalcount.push(scoreCount);
+    }
+    if (currentDate >= "2024-11-18") {
+      const activity_total =
+        await getDataActivityComplete1.getDataActivityComplete(
+          "2024-11-24",
+          grp,
+          courseid,
+          2
+        );
+      const activityMap = new Map(
+        activity_total.map((entry) => [
+          entry.phoneNumber,
+          entry.completion_match,
+        ])
+      );
+      scoreCount = [];
+      for (const phoneNumber of phoneNumbers) {
+        const completion_match = activityMap.get(phoneNumber) || 0;
+        let score_pert;
+        if (completion_match === 0) {
+          score_pert = "0%";
+        } else {
+          score_pert = await weekEndScoreCalculation(phoneNumber, 2, courseid);
+          score_pert = isNaN(score_pert) ? "0%" : `${score_pert}%`;
+        }
+        scoreCount.push(score_pert);
       }
       // console.log(scoreCount);
       totalcount.push(scoreCount);
     }
-    if (currentDate >= "2024-11-18" && currentDate <= "2024-11-24") {
-      for (const phoneNumber of phoneNumbers) {
-        const score_pert = await weekEndScoreCalculation(
-          phoneNumber,
-          2,
-          courseid
+
+    if (currentDate >= "2024-11-25") {
+      const activity_total =
+        await getDataActivityComplete1.getDataActivityComplete(
+          "2024-12-01",
+          grp,
+          courseid,
+          3
         );
-        const scoreToAdd = isNaN(score_pert) ? "0%" : `${score_pert}%`;
-        scoreCount.push(scoreToAdd);
+      const activityMap = new Map(
+        activity_total.map((entry) => [
+          entry.phoneNumber,
+          entry.completion_match,
+        ])
+      );
+      scoreCount = [];
+      for (const phoneNumber of phoneNumbers) {
+        const completion_match = activityMap.get(phoneNumber) || 0;
+        let score_pert;
+        if (completion_match === 0) {
+          score_pert = "0%";
+        } else {
+          score_pert = await weekEndScoreCalculation(phoneNumber, 3, courseid);
+          score_pert = isNaN(score_pert) ? "0%" : `${score_pert}%`;
+        }
+        scoreCount.push(score_pert);
       }
+      // console.log(scoreCount);
       totalcount.push(scoreCount);
     }
 
-    if (currentDate >= "2024-11-25" && currentDate <= "2024-12-01") {
-      for (const phoneNumber of phoneNumbers) {
-        const score_pert = await weekEndScoreCalculation(
-          phoneNumber,
-          3,
-          courseid
+    if (currentDate >= "2024-12-02") {
+      const activity_total =
+        await getDataActivityComplete1.getDataActivityComplete(
+          "2024-12-08",
+          grp,
+          courseid,
+          4
         );
-        const scoreToAdd = isNaN(score_pert) ? "0%" : `${score_pert}%`;
-        scoreCount.push(scoreToAdd);
-      }
-      totalcount.push(scoreCount);
-    }
+      // console.log("Activity total for week 4:", activity_total);
 
-    if (currentDate >= "2024-12-02" && currentDate <= "2024-12-08") {
+      const activityMap = new Map(
+        activity_total.map((entry) => [
+          entry.phoneNumber,
+          entry.completion_match,
+        ])
+      );
+      // console.log("Activity Map for week 4:", activityMap);
+
+      scoreCount = [];
       for (const phoneNumber of phoneNumbers) {
-        const score_pert = await weekEndScoreCalculation(
-          phoneNumber,
-          4,
-          courseid
-        );
-        const scoreToAdd = isNaN(score_pert) ? "0%" : `${score_pert}%`;
-        scoreCount.push(scoreToAdd);
+        const completion_match = activityMap.get(phoneNumber) || 0;
+        // console.log(`Phone: ${phoneNumber}, Match: ${completion_match}`);
+
+        let score_pert;
+        if (completion_match === 0) {
+          score_pert = "0%";
+        } else {
+          const calculatedScore = await weekEndScoreCalculation(
+            phoneNumber,
+            4,
+            courseid
+          );
+          // console.log(
+          //   `Calculated score for phone ${phoneNumber}:`,
+          //   calculatedScore
+          // );
+          score_pert = isNaN(calculatedScore) ? "0%" : `${calculatedScore}%`;
+        }
+        scoreCount.push(score_pert);
       }
+      // console.log("Score Count for week 4:", scoreCount);
       totalcount.push(scoreCount);
     }
 

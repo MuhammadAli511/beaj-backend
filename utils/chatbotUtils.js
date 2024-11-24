@@ -357,6 +357,7 @@ const weekEndScoreCalculation = async (phoneNumber, weekNumber, courseId) => {
     correctWatchAndSpeak.total +
     correctRead.total +
     correctMonologue.total;
+  // console.log("Total week1 : " + totalQuestions);
   const percentage = Math.round((totalScore / totalQuestions) * 100);
   //   console.log("Week End Score 1: ", percentage);
   return percentage;

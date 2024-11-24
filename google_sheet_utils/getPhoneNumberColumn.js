@@ -1,5 +1,5 @@
 import { google } from "googleapis";
-import creds from "../credentials/beaj-etl-pipeline-439508-f4f6048a542a.json" assert { type: "json" };
+import creds from "../cred/my_cred.json" assert { type: "json" };
 
 const sheets = google.sheets("v4");
 
