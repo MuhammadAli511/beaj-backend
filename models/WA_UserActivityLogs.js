@@ -1,7 +1,7 @@
 import { Model, DataTypes } from "sequelize";
 import sequelize from "../config/sequelize.js";
 
-class WA_UserActivityLogs extends Model {}
+class WA_UserActivityLogs extends Model { }
 
 WA_UserActivityLogs.init(
   {

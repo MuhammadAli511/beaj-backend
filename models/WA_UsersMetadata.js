@@ -1,7 +1,7 @@
 import { Model, DataTypes } from "sequelize";
 import sequelize from "../config/sequelize.js";
 
-class WA_UsersMetadata extends Model {}
+class WA_UsersMetadata extends Model { }
 
 WA_UsersMetadata.init(
   {
@@ -30,20 +30,20 @@ WA_UsersMetadata.init(
       allowNull: true,
     },
     freeDemoStarted: {
-        type: DataTypes.DATE,
-        allowNull: true,
+      type: DataTypes.DATE,
+      allowNull: true,
     },
     freeDemoEnded: {
-        type: DataTypes.DATE,
-        allowNull: true,
+      type: DataTypes.DATE,
+      allowNull: true,
     },
     userClickedLink: {
-        type: DataTypes.DATE,
-        allowNull: true,
+      type: DataTypes.DATE,
+      allowNull: true,
     },
     userRegistrationComplete: {
-        type: DataTypes.DATE,
-        allowNull: true,
+      type: DataTypes.DATE,
+      allowNull: true,
     },
     userClickedLink: {
       type: DataTypes.DATE,
