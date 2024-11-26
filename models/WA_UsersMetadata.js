@@ -1,54 +1,65 @@
-import { Model, DataTypes } from 'sequelize';
-import sequelize from '../config/sequelize.js';
+import { Model, DataTypes } from "sequelize";
+import sequelize from "../config/sequelize.js";
 
 class WA_UsersMetadata extends Model { }
 
-WA_UsersMetadata.init({
+WA_UsersMetadata.init(
+  {
     phoneNumber: {
-        type: DataTypes.TEXT,
-        primaryKey: true,
+      type: DataTypes.TEXT,
+      primaryKey: true,
     },
     name: {
-        type: DataTypes.TEXT,
-        allowNull: true,
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
     city: {
-        type: DataTypes.TEXT,
-        allowNull: true,
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
     timingPreference: {
-        type: DataTypes.TEXT,
-        allowNull: true,
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
     targetGroup: {
-        type: DataTypes.TEXT,
-        allowNull: true,
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
     scholarshipvalue: {
-        type: DataTypes.TEXT,
-        allowNull: true,
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
     freeDemoStarted: {
-        type: DataTypes.DATE,
-        allowNull: true,
+      type: DataTypes.DATE,
+      allowNull: true,
     },
     freeDemoEnded: {
-        type: DataTypes.DATE,
-        allowNull: true,
+      type: DataTypes.DATE,
+      allowNull: true,
     },
     userClickedLink: {
-        type: DataTypes.DATE,
-        allowNull: true,
+      type: DataTypes.DATE,
+      allowNull: true,
     },
     userRegistrationComplete: {
-        type: DataTypes.DATE,
-        allowNull: true,
+      type: DataTypes.DATE,
+      allowNull: true,
     },
-}, {
+    userClickedLink: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    userRegistrationComplete: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+  },
+  {
     sequelize,
-    modelName: 'WA_UsersMetadata',
-    tableName: 'wa_users_metadata',
+    modelName: "WA_UsersMetadata",
+    tableName: "wa_users_metadata",
     timestamps: false,
-});
+  }
+);
 
 export default WA_UsersMetadata;
