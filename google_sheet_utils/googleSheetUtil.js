@@ -1,5 +1,5 @@
 import { google, tasks_v1 } from "googleapis";
-import creds from "../cred/my_cred.json" assert { type: "json" };
+import creds from "../my_cred.json" assert { type: "json" };
 import getWeeklyDate from "../google_sheet_utils/weekscore_getdate.js";
 import courseId_gSheet from "../google_sheet_utils/courseId_gSheet.js";
 const sheets = google.sheets("v4");
@@ -295,7 +295,7 @@ const loadDataToGoogleSheets = async (
         values: activityMap1,
       },
     });
-    
+
 
     await sheets.spreadsheets.values.update({
       auth: authClient,
