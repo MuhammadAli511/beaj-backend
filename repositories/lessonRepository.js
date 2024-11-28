@@ -123,7 +123,10 @@ const isFirstLessonOfDay = async (lessonId) => {
     limit: 1,
   });
 
-  return firstLessonOfDay && firstLessonOfDay.LessonId === lesson.LessonId;
+  return (
+    firstLessonOfDay &&
+    firstLessonOfDay.dataValues.LessonId == lesson.dataValues.LessonId
+  );
 };
 
 const isLastLessonOfDay = async (lessonId) => {
@@ -144,7 +147,10 @@ const isLastLessonOfDay = async (lessonId) => {
     limit: 1,
   });
 
-  return lastLessonOfDay && lastLessonOfDay.LessonId === lesson.LessonId;
+  return (
+    lastLessonOfDay &&
+    lastLessonOfDay.dataValues.LessonId == lesson.dataValues.LessonId
+  );
 };
 
 const getTotalDaysInCourse = async (courseId) => {
@@ -255,6 +261,14 @@ const getNextLesson = async (
   }
 };
 
+const getLessonsByCourse = async (courseId) => {
+  return await Lesson.findAll({
+    where: {
+      courseId: courseId,
+    },
+  });
+};
+
 const getLessonIdsByCourseAndWeekAndActivityType = async (
   courseId,
   weekNumber,
@@ -285,5 +299,6 @@ export default {
   isFirstLessonOfDay,
   isLastLessonOfDay,
   getTotalDaysInCourse,
+  getLessonsByCourse,
   getLessonIdsByCourseAndWeekAndActivityType,
 };

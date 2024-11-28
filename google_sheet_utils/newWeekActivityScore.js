@@ -5,6 +5,12 @@ const newWeekActivityScore = async (data_list, grp, courseid) => {
   try {
     const phone_list = await getDataFromPostgres1.getDataFromPostgres(grp);
     const phoneNumbers = phone_list.map((item) => item.phoneNumber);
+<<<<<<< HEAD
+=======
+    // const currentDate1 = new Date();
+    // const currentDate = currentDate1.toISOString().split("T")[0];
+
+>>>>>>> 7d817916db3ad77d00d2d8498955706dca5f682b
     let totalcount = [];
 
     const activityMap = new Map(

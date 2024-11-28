@@ -28,7 +28,7 @@ const getAllLessonService = async () => {
 const getLessonByIdService = async (id) => {
     try {
         const lesson = await lessonRepository.getById(id);
-        if (lesson.activity == 'listenAndSpeak' || lesson.activity == 'postListenAndSpeak' || lesson.activity == 'preListenAndSpeak' || lesson.activity == 'watchAndSpeak' || lesson.activity == 'conversationalQuestionsBot' || lesson.activity == 'conversationalMonologueBot') {
+        if (lesson.activity == 'listenAndSpeak' || lesson.activity == 'postListenAndSpeak' || lesson.activity == 'preListenAndSpeak' || lesson.activity == 'watchAndSpeak' || lesson.activity == 'conversationalQuestionsBot' || lesson.activity == 'conversationalMonologueBot' || lesson.activity == 'conversationalAgencyBot') {
             const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonId(lesson.LessonId);
             lesson.dataValues.speakActivityQuestionFiles = speakActivityQuestionFiles;
         } else if (lesson.activity == 'mcqs' || lesson.activity == 'preMCQs' || lesson.activity == 'postMCQs') {
@@ -67,7 +67,7 @@ const deleteLessonService = async (id) => {
         const activity = lesson.activity;
         await lessonRepository.deleteLesson(id);
 
-        if (activity == 'listenAndSpeak' || activity == 'postListenAndSpeak' || activity == 'preListenAndSpeak' || activity == 'watchAndSpeak' || activity == 'conversationalQuestionsBot' || activity == 'conversationalMonologueBot') {
+        if (activity == 'listenAndSpeak' || activity == 'postListenAndSpeak' || activity == 'preListenAndSpeak' || activity == 'watchAndSpeak' || activity == 'conversationalQuestionsBot' || activity == 'conversationalMonologueBot' || activity == 'conversationalAgencyBot') {
             await speakActivityQuestionRepository.deleteByLessonId(id);
         } else if (activity == 'mcqs' || activity == 'preMCQs' || activity == 'postMCQs') {
             const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonIds(id);
@@ -87,7 +87,7 @@ const getLessonsByActivity = async (course, activity) => {
         const lessons = await lessonRepository.getByCourseActivity(course, activity);
         const lessonIds = lessons.map(lesson => lesson.LessonId);
 
-        if (activity == 'listenAndSpeak' || activity == 'postListenAndSpeak' || activity == 'preListenAndSpeak' || activity == 'watchAndSpeak' || activity == 'conversationalQuestionsBot' || activity == 'conversationalMonologueBot') {
+        if (activity == 'listenAndSpeak' || activity == 'postListenAndSpeak' || activity == 'preListenAndSpeak' || activity == 'watchAndSpeak' || activity == 'conversationalQuestionsBot' || activity == 'conversationalMonologueBot' || activity == 'conversationalAgencyBot') {
             const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonIds(lessonIds);
             const lessonsWithFiles = lessons.map(lesson => {
                 return {
@@ -160,7 +160,7 @@ const migrateLessonService = async (lessonId, courseId) => {
                 }
             );
 
-            if (['listenAndSpeak', 'postListenAndSpeak', 'preListenAndSpeak', 'watchAndSpeak', 'conversationalQuestionsBot', 'conversationalMonologueBot'].includes(lesson.activity)) {
+            if (['listenAndSpeak', 'postListenAndSpeak', 'preListenAndSpeak', 'watchAndSpeak', 'conversationalQuestionsBot', 'conversationalMonologueBot', 'conversationalAgencyBot'].includes(lesson.activity)) {
                 const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonId(lesson.LessonId);
                 await Promise.all(speakActivityQuestionFiles.map(file => {
                     const answerArray = Array.isArray(file.answer) ? file.answer : [file.answer];
@@ -276,6 +276,16 @@ const migrateLessonService = async (lessonId, courseId) => {
     }
 };
 
+const getLessonByCourseIdService = async (id) => {
+    try {
+        const lessons = await lessonRepository.getLessonsByCourse(id);
+        return lessons;
+    } catch (error) {
+        error.fileName = 'lessonService.js';
+        throw error;
+    }
+};
+
 
 
 export default {
@@ -285,5 +295,6 @@ export default {
     updateLessonService,
     deleteLessonService,
     getLessonsByActivity,
-    migrateLessonService
+    migrateLessonService,
+    getLessonByCourseIdService
 };

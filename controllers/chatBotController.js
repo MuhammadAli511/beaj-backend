@@ -19,7 +19,18 @@ const verifyWebhookController = async (req, res, next) => {
     }
 };
 
+const testController = async (req, res, next) => {
+    try {
+        await service.testService(req, res);
+        res.status(200).send("Chatbot Route Status : Working");
+    } catch (error) {
+        error.fileName = 'chatBotController.js';
+        next(error);
+    }
+};
+
 export default {
     webhookController,
-    verifyWebhookController
+    verifyWebhookController,
+    testController
 };

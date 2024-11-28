@@ -76,7 +76,6 @@ const purchaseCourseService = async (phoneNumber, courseId) => {
         courseId: courseId,
         courseCategoryId: course.CourseCategoryId,
         courseStartDate: new Date(),
-        coursePurchaseDate: new Date(),
         purchaseDate: new Date(),
     });
 };

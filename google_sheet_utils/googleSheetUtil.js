@@ -1,5 +1,9 @@
 import { google, tasks_v1 } from "googleapis";
+<<<<<<< HEAD
 import creds from "../cred/my_cred.json" assert { type: "json" };
+=======
+import creds from "../my_cred.json" assert { type: "json" };
+>>>>>>> 7d817916db3ad77d00d2d8498955706dca5f682b
 import getWeeklyDate from "../google_sheet_utils/weekscore_getdate.js";
 import courseId_gSheet from "../google_sheet_utils/courseId_gSheet.js";
 const sheets = google.sheets("v4");

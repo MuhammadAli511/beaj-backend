@@ -78,6 +78,16 @@ const deleteByLessonId = async (lessonId) => {
     });
 };
 
+const getDocumentFileByLessonIds = async (lessonIds) => {
+    return await DocumentFile.findAll({
+        where: {
+            lessonId: {
+                [Sequelize.Op.in]: lessonIds
+            }
+        }
+    });
+};
+
 
 export default {
     create,
@@ -87,5 +97,6 @@ export default {
     deleteDocumentFile,
     getByLessonId,
     getByLessonIds,
-    deleteByLessonId
+    deleteByLessonId,
+    getDocumentFileByLessonIds
 };

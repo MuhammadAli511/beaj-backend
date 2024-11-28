@@ -98,6 +98,7 @@ const getWeeklyDate = async (grp, courseid) => {
         }
         scoreCount.push(score_pert);
       }
+      console.log("Score Count for week 4:", scoreCount);
       totalcount.push(scoreCount);
     }
 
