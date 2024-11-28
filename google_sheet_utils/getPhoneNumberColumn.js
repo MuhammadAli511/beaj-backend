@@ -1,31 +1,10 @@
 import { google } from "googleapis";
-import creds from "../credentials/beaj-etl-pipeline-439508-f4f6048a542a.json" assert { type: "json" };
+import creds from "../cred/my_cred.json" assert { type: "json" };
 
 const sheets = google.sheets("v4");
 
 const getPhoneNumberColumn = async (data) => {
   try {
-    // const auth = new google.auth.GoogleAuth({
-    //   credentials: creds,
-    //   scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
-    // });
-
-    // const authClient = await auth.getClient();
-    // const spreadsheetId = "19NhKFhYYi30SfIQbfK0jITZTBKn08JwDDckLwv_0_D8";
-
-    // const readResponse = await sheets.spreadsheets.values.get({
-    //   auth: authClient,
-    //   spreadsheetId,
-    //   range: "Users-metadata!A2:A",
-    // });
-
-    // const existingPhoneNumbers = (readResponse.data.values || []).flat();
-
-    // const newEntries = data.filter(
-    //   (row) => !existingPhoneNumbers.includes(row.phoneNumber)
-    // );
-
-    //if (newEntries.length > 0) {
     const formattedData = data.map((row) => [
       row.phoneNumber,
       row.name,
@@ -55,9 +34,7 @@ const getPhoneNumberColumn = async (data) => {
           ).toLocaleString()
         : null,
     ]);
-    // console.log(formattedData);
     return formattedData;
-    // }
   } catch (error) {
     error.fileName = "getPhoneNumberColumn.js";
   }

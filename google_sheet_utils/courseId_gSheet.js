@@ -1,5 +1,5 @@
 import { google } from "googleapis";
-import creds from "../credentials/beaj-etl-pipeline-439508-f4f6048a542a.json" assert { type: "json" };
+import creds from "../cred/my_cred.json" assert { type: "json" };
 
 const sheets = google.sheets("v4");
 
@@ -19,7 +19,6 @@ const courseId_gSheet = async (grp) => {
       range: `${grp}!B2`,
     });
     const value = course_id.data.values ? course_id.data.values[0][0] : null;
-    // console.log(value);
     return value;
   } catch (error) {
     error.fileName = "courseId_gSheet.js";

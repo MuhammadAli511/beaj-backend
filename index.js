@@ -55,6 +55,7 @@ async function startETLProcess() {
         console.error("Error during ETL process:", error);
       }
     }, 3600000);
+    //3600000
   } catch (error) {
     console.error("Error during ETL process:", error);
   }

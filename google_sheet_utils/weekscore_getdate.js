@@ -1,122 +1,141 @@
-// import weeklyscore_repo from "../repositories/etl_weeklyScoreRepository.js";
-// const getWeeklyDate = async (grp, courseid) => {
-//   try {
-//     const currentDate1 = new Date();
-//     const currentDate = currentDate1.toISOString().split("T")[0];
-//     var weeklyCnt = [];
-//     // Level
-
-//     // const dateRanges = [
-//     //   { start: "2024-10-26", end: "2024-11-17" },
-//     //   { start: "2024-11-18", end: "2024-11-24" },
-//     //   { start: "2024-11-25", end: "2024-12-01" },
-//     //   { start: "2024-12-02", end: "2024-12-08" },
-//     // ];
-//     const dateRanges = [
-//       { start: "2024-10-26", end: "2024-10-31" },
-//       { start: "2024-11-01", end: "2024-11-06" },
-//       { start: "2024-11-25", end: "2024-12-01" },
-//       { start: "2024-12-02", end: "2024-12-08" },
-//     ];
-
-//     let matchedStartDate = null;
-//     let matchedEndDate = null;
-
-//     for (const range of dateRanges) {
-//       const startDate = range.start;
-//       const endDate = range.end;
-
-//       //   if (currentDate >= startDate && currentDate <= endDate) {
-
-//       if (currentDate >= endDate) {
-//         matchedStartDate = range.start;
-//         matchedEndDate = range.end;
-
-//         const week_sore_list = await weeklyscore_repo.getDataFromPostgres(
-//           courseid,
-//           matchedStartDate,
-//           matchedEndDate,
-//           grp
-//         );
-
-//         weeklyCnt.push(week_sore_list);
-//       }
-//     }
-
-//     return weeklyCnt;
-//   } catch (error) {
-//     error.fileName = "getWeeklyDate.js";
-//   }
-// };
-
-// export default getWeeklyDate;
-
 import getDataFromPostgres1 from "../repositories/etl_weeklyScoreRepository.js";
+import getDataActivityComplete1 from "../repositories/etl_weeklyScoreRepository.js";
 import { weekEndScoreCalculation } from "../utils/chatbotUtils.js";
 const getWeeklyDate = async (grp, courseid) => {
   try {
-    // console.log("ggg1");
     const phone_list = await getDataFromPostgres1.getDataFromPostgres(grp);
-    // console.log(phone_list);
-    // console.log("ggg2");
     const phoneNumbers = phone_list.map((item) => item.phoneNumber);
     const currentDate1 = new Date();
     const currentDate = currentDate1.toISOString().split("T")[0];
     var scoreCount = [],
       totalcount = [];
-    if (currentDate >= "2024-11-11" && currentDate <= "2024-11-17") {
-      for (const phoneNumber of phoneNumbers) {
-        const score_pert = await weekEndScoreCalculation(
-          phoneNumber,
-          1,
-          courseid
+    if (currentDate >= "2024-11-11") {
+      const activity_total =
+        await getDataActivityComplete1.getDataActivityComplete(
+          "2024-11-17",
+          grp,
+          courseid,
+          1
         );
-        const scoreToAdd = isNaN(score_pert) ? "0%" : `${score_pert}%`;
-        scoreCount.push(scoreToAdd);
+      const activityMap = new Map(
+        activity_total.map((entry) => [
+          entry.phoneNumber,
+          entry.completion_match,
+        ])
+      );
+      
+      scoreCount = [];
+      for (const phoneNumber of phoneNumbers) {
+        const completion_match = activityMap.get(phoneNumber) || 0;
+        let score_pert;
+        if (completion_match === 0) {
+          score_pert = "0%";
+        } else {
+          const calculatedScore = await weekEndScoreCalculation(
+            phoneNumber,
+            1,
+            courseid
+          );
+          score_pert = isNaN(calculatedScore) ? "0%" : `${calculatedScore}%`;
+        }
+        scoreCount.push(score_pert);
       }
-      // console.log(scoreCount);
+
       totalcount.push(scoreCount);
     }
-    if (currentDate >= "2024-11-18" && currentDate <= "2024-11-24") {
-      for (const phoneNumber of phoneNumbers) {
-        const score_pert = await weekEndScoreCalculation(
-          phoneNumber,
-          2,
-          courseid
+    if (currentDate >= "2024-11-18") {
+      const activity_total =
+        await getDataActivityComplete1.getDataActivityComplete(
+          "2024-11-24",
+          grp,
+          courseid,
+          2
         );
-        const scoreToAdd = isNaN(score_pert) ? "0%" : `${score_pert}%`;
-        scoreCount.push(scoreToAdd);
+      const activityMap = new Map(
+        activity_total.map((entry) => [
+          entry.phoneNumber,
+          entry.completion_match,
+        ])
+      );
+      scoreCount = [];
+      for (const phoneNumber of phoneNumbers) {
+        const completion_match = activityMap.get(phoneNumber) || 0;
+        let score_pert;
+        if (completion_match === 0) {
+          score_pert = "0%";
+        } else {
+          score_pert = await weekEndScoreCalculation(phoneNumber, 2, courseid);
+          score_pert = isNaN(score_pert) ? "0%" : `${score_pert}%`;
+        }
+        scoreCount.push(score_pert);
       }
       totalcount.push(scoreCount);
     }
 
-    if (currentDate >= "2024-11-25" && currentDate <= "2024-12-01") {
-      for (const phoneNumber of phoneNumbers) {
-        const score_pert = await weekEndScoreCalculation(
-          phoneNumber,
-          3,
-          courseid
+    if (currentDate >= "2024-11-25") {
+      const activity_total =
+        await getDataActivityComplete1.getDataActivityComplete(
+          "2024-12-01",
+          grp,
+          courseid,
+          3
         );
-        const scoreToAdd = isNaN(score_pert) ? "0%" : `${score_pert}%`;
-        scoreCount.push(scoreToAdd);
+      const activityMap = new Map(
+        activity_total.map((entry) => [
+          entry.phoneNumber,
+          entry.completion_match,
+        ])
+      );
+      scoreCount = [];
+      for (const phoneNumber of phoneNumbers) {
+        const completion_match = activityMap.get(phoneNumber) || 0;
+        let score_pert;
+        if (completion_match === 0) {
+          score_pert = "0%";
+        } else {
+          score_pert = await weekEndScoreCalculation(phoneNumber, 3, courseid);
+          score_pert = isNaN(score_pert) ? "0%" : `${score_pert}%`;
+        }
+        scoreCount.push(score_pert);
       }
       totalcount.push(scoreCount);
     }
 
-    if (currentDate >= "2024-12-02" && currentDate <= "2024-12-08") {
-      for (const phoneNumber of phoneNumbers) {
-        const score_pert = await weekEndScoreCalculation(
-          phoneNumber,
-          4,
-          courseid
+    if (currentDate >= "2024-12-02") {
+      const activity_total =
+        await getDataActivityComplete1.getDataActivityComplete(
+          "2024-12-08",
+          grp,
+          courseid,
+          4
         );
-        const scoreToAdd = isNaN(score_pert) ? "0%" : `${score_pert}%`;
-        scoreCount.push(scoreToAdd);
+
+      const activityMap = new Map(
+        activity_total.map((entry) => [
+          entry.phoneNumber,
+          entry.completion_match,
+        ])
+      );
+
+      scoreCount = [];
+      for (const phoneNumber of phoneNumbers) {
+        const completion_match = activityMap.get(phoneNumber) || 0;
+        let score_pert;
+        if (completion_match === 0) {
+          score_pert = "0%";
+        } else {
+          const calculatedScore = await weekEndScoreCalculation(
+            phoneNumber,
+            4,
+            courseid
+          );
+          score_pert = isNaN(calculatedScore) ? "0%" : `${calculatedScore}%`;
+        }
+        scoreCount.push(score_pert);
       }
       totalcount.push(scoreCount);
     }
 
-    // console.log(totalcount);
     return totalcount;
   } catch (error) {
     error.fileName = "getWeeklyDate.js";

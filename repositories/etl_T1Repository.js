@@ -11,11 +11,8 @@ const getDataFromPostgres = async (date, grp, course_id) => {
       `'${grp}' ` +
       ` group by m."name", m."phoneNumber" order by m."phoneNumber" asc;`;
 
-    // const qry = `select * from "wa_users_metadata" m where m."targetGroup" = 'T2';`;
-
     const res = await sequelize.query(qry);
 
-    // console.log(res[0]);
     return res[0];
   } catch (error) {
     error.fileName = "etlRepository.js";
