@@ -1,5 +1,10 @@
 import { google } from "googleapis";
-import creds from "../my_cred.json" assert { type: "json" };
+import { readFile } from 'fs/promises';
+
+const creds = JSON.parse(
+  await readFile(new URL('../my_cred.json', import.meta.url), 'utf-8')
+);
+
 
 const sheets = google.sheets("v4");
 

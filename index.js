@@ -6,6 +6,7 @@ dotenv.config();
 import sequelize from './config/sequelize.js';
 import cors from 'cors';
 import routes from './routes/index.js';
+import etlController from './controllers/etlController.js';
 
 const port = 8080;
 
@@ -27,4 +28,38 @@ sequelize.authenticate()
   .then(() => console.log('Database connected.'))
   .catch(err => console.error('Unable to connect to the database:', err));
 
-app.listen(port, () => console.log(`Server running on port ${port}`));
+async function startETLProcess() {
+  try {
+    console.log("Starting ETL process...");
+    const startTimeInitial = new Date();
+    await etlController.runETL();
+    const endTimeInitial = new Date();
+    const totalTimeInitial = endTimeInitial - startTimeInitial;
+    console.log(
+      `Initial ETL process completed in ${totalTimeInitial / 1000} seconds.`
+    );
+    console.log("ETL process completed successfully.");
+    setInterval(async () => {
+      try {
+        console.log("Starting ETL process...");
+        const startTimeInitial = new Date();
+        await etlController.runETL();
+        const endTimeInitial = new Date();
+        const totalTimeInitial = endTimeInitial - startTimeInitial;
+        console.log(
+          `Initial ETL process completed in ${totalTimeInitial / 1000} seconds.`
+        );
+        console.log("ETL process completed successfully.");
+      } catch (error) {
+        console.error("Error during ETL process:", error);
+      }
+    }, 3600000);
+    //3600000
+  } catch (error) {
+    console.error("Error during ETL process:", error);
+  }
+}
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+  startETLProcess();
+});

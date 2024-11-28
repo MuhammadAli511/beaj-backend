@@ -1,7 +1,10 @@
 import { google, tasks_v1 } from "googleapis";
-import creds from "../my_cred.json" assert { type: "json" };
-import getWeeklyDate from "../google_sheet_utils/weekscore_getdate.js";
-import courseId_gSheet from "../google_sheet_utils/courseId_gSheet.js";
+import { readFile } from 'fs/promises';
+
+const creds = JSON.parse(
+  await readFile(new URL('../my_cred.json', import.meta.url), 'utf-8')
+);
+
 const sheets = google.sheets("v4");
 
 const loadDataToGoogleSheets = async (
