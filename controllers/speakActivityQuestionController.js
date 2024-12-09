@@ -57,10 +57,21 @@ const deleteSpeakActivityQuestionController = async (req, res, next) => {
     }
 };
 
+const getScoreAndAudiosController = async (req, res, next) => {
+    try {
+        const result = await service.getScoreAndAudiosService();
+        res.status(200).send(result);
+    } catch (error) {
+        error.fileName = 'speakActivityQuestionController.js';
+        next(error);
+    }
+};
+
 export default {
     createSpeakActivityQuestionController,
     getAllSpeakActivityQuestionController,
     getSpeakActivityQuestionByIdController,
     updateSpeakActivityQuestionController,
-    deleteSpeakActivityQuestionController
+    deleteSpeakActivityQuestionController,
+    getScoreAndAudiosController,
 };

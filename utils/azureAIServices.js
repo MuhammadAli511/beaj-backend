@@ -292,7 +292,6 @@ async function azurePronunciationAssessment(audioBuffer, referenceText) {
                 fluencyScore: 0,
                 compScore: 0,
                 prosodyScore: 0,
-                pronScore: 0,
             };
             const allWords = [];
             let currentText = [];

@@ -333,10 +333,6 @@ const webhookService = async (body, res) => {
                         currentUserState.dataValues.currentLesson_sequence
                     );
 
-                    // Mark previous lesson as completed
-                    const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
-                    await waLessonsCompletedRepository.endLessonByPhoneNumberAndLessonId(userMobileNumber, currentLesson.dataValues.LessonId);
-
 
                     if (!nextLesson) {
                         // Check if current lesson 

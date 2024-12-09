@@ -1714,6 +1714,8 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         return;
     }
 
+    await waLessonsCompletedRepository.endLessonByPhoneNumberAndLessonId(userMobileNumber, startingLesson.dataValues.LessonId);
+
     // Activity Complete Sticker
     const activityCompleteSticker = await extractConstantMessage("activity_complete_sticker");
     await sendMediaMessage(userMobileNumber, activityCompleteSticker, 'sticker');
