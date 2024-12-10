@@ -13,7 +13,6 @@ import {
     sendDemoLessonToUser,
     nameInputMessage,
     districtInputMessage,
-    scholarshipInputMessage,
     thankYouMessage,
     demoCourseStart,
     getAcceptableMessagesList,
@@ -25,7 +24,9 @@ import {
     levelCourseStart,
     sendCourseLessonToUser,
     removeUserTillCourse,
-    weekEndScoreCalculation
+    weekEndScoreCalculation,
+    teacherInputMessage,
+    schoolNameInputMessage
 } from '../utils/chatbotUtils.js';
 
 
@@ -159,11 +160,25 @@ const webhookService = async (body, res) => {
                 return;
             }
 
-            // Step 4: User enters their district, now ask for their preferred timing
+            // Step 4: User enters their district, now ask for whether they are a teacher or not
             if (message.type === 'text' && currentUserState.dataValues.engagement_type == 'District Input') {
+                await waUsersMetadataRepository.update(userMobileNumber, { city: messageContent });
+                await teacherInputMessage(userMobileNumber);
+                return;
+            }
+
+            // Step 5: User enters their isTeacher, now ask for school name
+            if (message.type === 'text' && currentUserState.dataValues.engagement_type == 'Teacher Input') {
+                await waUsersMetadataRepository.update(userMobileNumber, { isTeacher: messageContent });
+                await schoolNameInputMessage(userMobileNumber);
+                return;
+            }
+
+            // Step 6: User enters if they are a teacher or not, now ask for school name
+            if (message.type === 'text' && currentUserState.dataValues.engagement_type == 'School Input') {
                 if (!messageContent.toLowerCase().includes('i want to start my course')) {
-                    if (!user.dataValues.city) {
-                        await waUsersMetadataRepository.update(userMobileNumber, { city: messageContent, userRegistrationComplete: new Date() });
+                    if (!user.dataValues.isTeacher) {
+                        await waUsersMetadataRepository.update(userMobileNumber, { schoolName: messageContent, userRegistrationComplete: new Date() });
                         await thankYouMessage(userMobileNumber);
                     } else {
                         await thankYouMessage(userMobileNumber);
@@ -171,21 +186,6 @@ const webhookService = async (body, res) => {
                     return;
                 }
             }
-
-            // Step 5: User enters their scholarship, send them a thank you message
-            // if (message.type == 'text' && currentUserState.dataValues.engagement_type == 'Scholarship') {
-            //     
-            //         const messageAuth = await checkUserMessageAndAcceptableMessages(userMobileNumber, currentUserState, message, messageType, messageContent);
-            //         if (messageAuth === false) {
-            //             return;
-            //         }
-            //         if (parseInt(messageContent) >= 0 && parseInt(messageContent) <= 3000) {
-            //             await waUsersMetadataRepository.update(userMobileNumber, { scholarshipvalue: messageContent, userRegistrationComplete: new Date() });
-            //         }
-            //         await thankYouMessage(userMobileNumber);
-            //         return;
-            //     }
-            // };
 
             // From step 2 if user clicks 'Start Free Demo' button
             if ((message.type == 'interactive' || message.type == 'text') && (messageContent.toLowerCase().includes('start free demo'))) {

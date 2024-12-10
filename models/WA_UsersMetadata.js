@@ -54,6 +54,14 @@ WA_UsersMetadata.init({
         type: DataTypes.TEXT,
         allowNull: true,
     },
+    isTeacher: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    schoolName: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
 }, {
     sequelize,
     modelName: 'WA_UsersMetadata',
