@@ -89,21 +89,10 @@ const deleteSpeakActivityQuestionService = async (id) => {
     }
 };
 
-const getScoreAndAudiosService = async () => {
-    try {
-        const speakActivityQuestions = await speakActivityQuestionRepository.getScoreAndAudios();
-        return speakActivityQuestions;
-    } catch (error) {
-        error.fileName = 'speakActivityQuestionService.js';
-        throw error;
-    }
-};
-
 export default {
     createSpeakActivityQuestionService,
     getAllSpeakActivityQuestionService,
     getSpeakActivityQuestionByIdService,
     updateSpeakActivityQuestionService,
-    deleteSpeakActivityQuestionService,
-    getScoreAndAudiosService
+    deleteSpeakActivityQuestionService
 };

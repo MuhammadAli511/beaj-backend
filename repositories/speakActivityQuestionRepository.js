@@ -1,6 +1,5 @@
 import SpeakActivityQuestion from "../models/SpeakActivityQuestion.js";
 import Sequelize from 'sequelize';
-import sequelize from "../config/sequelize.js";
 
 const create = async (question, audioUrl, answer, lessonId, questionNumber) => {
     const speakActivityQuestion = new SpeakActivityQuestion({
@@ -109,15 +108,6 @@ const deleteByLessonId = async (lessonId) => {
 };
 
 
-const getScoreAndAudios = async () => {
-    const qry = `select "submittedFeedbackJson"[1]->'scoreNumber' as score, "submittedAnswerText", "submittedUserAudio"
-    from wa_question_responses
-    where "activityType" in ('watchAndSpeak', 'conversationalAgencyBot', 'conversationalMonologueBot')
-    and "submittedFeedbackJson"[1]->'scoreNumber' is not null;`;
-    return await sequelize.query(qry);
-};
-
-
 export default {
     create,
     getAll,
@@ -125,7 +115,6 @@ export default {
     update,
     deleteSpeakActivityQuestion,
     getCurrentSpeakActivityQuestion,
-    getScoreAndAudios,
     getNextSpeakActivityQuestion,
     getByLessonIds,
     getByLessonId,

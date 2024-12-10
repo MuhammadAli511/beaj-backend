@@ -26,9 +26,6 @@ router.put('/update/:id', beajEmployeesAuth, upload.single('file'), speakActivit
 // DELETE  api/speakActivityQuestion/delete/:id
 router.delete('/delete/:id', beajEmployeesAuth, speakActivityQuestionController.deleteSpeakActivityQuestionController);
 
-// GET api/speakActivityQuestion/getScoreAndAudios
-router.get('/getScoreAndAudios', beajEmployeesAuth, speakActivityQuestionController.getScoreAndAudiosController);
-
 // Use error handler middleware
 router.use(errorHandler);
 
