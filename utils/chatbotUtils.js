@@ -1446,42 +1446,42 @@ const nameInputMessage = async (userMobileNumber) => {
         null,
     )
     await waUserProgressRepository.updateEngagementType(userMobileNumber, "Name Input");
-    await sendMessage(userMobileNumber, "Your Full Name\n(e.g. Saima Khan)");
-    await createActivityLog(userMobileNumber, "text", "outbound", "Your Full Name\n(e.g. Saima Khan)", null);
+    let nameMessage = "Your Full Name\n(e.g. Saima Khan)\n\nآپ کا پورا نام\n(مثلن: صایمہ خان)"
+    await sendMessage(userMobileNumber, nameMessage);
+    await createActivityLog(userMobileNumber, "text", "outbound", nameMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["text"]);
     return;
 };
 
 const districtInputMessage = async (userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(userMobileNumber, "District Input");
-    await sendMessage(userMobileNumber, "Your District\n(e.g. Faisalabad, Punjab)");
-    await createActivityLog(userMobileNumber, "text", "outbound", "Your District\n(e.g. Faisalabad, Punjab)", null);
+    let districtMessage = "Your District\n(e.g. Faisalabad, Punjab)\n\nآپ کے ضلع کا نام\n(مثلن: فیصل آباد، پنجاب)"
+    await sendMessage(userMobileNumber, districtMessage);
+    await createActivityLog(userMobileNumber, "text", "outbound", districtMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["text"]);
     return;
 };
 
-const scolarshipOptions = [
-    "Iss 3-month course ki fees Rs. 3000 hai. \n\nScholarships available hain lekin scholarship maangtay huay yaad rakhain ke seats mehdud hain, aur aap jitni zyada scholarship managain ge, aap ko seat milnay ka imkaan utna hi kum hoga.\n\nMisaal ke taur pay, agar Sana Rs. 2250 dainay kay liye tayyar hai (woh 25% scholarship maang rahi hai) aur Huma Rs. 750 dainay kay liye tayyar hai (woh 75% scholarship maang rahi hai) tou Sana ko course mein jaga milnay ka imkaan zyada hain.\n\nAap iss course kay liye kitni fees dainay kay liye tayyar hain?\n\nWrite an amount from 0 to 3000",
-    "Iss 3-month course ki fees Rs. 3000 hai. \n\nScholarships available hain lekin scholarship maangtay huay yaad rakhain ke seats mehdud hain, aur aap jitni zyada scholarship managain ge, aap ko seat milnay ka imkaan utna hi kum hoga.\n\nMisaal ke taur pay, agar Sana Rs. 2400 dainay kay liye tayyar hai (woh 20% scholarship maang rahi hai) aur Huma Rs. 1800 dainay kay liye tayyar hai (woh 40% scholarship maang rahi hai) tou Sana ko course mein jaga milnay ka imkaan zyada hain.\n\nAap iss course kay liye kitni fees dainay kay liye tayyar hain?\n\nWrite an amount from 0 to 3000",
-    "Iss 3-month course ki fees Rs. 3000 hai. \n\nScholarships available hain lekin scholarship maangtay huay yaad rakhain ke seats mehdud hain, aur aap jitni zyada scholarship managain ge, aap ko seat milnay ka imkaan utna hi kum hoga.\n\nMisaal ke taur pay, agar Sana Rs. 750 dainay kay liye tayyar hai (woh 75% scholarship maang rahi hai) aur Huma Rs. 1500 dainay kay liye tayyar hai (woh 50% scholarship maang rahi hai) tou Huma ko course mein jaga milnay ka imkaan zyada hain.\n\nAap iss course kay liye kitni fees dainay kay liye tayyar hain?\n\nWrite an amount from 0 to 3000",
-    "Iss 3-month course ki fees Rs. 3000 hai. \n\nScholarships available hain lekin scholarship maangtay huay yaad rakhain ke seats mehdud hain, aur aap jitni zyada scholarship managain ge, aap ko seat milnay ka imkaan utna hi kum hoga.\n\nMisaal ke taur pay, agar Sana Rs. 1500 dainay kay liye tayyar hai (woh 50% scholarship maang rahi hai) aur Huma Rs. 750 dainay kay liye tayyar hai (woh 75% scholarship maang rahi hai) tou Sana ko course mein jaga milnay ka imkaan zyada hain.\n\nAap iss course kay liye kitni fees dainay kay liye tayyar hain?\n\nWrite an amount from 0 to 3000",
-]
+const teacherInputMessage = async (userMobileNumber) => {
+    await waUserProgressRepository.updateEngagementType(userMobileNumber, "Teacher Input");
+    let teacherMessage = "Are you a teacher?\n\nکیا آپ ٹیچر ہیں؟";
+    await sendButtonMessage(userMobileNumber, teacherMessage, [{ id: "yes_message", title: "Yes/ہاں" }, { id: "no_message", title: "No/نہیں" }]);
+    await createActivityLog(userMobileNumber, "template", "outbound", teacherMessage, null);
+    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["yes/ہاں", "no/نہیں", "yes", "no"]);
+    return;
+};
 
-const scholarshipInputMessage = async (userMobileNumber) => {
-    await waUserProgressRepository.updateEngagementType(userMobileNumber, "Scholarship");
-    const random = Math.floor(Math.random() * 4);
-    await sendMessage(userMobileNumber, scolarshipOptions[random]);
-    await createActivityLog(userMobileNumber, "text", "outbound", scolarshipOptions[random], null);
-    let acceptableMessages = [];
-    for (let i = 0; i <= 3000; i += 1) {
-        acceptableMessages.push(i.toString());
-    }
-    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, acceptableMessages);
+const schoolNameInputMessage = async (userMobileNumber) => {
+    await waUserProgressRepository.updateEngagementType(userMobileNumber, "School Input");
+    let schoolNameMessage = "If Yes, type the name of the school you teach at.\nIf No, type 'NO'.\n\nاگر ہاں, تو اپنے سکول کا نام لکھیں۔\nاگر نہیں، تو لکھیں 'NO'."
+    await sendMessage(userMobileNumber, schoolNameMessage);
+    await createActivityLog(userMobileNumber, "text", "outbound", schoolNameMessage, null);
+    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["text"]);
     return;
 };
 
 const thankYouMessage = async (userMobileNumber) => {
-    const message = "Your registration is *complete*. Thank you for applying!\nWe will contact you by December, 15th."
+    const message = "Thank You! Your application is complete. Our team will call you soon!\n\nشکریہ! آپ کی درخواست مکمل ہو گئی ہے۔ ہماری ٹیم جلد ہی آپ کو کال کرے گی!"
     await sendMessage(userMobileNumber, message);
     await createActivityLog(userMobileNumber, "text", "outbound", message, null);
 
@@ -1530,14 +1530,9 @@ const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUs
     else if (acceptableMessagesList.includes(messageContent.toLowerCase())) {
         return true;
     }
-    // If acceptable message list size is more than 2999 then "0 - 3000 tak koi number type kerain."
-    if (acceptableMessagesList.length > 2999) {
-        await sendMessage(userMobileNumber, "0 - 3000 tak koi number type kerain.");
-        await createActivityLog(userMobileNumber, "text", "outbound", "0 - 3000 tak koi number type kerain.", null);
-        return false;
-    }
+
     // If list has "option a", "option b", "option c" then "option a", "option b", "option c" type kerain.
-    else if (acceptableMessagesList.includes("option a") && acceptableMessagesList.includes("option b") && acceptableMessagesList.includes("option c")) {
+    if (acceptableMessagesList.includes("option a") && acceptableMessagesList.includes("option b") && acceptableMessagesList.includes("option c")) {
         await sendMessage(userMobileNumber, "option a, option b, ya option c mein se koi aik button press kerain.");
         await createActivityLog(userMobileNumber, "text", "outbound", "option a, option b, ya option c mein se koi aik button press kerain.", null);
         return false;
@@ -1713,6 +1708,8 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
     if (startingLesson.dataValues.activity === 'video') {
         return;
     }
+
+    await waLessonsCompletedRepository.endLessonByPhoneNumberAndLessonId(userMobileNumber, startingLesson.dataValues.LessonId);
 
     // Activity Complete Sticker
     const activityCompleteSticker = await extractConstantMessage("activity_complete_sticker");
@@ -2805,7 +2802,6 @@ export {
     nameInputMessage,
     districtInputMessage,
     thankYouMessage,
-    scholarshipInputMessage,
     demoCourseStart,
     removeUser,
     checkUserMessageAndAcceptableMessages,
@@ -2815,5 +2811,7 @@ export {
     levelCourseStart,
     sendCourseLessonToUser,
     removeUserTillCourse,
-    weekEndScoreCalculation
+    weekEndScoreCalculation,
+    teacherInputMessage,
+    schoolNameInputMessage,
 };
