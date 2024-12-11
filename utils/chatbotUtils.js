@@ -1481,7 +1481,7 @@ const schoolNameInputMessage = async (userMobileNumber) => {
 };
 
 const thankYouMessage = async (userMobileNumber) => {
-    const message = "Your registration is *complete*. Thank you for applying!\nWe will contact you by December, 15th."
+    const message = "Thank You! Your application is complete. Our team will call you soon!\n\nشکریہ! آپ کی درخواست مکمل ہو گئی ہے۔ ہماری ٹیم جلد ہی آپ کو کال کرے گی!"
     await sendMessage(userMobileNumber, message);
     await createActivityLog(userMobileNumber, "text", "outbound", message, null);
 

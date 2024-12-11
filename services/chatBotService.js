@@ -168,7 +168,7 @@ const webhookService = async (body, res) => {
             }
 
             // Step 5: User enters their isTeacher, now ask for school name
-            if (message.type === 'text' && currentUserState.dataValues.engagement_type == 'Teacher Input') {
+            if ((message.type === 'text' || message.type === 'interactive') && currentUserState.dataValues.engagement_type == 'Teacher Input') {
                 await waUsersMetadataRepository.update(userMobileNumber, { isTeacher: messageContent });
                 await schoolNameInputMessage(userMobileNumber);
                 return;
