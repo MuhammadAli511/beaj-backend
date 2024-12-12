@@ -50,7 +50,7 @@ const removeUser = async (phoneNumber) => {
 
 const removeUserTillCourse = async (phoneNumber) => {
     await waUserProgressRepository.update(phoneNumber, null, null, null, null, null, null, null, null, ["i want to start my course"]);
-    await waUserProgressRepository.updateEngagementType(phoneNumber, "District Input");
+    await waUserProgressRepository.updateEngagementType(phoneNumber, "School Input");
     await waUserActivityLogsRepository.deleteByPhoneNumber(phoneNumber);
     await waLessonsCompletedRepository.deleteByPhoneNumber(phoneNumber);
     await waQuestionResponsesRepository.deleteByPhoneNumber(phoneNumber);
@@ -1578,8 +1578,9 @@ const sendWrongMessages = async (userMobileNumber) => {
 const getNextCourse = async (userMobileNumber) => {
     const purchaseCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByPhoneNumber(userMobileNumber);
     const courses = await courseRepository.getAll();
-    const notCompletedPurchasedCourse = purchaseCourses.filter(purchaseCourse => purchaseCourse.dataValues.courseEndDate === null);
-    if (notCompletedPurchasedCourse) {
+    const startedCourses = await waLessonsCompletedRepository.getUniqueStartedCoursesByPhoneNumber(userMobileNumber);
+    const notCompletedPurchasedCourse = purchaseCourses.filter(course => !startedCourses.includes(course.dataValues.courseId));
+    if (notCompletedPurchasedCourse.length > 0) {
         // Add sequence number to the courses
         for (let i = 0; i < notCompletedPurchasedCourse.length; i++) {
             for (let j = 0; j < courses.length; j++) {
