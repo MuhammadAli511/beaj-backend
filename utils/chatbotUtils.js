@@ -112,6 +112,17 @@ const weekEndImage = async (score, week) => {
         ctx.font = 'bold 60px Arial';
         ctx.fillText(`${score}%`, centerX, centerY + 20);
 
+        ctx.font = 'bold 60px Arial';
+        let remark = '';
+        if (parseInt(score) <= 60) {
+            remark = "Good Effort! 👍🏽";
+        } else if (parseInt(score) <= 79) {
+            remark = "Well done! 🌟";
+        } else {
+            remark = "Excellent 🎉";
+        }
+        ctx.fillText(remark, centerX, centerY + 300);
+
 
         // Convert the canvas to a buffer
         const buffer = canvas.toBuffer('image/jpeg');
@@ -126,45 +137,36 @@ const weekEndImage = async (score, week) => {
 }
 
 const weekEndScoreCalculation = async (phoneNumber, weekNumber, courseId) => {
-    console.log("Phone Number: ", phoneNumber);
-    console.log("Week Number: ", weekNumber);
-    console.log("Course Id: ", courseId);
     // Get lessonIds for mcqs of that week
     const mcqLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'mcqs');
     const correctMcqs = await waQuestionResponsesRepository.getTotalScoreForList(phoneNumber, mcqLessonIds);
     const totalMcqs = await waQuestionResponsesRepository.getTotalQuestionsForList(phoneNumber, mcqLessonIds);
-    console.log("MCQs: ", correctMcqs, totalMcqs);
 
     // Get lessonIds for listenAndSpeak of that week
     const listenAndSpeakLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'listenAndSpeak');
     const correctListenAndSpeak = await waQuestionResponsesRepository.getTotalScoreForList(phoneNumber, listenAndSpeakLessonIds);
     const totalListenAndSpeak = await waQuestionResponsesRepository.getTotalQuestionsForList(phoneNumber, listenAndSpeakLessonIds);
-    console.log("Listen and Speak: ", correctListenAndSpeak, totalListenAndSpeak);
 
 
     // Get lessonIds for watchAndSpeak of that week
     const watchAndSpeakLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'watchAndSpeak');
     const correctWatchAndSpeak = await waQuestionResponsesRepository.watchAndSpeakScoreForList(phoneNumber, watchAndSpeakLessonIds);
-    console.log("Watch and Speak: ", correctWatchAndSpeak);
 
 
     // Get lessonIds for read of that week
     const readLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'read');
     const correctRead = await waQuestionResponsesRepository.readScoreForList(phoneNumber, readLessonIds);
-    console.log("Read: ", correctRead);
 
 
     // Get lessonIds for conversationalMonologueBot of that week
     const monologueLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'conversationalMonologueBot');
     const correctMonologue = await waQuestionResponsesRepository.monologueScoreForList(phoneNumber, monologueLessonIds);
-    console.log("Monologue: ", correctMonologue);
 
 
     // Calculate sum of scores and sum of total scores and give percentage out of 100
     const totalScore = correctMcqs + correctListenAndSpeak + correctWatchAndSpeak.score + correctRead.score + correctMonologue.score;
     const totalQuestions = totalMcqs + totalListenAndSpeak + correctWatchAndSpeak.total + correctRead.total + correctMonologue.total;
     const percentage = Math.round((totalScore / totalQuestions) * 100);
-    console.log("Week End Score 1: ", percentage);
     return percentage;
 };
 
@@ -436,7 +438,7 @@ const createAndUploadSpeakingScoreImage = async (results) => {
 }
 
 const getAcceptableMessagesList = async (activityType) => {
-    if (activityType === "listenAndSpeak" || activityType === "postListenAndSpeak" || activityType === "preListenAndSpeak" || activityType === "watchAndSpeak" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot") {
+    if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot") {
         return ["audio"];
     }
 };
@@ -699,699 +701,6 @@ const removeHTMLTags = (text) => {
     return text.replace(/<[^>]*>?/gm, '');
 };
 
-const sendDemoLessonToUser = async (
-    userMobileNumber,
-    currentUserState,
-    startingLesson,
-    messageType,
-    messageContent
-) => {
-    try {
-        const activity = startingLesson.dataValues.activity;
-        if (activity === 'video') {
-            // Lesson Started Record
-            await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date());
-
-            // Send lesson message
-            let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-            lessonMessage += "\n" + removeHTMLTags(startingLesson.dataValues.text);
-
-            // Text message
-            await sendMessage(userMobileNumber, lessonMessage);
-            await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
-
-            // Send video content
-            const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
-            let videoURL = documentFile[0].dataValues.video;
-
-            // Media message
-            await sendMediaMessage(userMobileNumber, videoURL, 'video');
-            await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
-
-            // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["next"]);
-
-            // Sleep
-            await sleep(12000);
-
-            // Reply buttons to move forward
-            await sendButtonMessage(userMobileNumber, 'Let’s Start Questions👇🏽', [{ id: 'next', title: 'Next' }]);
-            await createActivityLog(userMobileNumber, "template", "outbound", "Next", null);
-        }
-        else if (activity == 'listenAndSpeak' || activity == 'preListenAndSpeak' || activity == 'postListenAndSpeak') {
-            if (currentUserState.dataValues.questionNumber === null) {
-                // Lesson Started Record
-                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
-
-                // Send lesson message
-                let lessonMessage = "Listen to the audio question and send your answer as a voice message.💬";
-
-                // Text message
-                await sendMessage(userMobileNumber, lessonMessage);
-                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
-
-                // Send first Listen and Speak question
-                const firstListenAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
-
-                // Update question number
-                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstListenAndSpeakQuestion.dataValues.questionNumber);
-
-                // Send question media file
-                await sendMediaMessage(userMobileNumber, firstListenAndSpeakQuestion.dataValues.mediaFile, 'audio');
-                await createActivityLog(userMobileNumber, "audio", "outbound", firstListenAndSpeakQuestion.dataValues.mediaFile, null);
-
-                // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
-                await sleep(5000);
-
-                // Send question text
-                await sendMessage(userMobileNumber, firstListenAndSpeakQuestion.dataValues.question);
-                await createActivityLog(userMobileNumber, "text", "outbound", firstListenAndSpeakQuestion.dataValues.question, null);
-
-                return;
-            } else if (messageType === 'audio') {
-                // Get the current Listen and Speak question
-                const currentListenAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
-
-                // OpenAI Speech to Text
-                const recognizedText = await azureAIServices.openaiSpeechToText(messageContent.data);
-                if (recognizedText) {
-                    // Checking if user response is correct or not
-                    const answersArray = currentListenAndSpeakQuestion.dataValues.answer;
-                    let userAnswerIsCorrect = false;
-                    for (let i = 0; i < answersArray.length; i++) {
-                        if (recognizedText.toLowerCase().includes(answersArray[i].toLowerCase())) {
-                            userAnswerIsCorrect = true;
-                            break;
-                        }
-                    }
-                    if (!userAnswerIsCorrect) {
-                        userAnswerIsCorrect = false;
-                    }
-
-                    // Uploading user audio to Azure Blob Storage
-                    const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
-                    const uniqueID = uuidv4();
-                    const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
-                    const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
-
-                    // Save user response to the database
-                    const submissionDate = new Date();
-                    const retryCounter = currentUserState.dataValues.retryCounter;
-                    // User first attempt
-                    if (retryCounter == 0 || retryCounter == null) {
-                        await waUserProgressRepository.updateRetryCounter(userMobileNumber, 1);
-                        await waQuestionResponsesRepository.create(
-                            userMobileNumber,
-                            currentUserState.dataValues.currentLessonId,
-                            currentListenAndSpeakQuestion.dataValues.id,
-                            activity,
-                            startingLesson.dataValues.activityAlias,
-                            [recognizedText],
-                            [userAudioFileUrl],
-                            null,
-                            null,
-                            null,
-                            [userAnswerIsCorrect],
-                            retryCounter + 1,
-                            submissionDate
-                        );
-                    }
-                    // User other attempts
-                    else {
-                        await waQuestionResponsesRepository.update(
-                            userMobileNumber,
-                            currentUserState.dataValues.currentLessonId,
-                            currentListenAndSpeakQuestion.dataValues.id,
-                            activity,
-                            startingLesson.dataValues.activityAlias,
-                            recognizedText,
-                            userAudioFileUrl,
-                            null,
-                            null,
-                            null,
-                            userAnswerIsCorrect,
-                            retryCounter + 1,
-                            submissionDate
-                        );
-                    }
-                    // If user response is correct
-                    if (userAnswerIsCorrect) {
-                        // Reset retry counter
-                        await waUserProgressRepository.updateRetryCounter(userMobileNumber, 0);
-
-                        // Text message
-                        let correctMessage = "You said:\n" + recognizedText + "\n✅ Great!";
-                        await sendMessage(userMobileNumber, correctMessage);
-                        await createActivityLog(userMobileNumber, "text", "outbound", correctMessage, null);
-                    }
-                    // If user response is incorrect
-                    else {
-                        if (retryCounter !== 2) {
-                            // Update retry counter
-                            await waUserProgressRepository.updateRetryCounter(userMobileNumber, currentUserState.dataValues.retryCounter + 1);
-
-                            // Text message
-                            let wrongMessage = "You said:\n" + recognizedText + "\n❌ Try Again!";
-                            await sendMessage(userMobileNumber, wrongMessage);
-                            await createActivityLog(userMobileNumber, "text", "outbound", wrongMessage, null);
-                            return;
-                        } else if (retryCounter == 2) {
-                            // Reset retry counter
-                            await waUserProgressRepository.updateRetryCounter(userMobileNumber, 0);
-
-                            // Text message
-                            let wrongMessage = "You said:\n" + recognizedText + "\n❌ The correct answer is: " + answersArray[0];
-                            await sendMessage(userMobileNumber, wrongMessage);
-                            await createActivityLog(userMobileNumber, "text", "outbound", wrongMessage, null);
-                        }
-                    }
-                    const nextListenAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
-                    if (nextListenAndSpeakQuestion) {
-                        // Update question number
-                        await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextListenAndSpeakQuestion.dataValues.questionNumber);
-
-                        // Media message
-                        await sendMediaMessage(userMobileNumber, nextListenAndSpeakQuestion.dataValues.mediaFile, 'audio');
-                        await createActivityLog(userMobileNumber, "audio", "outbound", nextListenAndSpeakQuestion.dataValues.mediaFile, null);
-
-                        // Update acceptable messages list for the user
-                        await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
-                        await sleep(5000);
-
-                        // Text message
-                        await sendMessage(userMobileNumber, nextListenAndSpeakQuestion.dataValues.question);
-                        await createActivityLog(userMobileNumber, "text", "outbound", nextListenAndSpeakQuestion.dataValues.question, null);
-                    } else {
-                        // Calculate total score and send message
-                        const totalScore = await waQuestionResponsesRepository.getTotalScore(userMobileNumber, currentUserState.dataValues.currentLessonId);
-                        const totalQuestions = await waQuestionResponsesRepository.getTotalQuestions(userMobileNumber, currentUserState.dataValues.currentLessonId);
-                        const scorePercentage = (totalScore / totalQuestions) * 100;
-                        let message = "*Your score: " + totalScore + "/" + totalQuestions + ".*";
-                        if (scorePercentage >= 0 && scorePercentage <= 60) {
-                            message += "\nGood Effort! 👍🏽";
-                        } else if (scorePercentage >= 61 && scorePercentage <= 79) {
-                            message += "\nWell done! 🌟";
-                        } else if (scorePercentage >= 80) {
-                            message += "\nExcellent 🎉";
-                        }
-                        await sendMessage(userMobileNumber, message);
-                        await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-
-                        // Reset Question Number, Retry Counter, and Activity Type
-                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
-
-                        // Update acceptable messages list for the user
-                        await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try next activity", "apply for course"]);
-
-                        // Sleep
-                        await sleep(2000);
-
-                        // Reply Buttons
-                        await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'try_next_activity', title: 'Try Next Activity' }, { id: 'apply_for_course', title: 'Apply for Course' }]);
-                        await createActivityLog(userMobileNumber, "template", "outbound", "Try Next Activity or Apply for Course", null);
-                    }
-                } else {
-                    // TODO: Handle if no speech recognized
-                    console.log("No speech recognized or an error occurred.");
-                }
-            }
-        }
-        else if (activity == 'mcqs' || activity == 'postMCQs' || activity == 'preMCQs') {
-            if (currentUserState.dataValues.questionNumber === null) {
-                // Lesson Started Record
-                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
-
-                // Send first MCQs question
-                const firstMCQsQuestion = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, null);
-
-                // Update question number
-                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstMCQsQuestion.dataValues.QuestionNumber);
-
-                // Send question
-                const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(firstMCQsQuestion.dataValues.Id);
-                let mcqMessage = firstMCQsQuestion.dataValues.QuestionText + "\n";
-                if (firstMCQsQuestion.dataValues.QuestionText != "Choose the correct sentence.") {
-                    mcqMessage += "Choose the correct answer.\n";
-                }
-                for (let i = 0; i < mcqAnswers.length; i++) {
-                    mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
-                }
-
-                // Reply buttons to answer
-                await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })));
-                await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
-
-                // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["option a", "option b", "option c"]);
-                return;
-            } else {
-                // Get current MCQ question
-                const currentMCQsQuestion = await multipleChoiceQuestionRepository.getCurrentMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
-
-                // Upper and Lower case answers
-                const originalAnswer = messageContent;
-                const userAnswer = messageContent.toLowerCase();
-
-                // Get all answers against the question
-                const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(currentMCQsQuestion.dataValues.Id);
-
-                // Check if the user answer is correct
-                let isCorrectAnswer = false;
-                for (let i = 0; i < mcqAnswers.length; i++) {
-                    let matchWith = `option ${String.fromCharCode(65 + i)}`.toLowerCase();
-                    if (mcqAnswers[i].dataValues.IsCorrect === true && userAnswer == matchWith) {
-                        isCorrectAnswer = true;
-                        break;
-                    }
-                }
-
-                // Save user response to the database
-                const submissionDate = new Date();
-                await waQuestionResponsesRepository.create(
-                    userMobileNumber,
-                    currentUserState.dataValues.currentLessonId,
-                    currentMCQsQuestion.dataValues.Id,
-                    activity,
-                    startingLesson.dataValues.activityAlias,
-                    [originalAnswer],
-                    null,
-                    null,
-                    null,
-                    null,
-                    [isCorrectAnswer],
-                    1,
-                    submissionDate
-                );
-
-                // Correct Answer Feedback
-                if (isCorrectAnswer) {
-                    // Text message
-                    await sendMessage(userMobileNumber, "✅ Great!\n");
-                    await createActivityLog(userMobileNumber, "text", "outbound", "✅ Great!\n", null);
-                }
-                // Incorrect Answer Feedback
-                else {
-                    let correctAnswer = "❌ The correct answer is ";
-                    for (let i = 0; i < mcqAnswers.length; i++) {
-                        if (mcqAnswers[i].dataValues.IsCorrect === true) {
-                            correctAnswer += "Option " + String.fromCharCode(65 + i) + ": " + mcqAnswers[i].dataValues.AnswerText;
-                        }
-                    }
-                    // Text message
-                    await sendMessage(userMobileNumber, correctAnswer);
-                    await createActivityLog(userMobileNumber, "text", "outbound", correctAnswer, null);
-                }
-
-                // Get next MCQ question
-                const nextMCQsQuestion = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
-                if (nextMCQsQuestion) {
-                    // Update question number
-                    await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextMCQsQuestion.dataValues.QuestionNumber);
-
-                    // Send question
-                    const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(nextMCQsQuestion.dataValues.Id);
-                    let mcqMessage = nextMCQsQuestion.dataValues.QuestionText + "\n";
-                    if (nextMCQsQuestion.dataValues.QuestionText != "Choose the correct sentence.") {
-                        mcqMessage += "Choose the correct answer.\n";
-                    }
-                    for (let i = 0; i < mcqAnswers.length; i++) {
-                        mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
-                    }
-
-                    // Reply buttons to answer
-                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })));
-                    await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
-
-                    // Update acceptable messages list for the user
-                    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["option a", "option b", "option c"]);
-                    return;
-                } else {
-                    // Calculate total score and send message
-                    const totalScore = await waQuestionResponsesRepository.getTotalScore(userMobileNumber, currentUserState.dataValues.currentLessonId);
-                    const totalQuestions = await waQuestionResponsesRepository.getTotalQuestions(userMobileNumber, currentUserState.dataValues.currentLessonId);
-                    const scorePercentage = (totalScore / totalQuestions) * 100;
-                    let message = "*Your score: " + totalScore + "/" + totalQuestions + ".*";
-                    if (scorePercentage >= 0 && scorePercentage <= 60) {
-                        message += "\nGood Effort! 👍🏽";
-                    } else if (scorePercentage >= 61 && scorePercentage <= 79) {
-                        message += "\nWell done! 🌟";
-                    } else if (scorePercentage >= 80) {
-                        message += "\nExcellent 🎉";
-                    }
-                    // Text message
-                    await sendMessage(userMobileNumber, message);
-                    await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-
-                    // Reset Question Number, Retry Counter, and Activity Type
-                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
-
-                    // Update acceptable messages list for the user
-                    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try next activity", "apply for course"]);
-
-                    // Sleep
-                    await sleep(2000);
-
-                    // Reply Buttons
-                    await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'try_next_activity', title: 'Try Next Activity' }, { id: 'apply_for_course', title: 'Apply for Course' }]);
-                    await createActivityLog(userMobileNumber, "template", "outbound", "Try Next Activity or Apply for Course", null);
-                }
-            }
-        }
-        else if (activity == 'watchAndSpeak') {
-            if (currentUserState.dataValues.questionNumber === null) {
-                // Lesson Started Record
-                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
-
-                // Send lesson message
-                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\nWatch the videos. Then practice speaking by sending voice messages. 💬";
-                await sendMessage(userMobileNumber, lessonMessage);
-                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
-
-                // Send first Watch and Speak question
-                const firstWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
-
-                // Update question number
-                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.questionNumber);
-
-                // Send question media file
-                await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
-                await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
-                await sleep(12000);
-
-                // Send question text
-                let message = "Puri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
-                await sendMessage(userMobileNumber, message);
-                await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-
-                // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
-                return;
-            } else if (messageType === 'audio') {
-                // Get the current Watch And Speak question
-                const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
-
-                // Extract user transcription from words
-                const userTranscription = await azureAIServices.openaiSpeechToText(messageContent.data);
-
-                // Text message
-                await sendMessage(userMobileNumber, "You said: " + userTranscription);
-                await createActivityLog(userMobileNumber, "text", "outbound", "You said: " + userTranscription, null);
-
-                // Azure Pronunciation Assessment
-                const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, currentWatchAndSpeakQuestion.dataValues.answer[0]);
-
-                // Generate pronunciation assessment message
-                const imageUrl = await createAndUploadScoreImage(pronunciationAssessment);
-
-                // Media message
-                if (imageUrl) {
-                    await sendMediaMessage(userMobileNumber, imageUrl, 'image');
-                    await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
-                    await sleep(5000);
-                }
-
-                // Save user response to the database
-                const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
-                const uniqueID = uuidv4();
-                const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
-                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
-                const submissionDate = new Date();
-                await waQuestionResponsesRepository.create(
-                    userMobileNumber,
-                    currentUserState.dataValues.currentLessonId,
-                    currentWatchAndSpeakQuestion.dataValues.id,
-                    activity,
-                    startingLesson.dataValues.activityAlias,
-                    [userTranscription],
-                    [userAudioFileUrl],
-                    null,
-                    null,
-                    [pronunciationAssessment],
-                    null,
-                    1,
-                    submissionDate
-                );
-
-                const nextWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
-                if (nextWatchAndSpeakQuestion) {
-                    // Update question number
-                    await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.questionNumber);
-
-                    // Send question media file
-                    await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
-                    await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
-                    await sleep(12000);
-
-                    // Send question text
-                    let message = "Puri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
-
-                    // Text message
-                    await sendMessage(userMobileNumber, message);
-                    await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-                } else {
-                    // Reset Question Number, Retry Counter, and Activity Type
-                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
-
-                    // Update acceptable messages list for the user
-                    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try next activity", "apply for course"]);
-
-                    // Sleep
-                    await sleep(2000);
-
-                    // Reply Buttons
-                    await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'try_next_activity', title: 'Try Next Activity' }, { id: 'apply_for_course', title: 'Apply for Course' }]);
-                    await createActivityLog(userMobileNumber, "template", "outbound", "Try Next Activity or Apply for Course", null);
-                }
-            }
-        }
-        else if (activity == 'read') {
-            if (messageType != 'audio') {
-                // Lesson Started Record
-                await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date());
-
-                // Send lesson message
-                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\nListen to the passage carefully.";
-                // Text message
-                await sendMessage(userMobileNumber, lessonMessage);
-                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
-
-                // Send video content
-                const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
-                let videoURL = documentFile[0].dataValues.video;
-
-                // Media message
-                await sendMediaMessage(userMobileNumber, videoURL, 'video');
-                await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
-
-                // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
-                await sleep(12000);
-
-                // Remove html tags from the text
-                const lessonText = startingLesson.dataValues.text;
-                const cleanedLessonText = removeHTMLTags(lessonText);
-
-                // Text message
-                await sendMessage(userMobileNumber, "Send us a voice note of you reading this passage.💬");
-                await createActivityLog(userMobileNumber, "text", "outbound", "Send us a voice note of you reading this passage.💬", null);
-
-
-                // Text message
-                await sendMessage(userMobileNumber, "Send us a voice message of you reading this passage:\n\n" + cleanedLessonText);
-                await createActivityLog(userMobileNumber, "text", "outbound", "Send us a voice message of you reading this passage:\n\n" + cleanedLessonText, null);
-            } else if (messageType == 'audio') {
-                // Get the current Read question text
-                const lessonText = startingLesson.dataValues.text;
-
-                // Remove punctuation from the text
-                const textWithoutPunctuation = lessonText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"‘’“”]/g, "");
-
-                // Remove HTML tags from the text
-                const textWithoutPunctuationAndHtmlTags = removeHTMLTags(textWithoutPunctuation);
-
-                // Extract user transcription from words
-                const userTranscription = await azureAIServices.openaiSpeechToText(messageContent.data);
-
-                // Text message
-                await sendMessage(userMobileNumber, "You said: " + userTranscription);
-                await createActivityLog(userMobileNumber, "text", "outbound", "You said: " + userTranscription, null);
-
-                // Azure Pronunciation Assessment
-                const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, textWithoutPunctuationAndHtmlTags);
-
-                const imageUrl = await createAndUploadScoreImage(pronunciationAssessment);
-
-                if (imageUrl) {
-                    // Media message
-                    await sendMediaMessage(userMobileNumber, imageUrl, 'image');
-                    await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
-                    await sleep(5000);
-                }
-
-                // Save user response to the database
-                const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
-                const uniqueID = uuidv4();
-                const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
-                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
-                const submissionDate = new Date();
-                await waQuestionResponsesRepository.create(
-                    userMobileNumber,
-                    startingLesson.dataValues.LessonId,
-                    null,
-                    activity,
-                    startingLesson.dataValues.activityAlias,
-                    [userTranscription],
-                    [userAudioFileUrl],
-                    null,
-                    null,
-                    [pronunciationAssessment],
-                    null,
-                    1,
-                    submissionDate
-                );
-
-                // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["apply for course"]);
-                await waUserProgressRepository.update(
-                    userMobileNumber,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                )
-                await waUserProgressRepository.updateEngagementType(userMobileNumber, 'Apply for Course');
-
-                // Sleep
-                await sleep(2000);
-
-                // Reply Buttons
-                await sendButtonMessage(userMobileNumber, '👏🏽Demo Complete! 🤓', [{ id: 'apply_for_course', title: 'Apply for Course' }]);
-                await createActivityLog(userMobileNumber, "template", "outbound", "Apply for Course", null);
-                return;
-            }
-        }
-        else if (activity == 'conversationalQuestionsBot') {
-            if (currentUserState.dataValues.questionNumber === null) {
-                // Lesson Started Record
-                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
-
-                // Send lesson message
-                let lessonMessage = "Now let's practice speaking English!";
-
-                // Text message
-                await sendMessage(userMobileNumber, lessonMessage);
-                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
-
-                // Send Conversation Bot Question
-                const firstConversationBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
-
-                // Update question number
-                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstConversationBotQuestion.dataValues.questionNumber);
-
-                // Send question media file
-                await sendMediaMessage(userMobileNumber, firstConversationBotQuestion.dataValues.mediaFile, 'audio');
-                await createActivityLog(userMobileNumber, "audio", "outbound", firstConversationBotQuestion.dataValues.mediaFile, null);
-
-                // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
-                return;
-            }
-            else if (messageType === 'audio') {
-                // Get the current Conversation Bot question
-                const currentConversationBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
-
-                // OpenAI Speech to Text
-                const recognizedText = await azureAIServices.openaiSpeechToText(messageContent.data);
-                if (recognizedText) {
-                    const message = `Please wait for an answer. \n\nYou said: ${recognizedText}`;
-                    await sendMessage(userMobileNumber, message);
-                    await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-
-                    // OpenAI Feedback
-                    let openaiFeedbackTranscript = await azureAIServices.openaiFeedback(recognizedText);
-
-                    // Extract corrected version of the answer
-                    const correctedVersion = openaiFeedbackTranscript.match(/\[CORRECTED\](.*?)\[\/CORRECTED\]/);
-                    if (correctedVersion) {
-                        openaiFeedbackTranscript = openaiFeedbackTranscript.replace(/\[CORRECTED\](.*?)\[\/CORRECTED\]/, '');
-                    }
-
-                    // Azure Text to Speech
-                    const openaiFeedbackAudio = await azureAIServices.azureTextToSpeechAndUpload(openaiFeedbackTranscript);
-
-                    // Media message
-                    await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
-                    await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
-                    await sleep(5000);
-
-                    // Send corrected version of the answer
-                    if (correctedVersion) {
-                        let correctMessage = "A corrected version of your answer is: " + correctedVersion[1];
-                        await sendMessage(userMobileNumber, correctMessage);
-                        await createActivityLog(userMobileNumber, "text", "outbound", correctMessage, null);
-                    }
-
-                    // Save user response to the database
-                    const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
-                    const uniqueID = uuidv4();
-                    const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
-                    const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
-                    const submissionDate = new Date();
-                    await waQuestionResponsesRepository.create(
-                        userMobileNumber,
-                        currentUserState.dataValues.currentLessonId,
-                        currentConversationBotQuestion.dataValues.id,
-                        activity,
-                        startingLesson.dataValues.activityAlias,
-                        [recognizedText],
-                        [userAudioFileUrl],
-                        [openaiFeedbackTranscript],
-                        [openaiFeedbackAudio],
-                        null,
-                        null,
-                        1,
-                        submissionDate
-                    );
-
-                    const nextConversationBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
-                    if (nextConversationBotQuestion) {
-                        // Update question number
-                        await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextConversationBotQuestion.dataValues.questionNumber);
-
-                        // Media message
-                        await sendMediaMessage(userMobileNumber, nextConversationBotQuestion.dataValues.mediaFile, 'audio');
-                        await createActivityLog(userMobileNumber, "audio", "outbound", nextConversationBotQuestion.dataValues.mediaFile, null);
-                    } else {
-                        // Reset Question Number, Retry Counter, and Activity Type
-                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
-
-                        // Update acceptable messages list for the user
-                        await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try next activity", "apply for course"]);
-
-                        // Sleep
-                        await sleep(2000);
-
-                        // Reply Buttons
-                        await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'try_next_activity', title: 'Try Next Activity' }, { id: 'apply_for_course', title: 'Apply for Course' }]);
-                        await createActivityLog(userMobileNumber, "template", "outbound", "Try Next Activity or Apply for Course", null);
-                    }
-                }
-            }
-        }
-    } catch (error) {
-        console.error('Error sending lesson to user:', error);
-        error.fileName = 'chatBotService.js';
-        throw error;
-    };
-};
-
 const outlineMessage = async (userMobileNumber) => {
     await waUserProgressRepository.create({
         phoneNumber: userMobileNumber,
@@ -1400,9 +709,13 @@ const outlineMessage = async (userMobileNumber) => {
         lastUpdated: new Date(),
     });
     // Introduction message
-    const botIntroMessage = await extractConstantMessage("onboarding_bot_introduction_message");
-    await sendMessage(userMobileNumber, botIntroMessage);
-    await createActivityLog(userMobileNumber, "text", "outbound", botIntroMessage, null);
+    let firstMessage = "Assalam o Alaikum 👋\nWelcome to Beaj Self Development Course for Teachers!";
+    await sendMessage(userMobileNumber, firstMessage);
+    await createActivityLog(userMobileNumber, "text", "outbound", firstMessage, null);
+
+    let secondMessage = "Meet your instructors👇🏽";
+    await sendMessage(userMobileNumber, secondMessage);
+    await createActivityLog(userMobileNumber, "text", "outbound", secondMessage, null);
 
     // Introduction Video picked from DB
     const introVideoLink = await extractConstantMessage("intro_video");
@@ -1413,8 +726,9 @@ const outlineMessage = async (userMobileNumber) => {
     await sleep(12000);
 
     // Text Message
-    await sendMessage(userMobileNumber, "Here is the Course Outline");
-    await createActivityLog(userMobileNumber, "text", "outbound", "Here is the Course Outline", null);
+    let outlineMessage = "Here is the Course Outline!";
+    await sendMessage(userMobileNumber, outlineMessage);
+    await createActivityLog(userMobileNumber, "text", "outbound", outlineMessage, null);
 
     // Outline Image picked from DB
     const outlineImageLink = await extractConstantMessage("level_one_course_outline");
@@ -1425,11 +739,11 @@ const outlineMessage = async (userMobileNumber) => {
     await sleep(5000);
 
     // Apply for Course or Start Free Demo
-    await sendButtonMessage(userMobileNumber, 'Apply for the English course now or start a free demo.', [{ id: 'apply_for_english_course', title: 'Apply for Course' }, { id: 'start_free_demo', title: 'Start Free Demo' }]);
-    await createActivityLog(userMobileNumber, "template", "outbound", "Apply for Course or Start Free Demo", null);
+    await sendButtonMessage(userMobileNumber, 'Apply for a scholarship to the course or take a free demo:', [{ id: 'apply_for_scholarship', title: 'Apply for Scholarship' }, { id: 'free_demo', title: 'Free Demo' }]);
+    await createActivityLog(userMobileNumber, "template", "outbound", "Apply for a scholarship to the course or take a free demo", null);
 
     // Update acceptable messages list for the user
-    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["apply for course", "start free demo"]);
+    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["apply for scholarship", "free demo"]);
     return;
 };
 
@@ -1473,7 +787,8 @@ const teacherInputMessage = async (userMobileNumber) => {
 
 const schoolNameInputMessage = async (userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(userMobileNumber, "School Input");
-    let schoolNameMessage = "If Yes, type the name of the school you teach at.\nIf No, type 'NO'.\n\nاگر ہاں, تو اپنے سکول کا نام لکھیں۔\nاگر نہیں، تو لکھیں 'NO'."
+    // let schoolNameMessage = "If Yes, type the name of the school you teach at.\nIf No, type 'NO'.\n\nاگر ہاں, تو اپنے سکول کا نام لکھیں۔\nاگر نہیں، تو لکھیں 'NO'."
+    let schoolNameMessage = "If Yes, type the name of the school you teach at.\nاگر ہاں, تو اپنے سکول کا نام لکھیں۔\n\nIf No, type 'NO'.\n.اگر نہیں، تو لکھیں 'NO'."
     await sendMessage(userMobileNumber, schoolNameMessage);
     await createActivityLog(userMobileNumber, "text", "outbound", schoolNameMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["text"]);
@@ -1481,7 +796,7 @@ const schoolNameInputMessage = async (userMobileNumber) => {
 };
 
 const thankYouMessage = async (userMobileNumber) => {
-    const message = "Thank You! Your application is complete. Our team will call you soon!\n\nشکریہ! آپ کی درخواست مکمل ہو گئی ہے۔ ہماری ٹیم جلد ہی آپ کو کال کرے گی!"
+    const message = "Thank You! We will call you soon!\n\nشکریہ! ہماری ٹیم جلد ہی آپ کو کال کرے گی!"
     await sendMessage(userMobileNumber, message);
     await createActivityLog(userMobileNumber, "text", "outbound", message, null);
 
@@ -1519,7 +834,7 @@ const demoCourseStart = async (userMobileNumber, startingLesson) => {
 const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUserState, currentLesson, messageType, messageContent) => {
     const acceptableMessagesList = currentUserState.dataValues.acceptableMessages;
     const activityType = currentUserState.dataValues.activityType;
-    if (activityType === "listenAndSpeak" || activityType === "postListenAndSpeak" || activityType === "preListenAndSpeak" || activityType === "watchAndSpeak" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "read") {
+    if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "read") {
         if (acceptableMessagesList.includes("audio") && messageType === "audio") {
             return true;
         }
@@ -1714,8 +1029,24 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
     // Activity Complete Sticker
     const activityCompleteSticker = await extractConstantMessage("activity_complete_sticker");
     await sendMediaMessage(userMobileNumber, activityCompleteSticker, 'sticker');
+    await createActivityLog(userMobileNumber, "sticker", "outbound", activityCompleteSticker, null);
 
     await sleep(3000);
+
+
+    if (currentUserState.dataValues.engagement_type == "Free Demo") {
+        // Update acceptable messages list for the user
+        await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try next activity", "apply for course"]);
+
+        // Sleep
+        await sleep(2000);
+
+        // Reply Buttons
+        await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'try_next_activity', title: 'Try Next Activity' }, { id: 'apply_for_course', title: 'Apply for Course' }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "Try Next Activity or Apply for Course", null);
+
+        return;
+    }
 
     // FOR ALL ACTIVITIES
     // Check if the lesson is the last lesson of the day
@@ -1745,7 +1076,6 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         // Week end score image
         if (startingLesson.dataValues.dayNumber == 6) {
             const weekEndScore = await weekEndScoreCalculation(userMobileNumber, startingLesson.dataValues.weekNumber, currentUserState.currentCourseId);
-            console.log("Week End Score 2: ", weekEndScore);
             const weekEndScoreImage = await weekEndImage(weekEndScore, startingLesson.dataValues.weekNumber);
             await sendMediaMessage(userMobileNumber, weekEndScoreImage, 'image');
             await createActivityLog(userMobileNumber, "image", "outbound", weekEndScoreImage, null);
@@ -1840,7 +1170,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
             // Ending Message
             await endingMessage(userMobileNumber, currentUserState, startingLesson);
         }
-        else if (activity == 'mcqs' || activity == 'postMCQs' || activity == 'preMCQs') {
+        else if (activity == 'mcqs') {
             if (currentUserState.dataValues.questionNumber === null) {
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
@@ -2054,7 +1384,8 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 await sleep(12000);
 
                 // Send question text
-                let message = "Puri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
+                const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
+                let message = "Question " + firstWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + ".\n\n Puri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
                 await sendMessage(userMobileNumber, message);
                 await createActivityLog(userMobileNumber, "text", "outbound", message, null);
 
@@ -2117,7 +1448,8 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     await sleep(12000);
 
                     // Send question text
-                    let message = "Puri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
+                    const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
+                    let message = "Question " + nextWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + ".\n\n Puri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
 
                     // Text message
                     await sendMessage(userMobileNumber, message);
@@ -2131,7 +1463,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 }
             }
         }
-        else if (activity == 'listenAndSpeak' || activity == 'preListenAndSpeak' || activity == 'postListenAndSpeak') {
+        else if (activity == 'listenAndSpeak') {
             if (currentUserState.dataValues.questionNumber === null) {
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
@@ -2276,12 +1608,12 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextListenAndSpeakQuestion.dataValues.questionNumber);
 
                         // Media message
-                        await sendMediaMessage(userMobileNumber, nextListenAndSpeakQuestion.dataValues.mediaFile, 'audio');
-                        await createActivityLog(userMobileNumber, "audio", "outbound", nextListenAndSpeakQuestion.dataValues.mediaFile, null);
+                        // await sendMediaMessage(userMobileNumber, nextListenAndSpeakQuestion.dataValues.mediaFile, 'audio');
+                        // await createActivityLog(userMobileNumber, "audio", "outbound", nextListenAndSpeakQuestion.dataValues.mediaFile, null);
 
                         // Update acceptable messages list for the user
                         await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
-                        await sleep(5000);
+                        // await sleep(5000);
 
                         // Text message
                         const questionText = nextListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
@@ -2797,7 +2129,6 @@ export {
     outlineMessage,
     createActivityLog,
     extractConstantMessage,
-    sendDemoLessonToUser,
     getAcceptableMessagesList,
     nameInputMessage,
     districtInputMessage,

@@ -107,6 +107,14 @@ const deleteByLessonId = async (lessonId) => {
     });
 };
 
+const getTotalQuestionsByLessonId = async (lessonId) => {
+    return await SpeakActivityQuestion.count({
+        where: {
+            lessonId: lessonId
+        }
+    });
+};
+
 
 export default {
     create,
@@ -118,5 +126,6 @@ export default {
     getNextSpeakActivityQuestion,
     getByLessonIds,
     getByLessonId,
-    deleteByLessonId
+    deleteByLessonId,
+    getTotalQuestionsByLessonId
 };

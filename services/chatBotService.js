@@ -8,9 +8,7 @@ import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import {
     outlineMessage,
     createActivityLog,
-    extractConstantMessage,
     retrieveMediaURL,
-    sendDemoLessonToUser,
     nameInputMessage,
     districtInputMessage,
     thankYouMessage,
@@ -33,7 +31,7 @@ import {
 dotenv.config();
 const whatsappVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN;
 
-let activity_types_to_repeat = ['mcqs', 'watchAndSpeak', 'listenAndSpeak', 'postListenAndSpeak', 'preListenAndSpeak', 'postMCQs', 'preMCQs', 'read', 'conversationalQuestionsBot', 'conversationalMonologueBot', 'conversationalAgencyBot'];
+let activity_types_to_repeat = ['mcqs', 'watchAndSpeak', 'listenAndSpeak', 'read', 'conversationalQuestionsBot', 'conversationalMonologueBot', 'conversationalAgencyBot'];
 
 const testService = async (req, res) => {
     const userMobileNumber = "+923225036358";
@@ -120,8 +118,7 @@ const webhookService = async (body, res) => {
 
             // DEMO COURSE
             // Step 1: If user does not exist, check if the first message is the onboarding message
-            const onboardingFirstMessage = await extractConstantMessage('onboarding_first_message');
-            if (!user && onboardingFirstMessage.toLowerCase() === messageContent) {
+            if (!user && (messageContent == "start" || messageContent == "start!")) {
                 await waUsersMetadataRepository.create({ phoneNumber: userMobileNumber, userClickedLink: new Date() });
                 await outlineMessage(userMobileNumber);
                 return;
@@ -187,8 +184,8 @@ const webhookService = async (body, res) => {
                 }
             }
 
-            // From step 2 if user clicks 'Start Free Demo' button
-            if ((message.type == 'interactive' || message.type == 'text') && (messageContent.toLowerCase().includes('start free demo'))) {
+            // DEMO COURSE
+            if ((message.type == 'interactive' || message.type == 'text') && (messageContent.toLowerCase().includes('free demo'))) {
                 if (currentUserState.dataValues.engagement_type == 'Outline Message') {
                     await waUsersMetadataRepository.update(userMobileNumber, { freeDemoStarted: new Date() });
                     const startingLesson = await lessonRepository.getNextLesson(
@@ -200,7 +197,7 @@ const webhookService = async (body, res) => {
                     await demoCourseStart(userMobileNumber, startingLesson);
                     // Send first lesson to user
                     currentUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
-                    await sendDemoLessonToUser(userMobileNumber, currentUserState, startingLesson, messageType, messageContent);
+                    await sendCourseLessonToUser(userMobileNumber, currentUserState, startingLesson, messageType, messageContent);
                     return;
                 }
             }
@@ -240,7 +237,7 @@ const webhookService = async (body, res) => {
                         const latestUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
 
                         // Send next lesson to user
-                        await sendDemoLessonToUser(userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
+                        await sendCourseLessonToUser(userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
                         return;
                     }
                 }
@@ -257,7 +254,7 @@ const webhookService = async (body, res) => {
                     await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, acceptableMessagesList);
 
                     // Update user progress to next question
-                    await sendDemoLessonToUser(userMobileNumber, currentUserState, currentLesson, messageType, messageContent);
+                    await sendCourseLessonToUser(userMobileNumber, currentUserState, currentLesson, messageType, messageContent);
                     return;
                 }
             }
@@ -320,8 +317,6 @@ const webhookService = async (body, res) => {
                     return;
                 }
             }
-
-
 
             if ((message.type === 'text' || message.type === 'interactive')) {
                 if (messageContent.toLowerCase().includes('start next activity') || messageContent.toLowerCase().includes('start next lesson')) {
