@@ -1079,19 +1079,19 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
             await sleep(2000);
 
             // Reply Buttons
-            await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'try_demo_again', title: 'Try Demo Again' }, { id: 'apply_for_course', title: 'Apply Scholarship' }]);
+            await sendButtonMessage(userMobileNumber, '👏🏽Demo Complete! 🤓', [{ id: 'try_demo_again', title: 'Try Demo Again' }, { id: 'apply_for_course', title: 'Apply Scholarship' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Try Demo Again or Apply Scholarship", null);
 
             return;
         } else if (checkRegistrationComplete == true && lessonLast == true) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try demo again"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try demo again", "i want to start my course"]);
 
             // Sleep
             await sleep(2000);
 
             // Reply Buttons
-            await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'try_demo_again', title: 'Try Demo Again' }]);
+            await sendButtonMessage(userMobileNumber, '👏🏽Demo Complete! 🤓', [{ id: 'try_demo_again', title: 'Try Demo Again' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Try Demo Again", null);
 
             return;
@@ -1109,7 +1109,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
             return;
         } else if (checkRegistrationComplete == true && lessonLast == false) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try next activity"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try next activity", "i want to start my course"]);
 
             // Sleep
             await sleep(2000);
@@ -1569,9 +1569,11 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 await sleep(5000);
 
                 // Send question text
+                const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
                 const questionText = firstListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
-                await sendMessage(userMobileNumber, questionText);
-                await createActivityLog(userMobileNumber, "text", "outbound", questionText, null);
+                let message = "Question " + firstListenAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + ":\n\n" + questionText;
+                await sendMessage(userMobileNumber, message);
+                await createActivityLog(userMobileNumber, "text", "outbound", message, null);
 
                 return;
             } else if (messageType === 'audio') {
@@ -1687,9 +1689,11 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         // await sleep(5000);
 
                         // Text message
+                        const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
                         const questionText = nextListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
-                        await sendMessage(userMobileNumber, questionText);
-                        await createActivityLog(userMobileNumber, "text", "outbound", questionText, null);
+                        let message = "Question " + nextListenAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + ":\n\n" + questionText;
+                        await sendMessage(userMobileNumber, message);
+                        await createActivityLog(userMobileNumber, "text", "outbound", message, null);
                     } else {
                         // Calculate total score and send message
                         const totalScore = await waQuestionResponsesRepository.getTotalScore(userMobileNumber, currentUserState.dataValues.currentLessonId);

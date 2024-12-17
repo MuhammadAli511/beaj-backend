@@ -4,6 +4,7 @@ import courseRepository from '../repositories/courseRepository.js';
 import lessonRepository from '../repositories/lessonRepository.js';
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
+import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRepository.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import {
     outlineMessage,
@@ -195,6 +196,8 @@ const webhookService = async (body, res) => {
                     if (user.dataValues.freeDemoStarted == null) {
                         await waUsersMetadataRepository.update(userMobileNumber, { freeDemoStarted: new Date() });
                     }
+                    // Delete all question responses for the user
+                    await waQuestionResponsesRepository.deleteByPhoneNumber(userMobileNumber);
                     const startingLesson = await lessonRepository.getNextLesson(
                         await courseRepository.getCourseIdByName("Free Trial"),
                         1,
