@@ -16,11 +16,12 @@ import azureBlobStorage from "./azureBlobStorage.js";
 import azureAIServices from '../utils/azureAIServices.js';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
-import { createCanvas, registerFont } from 'canvas';
+import { createCanvas, registerFont, loadImage } from 'canvas';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import OpenAI from "openai";
 import lessonRepository from "../repositories/lessonRepository.js";
+import fs from 'fs';
 
 dotenv.config();
 
@@ -176,13 +177,14 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
             return null;
         };
 
-        const pronounciationScoreNumber = Math.round(pronunciationAssessment.scoreNumber.pronScore);
         const fluencyScoreNumber = Math.round(pronunciationAssessment.scoreNumber.fluencyScore);
+        const accuracyScoreNumber = Math.round(pronunciationAssessment.scoreNumber.accuracyScore);
+        const completenessScoreNumber = Math.round(pronunciationAssessment.scoreNumber.compScore);
         const words = pronunciationAssessment.words;
 
         // Set up canvas dimensions
         const width = 900;
-        const height = 800;
+        const height = 850;
         const canvas = createCanvas(width, height);
         const ctx = canvas.getContext('2d');
 
@@ -190,49 +192,70 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, width, height);
 
-        // Load and add the company logo in the top-right corner
-        // const image = await loadImage(logoPath);  // Path to the logo image
-        // ctx.drawImage(image, width - 160, 20, image.width / 7.5, image.height / 7.5);
+        // Load and add the company logo in the top - right corner
+        const image = await loadImage("https://beajbloblive.blob.core.windows.net/beajdocuments/logo.jpeg");  // Path to the logo image
+        ctx.drawImage(image, width - 160, 20, image.width / 7.5, image.height / 7.5);
 
         // Add "YOUR SCORE" Title
         ctx.font = 'bold 40px Arial';
         ctx.fillStyle = '#000000';
         ctx.fillText('YOUR SCORE', 50, 80);
 
+        // Add "Completeness" Bar with dynamic score
+        ctx.font = '25px Arial';
+        ctx.fillText('Sentence Completion', 50, 120);
+
+        // Draw light magenta background bar for full length
+        ctx.fillStyle = '#eecef7';
+        ctx.fillRect(50, 125, 790, 40);
+
+        // Draw dark magenta foreground bar for actual score
+        ctx.fillStyle = '#cb6ce6';
+        ctx.fillRect(50, 125, 790 * (completenessScoreNumber / 100), 40);
+
+        // Add score text inside the bar
+        ctx.fillStyle = '#000000';
+        // Position till the end of dark magenta bar
+        ctx.fillText(`${completenessScoreNumber}%`, 50 + 790 * (completenessScoreNumber / 100) - 70, 155);
+
+
         // Add "Pronunciation" Bar with dynamic score
         ctx.font = '25px Arial';
-        ctx.fillText('Pronunciation', 50, 150);
+        ctx.fillText('Correct Pronunciation', 50, 215);
 
         // Draw light blue background bar for full length
         ctx.fillStyle = '#B2EBF2';
-        ctx.fillRect(50, 160, 790, 40);
+        ctx.fillRect(50, 220, 790, 40);
 
         // Draw dark blue foreground bar for actual score
         ctx.fillStyle = '#30D5C8';
-        ctx.fillRect(50, 160, 790 * (pronounciationScoreNumber / 100), 40);
+        ctx.fillRect(50, 220, 790 * (accuracyScoreNumber / 100), 40);
 
         // Add score text inside the bar
         ctx.fillStyle = '#000000';
-        ctx.fillText(`${pronounciationScoreNumber}%`, 50 + 790 * (pronounciationScoreNumber / 100) - 70, 187);
+        // Position till the end of dark blue bar
+        ctx.fillText(`${accuracyScoreNumber}%`, 50 + 790 * (accuracyScoreNumber / 100) - 70, 250);
+
 
         // Add "Fluency" Bar with dynamic score
-        ctx.fillText('Fluency', 50, 250);
+        ctx.font = '25px Arial';
+        ctx.fillText('Fluency', 50, 310);
 
         // Draw light yellow background bar for full length
         ctx.fillStyle = '#F0F4C3';
-        ctx.fillRect(50, 260, 790, 40);
+        ctx.fillRect(50, 315, 790, 40);
 
         // Draw darker yellow foreground bar for actual score
         ctx.fillStyle = '#C7EA46';
-        ctx.fillRect(50, 260, 790 * (fluencyScoreNumber / 100), 40);
+        ctx.fillRect(50, 315, 790 * (fluencyScoreNumber / 100), 40);
 
         // Add score text inside the bar
         ctx.fillStyle = '#000000';
-        ctx.fillText(`${fluencyScoreNumber}%`, 50 + 790 * (fluencyScoreNumber / 100) - 70, 287);
+        ctx.fillText(`${fluencyScoreNumber}%`, 50 + 790 * (fluencyScoreNumber / 100) - 70, 345);
 
         // Add "You said" section
         ctx.font = 'bold 30px Arial';
-        ctx.fillText('You said', 50, 380);
+        ctx.fillText('You said', 50, 410);
 
         // Create a paragraph format for the text
         ctx.font = '25px Arial';
@@ -240,7 +263,7 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
         const maxWidth = 850;
         let lineHeight = 40;
         let cursorX = marginLeft;
-        let cursorY = 430; // Starting Y position for the text
+        let cursorY = 450; // Starting Y position for the text
 
         // Loop through words and handle line breaks
         words.forEach((wordObj) => {
@@ -250,6 +273,7 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
             }
             const word = wordObj.Word;
             const errorType = wordObj.PronunciationAssessment.ErrorType;
+            const wordAccuracyScore = wordObj.PronunciationAssessment.AccuracyScore;
             const wordWidth = ctx.measureText(word).width + 15; // Measure width of the word
 
             // If the word exceeds the max width, move to a new line
@@ -258,7 +282,7 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
                 cursorY += lineHeight; // Move to the next line
             }
 
-            if (errorType === 'Mispronunciation') {
+            if (errorType === 'Mispronunciation' || wordAccuracyScore < 50) {
                 // Highlight mispronounced words in yellow
                 ctx.fillStyle = '#FFD700'; // Yellow
                 ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
@@ -286,18 +310,18 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
         // Mispronounced Words Legend (Yellow Circle)
         ctx.fillStyle = '#FFD700'; // Yellow color
         ctx.beginPath(); // Start a new path
-        ctx.arc(60, 760, 10, 0, 2 * Math.PI); // Draw a circle
+        ctx.arc(60, 820, 10, 0, 2 * Math.PI);
         ctx.fill(); // Fill the circle
         ctx.fillStyle = '#000000';
-        ctx.fillText('Mispronounced Words', 80, 767);
+        ctx.fillText('Mispronounced Words', 80, 827);
 
         // Skipped Words Legend (Grey Circle)
         ctx.fillStyle = '#A9A9A9'; // Grey color
         ctx.beginPath(); // Start a new path
-        ctx.arc(350, 760, 10, 0, 2 * Math.PI); // Draw a circle
+        ctx.arc(350, 820, 10, 0, 2 * Math.PI);
         ctx.fill(); // Fill the circle
         ctx.fillStyle = '#000000';
-        ctx.fillText('Skipped Words', 380, 767);
+        ctx.fillText('Skipped Words', 370, 827);
 
         // Convert the canvas to a buffer
         const buffer = canvas.toBuffer('image/jpeg');
@@ -726,7 +750,7 @@ const outlineMessage = async (userMobileNumber) => {
     await sleep(12000);
 
     // Text Message
-    let outlineMessage = "Here is the Course Outline!";
+    let outlineMessage = "Here is the course outline: ";
     await sendMessage(userMobileNumber, outlineMessage);
     await createActivityLog(userMobileNumber, "text", "outbound", outlineMessage, null);
 
@@ -739,11 +763,11 @@ const outlineMessage = async (userMobileNumber) => {
     await sleep(5000);
 
     // Apply for Course or Start Free Demo
-    await sendButtonMessage(userMobileNumber, 'Apply for a scholarship to the course or take a free demo:', [{ id: 'apply_for_scholarship', title: 'Apply for Scholarship' }, { id: 'free_demo', title: 'Free Demo' }]);
+    await sendButtonMessage(userMobileNumber, 'Apply for a scholarship to the course or take a free demo:', [{ id: 'apply_for_scholarship', title: 'Apply Scholarship' }, { id: 'free_demo', title: 'Free Demo' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", "Apply for a scholarship to the course or take a free demo", null);
 
     // Update acceptable messages list for the user
-    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["apply for scholarship", "free demo"]);
+    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["apply scholarship", "free demo"]);
     return;
 };
 
@@ -804,7 +828,14 @@ const thankYouMessage = async (userMobileNumber) => {
     const registrationImage = await extractConstantMessage("registration");
     await sendMediaMessage(userMobileNumber, registrationImage, 'image');
     await createActivityLog(userMobileNumber, "image", "outbound", registrationImage, null);
-    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["i want to start my course"]);
+    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["i want to start my course", "try demo"]);
+
+    await sleep(2000);
+
+    // Send Button Message (Try Demo)
+    await sendButtonMessage(userMobileNumber, 'Application Complete! 🤩', [{ id: 'try_demo', title: 'Try Demo' }]);
+    await createActivityLog(userMobileNumber, "template", "outbound", "Application Complete! 🤩", null);
+
     return;
 };
 
@@ -879,7 +910,7 @@ const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUs
 };
 
 const sendWrongMessages = async (userMobileNumber) => {
-    let message = "Please write: \n\nI want to learn English with Beaj";
+    let message = "Please write: \n\nStart";
     await sendMessage(userMobileNumber, message);
     await createActivityLog(userMobileNumber, "text", "outbound", message, null);
     return;
@@ -1033,25 +1064,65 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
 
     await sleep(3000);
 
-
-    if (currentUserState.dataValues.engagement_type == "Free Demo") {
-        // Update acceptable messages list for the user
-        await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try next activity", "apply for course"]);
-
-        // Sleep
-        await sleep(2000);
-
-        // Reply Buttons
-        await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'try_next_activity', title: 'Try Next Activity' }, { id: 'apply_for_course', title: 'Apply for Course' }]);
-        await createActivityLog(userMobileNumber, "template", "outbound", "Try Next Activity or Apply for Course", null);
-
-        return;
-    }
-
-    // FOR ALL ACTIVITIES
     // Check if the lesson is the last lesson of the day
     const lessonLast = await lessonRepository.isLastLessonOfDay(startingLesson.dataValues.LessonId);
 
+
+    if (currentUserState.dataValues.engagement_type == "Free Demo") {
+        let user = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
+        let checkRegistrationComplete = user.dataValues.userRegistrationComplete !== null;
+        if (checkRegistrationComplete == false && lessonLast == true) {
+            // Update acceptable messages list for the user
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try demo again", "apply scholarship"]);
+
+            // Sleep
+            await sleep(2000);
+
+            // Reply Buttons
+            await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'try_demo_again', title: 'Try Demo Again' }, { id: 'apply_for_course', title: 'Apply Scholarship' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Try Demo Again or Apply Scholarship", null);
+
+            return;
+        } else if (checkRegistrationComplete == true && lessonLast == true) {
+            // Update acceptable messages list for the user
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try demo again"]);
+
+            // Sleep
+            await sleep(2000);
+
+            // Reply Buttons
+            await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'try_demo_again', title: 'Try Demo Again' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Try Demo Again", null);
+
+            return;
+        } else if (checkRegistrationComplete == false && lessonLast == false) {
+            // Update acceptable messages list for the user
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try next activity", "apply scholarship"]);
+
+            // Sleep
+            await sleep(2000);
+
+            // Reply Buttons
+            await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'try_next_activity', title: 'Try Next Activity' }, { id: 'apply_for_course', title: 'Apply Scholarship' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Try Next Activity or Apply Scholarship", null);
+
+            return;
+        } else if (checkRegistrationComplete == true && lessonLast == false) {
+            // Update acceptable messages list for the user
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try next activity"]);
+
+            // Sleep
+            await sleep(2000);
+
+            // Reply Buttons
+            await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'try_next_activity', title: 'Try Next Activity' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Try Next Activity", null);
+
+            return;
+        }
+    }
+
+    // FOR ALL ACTIVITIES
     if (lessonLast) {
         const courseName = await courseRepository.getCourseNameById(currentUserState.currentCourseId);
         const strippedCourseName = courseName.split("-")[0].trim();
@@ -1385,7 +1456,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                 // Send question text
                 const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
-                let message = "Question " + firstWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + ".\n\n Puri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
+                let message = "Question " + firstWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + ":\n\nPuri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
                 await sendMessage(userMobileNumber, message);
                 await createActivityLog(userMobileNumber, "text", "outbound", message, null);
 
@@ -1449,7 +1520,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                     // Send question text
                     const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
-                    let message = "Question " + nextWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + ".\n\n Puri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
+                    let message = "Question " + nextWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + ":\n\nPuri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
 
                     // Text message
                     await sendMessage(userMobileNumber, message);
