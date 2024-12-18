@@ -763,11 +763,11 @@ const outlineMessage = async (userMobileNumber) => {
     await sleep(5000);
 
     // Apply for Course or Start Free Demo
-    await sendButtonMessage(userMobileNumber, 'Apply for a scholarship to the course or take a free demo:', [{ id: 'apply_for_scholarship', title: 'Apply Scholarship' }, { id: 'free_demo', title: 'Free Demo' }]);
+    await sendButtonMessage(userMobileNumber, 'Apply for a scholarship to the course or take a free demo:', [{ id: 'apply_for_scholarship', title: 'Apply Scholarship' }, { id: 'try_free_demo', title: 'Try Free Demo' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", "Apply for a scholarship to the course or take a free demo", null);
 
     // Update acceptable messages list for the user
-    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["apply scholarship", "free demo"]);
+    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["apply scholarship", "try free demo"]);
     return;
 };
 
@@ -1195,7 +1195,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
             // Send lesson message
             let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-            lessonMessage += "\n" + removeHTMLTags(startingLesson.dataValues.text);
+            lessonMessage += "\n\n" + removeHTMLTags(startingLesson.dataValues.text);
 
             // Text message
             await sendMessage(userMobileNumber, lessonMessage);
@@ -1218,7 +1218,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
             // Send lesson message
             let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-            lessonMessage += "\n" + removeHTMLTags(startingLesson.dataValues.text);
+            lessonMessage += "\n\n" + removeHTMLTags(startingLesson.dataValues.text);
 
             // Text message
             await sendMessage(userMobileNumber, lessonMessage);
@@ -1253,7 +1253,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 if (activityAlias == "*End of Week Challenge!* 💪🏽") {
                     // Send lesson message
                     let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                    lessonMessage += "\n" + "Answer the following questions.";
+                    lessonMessage += "\n\n" + "Answer the following questions.";
                     // Text message
                     await sendMessage(userMobileNumber, lessonMessage);
                     await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
@@ -1262,7 +1262,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     await createActivityLog(userMobileNumber, "text", "outbound", "Let's Start Questions👇🏽", null);
                 } else if (activityAlias == "*Reading Comprehension* 📖") {
                     let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                    lessonMessage += "\n" + "Answer the following questions about the reading passage.";
+                    lessonMessage += "\n\n" + "Answer the following questions about the reading passage.";
                     // Text message
                     await sendMessage(userMobileNumber, lessonMessage);
                     await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
@@ -1439,7 +1439,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                 // Send lesson message
                 let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\nWatch the videos. Then practice speaking by sending voice messages. 💬";
+                lessonMessage += "\n\nWatch the videos. Then practice speaking by sending voice messages. 💬";
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
@@ -1754,7 +1754,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                 // Send lesson message
                 let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\nListen to the passage carefully.";
+                lessonMessage += "\n\nListen to the passage carefully.";
                 // Text message
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
@@ -1842,7 +1842,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
 
                 let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\nListen to the audio and send your answer as a voice message.";
+                lessonMessage += "\n\nListen to the audio and send your answer as a voice message.";
 
                 // Text message
                 await sendMessage(userMobileNumber, lessonMessage);
@@ -2030,7 +2030,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                 // Send lesson message
                 let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\nListen to the audio and send your answer as a voice message.";
+                lessonMessage += "\n\nListen to the audio and send your answer as a voice message.";
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 

@@ -189,7 +189,7 @@ const webhookService = async (body, res) => {
 
 
             // DEMO COURSE
-            let messagesList = ["free demo", "try demo again", "try demo"];
+            let messagesList = ["try free demo", "try demo again", "try demo"];
             if ((message.type == 'interactive' || message.type == 'text') && (messagesList.includes(messageContent.toLowerCase()))) {
                 let validEngagementTypes = ['Outline Message', 'Free Demo', 'School Input'];
                 if (validEngagementTypes.includes(currentUserState.dataValues.engagement_type)) {
