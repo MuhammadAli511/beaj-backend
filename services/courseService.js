@@ -97,7 +97,7 @@ const duplicateCourseService = async (id) => {
             const lesson = lessons[i].dataValues;
             const newLesson = await lessonRepository.create(lesson.lessonType, lesson.dayNumber, lesson.activity, lesson.activityAlias, lesson.weekNumber, lesson.text, newCourse.CourseId, lesson.SequenceNumber, lesson.status);
 
-            if (lesson.activity == 'listenAndSpeak' || lesson.activity == 'postListenAndSpeak' || lesson.activity == 'preListenAndSpeak' || lesson.activity == 'watchAndSpeak' || lesson.activity == 'conversationalQuestionsBot' || lesson.activity == 'conversationalMonologueBot' || lesson.activity == 'conversationalAgencyBot') {
+            if (lesson.activity == 'listenAndSpeak' || lesson.activity == 'watchAndSpeak' || lesson.activity == 'conversationalQuestionsBot' || lesson.activity == 'conversationalMonologueBot' || lesson.activity == 'conversationalAgencyBot') {
                 // SPEAK ACTIVITY QUESTIONS
                 // Get original speak activity questions
                 const speakActivityQuestions = await speakActivityQuestionRepository.getByLessonId(lesson.LessonId);
@@ -106,7 +106,7 @@ const duplicateCourseService = async (id) => {
                     const speakActivityQuestion = speakActivityQuestions[j].dataValues;
                     await speakActivityQuestionRepository.create(speakActivityQuestion.question, speakActivityQuestion.mediaFile, speakActivityQuestion.answer, newLesson.LessonId, speakActivityQuestion.questionNumber);
                 }
-            } else if (lesson.activity == 'mcqs' || lesson.activity == 'preMCQs' || lesson.activity == 'postMCQs') {
+            } else if (lesson.activity == 'mcqs') {
                 // MULTIPLE CHOICE QUESTIONS
                 // Get original multiple choice questions
                 const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonId(lesson.LessonId);
