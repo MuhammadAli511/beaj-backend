@@ -116,11 +116,11 @@ const weekEndImage = async (score, week) => {
         ctx.font = 'bold 60px Arial';
         let remark = '';
         if (parseInt(score) <= 60) {
-            remark = "Good Effort! 👍🏽";
+            remark = "Good Effort!";
         } else if (parseInt(score) <= 79) {
-            remark = "Well done! 🌟";
+            remark = "Well done!";
         } else {
-            remark = "Excellent 🎉";
+            remark = "Excellent";
         }
         ctx.fillText(remark, centerX, centerY + 300);
 
