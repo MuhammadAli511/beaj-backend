@@ -2212,11 +2212,13 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                 // Extract text between <question></question> tags from firstConversationalAgencyBotQuestion.question
                 const questionText = firstConversationalAgencyBotQuestion.dataValues.question.match(/<question>(.*?)<\/question>/s)[1].trim();
-                if (firstConversationalAgencyBotQuestion.dataValues.mediaFile != null && firstConversationalAgencyBotQuestion.dataValues.mediaFile != "") {
+                let questionAudio = "";
+                if (firstConversationalAgencyBotQuestion.dataValues.mediaFile != null && firstConversationalAgencyBotQuestion.dataValues.mediaFile.includes("http")) {
                     questionAudio = firstConversationalAgencyBotQuestion.dataValues.mediaFile;
                 } else {
                     questionAudio = await azureAIServices.azureTextToSpeechAndUpload(questionText);
                 }
+                console.log("Question Audio: ", questionAudio);
 
                 // Update question number
                 await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstConversationalAgencyBotQuestion.dataValues.questionNumber);
