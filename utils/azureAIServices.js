@@ -60,34 +60,39 @@ async function uploadAudioToAzure(audioData) {
 };
 
 async function azureTextToSpeechAndUpload(text) {
-    const client = new ElevenLabsClient({
-        apiKey: process.env.ELEVENLABS_API_KEY,
-    });
-    const audio = await client.generate({
-        voice: "NH0AbpVpD8W8R6jnEwVU",
-        model_id: "eleven_multilingual_v2",
-        text,
-    });
-
-    // Save to temporary file and then read it as a buffer
-    const tempFileName = `temp-${uuidv4()}.mp3`;
-    const tempFilePath = join(tmpdir(), tempFileName);
-    const tempFileStream = fs.createWriteStream(tempFilePath);
-    audio.pipe(tempFileStream);
-
-    return new Promise((resolve, reject) => {
-        tempFileStream.on("finish", async () => {
-            try {
-                const audioBuffer = fs.readFileSync(tempFilePath);
-                const audioUrl = await uploadAudioToAzure(audioBuffer);
-                resolve(audioUrl);
-            } catch (err) {
-                reject(err);
-            } finally {
-                fs.unlinkSync(tempFilePath);
-            }
+    try {
+        const client = new ElevenLabsClient({
+            apiKey: process.env.ELEVENLABS_API_KEY,
         });
-    });
+        const audio = await client.generate({
+            voice: "NH0AbpVpD8W8R6jnEwVU",
+            model_id: "eleven_multilingual_v2",
+            text,
+        });
+
+        // Save to temporary file and then read it as a buffer
+        const tempFileName = `temp-${uuidv4()}.mp3`;
+        const tempFilePath = join(tmpdir(), tempFileName);
+        const tempFileStream = fs.createWriteStream(tempFilePath);
+        audio.pipe(tempFileStream);
+
+        return new Promise((resolve, reject) => {
+            tempFileStream.on("finish", async () => {
+                try {
+                    const audioBuffer = fs.readFileSync(tempFilePath);
+                    const audioUrl = await uploadAudioToAzure(audioBuffer);
+                    resolve(audioUrl);
+                } catch (err) {
+                    reject(err);
+                } finally {
+                    fs.unlinkSync(tempFilePath);
+                }
+            });
+        });
+    } catch (error) {
+        console.error("Error during text-to-speech generation:", error);
+        throw error;
+    }
 }
 
 
@@ -500,7 +505,7 @@ async function azurePronunciationAssessment(audioBuffer, referenceText) {
     });
 }
 
-async function azurePronunciationSpeakingAssessment(audioBuffer) {
+async function azureSpeakingAssessment(audioBuffer, topic) {
     return new Promise(async (resolve, reject) => {
         try {
             const wavBuffer = await convertOggToWav(audioBuffer);
@@ -526,22 +531,94 @@ async function azurePronunciationSpeakingAssessment(audioBuffer) {
                     "",
                     sdk.PronunciationAssessmentGradingSystem.HundredMark,
                     sdk.PronunciationAssessmentGranularity.Phoneme,
-                    false
+                    true
                 );
             pronunciationAssessmentConfig.enableProsodyAssessment = true;
+            pronunciationAssessmentConfig.enableContentAssessmentWithTopic(topic);
             pronunciationAssessmentConfig.applyTo(recognizer);
 
-            var results = [];
-            var recognizedText = "";
+            let recognizedText = "";
+            let results = [];
 
             recognizer.recognized = function (s, e) {
                 var jo = JSON.parse(e.result.properties.getProperty(sdk.PropertyId.SpeechServiceResponse_JsonResult));
                 if (jo.DisplayText != ".") {
-                    console.log(`Recognizing: ${jo.DisplayText}`);
                     recognizedText += jo.DisplayText + " ";
                 }
                 results.push(jo);
-            };
+            }
+
+            function onRecognizedResult() {
+                try {
+                    let finalOutput = {
+                        "recognizedText": recognizedText,
+                        "pronunciationAssessment": {
+                            AccuracyScore: 0,
+                            FluencyScore: 0,
+                            CompletenessScore: 0,
+                            PronScore: 0,
+                            ProsodyScore: 0
+                        },
+                        "contentAssessment": null,
+                        "words": {}
+                    };
+
+                    let validResultsCount = 0;
+                    // Process all results except the last one for pronunciation assessment
+                    for (let i = 0; i < results.length; i++) {
+                        if (results[i]?.NBest?.[0]?.PronunciationAssessment) {
+                            const currentAssessment = results[i].NBest[0].PronunciationAssessment;
+
+                            // Accumulate scores
+                            finalOutput.pronunciationAssessment.AccuracyScore += currentAssessment.AccuracyScore;
+                            finalOutput.pronunciationAssessment.FluencyScore += currentAssessment.FluencyScore;
+                            finalOutput.pronunciationAssessment.CompletenessScore += currentAssessment.CompletenessScore;
+                            finalOutput.pronunciationAssessment.PronScore += currentAssessment.PronScore;
+                            finalOutput.pronunciationAssessment.ProsodyScore += currentAssessment.ProsodyScore;
+
+                            validResultsCount++;
+
+                            // Process words
+                            const wordsList = results[i].NBest[0].Words;
+                            for (const word of wordsList) {
+                                finalOutput.words[word.Word] = {
+                                    Word: word.Word,
+                                    AccuracyScore: word.PronunciationAssessment.AccuracyScore,
+                                    ErrorType: word.PronunciationAssessment.ErrorType
+                                };
+                            }
+                        }
+
+                        // Check for content assessment in the current chunk
+                        if (results[i]?.NBest?.[0]?.ContentAssessment) {
+                            finalOutput.contentAssessment = results[i].NBest[0].ContentAssessment;
+                        }
+                    }
+
+                    // Calculate averages if we have valid results
+                    if (validResultsCount > 0) {
+                        finalOutput.pronunciationAssessment.AccuracyScore /= validResultsCount;
+                        finalOutput.pronunciationAssessment.FluencyScore /= validResultsCount;
+                        finalOutput.pronunciationAssessment.CompletenessScore /= validResultsCount;
+                        finalOutput.pronunciationAssessment.PronScore /= validResultsCount;
+                        finalOutput.pronunciationAssessment.ProsodyScore /= validResultsCount;
+
+                        // Round the scores to 2 decimal places
+                        for (let key in finalOutput.pronunciationAssessment) {
+                            finalOutput.pronunciationAssessment[key] =
+                                Math.round(finalOutput.pronunciationAssessment[key] * 100) / 100;
+                        }
+                    }
+
+                    return finalOutput;
+                } catch (error) {
+                    console.error("Error in onRecognizedResult:", error);
+                    return {
+                        "recognizedText": recognizedText,
+                        "error": error.message
+                    };
+                }
+            }
 
             recognizer.canceled = function (s, e) {
                 if (e.reason === sdk.CancellationReason.Error) {
@@ -554,10 +631,13 @@ async function azurePronunciationSpeakingAssessment(audioBuffer) {
             recognizer.sessionStopped = function (s, e) {
                 recognizer.stopContinuousRecognitionAsync();
                 recognizer.close();
-                resolve(results);
+                const result = onRecognizedResult();
+                resolve(result);
             };
 
             recognizer.startContinuousRecognitionAsync();
+
+
         } catch (err) {
             console.error("Error during pronunciation assessment:", err);
             reject(err);
@@ -609,7 +689,8 @@ export default {
     openaiFeedback,
     openaiSpeechToText,
     openaiCustomFeedback,
-    azurePronunciationSpeakingAssessment,
+    azureSpeakingAssessment,
     openaiSpeechToTextAnyLanguage,
     azureSpeechToTextAnyLanguage
 };
+
