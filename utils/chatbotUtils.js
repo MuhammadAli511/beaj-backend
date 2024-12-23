@@ -969,7 +969,7 @@ const getNextCourse = async (userMobileNumber) => {
                 }
             }
         }
-        const sortedNotCompletedPurchasedCourse = purchaseCourses.sort((a, b) => a.dataValues.sequenceNumber - b.dataValues.sequenceNumber);
+        const sortedNotCompletedPurchasedCourse = notCompletedPurchasedCourse.sort((a, b) => a.dataValues.sequenceNumber - b.dataValues.sequenceNumber);
         const nextCourse = sortedNotCompletedPurchasedCourse[0];
         return nextCourse;
     }
