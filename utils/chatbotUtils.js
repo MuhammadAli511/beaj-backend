@@ -488,8 +488,10 @@ const createAndUploadSpeakingScoreImage = async (results) => {
 }
 
 const getAcceptableMessagesList = async (activityType) => {
-    if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot") {
+    if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot") {
         return ["audio"];
+    } else if (activityType === "watchAndImage") {
+        return ["image"];
     }
 };
 
@@ -891,10 +893,18 @@ const demoCourseStart = async (userMobileNumber, startingLesson) => {
 const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUserState, currentLesson, messageType, messageContent) => {
     const acceptableMessagesList = currentUserState.dataValues.acceptableMessages;
     const activityType = currentUserState.dataValues.activityType;
-    if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "read") {
+    if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "read") {
         if (acceptableMessagesList.includes("audio") && messageType === "audio") {
             return true;
         }
+    }
+    else if (activityType === "watchAndImage" && messageType === "image") {
+        return true;
+    }
+    else if (activityType === "watchAndImage" && messageType != "image") {
+        await sendMessage(userMobileNumber, "Image bhejain.");
+        await createActivityLog(userMobileNumber, "text", "outbound", "Image bhejain.", null);
+        return false;
     }
     else if (messageType === "text" && acceptableMessagesList.includes("text")) {
         return true;
@@ -1556,6 +1566,138 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     // Text message
                     await sendMessage(userMobileNumber, message);
                     await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+                } else {
+                    // Reset Question Number, Retry Counter, and Activity Type
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+
+                    // ENDING MESSAGE
+                    await endingMessage(userMobileNumber, currentUserState, startingLesson);
+                }
+            }
+        }
+        else if (activity == 'watchAndAudio') {
+            if (currentUserState.dataValues.questionNumber === null) {
+                // Lesson Started Record
+                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
+
+                // Send lesson message
+                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
+                lessonMessage += "\n\nWatch the videos. Then send voice message response. 💬";
+                await sendMessage(userMobileNumber, lessonMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+
+                // Send first Watch and Speak question
+                const firstWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
+
+                // Update question number
+                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.questionNumber);
+
+                // Send question media file
+                await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
+                await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
+
+                // Update acceptable messages list for the user
+                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
+            } else if (messageType === 'audio') {
+                // Get the current Watch And Speak question
+                const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+
+                // Save user response to the database
+                const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
+                const uniqueID = uuidv4();
+                const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
+                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                const submissionDate = new Date();
+                await waQuestionResponsesRepository.create(
+                    userMobileNumber,
+                    currentUserState.dataValues.currentLessonId,
+                    currentWatchAndSpeakQuestion.dataValues.id,
+                    activity,
+                    startingLesson.dataValues.activityAlias,
+                    null,
+                    [userAudioFileUrl],
+                    null,
+                    null,
+                    null,
+                    null,
+                    1,
+                    submissionDate
+                );
+
+                const nextWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                if (nextWatchAndSpeakQuestion) {
+                    // Update question number
+                    await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.questionNumber);
+
+                    // Send question media file
+                    await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
+                    await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
+                } else {
+                    // Reset Question Number, Retry Counter, and Activity Type
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+
+                    // ENDING MESSAGE
+                    await endingMessage(userMobileNumber, currentUserState, startingLesson);
+                }
+            }
+        }
+        else if (activity == 'watchAndImage') {
+            if (currentUserState.dataValues.questionNumber === null) {
+                // Lesson Started Record
+                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
+
+                // Send lesson message
+                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
+                lessonMessage += "\n\nWatch the videos. Then send an image response.";
+                await sendMessage(userMobileNumber, lessonMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+
+                // Send first Watch and Speak question
+                const firstWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
+
+                // Update question number
+                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.questionNumber);
+
+                // Send question media file
+                await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
+                await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
+
+                // Update acceptable messages list for the user
+                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["image"]);
+            } else if (messageType === 'image') {
+                // Get the current Watch And Speak question
+                const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+
+                // Save user response to the database
+                const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
+                const uniqueID = uuidv4();
+                const userImage = `${timestamp}-${uniqueID}-` + "imageFile.jpg";
+                const userImageFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userImage);
+                const submissionDate = new Date();
+                await waQuestionResponsesRepository.create(
+                    userMobileNumber,
+                    currentUserState.dataValues.currentLessonId,
+                    currentWatchAndSpeakQuestion.dataValues.id,
+                    activity,
+                    startingLesson.dataValues.activityAlias,
+                    null,
+                    [userImageFileUrl],
+                    null,
+                    null,
+                    null,
+                    null,
+                    1,
+                    submissionDate
+                );
+
+                const nextWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                if (nextWatchAndSpeakQuestion) {
+                    // Update question number
+                    await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.questionNumber);
+
+                    // Send question media file
+                    await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
+                    await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
                 } else {
                     // Reset Question Number, Retry Counter, and Activity Type
                     await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);

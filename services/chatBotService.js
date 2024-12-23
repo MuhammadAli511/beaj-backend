@@ -32,12 +32,7 @@ import {
 dotenv.config();
 const whatsappVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN;
 
-let activity_types_to_repeat = ['mcqs', 'watchAndSpeak', 'listenAndSpeak', 'read', 'conversationalQuestionsBot', 'conversationalMonologueBot', 'conversationalAgencyBot'];
-
-const testService = async (req, res) => {
-    const userMobileNumber = "+923225036358";
-    await weekEndScoreCalculation(userMobileNumber, 1, 104);
-};
+let activity_types_to_repeat = ['mcqs', 'watchAndSpeak', 'listenAndSpeak', 'read', 'conversationalQuestionsBot', 'conversationalMonologueBot', 'conversationalAgencyBot', 'watchAndAudio', 'watchAndImage'];
 
 const verifyWebhookService = async (req, res) => {
     try {
@@ -542,4 +537,4 @@ const webhookService = async (body, res) => {
     }
 };
 
-export default { webhookService, verifyWebhookService, testService };
+export default { webhookService, verifyWebhookService };
