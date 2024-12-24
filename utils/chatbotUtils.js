@@ -1596,6 +1596,14 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
                 await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
 
+                await sleep(12000);
+
+                // Lesson Text
+                let lessonText = startingLesson.dataValues.text;
+                lessonText = removeHTMLTags(lessonText);
+                await sendMessage(userMobileNumber, lessonText);
+                await createActivityLog(userMobileNumber, "text", "outbound", lessonText, null);
+
                 // Update acceptable messages list for the user
                 await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
             } else if (messageType === 'audio') {
