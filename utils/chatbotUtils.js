@@ -2054,9 +2054,9 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     let openaiFeedbackTranscript = await azureAIServices.openaiFeedback(recognizedText);
 
                     // Extract corrected version of the answer
-                    const correctedVersion = openaiFeedbackTranscript.match(/\[CORRECTED\](.*?)\[\/CORRECTED\]/);
+                    const correctedVersion = openaiFeedbackTranscript.match(/\[IMPROVED\](.*?)\[\/IMPROVED\]/);
                     if (correctedVersion) {
-                        openaiFeedbackTranscript = openaiFeedbackTranscript.replace(/\[CORRECTED\](.*?)\[\/CORRECTED\]/, '');
+                        openaiFeedbackTranscript = openaiFeedbackTranscript.replace(/\[IMPROVED\](.*?)\[\/IMPROVED\]/, '');
                     }
 
                     // Azure Text to Speech
