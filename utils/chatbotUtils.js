@@ -1750,11 +1750,9 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 await sleep(5000);
 
                 // Send question text
-                const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
                 const questionText = firstListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
-                let message = "Question " + firstListenAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + ":\n\n" + questionText;
-                await sendMessage(userMobileNumber, message);
-                await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+                await sendMessage(userMobileNumber, questionText);
+                await createActivityLog(userMobileNumber, "text", "outbound", questionText, null);
 
                 return;
             } else if (messageType === 'audio') {
@@ -1870,11 +1868,9 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         // await sleep(5000);
 
                         // Text message
-                        const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
                         const questionText = nextListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
-                        let message = "Question " + nextListenAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + ":\n\n" + questionText;
-                        await sendMessage(userMobileNumber, message);
-                        await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+                        await sendMessage(userMobileNumber, questionText);
+                        await createActivityLog(userMobileNumber, "text", "outbound", questionText, null);
                     } else {
                         // Calculate total score and send message
                         const totalScore = await waQuestionResponsesRepository.getTotalScore(userMobileNumber, currentUserState.dataValues.currentLessonId);
