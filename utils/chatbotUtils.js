@@ -1326,7 +1326,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                 // Send question
                 const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(firstMCQsQuestion.dataValues.Id);
-                let mcqMessage = firstMCQsQuestion.dataValues.QuestionText + "\n";
+                let mcqMessage = firstMCQsQuestion.dataValues.QuestionText + "\n\n";
                 if (firstMCQsQuestion.dataValues.QuestionText != "Choose the correct sentence.") {
                     mcqMessage += "Choose the correct answer.\n";
                 }
@@ -1408,7 +1408,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                     // Send question
                     const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(nextMCQsQuestion.dataValues.Id);
-                    let mcqMessage = nextMCQsQuestion.dataValues.QuestionText + "\n";
+                    let mcqMessage = nextMCQsQuestion.dataValues.QuestionText + "\n\n";
                     if (nextMCQsQuestion.dataValues.QuestionText != "Choose the correct sentence.") {
                         mcqMessage += "Choose the correct answer.\n";
                     }
