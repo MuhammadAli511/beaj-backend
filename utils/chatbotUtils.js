@@ -1511,7 +1511,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, currentWatchAndSpeakQuestion.dataValues.answer[0]);
 
                 // Extract user transcription from words
-                const userTranscription = pronunciationAssessment.words.map(word => word.Word).join(' ');
+                const userTranscription = await azureAIServices.openaiSpeechToText(messageContent.data);
 
                 // Text message
                 await sendMessage(userMobileNumber, "You said: " + userTranscription);
@@ -1969,7 +1969,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, textWithoutPunctuationAndHtmlTags);
 
                 // Extract user transcription from words
-                const userTranscription = pronunciationAssessment.words.map(word => word.Word).join(' ');
+                const userTranscription = await azureAIServices.openaiSpeechToText(messageContent.data);
 
                 // Text message
                 await sendMessage(userMobileNumber, "You said: " + userTranscription);
