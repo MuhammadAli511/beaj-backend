@@ -1029,15 +1029,17 @@ const startCourseForUser = async (userMobileNumber) => {
     await sendMessage(userMobileNumber, intro_message);
     await createActivityLog(userMobileNumber, "text", "outbound", intro_message, null);
 
-    // Send demo_video
-    const demoVideoLink = await extractConstantMessage("demo_video");
-    await sendMediaMessage(userMobileNumber, demoVideoLink, 'video');
-    await createActivityLog(userMobileNumber, "video", "outbound", demoVideoLink, null);
-    await sleep(12000);
-
     // Extract Level from courseName
     const courseName = nextCourse.dataValues.courseName.split("-");
     const level = courseName[0].trim();
+
+    if (level == "Level 1") {
+        // Send demo_video
+        const demoVideoLink = await extractConstantMessage("demo_video");
+        await sendMediaMessage(userMobileNumber, demoVideoLink, 'video');
+        await createActivityLog(userMobileNumber, "video", "outbound", demoVideoLink, null);
+        await sleep(12000);
+    }
 
     // Send Button Message
     // "Are you ready to start level"
@@ -2267,12 +2269,12 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                     let threadMessages1 = await openai.beta.threads.messages.list(chatThread);
                     let attempts = 0;
-                    while ((!threadMessages1.data[0].content[0] || threadMessages1.data[0].content[0].text.value == firstPrompt) && attempts < 10) {
+                    while ((!threadMessages1.data[0].content[0] || threadMessages1.data[0].content[0].text.value == firstPrompt) && attempts < 30) {
                         console.log("Thinking...");
                         await new Promise(resolve => setTimeout(resolve, 1000));
                         threadMessages1 = await openai.beta.threads.messages.list(chatThread);
                         attempts++;
-                        if (attempts >= 10) {
+                        if (attempts >= 30) {
                             await sendMessage(userMobileNumber, "Please try again.");
                             await createActivityLog(userMobileNumber, "text", "outbound", "Please try again.", null);
                             return;
