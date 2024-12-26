@@ -2201,7 +2201,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
             }
         }
         else if (activity == 'conversationalAgencyBot') {
-            if (currentUserState.dataValues.questionNumber === null) {
+            if (currentUserState.dataValues.questionNumber == null) {
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
 
@@ -2222,7 +2222,6 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 } else {
                     questionAudio = await azureAIServices.azureTextToSpeechAndUpload(questionText);
                 }
-                console.log("Question Audio: ", questionAudio);
 
                 // Update question number
                 await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstConversationalAgencyBotQuestion.dataValues.questionNumber);
@@ -2239,132 +2238,78 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 const currentConversationalAgencyBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                 const recognizedText = await azureAIServices.openaiSpeechToTextAnyLanguage(messageContent.data);
                 if (recognizedText) {
-                    console.log("Recognized Text: ", recognizedText);
+                    let chatThread;
+                    let chatThreadMain;
                     if (currentUserState.dataValues.questionNumber == 1) {
-                        const chatThread = await openai.beta.threads.create();
+                        chatThreadMain = await openai.beta.threads.create();
+                        chatThread = chatThreadMain.id;
                         await waUserProgressRepository.updateOpenaiThreadId(userMobileNumber, null);
-                        await waUserProgressRepository.updateOpenaiThreadId(userMobileNumber, chatThread.id);
-                        let firstPrompt = currentConversationalAgencyBotQuestion.dataValues.question;
-                        firstPrompt += "\n\n\nMy response: " + recognizedText;
-
-                        await openai.beta.threads.messages.create(
-                            chatThread.id,
-                            {
-                                role: "user", content: firstPrompt
-                            }
-                        );
-
-                        await openai.beta.threads.runs.create(
-                            chatThread.id,
-                            { assistant_id: "asst_6zTBy1Esn6WuM9pLujyfT3y8" }
-                        );
-
-                        let threadMessages1 = await openai.beta.threads.messages.list(chatThread.id);
-                        let attempts = 0;
-                        while ((!threadMessages1.data[0].content[0] || threadMessages1.data[0].content[0].text.value == firstPrompt) && attempts < 10) {
-                            console.log("Thinking...");
-                            await new Promise(resolve => setTimeout(resolve, 1000));
-                            threadMessages1 = await openai.beta.threads.messages.list(chatThread.id);
-                            attempts++;
-                            if (attempts >= 10) {
-                                await sendMessage(userMobileNumber, "Please try again.");
-                                await createActivityLog(userMobileNumber, "text", "outbound", "Please try again.", null);
-                                return;
-                            }
-                        }
-
-                        // console.log(threadMessages1.data[0].content[0].text.value);
-                        const audioLink = await azureAIServices.azureTextToSpeechAndUpload(threadMessages1.data[0].content[0].text.value);
-                        await sendMediaMessage(userMobileNumber, audioLink, 'audio');
-                        await createActivityLog(userMobileNumber, "audio", "outbound", audioLink, null);
-
-                        // Save to question responses
-                        const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
-                        const uniqueID = uuidv4();
-                        const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
-                        const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
-                        const submissionDate = new Date();
-                        await waQuestionResponsesRepository.create(
-                            userMobileNumber,
-                            currentUserState.dataValues.currentLessonId,
-                            currentConversationalAgencyBotQuestion.dataValues.id,
-                            activity,
-                            startingLesson.dataValues.activityAlias,
-                            [recognizedText],
-                            [userAudioFileUrl],
-                            [threadMessages1.data[0].content[0].text.value],
-                            [audioLink],
-                            null,
-                            null,
-                            1,
-                            submissionDate
-                        );
-
-                        // Update question number
-                        await waUserProgressRepository.updateQuestionNumber(userMobileNumber, 2);
-
-                        // Update acceptable messages list for the user
-                        await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
-                        return;
-                    }
-                    else if (currentUserState.dataValues.questionNumber == 2) {
-                        let chatThread = await waUserProgressRepository.getOpenaiThreadId(userMobileNumber);
+                        await waUserProgressRepository.updateOpenaiThreadId(userMobileNumber, chatThread);
+                    } else {
+                        chatThread = await waUserProgressRepository.getOpenaiThreadId(userMobileNumber);
                         chatThread = chatThread.dataValues.openaiThreadId;
-                        let secondPrompt = currentConversationalAgencyBotQuestion.dataValues.question;
-                        secondPrompt += "\n\n\nMy response: " + recognizedText;
+                    }
 
-                        await openai.beta.threads.messages.create(
-                            chatThread,
-                            {
-                                role: "user", content: secondPrompt
-                            }
-                        );
+                    let firstPrompt = currentConversationalAgencyBotQuestion.dataValues.question;
+                    firstPrompt += "\n\n\nMy response: " + recognizedText;
 
-                        await openai.beta.threads.runs.create(
-                            chatThread,
-                            { assistant_id: "asst_6zTBy1Esn6WuM9pLujyfT3y8" }
-                        );
-
-                        let threadMessages1 = await openai.beta.threads.messages.list(chatThread);
-                        let attempts = 0;
-                        while ((!threadMessages1.data[0].content[0] || threadMessages1.data[0].content[0].text.value == secondPrompt) && attempts < 10) {
-                            console.log("Thinking...");
-                            await new Promise(resolve => setTimeout(resolve, 1000));
-                            threadMessages1 = await openai.beta.threads.messages.list(chatThread);
-                            attempts++;
-                            if (attempts >= 10) {
-                                await sendMessage(userMobileNumber, "Please try again.");
-                                await createActivityLog(userMobileNumber, "text", "outbound", "Please try again.", null);
-                                return;
-                            }
+                    await openai.beta.threads.messages.create(
+                        chatThread,
+                        {
+                            role: "user", content: firstPrompt
                         }
+                    );
 
-                        const audioLink = await azureAIServices.azureTextToSpeechAndUpload(threadMessages1.data[0].content[0].text.value);
-                        await sendMediaMessage(userMobileNumber, audioLink, 'audio');
-                        await createActivityLog(userMobileNumber, "audio", "outbound", audioLink, null);
+                    await openai.beta.threads.runs.create(
+                        chatThread,
+                        { assistant_id: "asst_6zTBy1Esn6WuM9pLujyfT3y8" }
+                    );
 
-                        // Save to question responses
-                        const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
-                        const uniqueID = uuidv4();
-                        const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
-                        const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
-                        const submissionDate = new Date();
-                        await waQuestionResponsesRepository.create(
-                            userMobileNumber,
-                            currentUserState.dataValues.currentLessonId,
-                            currentConversationalAgencyBotQuestion.dataValues.id,
-                            activity,
-                            startingLesson.dataValues.activityAlias,
-                            [recognizedText],
-                            [userAudioFileUrl],
-                            [threadMessages1.data[0].content[0].text.value],
-                            [audioLink],
-                            null,
-                            null,
-                            1,
-                            submissionDate
-                        );
+                    let threadMessages1 = await openai.beta.threads.messages.list(chatThread);
+                    let attempts = 0;
+                    while ((!threadMessages1.data[0].content[0] || threadMessages1.data[0].content[0].text.value == firstPrompt) && attempts < 10) {
+                        console.log("Thinking...");
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        threadMessages1 = await openai.beta.threads.messages.list(chatThread);
+                        attempts++;
+                        if (attempts >= 10) {
+                            await sendMessage(userMobileNumber, "Please try again.");
+                            await createActivityLog(userMobileNumber, "text", "outbound", "Please try again.", null);
+                            return;
+                        }
+                    }
 
+                    const audioLink = await azureAIServices.azureTextToSpeechAndUpload(threadMessages1.data[0].content[0].text.value);
+                    await sendMediaMessage(userMobileNumber, audioLink, 'audio');
+                    await createActivityLog(userMobileNumber, "audio", "outbound", audioLink, null);
+
+                    // Save to question responses
+                    const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
+                    const uniqueID = uuidv4();
+                    const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
+                    const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                    const submissionDate = new Date();
+                    await waQuestionResponsesRepository.create(
+                        userMobileNumber,
+                        currentUserState.dataValues.currentLessonId,
+                        currentConversationalAgencyBotQuestion.dataValues.id,
+                        activity,
+                        startingLesson.dataValues.activityAlias,
+                        [recognizedText],
+                        [userAudioFileUrl],
+                        [threadMessages1.data[0].content[0].text.value],
+                        [audioLink],
+                        null,
+                        null,
+                        1,
+                        submissionDate
+                    );
+
+                    const nextConversationalAgencyBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                    if (nextConversationalAgencyBotQuestion) {
+                        // Update question number
+                        await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextConversationalAgencyBotQuestion.dataValues.questionNumber);
+                    } else {
                         // Reset Question Number, Retry Counter, and Activity Type
                         await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
 

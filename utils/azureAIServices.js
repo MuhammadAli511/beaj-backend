@@ -153,7 +153,7 @@ async function openaiSpeechToTextAnyLanguage(audioBuffer) {
         const transcription = await openai.audio.transcriptions.create({
             file: fs.createReadStream(tempFilePath),
             model: "whisper-1",
-            language: 'en'
+            language: 'ur'
         });
         return transcription.text;
     } finally {
