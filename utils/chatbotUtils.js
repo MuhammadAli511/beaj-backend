@@ -2240,6 +2240,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 const currentConversationalAgencyBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                 const recognizedText = await azureAIServices.openaiSpeechToTextAnyLanguage(messageContent.data);
                 if (recognizedText) {
+                    console.log("Recognized Text: ", recognizedText);
                     let chatThread;
                     let chatThreadMain;
                     if (currentUserState.dataValues.questionNumber == 1) {
