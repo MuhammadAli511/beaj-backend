@@ -2253,7 +2253,17 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         chatThread = chatThread.dataValues.openaiThreadId;
                     }
 
-                    let firstPrompt = currentConversationalAgencyBotQuestion.dataValues.question;
+
+                    // Language Detection
+                    let modelLanguagePrompt = "Detect the majority of the language used in the provided text. Respond in one word only. The two options are: English or Urdu. You must respond with only one word."
+                    const openaiFeedback = await azureAIServices.openaiCustomFeedback(recognizedText, modelLanguagePrompt);
+                    console.log("Language Detection: ", openaiFeedback);
+                    if (openaiFeedback.toLowerCase().includes("english")) {
+                        modelLanguagePrompt = "Respond in simple English."
+                    } else {
+                        modelLanguagePrompt = "Use simple, easy-to-understand Urdu language, not jargon to respond."
+                    }
+                    let firstPrompt = currentConversationalAgencyBotQuestion.dataValues.question + "\n\n\n" + modelLanguagePrompt;
                     firstPrompt += "\n\n\nMy response: " + recognizedText;
 
                     await openai.beta.threads.messages.create(
