@@ -267,6 +267,11 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
 
         // Loop through words and handle line breaks
         words.forEach((wordObj) => {
+            // If undefined, skip the word
+            if (wordObj == undefined) {
+                return;
+            }
+
             // If not Mispronunciation, Omission, or None, skip the word
             if (!['Mispronunciation', 'Omission', 'None'].includes(wordObj.PronunciationAssessment.ErrorType)) {
                 return;
