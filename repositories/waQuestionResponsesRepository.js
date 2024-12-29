@@ -327,13 +327,16 @@ const monologueScoreForList = async (phoneNumber, lessonIdList) => {
         let grammarScore = 0;
 
         if (jsonArray && jsonArray.length > 0) {
-            const parsedJson = jsonArray[0][0]; // Access the first JSON object directly
-            if (parsedJson && parsedJson.NBest && parsedJson.NBest.length > 0) {
-                const assessment = parsedJson.NBest[0].PronunciationAssessment;
-                if (assessment) {
-                    accuracyScore = assessment.AccuracyScore;
-                    fluencyScore = assessment.FluencyScore;
-                    grammarScore = assessment.GrammarScore;
+            const parsedJson = jsonArray[0]; // Access the first JSON object directly
+            if (parsedJson) {
+                const pronAssessment = parsedJson.pronunciationAssessment;
+                if (pronAssessment) {
+                    accuracyScore = pronAssessment.AccuracyScore;
+                    fluencyScore = pronAssessment.FluencyScore;
+                }
+                const contentAssessment = parsedJson.contentAssessment;
+                if (contentAssessment) {
+                    grammarScore = contentAssessment.GrammarScore;
                 }
             }
         }
