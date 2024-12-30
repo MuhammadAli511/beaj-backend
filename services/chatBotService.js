@@ -413,7 +413,7 @@ const webhookService = async (body, res) => {
                     }
 
                     // Daily blocking
-                    let numbers_to_ignore = ['+923331432681', '+923008400080', '+923303418882', '+923345520552', '+923225036358']
+                    let numbers_to_ignore = ['+923331432681', '+923008400080', '+923303418882', '+923345520552', '+923225036358', '+923365560202']
                     if (!numbers_to_ignore.includes(userMobileNumber)) {
                         const course = await courseRepository.getById(currentUserState.dataValues.currentCourseId);
                         const courseStartDate = new Date(course.dataValues.courseStartDate);
