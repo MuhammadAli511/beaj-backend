@@ -33,6 +33,9 @@ const deleteByPhoneNumber = async (phoneNumber) => {
 };
 
 const assignTargetGroup = async (phoneNumber, targetGroup) => {
+    if (targetGroup == "None") {
+        targetGroup = null;
+    }
     return await WA_UsersMetadata.update({
         targetGroup: targetGroup
     }, {
