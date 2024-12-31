@@ -1608,6 +1608,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 // Lesson Text
                 let lessonText = startingLesson.dataValues.text;
                 lessonText = removeHTMLTags(lessonText);
+                lessonText = lessonText.replace(/\\n/g, '\n');
                 await sendMessage(userMobileNumber, lessonText);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonText, null);
 
