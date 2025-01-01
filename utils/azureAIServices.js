@@ -223,41 +223,51 @@ async function azureSpeechToText(audioBuffer) {
 
 async function azureSpeechToTextAnyLanguage(audioBuffer) {
     return new Promise(async (resolve, reject) => {
-        try {
-            const wavBuffer = await convertOggToWav(audioBuffer);
+        const region = process.env.AZURE_CUSTOM_VOICE_REGION;
+        const subscriptionKey = process.env.AZURE_CUSTOM_VOICE_KEY;
+        const endpointUrl = `wss://${region}.stt.speech.microsoft.com/speech/universal/v2`;
+        const wavBuffer = await convertOggToWav(audioBuffer);
+        const audioFormat = sdk.AudioStreamFormat.getWaveFormatPCM(16000, 16, 1);
+        const pushStream = sdk.AudioInputStream.createPushStream(audioFormat);
+        pushStream.write(wavBuffer);
+        pushStream.close();
 
-            const speechConfig = sdk.SpeechConfig.fromSubscription(
-                process.env.AZURE_CUSTOM_VOICE_KEY,
-                process.env.AZURE_CUSTOM_VOICE_REGION
-            );
-            const autoDetectSourceLanguageConfig = sdk.AutoDetectSourceLanguageConfig.fromLanguages(["en-US", "ur-IN"]);
+        const audioConfig = sdk.AudioConfig.fromStreamInput(pushStream);
 
-            const audioFormat = sdk.AudioStreamFormat.getWaveFormatPCM(16000, 16, 1);
 
-            const pushStream = sdk.AudioInputStream.createPushStream(audioFormat);
-            pushStream.write(wavBuffer);
-            pushStream.close();
+        const speechConfig = sdk.SpeechConfig.fromEndpoint(new URL(endpointUrl), subscriptionKey);
 
-            const audioConfig = sdk.AudioConfig.fromStreamInput(pushStream);
+        speechConfig.setProperty(sdk.PropertyId.SpeechServiceConnection_LanguageIdMode, "Continuous");
 
-            const speechRecognizer = sdk.SpeechRecognizer.FromConfig(
-                speechConfig,
-                autoDetectSourceLanguageConfig,
-                audioConfig
-            );
+        const autoDetectSourceLanguageConfig = sdk.AutoDetectSourceLanguageConfig.fromLanguages(["en-US", "ur-IN"]);
 
-            speechRecognizer.recognizeOnceAsync((result) => {
-                switch (result.reason) {
-                    case sdk.ResultReason.RecognizedSpeech:
-                        resolve(result);
-                        break;
-                }
-                speechRecognizer.close();
+        const recognizer = sdk.SpeechRecognizer.FromConfig(speechConfig, autoDetectSourceLanguageConfig, audioConfig);
+
+        let finalTranscription = "";
+
+        // Event handlers
+        recognizer.recognizing = (s, e) => {
+            if (e.result.reason === sdk.ResultReason.RecognizingSpeech) {
+                const autoDetectSourceLanguageResult = sdk.AutoDetectSourceLanguageResult.fromResult(e.result);
+            }
+        };
+
+        recognizer.recognized = (s, e) => {
+            if (e.result.reason === sdk.ResultReason.RecognizedSpeech) {
+                finalTranscription += e.result.text;
+            } else if (e.result.reason === sdk.ResultReason.NoMatch) {
+                console.log("NOMATCH: Speech could not be recognized.");
+            }
+        };
+
+        recognizer.sessionStopped = (s, e) => {
+            recognizer.stopContinuousRecognitionAsync(() => {
+                resolve(finalTranscription);
             });
-        } catch (err) {
-            console.error("Error during speech recognition:", err);
-            reject(err);
-        }
+        };
+
+        // Start continuous recognition
+        recognizer.startContinuousRecognitionAsync();
     });
 }
 

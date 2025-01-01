@@ -2244,8 +2244,11 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
             else if (messageType === 'audio') {
                 // Get the current Conversational Agency Bot question
                 const currentConversationalAgencyBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
-                const recognizedText = await azureAIServices.openaiSpeechToTextAnyLanguage(messageContent.data);
-                if (recognizedText) {
+                let waitingMessage = "Please wait for an answer.";
+                await sendMessage(userMobileNumber, waitingMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", waitingMessage, null);
+                const recognizedText = await azureAIServices.azureSpeechToTextAnyLanguage(messageContent.data);
+                if (recognizedText != null && recognizedText != "") {
                     console.log("Recognized Text: ", recognizedText);
                     let chatThread;
                     let chatThreadMain;
