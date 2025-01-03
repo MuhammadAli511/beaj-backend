@@ -17,10 +17,6 @@ router.post('/webhook', chatBotController.webhookController);
 // GET /chatbot/webhook
 router.get('/webhook', chatBotController.verifyWebhookController);
 
-// TESTING
-// GET /chatbot/test
-router.get('/test', chatBotController.testController);
-
 
 // Use error handler middleware
 router.use(errorHandler);

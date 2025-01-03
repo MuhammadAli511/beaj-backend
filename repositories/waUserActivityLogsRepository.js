@@ -37,14 +37,16 @@ const getCountBySpeciifcMessage = async (message) => {
     });
 };
 
-const getByPhoneNumber = async (phoneNumber) => {
+const getByPhoneNumber = async (phoneNumber, limit = 15, offset = 0) => {
     return await WA_UserActivityLogs.findAll({
         where: {
             phoneNumber: phoneNumber
         },
         order: [
-            ['timestamp', 'ASC']
-        ]
+            ['timestamp', 'DESC']
+        ],
+        limit: limit,
+        offset: offset
     });
 };
 

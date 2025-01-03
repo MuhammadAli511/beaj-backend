@@ -214,23 +214,26 @@ const watchAndSpeakScoreForList = async (phoneNumber, lessonIdList) => {
         const jsonArray = response.get('submittedFeedbackJson'); // Get the JSON array
 
         // Directly access the first element in the JSON array if it exists
-        let pronScore = 0;
+        let accuracyScore = 0;
         let fluencyScore = 0;
+        let compScore = 0;
         if (jsonArray && jsonArray.length > 0) {
             const parsedJson = jsonArray[0]; // Access the first JSON object directly
-            pronScore = parsedJson.scoreNumber.pronScore;
+            accuracyScore = parsedJson.scoreNumber.accuracyScore;
             fluencyScore = parsedJson.scoreNumber.fluencyScore;
+            compScore = parsedJson.scoreNumber.compScore;
         }
 
         // Calculate the combined score for this entry
-        const combinedScore = (pronScore + fluencyScore) / 200 * 2;
+        const combinedScore = (accuracyScore + fluencyScore + compScore) / 300 * 2;
         totalScore += combinedScore; // Accumulate the total score
         maxScore += 2; // Each entry has a max score of 2
 
         return {
             lessonId: response.get('lessonId'),
-            pronScore: pronScore,
+            accuracyScore: accuracyScore,
             fluencyScore: fluencyScore,
+            compScore: compScore,
             combinedScore: combinedScore
         };
     });
@@ -265,23 +268,26 @@ const readScoreForList = async (phoneNumber, lessonIdList) => {
         const jsonArray = response.get('submittedFeedbackJson'); // Get the JSON array
 
         // Directly access the first element in the JSON array if it exists
-        let pronScore = 0;
+        let accuracyScore = 0;
         let fluencyScore = 0;
+        let compScore = 0;
         if (jsonArray && jsonArray.length > 0) {
             const parsedJson = jsonArray[0]; // Access the first JSON object directly
-            pronScore = parsedJson.scoreNumber.pronScore;
+            accuracyScore = parsedJson.scoreNumber.accuracyScore;
             fluencyScore = parsedJson.scoreNumber.fluencyScore;
+            compScore = parsedJson.scoreNumber.compScore;
         }
 
         // Calculate the combined score for this entry with weightage of 6
-        const combinedScore = (pronScore + fluencyScore) / 200 * 6;
+        const combinedScore = (accuracyScore + fluencyScore + compScore) / 300 * 6;
         totalScore += combinedScore; // Accumulate the total score
         maxScore += 6; // Each entry now has a max score of 6
 
         return {
             lessonId: response.get('lessonId'),
-            pronScore: pronScore,
+            accuracyScore: accuracyScore,
             fluencyScore: fluencyScore,
+            compScore: compScore,
             combinedScore: combinedScore
         };
     });
@@ -316,28 +322,34 @@ const monologueScoreForList = async (phoneNumber, lessonIdList) => {
         const jsonArray = response.get('submittedFeedbackJson'); // Get the JSON array
 
         // Directly access the PronScore and FluencyScore if the JSON structure is valid
-        let pronScore = 0;
+        let accuracyScore = 0;
         let fluencyScore = 0;
+        let grammarScore = 0;
 
         if (jsonArray && jsonArray.length > 0) {
-            const parsedJson = jsonArray[0][0]; // Access the first JSON object directly
-            if (parsedJson && parsedJson.NBest && parsedJson.NBest.length > 0) {
-                const assessment = parsedJson.NBest[0].PronunciationAssessment;
-                if (assessment) {
-                    pronScore = assessment.PronScore;
-                    fluencyScore = assessment.FluencyScore;
+            const parsedJson = jsonArray[0]; // Access the first JSON object directly
+            if (parsedJson) {
+                const pronAssessment = parsedJson.pronunciationAssessment;
+                if (pronAssessment) {
+                    accuracyScore = pronAssessment.AccuracyScore;
+                    fluencyScore = pronAssessment.FluencyScore;
+                }
+                const contentAssessment = parsedJson.contentAssessment;
+                if (contentAssessment) {
+                    grammarScore = contentAssessment.GrammarScore;
                 }
             }
         }
         // Calculate the combined score for this entry with weightage of 5
-        const combinedScore = (pronScore + fluencyScore) / 200 * 5;
+        const combinedScore = (accuracyScore + fluencyScore + grammarScore) / 300 * 5;
         totalScore += combinedScore; // Accumulate the total score
         maxScore += 5; // Each entry now has a max score of 5
 
         return {
             lessonId: response.get('lessonId'),
-            pronScore: pronScore,
+            accuracyScore: accuracyScore,
             fluencyScore: fluencyScore,
+            grammarScore: grammarScore,
             combinedScore: combinedScore
         };
     });

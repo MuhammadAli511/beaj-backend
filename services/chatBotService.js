@@ -32,12 +32,7 @@ import {
 dotenv.config();
 const whatsappVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN;
 
-let activity_types_to_repeat = ['mcqs', 'watchAndSpeak', 'listenAndSpeak', 'read', 'conversationalQuestionsBot', 'conversationalMonologueBot', 'conversationalAgencyBot'];
-
-const testService = async (req, res) => {
-    const userMobileNumber = "+923225036358";
-    await weekEndScoreCalculation(userMobileNumber, 1, 104);
-};
+let activity_types_to_repeat = ['mcqs', 'watchAndSpeak', 'listenAndSpeak', 'read', 'conversationalQuestionsBot', 'conversationalMonologueBot', 'conversationalAgencyBot', 'watchAndAudio', 'watchAndImage'];
 
 const verifyWebhookService = async (req, res) => {
     try {
@@ -418,7 +413,7 @@ const webhookService = async (body, res) => {
                     }
 
                     // Daily blocking
-                    let numbers_to_ignore = ['+923331432681', '+923008400080', '+923303418882', '+923345520552', '+923225036358']
+                    let numbers_to_ignore = ['+923331432681', '+923008400080', '+923303418882', '+923345520552', '+923225036358', '+923365560202', '+923328251950']
                     if (!numbers_to_ignore.includes(userMobileNumber)) {
                         const course = await courseRepository.getById(currentUserState.dataValues.currentCourseId);
                         const courseStartDate = new Date(course.dataValues.courseStartDate);
@@ -542,4 +537,4 @@ const webhookService = async (body, res) => {
     }
 };
 
-export default { webhookService, verifyWebhookService, testService };
+export default { webhookService, verifyWebhookService };

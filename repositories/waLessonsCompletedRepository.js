@@ -84,6 +84,15 @@ const deleteByPhoneNumber = async (phoneNumber) => {
     });
 };
 
+const getUniqueStartedCoursesByPhoneNumber = async (phoneNumber) => {
+    const lessonsCompleted = await WA_LessonsCompleted.findAll({
+        where: {
+            phoneNumber: phoneNumber
+        }
+    });
+    return lessonsCompleted.map(lesson => lesson.courseId).filter((value, index, self) => self.indexOf(value) === index);
+};
+
 export default {
     create,
     getAll,
@@ -91,5 +100,6 @@ export default {
     update,
     deleteById,
     endLessonByPhoneNumberAndLessonId,
-    deleteByPhoneNumber
+    deleteByPhoneNumber,
+    getUniqueStartedCoursesByPhoneNumber
 };

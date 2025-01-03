@@ -97,7 +97,7 @@ const duplicateCourseService = async (id) => {
             const lesson = lessons[i].dataValues;
             const newLesson = await lessonRepository.create(lesson.lessonType, lesson.dayNumber, lesson.activity, lesson.activityAlias, lesson.weekNumber, lesson.text, newCourse.CourseId, lesson.SequenceNumber, lesson.status);
 
-            if (lesson.activity == 'listenAndSpeak' || lesson.activity == 'watchAndSpeak' || lesson.activity == 'conversationalQuestionsBot' || lesson.activity == 'conversationalMonologueBot' || lesson.activity == 'conversationalAgencyBot') {
+            if (lesson.activity == 'listenAndSpeak' || lesson.activity == 'watchAndSpeak' || lesson.activity == 'watchAndAudio' || lesson.activity == 'watchAndImage' || lesson.activity == 'conversationalQuestionsBot' || lesson.activity == 'conversationalMonologueBot' || lesson.activity == 'conversationalAgencyBot') {
                 // SPEAK ACTIVITY QUESTIONS
                 // Get original speak activity questions
                 const speakActivityQuestions = await speakActivityQuestionRepository.getByLessonId(lesson.LessonId);

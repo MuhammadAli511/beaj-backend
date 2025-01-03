@@ -7,7 +7,9 @@ const create = async (data) => {
 };
 
 const getAll = async () => {
-    return await WA_UsersMetadata.findAll();
+    return await WA_UsersMetadata.findAll({
+        order: [['userRegistrationComplete', 'ASC']],
+    });
 };
 
 const getByPhoneNumber = async (phoneNumber) => {
@@ -31,6 +33,9 @@ const deleteByPhoneNumber = async (phoneNumber) => {
 };
 
 const assignTargetGroup = async (phoneNumber, targetGroup) => {
+    if (targetGroup == "None") {
+        targetGroup = null;
+    }
     return await WA_UsersMetadata.update({
         targetGroup: targetGroup
     }, {
