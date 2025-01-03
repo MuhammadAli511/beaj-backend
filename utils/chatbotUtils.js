@@ -345,14 +345,16 @@ const createAndUploadSpeakingScoreImage = async (results) => {
         if (results.pronunciationAssessment === undefined || results.pronunciationAssessment === null) {
             return null;
         }
+        let grammarScoreNumber;
 
         if (results.contentAssessment === undefined || results.contentAssessment === null) {
-            return null;
+            grammarScoreNumber = 0;
+        } else {
+            grammarScoreNumber = Math.round(results.contentAssessment.GrammarScore);
         }
 
         const fluencyScoreNumber = Math.round(results.pronunciationAssessment.FluencyScore);
         const accuracyScoreNumber = Math.round(results.pronunciationAssessment.AccuracyScore);
-        const grammarScoreNumber = Math.round(results.contentAssessment.GrammarScore);
         const words = Object.values(results.words);
 
         // Set up canvas dimensions
@@ -365,8 +367,8 @@ const createAndUploadSpeakingScoreImage = async (results) => {
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, width, height);
 
-        // Load and add the company logo in the top - right corner
-        const image = await loadImage("https://beajbloblive.blob.core.windows.net/beajdocuments/logo.jpeg");  // Path to the logo image
+        // Load and add the company logo in the top-right corner
+        const image = await loadImage("https://beajbloblive.blob.core.windows.net/beajdocuments/logo.jpeg");
         ctx.drawImage(image, width - 160, 20, image.width / 7.5, image.height / 7.5);
 
         // Add "YOUR SCORE" Title
@@ -374,68 +376,76 @@ const createAndUploadSpeakingScoreImage = async (results) => {
         ctx.fillStyle = '#000000';
         ctx.fillText('YOUR SCORE', 50, 80);
 
-        // Add "Grammar" Bar with dynamic score
+        // Initialize the starting y-coordinate for the bars
+        let barYStart = 120;
+
+        // Conditionally add "Grammar" bar
+        if (grammarScoreNumber > 0) {
+            ctx.font = '25px Arial';
+            ctx.fillText('Grammar Score', 50, barYStart);
+
+            // Draw light magenta background bar
+            ctx.fillStyle = '#eecef7';
+            ctx.fillRect(50, barYStart + 5, 790, 40);
+
+            // Draw dark magenta foreground bar
+            ctx.fillStyle = '#cb6ce6';
+            ctx.fillRect(50, barYStart + 5, 790 * (grammarScoreNumber / 100), 40);
+
+            // Add score text
+            ctx.fillStyle = '#000000';
+            ctx.fillText(`${grammarScoreNumber}%`, 50 + 790 * (grammarScoreNumber / 100) - 70, barYStart + 35);
+
+            barYStart += 95; // Move to the next bar position
+        }
+
+        // Add "Pronunciation" bar
         ctx.font = '25px Arial';
-        ctx.fillText('Grammar Score', 50, 120);
+        ctx.fillText('Correct Pronunciation', 50, barYStart);
 
-        // Draw light magenta background bar for full length
-        ctx.fillStyle = '#eecef7';
-        ctx.fillRect(50, 125, 790, 40);
-
-        // Draw dark magenta foreground bar for actual score
-        ctx.fillStyle = '#cb6ce6';
-        ctx.fillRect(50, 125, 790 * (grammarScoreNumber / 100), 40);
-
-        // Add score text inside the bar
-        ctx.fillStyle = '#000000';
-        // Position till the end of dark magenta bar
-        ctx.fillText(`${grammarScoreNumber}%`, 50 + 790 * (grammarScoreNumber / 100) - 70, 155);
-
-        // Add "Pronunciation" Bar with dynamic score
-        ctx.font = '25px Arial';
-        ctx.fillText('Correct Pronunciation', 50, 215);
-
-        // Draw light blue background bar for full length
+        // Draw light blue background bar
         ctx.fillStyle = '#B2EBF2';
-        ctx.fillRect(50, 220, 790, 40);
+        ctx.fillRect(50, barYStart + 5, 790, 40);
 
-        // Draw dark blue foreground bar for actual score
+        // Draw dark blue foreground bar
         ctx.fillStyle = '#30D5C8';
-        ctx.fillRect(50, 220, 790 * (accuracyScoreNumber / 100), 40);
+        ctx.fillRect(50, barYStart + 5, 790 * (accuracyScoreNumber / 100), 40);
 
-        // Add score text inside the bar
+        // Add score text
         ctx.fillStyle = '#000000';
-        // Position till the end of dark blue bar
-        ctx.fillText(`${accuracyScoreNumber}%`, 50 + 790 * (accuracyScoreNumber / 100) - 70, 250);
+        ctx.fillText(`${accuracyScoreNumber}%`, 50 + 790 * (accuracyScoreNumber / 100) - 70, barYStart + 35);
 
+        barYStart += 95; // Move to the next bar position
 
-        // Add "Fluency" Bar with dynamic score
+        // Add "Fluency" bar
         ctx.font = '25px Arial';
-        ctx.fillText('Fluency', 50, 310);
+        ctx.fillText('Fluency', 50, barYStart);
 
-        // Draw light yellow background bar for full length
+        // Draw light yellow background bar
         ctx.fillStyle = '#F0F4C3';
-        ctx.fillRect(50, 315, 790, 40);
+        ctx.fillRect(50, barYStart + 5, 790, 40);
 
-        // Draw darker yellow foreground bar for actual score
+        // Draw darker yellow foreground bar
         ctx.fillStyle = '#C7EA46';
-        ctx.fillRect(50, 315, 790 * (fluencyScoreNumber / 100), 40);
+        ctx.fillRect(50, barYStart + 5, 790 * (fluencyScoreNumber / 100), 40);
 
-        // Add score text inside the bar
+        // Add score text
         ctx.fillStyle = '#000000';
-        ctx.fillText(`${fluencyScoreNumber}%`, 50 + 790 * (fluencyScoreNumber / 100) - 70, 345);
+        ctx.fillText(`${fluencyScoreNumber}%`, 50 + 790 * (fluencyScoreNumber / 100) - 70, barYStart + 35);
+
+        barYStart += 95; // Move to the "You said" section
 
         // Add "You said" section
         ctx.font = 'bold 30px Arial';
-        ctx.fillText('You said', 50, 410);
+        ctx.fillText('You said', 50, barYStart);
 
-        // Create a paragraph format for the text
+        // Format and render the words
         ctx.font = '25px Arial';
         const marginLeft = 50;
         const maxWidth = 850;
         let lineHeight = 40;
         let cursorX = marginLeft;
-        let cursorY = 450; // Starting Y position for the text
+        let cursorY = barYStart + 40;
 
         words.forEach((wordObj) => {
             if (!['Mispronunciation', 'Omission', 'None'].includes(wordObj.ErrorType)) {
@@ -444,39 +454,33 @@ const createAndUploadSpeakingScoreImage = async (results) => {
             const word = wordObj.Word;
             const errorType = wordObj.ErrorType;
             const wordAccuracyScore = wordObj.AccuracyScore;
-            const wordWidth = ctx.measureText(word).width + 15; // Measure width of the word
+            const wordWidth = ctx.measureText(word).width + 15;
 
-            // If the word exceeds the max width, move to a new line
             if (cursorX + wordWidth > maxWidth) {
-                cursorX = marginLeft; // Reset X position to the left margin
-                cursorY += lineHeight; // Move to the next line
+                cursorX = marginLeft;
+                cursorY += lineHeight;
             }
 
             if (errorType === 'Mispronunciation' || wordAccuracyScore < 50) {
-                // Highlight mispronounced words in yellow
-                ctx.fillStyle = '#FFD700'; // Yellow
+                ctx.fillStyle = '#FFD700';
                 ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
-                ctx.fillStyle = '#000000'; // Black text
+                ctx.fillStyle = '#000000';
                 ctx.fillText(word, cursorX, cursorY);
             } else if (errorType === 'None') {
-                // Regular words
                 ctx.fillStyle = '#000000';
                 ctx.fillText(word, cursorX, cursorY);
             }
 
-            // Move cursor for the next word
             cursorX += wordWidth;
         });
-
 
         // Add the legends at the bottom
         ctx.font = '20px Arial';
 
-        // Mispronounced Words Legend (Yellow Circle)
-        ctx.fillStyle = '#FFD700'; // Yellow color
-        ctx.beginPath(); // Start a new path
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
         ctx.arc(60, 820, 10, 0, 2 * Math.PI);
-        ctx.fill(); // Fill the circle
+        ctx.fill();
         ctx.fillStyle = '#000000';
         ctx.fillText('Mispronounced Words', 80, 827);
 
@@ -490,7 +494,7 @@ const createAndUploadSpeakingScoreImage = async (results) => {
         console.error('Error creating and uploading image:', err);
         throw new Error('Failed to create and upload image');
     }
-}
+};
 
 const getAcceptableMessagesList = async (activityType) => {
     if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot") {
