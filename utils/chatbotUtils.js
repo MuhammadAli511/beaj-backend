@@ -2244,7 +2244,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
             else if (messageType === 'audio') {
                 // Get the current Conversational Agency Bot question
                 const currentConversationalAgencyBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
-                let waitingMessage = "Please wait for an answer.";
+                let waitingMessage = "Please wait for an answer...";
                 await sendMessage(userMobileNumber, waitingMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", waitingMessage, null);
                 const recognizedText = await azureAIServices.azureSpeechToTextAnyLanguage(messageContent.data);
@@ -2304,6 +2304,8 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     const audioLink = await azureAIServices.azureTextToSpeechAndUpload(threadMessages1.data[0].content[0].text.value);
                     await sendMediaMessage(userMobileNumber, audioLink, 'audio');
                     await createActivityLog(userMobileNumber, "audio", "outbound", audioLink, null);
+
+                    await sleep(5000);
 
                     // Save to question responses
                     const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
