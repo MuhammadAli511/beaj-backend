@@ -287,19 +287,19 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
                 cursorY += lineHeight; // Move to the next line
             }
 
-            if (errorType === 'Mispronunciation' || wordAccuracyScore < 50) {
+            if (errorType == 'Mispronunciation' || wordAccuracyScore < 50) {
                 // Highlight mispronounced words in yellow
                 ctx.fillStyle = '#FFD700'; // Yellow
                 ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
                 ctx.fillStyle = '#000000'; // Black text
                 ctx.fillText(word, cursorX, cursorY);
-            } else if (errorType === 'Omission') {
+            } else if (errorType == 'Omission') {
                 // Highlight skipped words in grey
                 ctx.fillStyle = '#A9A9A9'; // Grey
                 ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
                 ctx.fillStyle = '#000000'; // Black text
                 ctx.fillText(word, cursorX, cursorY);
-            } else if (errorType === 'None') {
+            } else if (errorType == 'None') {
                 // Regular words
                 ctx.fillStyle = '#000000';
                 ctx.fillText(word, cursorX, cursorY);
@@ -461,12 +461,12 @@ const createAndUploadSpeakingScoreImage = async (results) => {
                 cursorY += lineHeight;
             }
 
-            if (errorType === 'Mispronunciation' || wordAccuracyScore < 50) {
+            if (errorType == 'Mispronunciation' || wordAccuracyScore < 50) {
                 ctx.fillStyle = '#FFD700';
                 ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
                 ctx.fillStyle = '#000000';
                 ctx.fillText(word, cursorX, cursorY);
-            } else if (errorType === 'None') {
+            } else if (errorType == 'None') {
                 ctx.fillStyle = '#000000';
                 ctx.fillText(word, cursorX, cursorY);
             }
