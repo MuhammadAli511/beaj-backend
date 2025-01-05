@@ -1337,8 +1337,9 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                 // Send question
                 const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(firstMCQsQuestion.dataValues.Id);
-                let mcqMessage = firstMCQsQuestion.dataValues.QuestionText + "\n\n";
-                if (firstMCQsQuestion.dataValues.QuestionText != "Choose the correct sentence.") {
+                const questionText = firstMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
+                let mcqMessage = questionText + "\n\n";
+                if (!questionText.includes("Choose the correct sentence.")) {
                     mcqMessage += "Choose the correct answer.\n";
                 }
                 for (let i = 0; i < mcqAnswers.length; i++) {
@@ -1419,8 +1420,9 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                     // Send question
                     const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(nextMCQsQuestion.dataValues.Id);
-                    let mcqMessage = nextMCQsQuestion.dataValues.QuestionText + "\n\n";
-                    if (nextMCQsQuestion.dataValues.QuestionText != "Choose the correct sentence.") {
+                    const questionText = nextMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
+                    let mcqMessage = questionText + "\n\n";
+                    if (!questionText.includes("Choose the correct sentence.")) {
                         mcqMessage += "Choose the correct answer.\n";
                     }
                     for (let i = 0; i < mcqAnswers.length; i++) {
@@ -1780,7 +1782,8 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     const recognizedTextWithoutPunctuation = recognizedText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"‘’“”?]/g, "").toLowerCase();
                     for (let i = 0; i < answersArray.length; i++) {
                         const answerWithoutPunctuation = answersArray[i].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"‘’“”?]/g, "").toLowerCase();
-                        if (recognizedTextWithoutPunctuation == answerWithoutPunctuation) {
+                        const answerWithoutSpaces = answerWithoutPunctuation.trim();
+                        if (recognizedTextWithoutPunctuation == answerWithoutSpaces) {
                             userAnswerIsCorrect = true;
                             break;
                         }
