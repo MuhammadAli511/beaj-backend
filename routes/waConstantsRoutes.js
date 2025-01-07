@@ -1,5 +1,6 @@
 import express from 'express';
 import beajEmployeesAuth from '../middlewares/beajEmployeesAuth.js';
+import beajFacilitatorsAuth from '../middlewares/beajFacilitatorsAuth.js';
 import waConstantsController from '../controllers/waConstantsController.js';
 import upload from '../config/multerConfig.js';
 import errorHandler from '../middlewares/errorHandler.js';
@@ -15,10 +16,10 @@ router.get('/status', (req, res) => {
 router.post('/create', beajEmployeesAuth, upload.single('file'), waConstantsController.createWaConstant);
 
 // GET  api/waConstants/getAll
-router.get('/getAll', beajEmployeesAuth, waConstantsController.getAllWaConstants);
+router.get('/getAll', beajFacilitatorsAuth, waConstantsController.getAllWaConstants);
 
 // GET  api/waConstants/getByKey/:key
-router.get('/getByKey/:key', beajEmployeesAuth, waConstantsController.getWaConstantByConstantName);
+router.get('/getByKey/:key', beajFacilitatorsAuth, waConstantsController.getWaConstantByConstantName);
 
 // PUT  api/waConstants/update/:key
 router.put('/update/:key', beajEmployeesAuth, upload.single('file'), waConstantsController.updateWaConstant);
