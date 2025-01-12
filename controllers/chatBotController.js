@@ -19,7 +19,19 @@ const verifyWebhookController = async (req, res, next) => {
     }
 };
 
+const uploadUserDataController = async (req, res, next) => {
+    try {
+        const { users } = req.body;
+        const count = await service.uploadUserDataService(users);
+        res.status(200).send({ message: `Successfully uploaded ${count} users.` });
+    } catch (error) {
+        error.fileName = 'chatBotController.js';
+        next(error);
+    }
+};
+
 export default {
     webhookController,
-    verifyWebhookController
+    verifyWebhookController,
+    uploadUserDataController
 };

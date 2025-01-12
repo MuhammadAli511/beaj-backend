@@ -1,7 +1,6 @@
 import express from 'express';
 import chatBotController from '../controllers/chatBotController.js';
 import errorHandler from '../middlewares/errorHandler.js';
-import beajEmployeesAuth from '../middlewares/beajEmployeesAuth.js';
 import upload from '../config/multerConfig.js';
 
 const router = express.Router();
@@ -16,6 +15,9 @@ router.post('/webhook', chatBotController.webhookController);
 
 // GET /chatbot/webhook
 router.get('/webhook', chatBotController.verifyWebhookController);
+
+// POST /chatbot/upload-user-data
+router.post('/upload-user-data', chatBotController.uploadUserDataController);
 
 
 // Use error handler middleware
