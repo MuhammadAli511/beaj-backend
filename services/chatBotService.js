@@ -63,19 +63,6 @@ const verifyWebhookService = async (req, res) => {
 };
 
 const uploadUserDataService = async (users) => {
-    // {
-    //     "uid": "46",
-    //     "s0_name": "Halima",
-    //     "gender": "Female",
-    //     "phone_number": "3555028867",
-    //     "schoolname": "Baltistan Public School Skardu",
-    //     "school_role": "Teacher",
-    //     "Target.Group": "Control",
-    //     "cohort_assignment": "Cohort 49"
-    // },
-
-    // Remove gender
-    // Change phone_number from 3xxxx to +923xxxx
     let count = 0;
     const t1Course = await courseRepository.getCourseByCourseName("Level 1 - T1 - January 27, 2025");
     const t2Course = await courseRepository.getCourseByCourseName("Level 1 - T2 - January 27, 2025");
@@ -83,15 +70,15 @@ const uploadUserDataService = async (users) => {
         throw new Error("Course not found");
     }
     for (const user of users) {
-        const userExists = await waUsersMetadataRepository.getByPhoneNumber(user.phone_number);
-        if (userExists) {
-            console.log(`User ${user.phone_number} already exists in the database.`);
-            continue;
-        }
         const phoneNumber = user.phone_number;
         const newPhoneNumber = phoneNumber.startsWith("3")
             ? `+923${phoneNumber.slice(1)}`
             : phoneNumber;
+        const userExists = await waUsersMetadataRepository.getByPhoneNumber(newPhoneNumber);
+        if (userExists) {
+            // console.log(`${newPhoneNumber}`);
+            continue;
+        }
         await waUsersMetadataRepository.create({
             phoneNumber: newPhoneNumber,
             userClickedLink: new Date(),
@@ -119,6 +106,7 @@ const uploadUserDataService = async (users) => {
             });
         }
         count++;
+        // console.log(`${count}`);
     }
     return count;
 };
