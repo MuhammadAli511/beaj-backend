@@ -16,6 +16,9 @@ router.get('/totalContentStats', beajFacilitatorsAuth, statsController.totalCont
 // GET api/stats/dashboardCardsFunnel
 router.get('/dashboardCardsFunnel', beajFacilitatorsAuth, statsController.dashboardCardsFunnelController);
 
+// POST api/stats/lastActiveUsers
+router.post('/lastActiveUsers', beajFacilitatorsAuth, statsController.lastActiveUsersController);
+
 // Use error handler middleware
 router.use(errorHandler);
 

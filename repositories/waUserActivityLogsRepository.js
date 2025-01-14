@@ -1,4 +1,5 @@
 import WA_UserActivityLogs from '../models/WA_UserActivityLogs.js';
+import { Sequelize } from 'sequelize';
 
 const create = async (data) => {
     const activityLog = new WA_UserActivityLogs(data);
@@ -58,6 +59,21 @@ const deleteByPhoneNumber = async (phoneNumber) => {
     });
 };
 
+const getLastActiveUsers = async (days, filteredUsers) => {
+    return await WA_UserActivityLogs.findAll({
+        attributes: [
+            'phoneNumber',
+            [Sequelize.fn('MAX', Sequelize.col('timestamp')), 'timestamp']
+        ],
+        where: {
+            phoneNumber: {
+                [Sequelize.Op.in]: filteredUsers.map(user => user.phoneNumber)
+            }
+        },
+        group: ['phoneNumber']
+    });
+};
+
 export default {
     create,
     getAll,
@@ -66,5 +82,6 @@ export default {
     deleteById,
     getByPhoneNumber,
     deleteByPhoneNumber,
-    getCountBySpeciifcMessage
+    getCountBySpeciifcMessage,
+    getLastActiveUsers
 };
