@@ -70,10 +70,7 @@ const uploadUserDataService = async (users) => {
         throw new Error("Course not found");
     }
     for (const user of users) {
-        const phoneNumber = user.phone_number;
-        const newPhoneNumber = phoneNumber.startsWith("3")
-            ? `+923${phoneNumber.slice(1)}`
-            : phoneNumber;
+        const newPhoneNumber = user.phone_number;
         const userExists = await waUsersMetadataRepository.getByPhoneNumber(newPhoneNumber);
         if (userExists) {
             // console.log(`${newPhoneNumber}`);
@@ -91,7 +88,7 @@ const uploadUserDataService = async (users) => {
         });
         await waUserProgressRepository.create({
             phoneNumber: newPhoneNumber,
-            persona: user.school_role == "Teacher" || user.school_role == "Both" ? "Teacher" : "Administrator",
+            persona: user.school_role,
             engagement_type: "",
             acceptableMessages: ["i want to start my course"],
             lastUpdated: new Date(),
