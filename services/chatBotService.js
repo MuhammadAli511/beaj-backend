@@ -103,7 +103,7 @@ const uploadUserDataService = async (users) => {
             });
         }
         count++;
-        // console.log(`${count}`);
+        console.log(`${count}`);
     }
     return count;
 };
@@ -559,7 +559,8 @@ const webhookService = async (body, res) => {
                 "+923225036358",
                 "+923365560202",
                 "+923328251950",
-                "+923225812411"
+                "+923225812411",
+                "+923232658153"
             ];
 
             // START MAIN COURSE
