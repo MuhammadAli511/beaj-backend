@@ -551,12 +551,23 @@ const webhookService = async (body, res) => {
                 }
             }
 
+            let numbers_to_ignore = [
+                "+923331432681",
+                "+923008400080",
+                "+923303418882",
+                "+923345520552",
+                "+923225036358",
+                "+923365560202",
+                "+923328251950",
+                "+923225812411"
+            ];
+
             // START MAIN COURSE
             if (
                 message.type == "text" &&
                 messageContent.toLowerCase().includes("i want to start my course")
             ) {
-                await startCourseForUser(userMobileNumber);
+                await startCourseForUser(userMobileNumber, numbers_to_ignore);
                 return;
             }
 
@@ -695,15 +706,6 @@ const webhookService = async (body, res) => {
                     }
 
                     // Daily blocking
-                    let numbers_to_ignore = [
-                        "+923331432681",
-                        "+923008400080",
-                        "+923303418882",
-                        "+923345520552",
-                        "+923225036358",
-                        "+923365560202",
-                        "+923328251950",
-                    ];
                     if (!numbers_to_ignore.includes(userMobileNumber)) {
                         const course = await courseRepository.getById(
                             currentUserState.dataValues.currentCourseId

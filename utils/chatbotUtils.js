@@ -986,7 +986,7 @@ const getNextCourse = async (userMobileNumber) => {
 
 };
 
-const startCourseForUser = async (userMobileNumber) => {
+const startCourseForUser = async (userMobileNumber, numbers_to_ignore) => {
     const nextCourse = await getNextCourse(userMobileNumber);
     if (!nextCourse) {
         await sendMessage(userMobileNumber, "No available purchased courses. Kindly contact beaj support.");
@@ -1009,12 +1009,14 @@ const startCourseForUser = async (userMobileNumber) => {
     console.log(todayYear, todayMonth, todayDate);
     console.log(courseStartYear, courseStartMonth, courseStartDateOnly);
     // Check if today < course start date
-    if (todayYear < courseStartYear || (todayYear === courseStartYear && todayMonth < courseStartMonth) || (todayYear === courseStartYear && todayMonth === courseStartMonth && todayDate < courseStartDateOnly)) {
-        const formattedStartDate = format(new Date(nextCourse.dataValues.courseStartDate), 'MMMM do, yyyy');
-        const message = "Your course will start on " + formattedStartDate + ". Please wait for the course to start.";
-        await sendMessage(userMobileNumber, message);
-        await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-        return;
+    if (userMobileNumber in numbers_to_ignore) {
+        if (todayYear < courseStartYear || (todayYear === courseStartYear && todayMonth < courseStartMonth) || (todayYear === courseStartYear && todayMonth === courseStartMonth && todayDate < courseStartDateOnly)) {
+            const formattedStartDate = format(new Date(nextCourse.dataValues.courseStartDate), 'MMMM do, yyyy');
+            const message = "Your course will start on " + formattedStartDate + ". Please wait for the course to start.";
+            await sendMessage(userMobileNumber, message);
+            await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+            return;
+        }
     }
     // Update engagment type
     await waUserProgressRepository.updateEngagementType(userMobileNumber, "Course Start");
