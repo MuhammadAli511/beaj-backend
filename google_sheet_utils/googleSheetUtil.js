@@ -18,6 +18,10 @@ const loadDataToGoogleSheets = async (
   activityMap2,
   new_weeklyCntT1,
   new_weeklyCntT2,
+  successRate1,
+  successRate2,
+  successRate3,
+  successRate4,
 ) => {
   try {
     const auth = new google.auth.GoogleAuth({
@@ -36,61 +40,47 @@ const loadDataToGoogleSheets = async (
     await sheets.spreadsheets.values.update({
       auth: authClient,
       spreadsheetId,
-      range: "Dashboard-stats!B2:G3",
+      range: "Dashboard-stats!B2:F3",
       valueInputOption: "RAW",
       resource: {
         values: funnel,
       },
     });
-
-    const formattedData = t1.map((row) => {
-      if (!Array.isArray(row)) {
-        throw new Error("Each row must be an array");
-      }
-      return row.map((entry) => {
-        if (
-          typeof entry !== "object" ||
-          !entry.hasOwnProperty("activity_completd")
-        ) {
-          throw new Error(
-            "Each entry must be an object with an 'activity_completd' property"
-          );
-        }
-        return entry.activity_completd;
-      });
-    });
-    const formattedData1 = t2.map((row) => {
-      if (!Array.isArray(row)) {
-        throw new Error("Each row must be an array");
-      }
-      return row.map((entry) => {
-        if (
-          typeof entry !== "object" ||
-          !entry.hasOwnProperty("activity_completd")
-        ) {
-          throw new Error(
-            "Each entry must be an object with an 'activity_completd' property"
-          );
-        }
-        return entry.activity_completd;
-      });
-    });
+    
     await sheets.spreadsheets.values.update({
       auth: authClient,
       spreadsheetId,
-      range: "T1-Level 1 activity!E10:AM",
+      range: "Dashboard-stats!V2:AB2",
       valueInputOption: "RAW",
       resource: {
-        values: formattedData,
+        values: [successRate1],
       },
     });
     await sheets.spreadsheets.values.update({
       auth: authClient,
       spreadsheetId,
-      range: "T2-Level 1 activity!E10:AM",
+      range: "Dashboard-stats!V3:AB3",
       valueInputOption: "RAW",
       resource: {
-        values: formattedData1,
+        values: [successRate2],
+      },
+    });
+    await sheets.spreadsheets.values.update({
+      auth: authClient,
+      spreadsheetId,
+      range: "Dashboard-stats!V4:AB4",
+      valueInputOption: "RAW",
+      resource: {
+        values: [successRate3],
+      },
+    });
+    await sheets.spreadsheets.values.update({
+      auth: authClient,
+      spreadsheetId,
+      range: "Dashboard-stats!V5:AB5",
+      valueInputOption: "RAW",
+      resource: {
+        values: [successRate4],
       },
     });
 
@@ -103,7 +93,6 @@ const loadDataToGoogleSheets = async (
         values: activityMap1,
       },
     });
-
 
     await sheets.spreadsheets.values.update({
       auth: authClient,

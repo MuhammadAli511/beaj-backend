@@ -148,21 +148,17 @@ const weekEndScoreCalculation = async (phoneNumber, weekNumber, courseId) => {
     const correctListenAndSpeak = await waQuestionResponsesRepository.getTotalScoreForList(phoneNumber, listenAndSpeakLessonIds);
     const totalListenAndSpeak = await waQuestionResponsesRepository.getTotalQuestionsForList(phoneNumber, listenAndSpeakLessonIds);
 
-
     // Get lessonIds for watchAndSpeak of that week
     const watchAndSpeakLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'watchAndSpeak');
     const correctWatchAndSpeak = await waQuestionResponsesRepository.watchAndSpeakScoreForList(phoneNumber, watchAndSpeakLessonIds);
-
 
     // Get lessonIds for read of that week
     const readLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'read');
     const correctRead = await waQuestionResponsesRepository.readScoreForList(phoneNumber, readLessonIds);
 
-
     // Get lessonIds for conversationalMonologueBot of that week
     const monologueLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'conversationalMonologueBot');
     const correctMonologue = await waQuestionResponsesRepository.monologueScoreForList(phoneNumber, monologueLessonIds);
-
 
     // Calculate sum of scores and sum of total scores and give percentage out of 100
     const totalScore = correctMcqs + correctListenAndSpeak + correctWatchAndSpeak.score + correctRead.score + correctMonologue.score;
