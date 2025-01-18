@@ -15,7 +15,7 @@ const getDataFromPostgres = async (grp) => {
     throw error;
   }
 };
-const getDataActivityComplete = async (date, grp, course_id, weekno) => {
+const getDataActivityComplete = async (date, grp, course_id, weekno,cohort) => {
   try {
   
     const qry = `select distinct m."phoneNumber", m."name",count(case when (Date(l."startTime") <= '${date}'
@@ -24,7 +24,7 @@ const getDataActivityComplete = async (date, grp, course_id, weekno) => {
                   case when count(case when (Date(l."startTime") <= '${date}' and l."completionStatus" = 'Completed') Then 1 else null end) =
                   (select count(s."LessonId") from "Lesson" s where s."weekNumber" <= ${weekno}  and s."courseId" = ${course_id}) then 1 else 0 end as "completion_match"
                   from "wa_users_metadata" m left join "wa_lessons_completed" l on m."phoneNumber" = l."phoneNumber" and l."courseId" = ${course_id}
-                  where m."targetGroup" = '${grp}'
+                  where m."targetGroup" = '${grp}' and m."cohort" = '${cohort}'
                   group by m."name", m."phoneNumber" order by m."phoneNumber" asc;`;
 
 
@@ -37,7 +37,7 @@ const getDataActivityComplete = async (date, grp, course_id, weekno) => {
   }
 };
 
-const getWeeklyActivityCompleted = async (grp, course_id) => {
+const getWeeklyActivityCompleted = async (grp, course_id,cohort) => {
   try {
     const qry = `select m."phoneNumber", m."name", sum(case when s."weekNumber" = 1 then 1 else null end) as "week1_activities",
                 sum(case when s."weekNumber" = 2 then 1 else null end) as "week2_activities",
@@ -54,7 +54,7 @@ const getWeeklyActivityCompleted = async (grp, course_id) => {
                 then 1 else null end as "completion_match4"
                 from "wa_users_metadata" m left join "wa_lessons_completed" l on m."phoneNumber" = l."phoneNumber" 
                 and l."completionStatus" = 'Completed' left join "Lesson" s on s."LessonId" = l."lessonId" and s."courseId" = l."courseId" and s."courseId" = ${course_id}
-                and s."weekNumber" IN (1,2,3,4) where m."targetGroup" = '${grp}' group by m."name", m."phoneNumber" order by m."phoneNumber" asc;`;
+                and s."weekNumber" IN (1,2,3,4) where m."targetGroup" = '${grp}' and m."cohort" = '${cohort}' group by m."name", m."phoneNumber" order by m."phoneNumber" asc;`;
 
     const res = await sequelize.query(qry);
 
@@ -65,4 +65,73 @@ const getWeeklyActivityCompleted = async (grp, course_id) => {
   }
 };
 
-export default { getDataFromPostgres, getDataActivityComplete, getWeeklyActivityCompleted };
+const getUserMetadataAll = async (cohort) => {
+  try {
+    let cohortCondition;
+
+    if (cohort === 'Control') {
+      cohortCondition = `"targetGroup" = 'Control'`; 
+    } 
+    else {
+      if (cohort === 'Pilot') {
+        cohortCondition = `("targetGroup" = 'T1' OR "targetGroup" = 'T2') and "cohort" = 'Pilot'`; 
+      } else {
+        const cohortList = [];
+        for (let i = 1; i <= 48; i++) {
+          cohortList.push(`'Cohort ${i}'`);
+        }
+        cohortCondition = `("targetGroup" = 'T1' OR "targetGroup" = 'T2') and ("cohort" = ${cohortList.join(' OR "cohort" = ')})`; 
+      }
+    }
+    const qry = `
+      SELECT 
+        "userId",
+        "phoneNumber", 
+        name, 
+        city, 
+        "targetGroup", 
+        cohort, 
+        TO_CHAR("userClickedLink" AT TIME ZONE 'UTC', 'MM/DD/YYYY HH12:MI:SS AM') AS "userClickedLink_utc",
+        TO_CHAR("userRegistrationComplete" AT TIME ZONE 'UTC', 'MM/DD/YYYY HH12:MI:SS AM') AS "userRegistrationComplete_utc",
+        "isTeacher", 
+        "schoolName",
+        TO_CHAR("freeDemoStarted" AT TIME ZONE 'UTC', 'MM/DD/YYYY HH12:MI:SS AM') AS "freeDemoStarted_utc",
+        TO_CHAR("freeDemoEnded" AT TIME ZONE 'UTC', 'MM/DD/YYYY HH12:MI:SS AM') AS "freeDemoEnded_utc",
+        scholarshipvalue, 
+        "timingPreference"
+      FROM 
+        "wa_users_metadata"
+      WHERE 
+         ${cohortCondition} 
+      ORDER BY 
+        "targetGroup", "cohort";
+    `;
+
+    const res = await sequelize.query(qry);
+
+    return res[0];
+  } catch (error) {
+    error.fileName = "etlRepository.js";
+    throw error;
+  }
+};
+
+const getUserMetadataTime = async () => {
+  try {
+    const qry = `
+      SELECT 
+        TO_CHAR("userClickedLink" AT TIME ZONE 'UTC', 'MM/DD/YYYY HH12:MI:SS AM') AS "userClickedLink_utc",
+        TO_CHAR("userRegistrationComplete" AT TIME ZONE 'UTC', 'MM/DD/YYYY HH12:MI:SS AM') AS "userRegistrationComplete_utc"
+      FROM 
+        "wa_users_metadata";`;
+
+    const res = await sequelize.query(qry);
+
+    return res[0];
+  } catch (error) {
+    error.fileName = "etlRepository.js";
+    throw error;
+  }
+};
+
+export default { getDataFromPostgres, getDataActivityComplete, getWeeklyActivityCompleted,getUserMetadataAll,getUserMetadataTime };

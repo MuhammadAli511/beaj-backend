@@ -126,45 +126,45 @@ const weekEndImage = async (score, week) => {
 }
 
 const weekEndScoreCalculation = async (phoneNumber, weekNumber, courseId) => {
-    console.log("Phone Number: ", phoneNumber);
-    console.log("Week Number: ", weekNumber);
-    console.log("Course Id: ", courseId);
+    // console.log("Phone Number: ", phoneNumber);
+    // console.log("Week Number: ", weekNumber);
+    // console.log("Course Id: ", courseId);
     // Get lessonIds for mcqs of that week
     const mcqLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'mcqs');
     const correctMcqs = await waQuestionResponsesRepository.getTotalScoreForList(phoneNumber, mcqLessonIds);
     const totalMcqs = await waQuestionResponsesRepository.getTotalQuestionsForList(phoneNumber, mcqLessonIds);
-    console.log("MCQs: ", correctMcqs, totalMcqs);
+    // console.log("MCQs: ", correctMcqs, totalMcqs);
 
     // Get lessonIds for listenAndSpeak of that week
     const listenAndSpeakLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'listenAndSpeak');
     const correctListenAndSpeak = await waQuestionResponsesRepository.getTotalScoreForList(phoneNumber, listenAndSpeakLessonIds);
     const totalListenAndSpeak = await waQuestionResponsesRepository.getTotalQuestionsForList(phoneNumber, listenAndSpeakLessonIds);
-    console.log("Listen and Speak: ", correctListenAndSpeak, totalListenAndSpeak);
+    // console.log("Listen and Speak: ", correctListenAndSpeak, totalListenAndSpeak);
 
 
     // Get lessonIds for watchAndSpeak of that week
     const watchAndSpeakLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'watchAndSpeak');
     const correctWatchAndSpeak = await waQuestionResponsesRepository.watchAndSpeakScoreForList(phoneNumber, watchAndSpeakLessonIds);
-    console.log("Watch and Speak: ", correctWatchAndSpeak);
+    // console.log("Watch and Speak: ", correctWatchAndSpeak);
 
 
     // Get lessonIds for read of that week
     const readLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'read');
     const correctRead = await waQuestionResponsesRepository.readScoreForList(phoneNumber, readLessonIds);
-    console.log("Read: ", correctRead);
+    // console.log("Read: ", correctRead);
 
 
     // Get lessonIds for conversationalMonologueBot of that week
     const monologueLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'conversationalMonologueBot');
     const correctMonologue = await waQuestionResponsesRepository.monologueScoreForList(phoneNumber, monologueLessonIds);
-    console.log("Monologue: ", correctMonologue);
+    // console.log("Monologue: ", correctMonologue);
 
 
     // Calculate sum of scores and sum of total scores and give percentage out of 100
     const totalScore = correctMcqs + correctListenAndSpeak + correctWatchAndSpeak.score + correctRead.score + correctMonologue.score;
     const totalQuestions = totalMcqs + totalListenAndSpeak + correctWatchAndSpeak.total + correctRead.total + correctMonologue.total;
     const percentage = Math.round((totalScore / totalQuestions) * 100);
-    console.log("Week End Score 1: ", percentage);
+    // console.log("Week End Score 1: ", percentage);
     return percentage;
 };
 

@@ -1,5 +1,7 @@
 import etlRepository from "../repositories/etlRepository.js";
 import loadDataToGoogleSheets from "../google_sheet_utils/googleSheetUtil.js";
+import new_loadDataToGoogleSheets from "../google_sheet_utils/LevelGoogleSheet.js";
+import lesson_loadDataToGoogleSheets from "../google_sheet_utils/LessonGoogleSheet.js";
 import dashboardFunnel from "./statsService.js";
 import getPhoneNumberColumn from "../google_sheet_utils/getPhoneNumberColumn.js";
 import googleSheetStats from "../google_sheet_utils/googleSheetStats.js";
@@ -9,25 +11,91 @@ import getWeeklyDate from "../google_sheet_utils/weekscore_getdate.js";
 import courseId_gSheet from "../google_sheet_utils/courseId_gSheet.js";
 import getWeeklyActivityCompleted1 from "../repositories/etl_weeklyScoreRepository.js";
 import newWeekActivityScore from "../google_sheet_utils/newWeekActivityScore.js";
+import etl_T1Repository from "../repositories/etl_T1Repository.js";
+import DashboardUtils_load from "../google_sheet_utils/DashboardUtils.js";
 
 const runETL = async () => {
   try {
+    const t1 = 'T1';
+    const t2 = 'T2';
+    const t1_l1_courseId = 98;
+    const t2_l1_courseId = 99;
+    const t1_l2_courseId = 104;
+    const t2_l2_courseId = 103;
+
     const data = await etlRepository.getDataFromPostgres();
     const new_data_list = await getPhoneNumberColumn(data);
-    const funnel_count = await dashboardFunnel.dashboardCardsFunnelService();
+    const funnel_count = await T1Repository.getDashboardStats();
     const funnel = await googleSheetStats(funnel_count);
 
-    var activityCnt1 = [];
-    var activityCnt2 = [];
+    var activityCnt1 = [], total_actvity1 = [];
+    var activityCnt2 = [], total_actvity2 = [];
 
-    const date_T1 = await getDatefromGSheet("T1-Level 1 activity");
-    const date_T2 = await getDatefromGSheet("T2-Level 1 activity");
+    // const t1_l1_courseId = await courseId_gSheet("T1-Level 1 activity");
+    // const t2_l1_courseId = await courseId_gSheet("T2-Level 1 activity");
 
-    const courseid1 = await courseId_gSheet("T1-Level 1 activity");
-    const courseid2 = await courseId_gSheet("T2-Level 1 activity");
+    const totalActivity_list1 = await etlRepository.getActivityTotalCount(t1_l1_courseId,t1_l2_courseId);
+    const totalActivity_list2 = await etlRepository.getActivityTotalCount(t2_l1_courseId,t2_l2_courseId);
+    
+    let counts = totalActivity_list1.map(item => parseInt(item.count, 10));
+    let activities = totalActivity_list1.map(item => item.activity);
 
-    const activity_weekly_list1 = await getWeeklyActivityCompleted1.getWeeklyActivityCompleted("T1",courseid1);
-    const activity_weekly_list2 = await getWeeklyActivityCompleted1.getWeeklyActivityCompleted("T2",courseid2);
+    total_actvity1.push(counts, activities);
+
+    counts = totalActivity_list2.map(item => parseInt(item.count, 10));
+    activities = totalActivity_list2.map(item => item.activity); 
+
+    total_actvity2.push(counts, activities);
+
+
+    const t1_activity_name_list1 = totalActivity_list1.map(item => item.activity);
+    const t1_activity_name_list2 = totalActivity_list2.map(item => item.activity);
+
+    const activityCompleted_list1 = await etlRepository.getCompletedActivity(t1_l1_courseId,t1_l2_courseId, 'T1', t1_activity_name_list1,'Pilot');
+    const activityCompleted_list2 = await etlRepository.getCompletedActivity(t2_l1_courseId,t2_l2_courseId, 'T2', t1_activity_name_list2,'Pilot');
+
+
+    const successRate1 = await etlRepository.getSuccessRate(t1_l1_courseId,'T1','Pilot');
+    const successRate2 = await etlRepository.getSuccessRate(t2_l1_courseId,'T2','Pilot');
+    const successRate3 = await etlRepository.getSuccessRate(t1_l2_courseId,'T1','Pilot');
+    const successRate4 = await etlRepository.getSuccessRate(t2_l2_courseId,'T2','Pilot');
+
+    const pilot_lastActivityCompleted_t1_l1 = await etlRepository.getLastActivityCompleted(t1_l1_courseId,'T1','Pilot');
+    const pilot_lastActivityCompleted_t1_l1_Map = pilot_lastActivityCompleted_t1_l1.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
+    const pilot_lastActivityCompleted_t1_l2 = await etlRepository.getLastActivityCompleted(t1_l2_courseId,'T1','Pilot');
+    const pilot_lastActivityCompleted_t1_l2_Map = pilot_lastActivityCompleted_t1_l2.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
+    
+    const pilot_lastActivityCompleted_t2_l1 = await etlRepository.getLastActivityCompleted(t2_l1_courseId,'T2','Pilot');
+    const pilot_lastActivityCompleted_t2_l1_Map = pilot_lastActivityCompleted_t2_l1.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
+    const pilot_lastActivityCompleted_t2_l2 = await etlRepository.getLastActivityCompleted(t2_l2_courseId,'T2','Pilot');
+    const pilot_lastActivityCompleted_t2_l2_Map = pilot_lastActivityCompleted_t2_l2.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
+
+
+    // console.log(pilot_lastActivityCompleted_t2_l2_Map);
+
+    const activityCompletedMap1 = activityCompleted_list1.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
+    const activityCompletedMap2 = activityCompleted_list2.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
+
+    const success_list1 = Object.values(successRate1[0]).map((value) => {
+      return Number(value) || null;
+    });
+    const success_list2 = Object.values(successRate2[0]).map((value) => {
+      return Number(value) || null;
+    });
+    const success_list3 = Object.values(successRate3[0]).map((value) => {
+      return Number(value) || null;
+    });
+    const success_list4 = Object.values(successRate4[0]).map((value) => {
+      return Number(value) || null;
+    });
+    
+      
+    let arrayOfT1Activity_Pilot = [], arrayOfT1Activity_level_Pilot = [];
+    const activity_weekly_list1 = await getWeeklyActivityCompleted1.getWeeklyActivityCompleted("T1",t1_l1_courseId,'Pilot');
+    const activity_weekly_list2 = await getWeeklyActivityCompleted1.getWeeklyActivityCompleted("T2",t2_l1_courseId,'Pilot');
+    const activity_weekly_list3 = await getWeeklyActivityCompleted1.getWeeklyActivityCompleted("T1",t1_l2_courseId,'Pilot');
+    const activity_weekly_list4 = await getWeeklyActivityCompleted1.getWeeklyActivityCompleted("T2",t2_l2_courseId,'Pilot');
+
 
     let activityMap1 = [], activityMap2 = [];
 
@@ -39,6 +107,23 @@ const runETL = async () => {
         entry.week4_activities,
       ])
     }
+    arrayOfT1Activity_level_Pilot.push(activityMap1);
+    activityMap1 = []
+    for(const entry of activity_weekly_list3){
+      activityMap1.push([
+        entry.week1_activities,
+        entry.week2_activities,
+        entry.week3_activities,
+        entry.week4_activities,
+      ])
+    }
+    arrayOfT1Activity_level_Pilot.push(activityMap1);
+    arrayOfT1Activity_level_Pilot.push([]);
+    arrayOfT1Activity_Pilot.push(arrayOfT1Activity_level_Pilot);
+
+    
+    arrayOfT1Activity_level_Pilot = [];
+
     for(const entry of activity_weekly_list2){
       activityMap2.push([
         entry.week1_activities,
@@ -47,38 +132,190 @@ const runETL = async () => {
         entry.week4_activities,
       ])
     }
-
-    if (date_T1 && date_T2) {
-      for (const date of date_T1) {
-        const data1 = await T1Repository.getDataFromPostgres(
-          date,
-          "T1",
-          courseid1
-        );
-        if (data1.length !== 0) {
-          activityCnt1.push(data1);
-        }
-      }
-      for (const date of date_T2) {
-        const data1 = await T1Repository.getDataFromPostgres(
-          date,
-          "T2",
-          courseid2
-        );
-
-        if (data1.length !== 0) {
-          activityCnt2.push(data1);
-        }
-      }
+    arrayOfT1Activity_level_Pilot.push(activityMap2);
+    activityMap2 = []
+    for(const entry of activity_weekly_list4){
+      activityMap2.push([
+        entry.week1_activities,
+        entry.week2_activities,
+        entry.week3_activities,
+        entry.week4_activities,
+      ])
     }
-    const courseid3 = await courseId_gSheet("T1 Weekly-score");
-    const courseid4 = await courseId_gSheet("T2 Weekly-score");
+    arrayOfT1Activity_level_Pilot.push(activityMap2);
+    arrayOfT1Activity_level_Pilot.push([]);
+    arrayOfT1Activity_Pilot.push(arrayOfT1Activity_level_Pilot);
+    
 
-    const new_weeklyCntT1 = await newWeekActivityScore(activity_weekly_list1, "T1", courseid3);
-    const new_weeklyCntT2 = await newWeekActivityScore(activity_weekly_list2, "T2", courseid4);
 
-    const weeklyCntT1 = await getWeeklyDate("T1", courseid3);
-    const weeklyCntT2 = await getWeeklyDate("T2", courseid4);
+    let arrayOfT1Lesson_Pilot = [], arrayOfT1Lesson_level_Pilot = [];
+    const lesson_completed_list1 = await etlRepository.getLessonCompletion(t1_l1_courseId,"T1",'Pilot');
+    const lesson_completed_list2 = await etlRepository.getLessonCompletion(t2_l1_courseId,"T2",'Pilot');
+    const lesson_completed_list3 = await etlRepository.getLessonCompletion(t1_l2_courseId,"T1",'Pilot');
+    const lesson_completed_list4 = await etlRepository.getLessonCompletion(t2_l2_courseId,"T2",'Pilot');
+    let lessonMap1 = [], lessonMap2 = [];
+
+    for(const entry of lesson_completed_list1){``
+      lessonMap1.push([
+        entry.week1,
+        entry.week2,
+        entry.week3,
+        entry.week4,
+      ])
+    }
+    arrayOfT1Lesson_level_Pilot.push(lessonMap1);
+    lessonMap1 = [];
+    for(const entry of lesson_completed_list3){
+      lessonMap1.push([
+        entry.week1,
+        entry.week2,
+        entry.week3,
+        entry.week4,
+      ])
+    }
+    arrayOfT1Lesson_level_Pilot.push(lessonMap1);
+    arrayOfT1Lesson_level_Pilot.push([]);
+    arrayOfT1Lesson_Pilot.push(arrayOfT1Lesson_level_Pilot);
+    
+    arrayOfT1Lesson_level_Pilot = [];
+
+    for(const entry of lesson_completed_list2){
+      lessonMap2.push([
+        entry.week1,
+        entry.week2,
+        entry.week3,
+        entry.week4,
+      ])
+    }
+    arrayOfT1Lesson_level_Pilot.push(lessonMap2);
+    lessonMap2 = [];
+    for(const entry of lesson_completed_list4){
+      lessonMap2.push([
+        entry.week1,
+        entry.week2,
+        entry.week3,
+        entry.week4,
+      ])
+    }
+    arrayOfT1Lesson_level_Pilot.push(lessonMap2);
+    arrayOfT1Lesson_level_Pilot.push([]);
+    arrayOfT1Lesson_Pilot.push(arrayOfT1Lesson_level_Pilot);
+
+   
+    // let pilot_t1_w1_weekly_Score_l1 = await etlRepository.getWeeklyScore(t1_l1_courseId,"T1", 4);
+    // let pilot_t2_w1_weekly_Score_l1 = await etlRepository.getWeeklyScore(t2_l1_courseId,"T2", 4);
+
+    // pilot_t1_w1_weekly_Score_l1 = pilot_t1_w1_weekly_Score_l1.map(entry => entry.final_percentage).map(value => [value]);
+    // pilot_t2_w1_weekly_Score_l1 = pilot_t2_w1_weekly_Score_l1.map(entry => entry.final_percentage).map(value => [value]);
+
+    let pilot_t1_w1_weekly_Score = await etlRepository.getWeeklyScore(t1_l1_courseId,"T1",'Pilot' );
+    let pilot_t2_w1_weekly_Score = await etlRepository.getWeeklyScore(t2_l1_courseId,"T2",'Pilot');
+    let pilot_t1_w1_weekly_Score1 = await etlRepository.getWeeklyScore(t1_l2_courseId,"T1",'Pilot' );
+    let pilot_t2_w1_weekly_Score1 = await etlRepository.getWeeklyScore(t2_l2_courseId,"T2",'Pilot' );
+
+    // let pilot_t1_l2_w2 = await etlRepository.getWeeklyScore_pilot(104,"T1",1);
+    // pilot_t1_l2_w2 = pilot_t1_l2_w2.map(entry => entry.final_percentage).map(value => [value]);
+
+    pilot_t1_w1_weekly_Score1 = pilot_t1_w1_weekly_Score1.map((entry) => [
+      // entry.phoneNumber,
+      entry.final_percentage_week1,
+      entry.final_percentage_week2,
+      entry.final_percentage_week3,
+      entry.final_percentage_week4,
+    ]);
+    pilot_t2_w1_weekly_Score1 = pilot_t2_w1_weekly_Score1.map((entry) => [
+      // entry.phoneNumber,
+      entry.final_percentage_week1,
+      entry.final_percentage_week2,
+      entry.final_percentage_week3,
+      entry.final_percentage_week4,
+    ]);
+
+    // let pilot_t2_w1_weekly_Score = await etlRepository.getWeeklyScore(t2_l2_courseId,"T2");
+
+    pilot_t1_w1_weekly_Score = pilot_t1_w1_weekly_Score.map((entry) => [
+      // entry.phoneNumber,
+      entry.final_percentage_week1,
+      entry.final_percentage_week2,
+      entry.final_percentage_week3,
+      entry.final_percentage_week4,
+    ]);
+    pilot_t2_w1_weekly_Score = pilot_t2_w1_weekly_Score.map((entry) => [
+      // entry.phoneNumber,
+      entry.final_percentage_week1,
+      entry.final_percentage_week2,
+      entry.final_percentage_week3,
+      entry.final_percentage_week4,
+    ]);
+
+  //  console.log(pilot_t1_w1_weekly_Score);
+
+    // pilot_t1_w1_weekly_Score = pilot_t1_w1_weekly_Score.map(entry => entry.final_percentage).map(value => [value]);
+    // pilot_t2_w1_weekly_Score = pilot_t2_w1_weekly_Score.map(entry => entry.final_percentage).map(value => [value]);
+    // console.log(arrayOfT1Activity_level_Pilot);
+    // if (date_T1 && date_T2) {
+    //   for (const date of date_T1) {
+    //     const data1 = await T1Repository.getDataFromPostgres(
+    //       date,
+    //       "T1",
+    //       t1_l1_courseId
+    //     );
+    //     if (data1.length !== 0) {
+    //       activityCnt1.push(data1);
+    //     }
+    //   }
+    //   for (const date of date_T2) {
+    //     const data1 = await T1Repository.getDataFromPostgres(
+    //       date,
+    //       "T2",
+    //       t2_l1_courseId
+    //     );
+
+    //     if (data1.length !== 0) {
+    //       activityCnt2.push(data1);
+    //     }
+    //   }
+    // }
+    // const courseid3 = await courseId_gSheet("T1 Weekly-score");
+    // const courseid4 = await courseId_gSheet("T2 Weekly-score");
+
+    // const new_weeklyCntT1 = await newWeekActivityScore(activity_weekly_list1, "T1", courseid3);
+    // const new_weeklyCntT2 = await newWeekActivityScore(activity_weekly_list2, "T2", courseid4);
+    const new_weeklyCntT1 = [];
+    const new_weeklyCntT2 = [];
+
+    // const weeklyCntT1 = await getWeeklyDate("T1", courseid3);
+    // const weeklyCntT2 = await getWeeklyDate("T2", courseid4);
+    const weeklyCntT1 = [];
+    const weeklyCntT2 =[];
+    // console.log(success_list1);
+  //  console.log(arrayOfT1Activity_Pilot);
+
+  await lesson_loadDataToGoogleSheets(
+    arrayOfT1Lesson_Pilot,
+    pilot_t1_w1_weekly_Score,
+    pilot_t2_w1_weekly_Score,
+    pilot_t1_w1_weekly_Score1,
+    pilot_t2_w1_weekly_Score1,
+    // pilot_t1_l2_w2
+    // pilot_t1_w1_weekly_Score_l1,
+    // pilot_t2_w1_weekly_Score_l1
+  );
+
+    await new_loadDataToGoogleSheets(
+      arrayOfT1Activity_Pilot,
+      activityMap2,
+      total_actvity1,
+      total_actvity2,
+      activityCompletedMap1,
+      activityCompletedMap2,
+      pilot_lastActivityCompleted_t1_l1_Map,
+      pilot_lastActivityCompleted_t2_l1_Map,
+      pilot_lastActivityCompleted_t1_l2_Map,
+      pilot_lastActivityCompleted_t2_l2_Map
+    );
+
+    // console.log(funnel);
 
     await loadDataToGoogleSheets(
       new_data_list,
@@ -91,6 +328,11 @@ const runETL = async () => {
       activityMap2,
       new_weeklyCntT1,
       new_weeklyCntT2,
+      success_list1,
+      success_list2,
+      success_list3,
+      success_list4,
+      
     );
 
   } catch (error) {
@@ -99,4 +341,68 @@ const runETL = async () => {
   }
 };
 
-export default { runETL };
+const runETL_Dashboard = async () => {
+  try {
+    let userMetadata_Pilot = await getWeeklyActivityCompleted1.getUserMetadataAll('Pilot');
+    let userMetadata_Control = await getWeeklyActivityCompleted1.getUserMetadataAll('Control');
+    let userMetadata_Rollout = await getWeeklyActivityCompleted1.getUserMetadataAll('Rollout');
+    let userMetadata_overTime = await getWeeklyActivityCompleted1.getUserMetadataTime();
+
+    const funnel_count = await T1Repository.getDashboardStats();
+    const funnel = await googleSheetStats(funnel_count);
+
+    userMetadata_Pilot = userMetadata_Pilot.map(obj => Object.values(obj).map(value => value));
+    userMetadata_Control = userMetadata_Control.map(obj => Object.values(obj).map(value => value));
+    userMetadata_Rollout = userMetadata_Rollout.map(obj => Object.values(obj).map(value => value));
+    userMetadata_overTime = userMetadata_overTime.map(obj => Object.values(obj).map(value => value));
+
+    let successRate1 = await etlRepository.getSuccessRate(98,'T1','Pilot');
+    let successRate2 = await etlRepository.getSuccessRate(99,'T2','Pilot');
+    let successRate3 = await etlRepository.getSuccessRate(104,'T1','Pilot');
+    let successRate4 = await etlRepository.getSuccessRate(103,'T2','Pilot');
+    let successRate5 = await etlRepository.getSuccessRate(105,'T2','');
+    let successRate6 = await etlRepository.getSuccessRate(106,'T1','');
+
+    successRate1 = Object.values(successRate1[0]).map((value) => {
+      return Number(value) || null;
+    });
+    successRate2 = Object.values(successRate2[0]).map((value) => {
+      return Number(value) || null;
+    });
+    successRate3 = Object.values(successRate3[0]).map((value) => {
+      return Number(value) || null;
+    });
+    successRate4 = Object.values(successRate4[0]).map((value) => {
+      return Number(value) || null;
+    });
+    successRate5 = Object.values(successRate5[0]).map((value) => {
+      return Number(value) || null;
+    });
+    successRate6 = Object.values(successRate6[0]).map((value) => {
+      return Number(value) || null;
+    });
+
+    // console.log(successRate4);
+    
+
+    await DashboardUtils_load(
+      userMetadata_Pilot,
+      userMetadata_Control,
+      userMetadata_Rollout,
+      userMetadata_overTime,
+      successRate1,
+      successRate2,
+      successRate3,
+      successRate4,
+      successRate5,
+      successRate6,
+      funnel
+    );
+
+  } catch (error) {
+    error.fileName = "etlService.js";
+    throw error;
+  }
+};
+
+export default { runETL, runETL_Dashboard };

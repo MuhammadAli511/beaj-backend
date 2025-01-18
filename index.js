@@ -7,6 +7,8 @@ import sequelize from './config/sequelize.js';
 import cors from 'cors';
 import routes from './routes/index.js';
 import etlController from './controllers/etlController.js';
+import cron from "node-cron";
+
 
 const port = 8080;
 
@@ -39,7 +41,7 @@ async function startETLProcess() {
       `Initial ETL process completed in ${totalTimeInitial / 1000} seconds.`
     );
     console.log("ETL process completed successfully.");
-    setInterval(async () => {
+    cron.schedule("0 0,12 * * *", async () => {
       try {
         console.log("Starting ETL process...");
         const startTimeInitial = new Date();
@@ -53,8 +55,7 @@ async function startETLProcess() {
       } catch (error) {
         console.error("Error during ETL process:", error);
       }
-    }, 3600000);
-    //3600000
+    });
   } catch (error) {
     console.error("Error during ETL process:", error);
   }

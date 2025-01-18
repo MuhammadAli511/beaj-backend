@@ -14,7 +14,7 @@ const googleSheetStats = async (funnel) => {
                 funnel.freeDemoEnded.count,
                 funnel.registeredUsers.count,
                 funnel.selectedUsers.count,
-                funnel.purchasedUsers.count,
+                // funnel.purchasedUsers.count,
             ],
             [
                 safePercentage(funnel.linkClicked.percentage) + "%",
@@ -22,7 +22,7 @@ const googleSheetStats = async (funnel) => {
                 safePercentage(funnel.freeDemoEnded.percentage) + "%",
                 safePercentage(funnel.registeredUsers.percentage) + "%",
                 safePercentage(funnel.selectedUsers.percentage) + "%",
-                safePercentage(funnel.purchasedUsers.percentage) + "%",
+                // safePercentage(funnel.purchasedUsers.percentage) + "%",
             ],
         ];
         return dashboardCount;
