@@ -14,10 +14,6 @@ export default async function interalUsersAuth(req, res, next) {
             return decoded;
         });
 
-        if (decoded.email == "info@beaj.org") {
-            return res.status(401).send({ message: 'Unauthorized' });
-        }
-
         req.email = decoded.email;
         next();
     } catch (error) {

@@ -97,6 +97,15 @@ const getCourseNameById = async (courseId) => {
     return course.CourseName;
 };
 
+const getCourseByCourseName = async (courseName) => {
+    const course = await Course.findOne({
+        where: {
+            CourseName: courseName
+        }
+    });
+    return course;
+};
+
 export default {
     totalCoursesRepository,
     create,
@@ -109,5 +118,6 @@ export default {
     getByCourseCategoryId,
     deleteByCourseCategoryId,
     getCourseIdByName,
-    getCourseNameById
+    getCourseNameById,
+    getCourseByCourseName
 };

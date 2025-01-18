@@ -1,5 +1,5 @@
 import express from 'express';
-import beajEmployeesAuth from '../middlewares/beajEmployeesAuth.js';
+import beajFacilitatorsAuth from '../middlewares/beajFacilitatorsAuth.js';
 import statsController from '../controllers/statsController.js';
 import errorHandler from '../middlewares/errorHandler.js';
 
@@ -11,10 +11,13 @@ router.get('/status', (req, res) => {
 });
 
 // GET  api/stats/totalContentStats
-router.get('/totalContentStats', beajEmployeesAuth, statsController.totalContentStatsController);
+router.get('/totalContentStats', beajFacilitatorsAuth, statsController.totalContentStatsController);
 
 // GET api/stats/dashboardCardsFunnel
-router.get('/dashboardCardsFunnel', beajEmployeesAuth, statsController.dashboardCardsFunnelController);
+router.get('/dashboardCardsFunnel', beajFacilitatorsAuth, statsController.dashboardCardsFunnelController);
+
+// POST api/stats/lastActiveUsers
+router.post('/lastActiveUsers', beajFacilitatorsAuth, statsController.lastActiveUsersController);
 
 // Use error handler middleware
 router.use(errorHandler);

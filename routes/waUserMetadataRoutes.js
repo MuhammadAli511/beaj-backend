@@ -1,5 +1,5 @@
 import express from 'express';
-import beajEmployeesAuth from '../middlewares/beajEmployeesAuth.js';
+import beajFacilitatorsAuth from '../middlewares/beajFacilitatorsAuth.js';
 import waUserMetaDataController from '../controllers/waUserMetaDataController.js';
 import errorHandler from '../middlewares/errorHandler.js';
 
@@ -11,13 +11,13 @@ router.get('/status', (req, res) => {
 });
 
 // GET  api/waUserMetaData/getAll
-router.get('/getAll', beajEmployeesAuth, waUserMetaDataController.getAllWaUserMetaDataController);
+router.get('/getAll', beajFacilitatorsAuth, waUserMetaDataController.getAllWaUserMetaDataController);
 
 // GET api/waUserMetaData/getByPhoneNumber/:phoneNumber
-router.get('/getByPhoneNumber/:phoneNumber', beajEmployeesAuth, waUserMetaDataController.getWaUserMetaDataByPhoneNumberController);
+router.get('/getByPhoneNumber/:phoneNumber', beajFacilitatorsAuth, waUserMetaDataController.getWaUserMetaDataByPhoneNumberController);
 
 // POST api/waUserMetaData/assignTargetGroup
-router.post('/assignTargetGroup', beajEmployeesAuth, waUserMetaDataController.assignTargetGroupController);
+router.post('/assignTargetGroup', beajFacilitatorsAuth, waUserMetaDataController.assignTargetGroupController);
 
 // Use error handler middleware
 router.use(errorHandler);

@@ -8,6 +8,12 @@ WA_UsersMetadata.init({
         type: DataTypes.TEXT,
         primaryKey: true,
     },
+    userId: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        unique: true,
+        allowNull: false,
+    },
     name: {
         type: DataTypes.TEXT,
         allowNull: true,
@@ -42,6 +48,18 @@ WA_UsersMetadata.init({
     },
     userRegistrationComplete: {
         type: DataTypes.DATE,
+        allowNull: true,
+    },
+    cohort: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    isTeacher: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    schoolName: {
+        type: DataTypes.TEXT,
         allowNull: true,
     },
 }, {
