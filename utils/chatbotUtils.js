@@ -1770,12 +1770,13 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
             } else if (messageType === 'audio') {
                 // Get the current Listen and Speak question
                 const currentListenAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
-
+                const answersArray = currentListenAndSpeakQuestion.dataValues.answer;
                 // OpenAI Speech to Text
-                const recognizedText = await azureAIServices.openaiSpeechToText(messageContent.data);
+                let prompt = "Question: " + currentListenAndSpeakQuestion.dataValues.question + "\n\nAnswer: " + answersArray[0];
+                const recognizedText = await azureAIServices.openaiSpeechToTextWithPrompt(messageContent.data, prompt);
                 if (recognizedText) {
                     // Checking if user response is correct or not
-                    const answersArray = currentListenAndSpeakQuestion.dataValues.answer;
+
                     let userAnswerIsCorrect = false;
                     const recognizedTextWithoutPunctuation = recognizedText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"‘’“”?]/g, "").toLowerCase();
                     for (let i = 0; i < answersArray.length; i++) {

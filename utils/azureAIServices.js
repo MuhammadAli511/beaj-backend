@@ -141,6 +141,27 @@ async function openaiSpeechToText(audioBuffer) {
     }
 };
 
+async function openaiSpeechToTextWithPrompt(audioBuffer, prompt) {
+    const openai = new OpenAI(process.env.OPENAI_API_KEY);
+
+    const uniqueFileName = `audio-${uuidv4()}.ogg`;
+    const tempFilePath = join(tmpdir(), uniqueFileName);
+
+    try {
+        await writeFile(tempFilePath, audioBuffer);
+
+        const transcription = await openai.audio.transcriptions.create({
+            file: fs.createReadStream(tempFilePath),
+            model: "whisper-1",
+            language: 'en',
+            prompt: prompt
+        });
+        return transcription.text;
+    } finally {
+        await unlink(tempFilePath);
+    }
+};
+
 async function openaiSpeechToTextAnyLanguage(audioBuffer) {
     const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
@@ -701,6 +722,7 @@ export default {
     openaiCustomFeedback,
     azureSpeakingAssessment,
     openaiSpeechToTextAnyLanguage,
-    azureSpeechToTextAnyLanguage
+    azureSpeechToTextAnyLanguage,
+    openaiSpeechToTextWithPrompt
 };
 
