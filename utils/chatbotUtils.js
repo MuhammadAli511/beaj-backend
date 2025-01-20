@@ -1030,15 +1030,18 @@ const startCourseForUser = async (userMobileNumber, numbers_to_ignore) => {
         null,
     );
 
-
-    // Send course_bot_introduction_message
-    let intro_message = "Assalam o Alaikum 👋\nWelcome to Beaj Self Development Course for Teachers!\nMa'am Zainab Qureshi and Ma'am Fizza Hasan will be your instructors."
-    await sendMessage(userMobileNumber, intro_message);
-    await createActivityLog(userMobileNumber, "text", "outbound", intro_message, null);
-
     // Extract Level from courseName
     const courseName = nextCourse.dataValues.courseName.split("-");
     const level = courseName[0].trim();
+
+    // Send course_bot_introduction_message
+    let intro_message = "Assalam o Alaikum 👋\nWelcome to Beaj Self Development Course for Teachers" + level;
+    if (level == "Level 1") {
+        intro_message += "!\nMa'am Zainab Qureshi and Ma'am Fizza Hasan will be your instructors.";
+    }
+    await sendMessage(userMobileNumber, intro_message);
+    await createActivityLog(userMobileNumber, "text", "outbound", intro_message, null);
+
 
     if (level == "Level 1") {
         // Send demo_video
