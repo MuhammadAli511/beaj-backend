@@ -1081,8 +1081,8 @@ const levelCourseStart = async (userMobileNumber, startingLesson, courseId) => {
 
 
     // Text Message
-    await sendMessage(userMobileNumber, "Great! Let's start " + level + "! 🤩 Here is your first lesson.");
-    await createActivityLog(userMobileNumber, "text", "outbound", "Great! Let's start " + level + "! 🤩 Here is your first lesson.", null);
+    await sendMessage(userMobileNumber, "Great! Let's start " + level + "! 🤩");
+    await createActivityLog(userMobileNumber, "text", "outbound", "Great! Let's start " + level + "! 🤩", null);
     return;
 };
 
