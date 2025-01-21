@@ -1005,8 +1005,8 @@ const startCourseForUser = async (userMobileNumber, numbers_to_ignore) => {
     console.log(todayYear, todayMonth, todayDate);
     console.log(courseStartYear, courseStartMonth, courseStartDateOnly);
     // Check if today < course start date
-    if (userMobileNumber in numbers_to_ignore) {
-        if (todayYear < courseStartYear || (todayYear === courseStartYear && todayMonth < courseStartMonth) || (todayYear === courseStartYear && todayMonth === courseStartMonth && todayDate < courseStartDateOnly)) {
+    if (todayYear < courseStartYear || (todayYear === courseStartYear && todayMonth < courseStartMonth) || (todayYear === courseStartYear && todayMonth === courseStartMonth && todayDate < courseStartDateOnly)) {
+        if (!numbers_to_ignore.includes(userMobileNumber)) {
             const formattedStartDate = format(new Date(nextCourse.dataValues.courseStartDate), 'MMMM do, yyyy');
             const message = "Your course will start on " + formattedStartDate + ". Please wait for the course to start.";
             await sendMessage(userMobileNumber, message);
@@ -1035,7 +1035,7 @@ const startCourseForUser = async (userMobileNumber, numbers_to_ignore) => {
     const level = courseName[0].trim();
 
     // Send course_bot_introduction_message
-    let intro_message = "Assalam o Alaikum 👋\nWelcome to Beaj Self Development Course for Teachers" + level;
+    let intro_message = "Assalam o Alaikum 👋\nWelcome to Beaj Self Development Course for Teachers " + level;
     if (level == "Level 1") {
         intro_message += "!\nMa'am Zainab Qureshi and Ma'am Fizza Hasan will be your instructors.";
     }
