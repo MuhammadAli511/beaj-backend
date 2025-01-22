@@ -26,6 +26,7 @@ import {
     removeUserTillCourse,
     teacherInputMessage,
     schoolNameInputMessage,
+    createFeedback
 } from "../utils/chatbotUtils.js";
 
 dotenv.config();
@@ -659,8 +660,21 @@ const webhookService = async (body, res) => {
             if (message.type === "text" || message.type === "interactive") {
                 if (
                     messageContent.toLowerCase().includes("start next activity") ||
-                    messageContent.toLowerCase().includes("start next lesson")
+                    messageContent.toLowerCase().includes("start next lesson") ||
+                    messageContent.toLowerCase().includes("it was great") ||
+                    messageContent.toLowerCase().includes("it was great 😁") ||
+                    messageContent.toLowerCase().includes("it can be improved") ||
+                    messageContent.toLowerCase().includes("it can be improved 🤔")
                 ) {
+                    if (
+                        messageContent.toLowerCase().includes("it was great") ||
+                        messageContent.toLowerCase().includes("it was great 😁") ||
+                        messageContent.toLowerCase().includes("it can be improved") ||
+                        messageContent.toLowerCase().includes("it can be improved 🤔")
+                    ) {
+                        await createFeedback(userMobileNumber, messageContent);
+                        return;
+                    }
                     // Get next lesson to send user
                     const nextLesson = await lessonRepository.getNextLesson(
                         currentUserState.dataValues.currentCourseId,

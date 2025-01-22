@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import waUsersMetadataRepository from "../repositories/waUsersMetadataRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
 import waUserActivityLogsRepository from "../repositories/waUserActivityLogsRepository.js";
+import waFeedbackRepository from "../repositories/waFeedbackRepository.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import documentFileRepository from "../repositories/documentFileRepository.js";
 import courseRepository from "../repositories/courseRepository.js";
@@ -21,7 +22,6 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import OpenAI from "openai";
 import lessonRepository from "../repositories/lessonRepository.js";
-import fs from 'fs';
 
 dotenv.config();
 
@@ -545,6 +545,49 @@ const retrieveMediaURL = async (mediaId) => {
         },
     });
     return audioResponse;
+};
+
+const createFeedback = async (
+    phoneNumber,
+    feedbackContent
+) => {
+    const userCurrentProgress = await waUserProgressRepository.getByPhoneNumber(
+        phoneNumber
+    );
+
+    const userAcceptableList = userCurrentProgress.acceptableMessages || [];
+    if (userAcceptableList.includes("start next activity")) {
+        await waUserProgressRepository.updateAcceptableMessagesList(phoneNumber, ["start next activity"]);
+    } else if (userAcceptableList.includes("start next lesson")) {
+        await waUserProgressRepository.updateAcceptableMessagesList(phoneNumber, ["start next lesson"]);
+    }
+
+    let courseId = null,
+        lessonId = null,
+        weekNumber = null,
+        dayNumber = null,
+        activityType = null;
+
+    if (userCurrentProgress) {
+        courseId = userCurrentProgress.currentCourseId || null;
+        lessonId = userCurrentProgress.currentLessonId || null;
+        weekNumber = userCurrentProgress.currentWeek || null;
+        dayNumber = userCurrentProgress.currentDay || null;
+        activityType = await lessonRepository.getActivityByLessonId(lessonId);
+    }
+
+    await waFeedbackRepository.create({
+        phoneNumber: phoneNumber,
+        feedbackContent: feedbackContent,
+        courseId: courseId,
+        lessonId: lessonId,
+        weekNumber: weekNumber,
+        dayNumber: dayNumber,
+        activityType: activityType,
+    });
+
+    return;
+
 };
 
 const createActivityLog = async (
@@ -1171,6 +1214,15 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         }
     }
 
+
+    // Feedback Message
+    const randomNumber = Math.floor(Math.random() * 100) + 1;
+    if (randomNumber >= 50) {
+        let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + startingLesson.dataValues.activityAlias + " activity?";
+        await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", feedbackMessage, null);
+    }
+
     // FOR ALL ACTIVITIES
     if (lessonLast) {
         const courseName = await courseRepository.getCourseNameById(currentUserState.currentCourseId);
@@ -1218,7 +1270,12 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         }
 
         // Update acceptable messages list for the user
-        await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next lesson"]);
+        if (randomNumber >= 50) {
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next lesson", "it was great 😁", "it can be improved 🤔"]);
+        } else {
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next lesson"]);
+        }
+
 
         // Sleep
         await sleep(2000);
@@ -1227,11 +1284,14 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Lesson", null);
     } else {
         // Update acceptable messages list for the user
-        await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next activity"]);
+        if (randomNumber >= 50) {
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next activity", "it was great 😁", "it can be improved 🤔"]);
+        } else {
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next activity"]);
+        }
 
         // Sleep
         await sleep(2000);
-
 
         // Reply Buttons
         await sendButtonMessage(userMobileNumber, 'Are you ready to start the next activity?', [{ id: 'start_next_activity', title: 'Start Next Activity' }]);
@@ -2381,4 +2441,5 @@ export {
     weekEndScoreCalculation,
     teacherInputMessage,
     schoolNameInputMessage,
+    createFeedback
 };

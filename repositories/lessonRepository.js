@@ -255,6 +255,11 @@ const getLessonIdsByCourseAndWeekAndActivityType = async (courseId, weekNumber, 
     return lessons.map(lesson => lesson.LessonId);
 };
 
+const getActivityByLessonId = async (lessonId) => {
+    const lesson = await Lesson.findByPk(lessonId);
+    return lesson.activity;
+};
+
 
 export default {
     totalLessonsRepository,
@@ -271,5 +276,6 @@ export default {
     isLastLessonOfDay,
     getTotalDaysInCourse,
     getLessonsByCourse,
-    getLessonIdsByCourseAndWeekAndActivityType
+    getLessonIdsByCourseAndWeekAndActivityType,
+    getActivityByLessonId
 };
