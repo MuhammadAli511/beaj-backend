@@ -74,7 +74,7 @@ const uploadUserDataService = async (users) => {
         const newPhoneNumber = user.phone_number;
         const userExists = await waUsersMetadataRepository.getByPhoneNumber(newPhoneNumber);
         if (userExists) {
-            // console.log(`${newPhoneNumber}`);
+            console.log(`${newPhoneNumber}`);
             continue;
         }
         await waUsersMetadataRepository.create({
@@ -104,7 +104,7 @@ const uploadUserDataService = async (users) => {
             });
         }
         count++;
-        console.log(`${count}`);
+        // console.log(`${count}`);
     }
     return count;
 };

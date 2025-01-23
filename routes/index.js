@@ -17,7 +17,7 @@ import waConstantsRoutes from './waConstantsRoutes.js';
 import audioChatRoutes from './audioChatRoutes.js';
 import waPurchasedCoursesRoutes from './waPurchasedCoursesRoutes.js';
 import etlRoutes from './etlRoutes.js';
-
+import waFeedbackRoutes from './waFeedbackRoutes.js';
 const router = express.Router();
 
 // GET  api/status/
@@ -42,6 +42,7 @@ router.use('/waUserMetadata', waUserMetadataRoutes);
 router.use('/waConstants', waConstantsRoutes);
 router.use('/audioChat', audioChatRoutes);
 router.use('/waPurchasedCourses', waPurchasedCoursesRoutes);
+router.use('/waFeedback', waFeedbackRoutes);
 router.use('/etl_pipline', etlRoutes);
 
 export default router;
