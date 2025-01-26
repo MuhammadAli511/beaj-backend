@@ -809,7 +809,7 @@ const outlineMessage = async (userMobileNumber) => {
         lastUpdated: new Date(),
     });
     // Introduction message
-    let firstMessage = "Assalam o Alaikum 👋\nWelcome to Beaj Self Development Course for Teachers!";
+    let firstMessage = "Assalam o Alaikum 👋\n\nWelcome to Beaj Self Development Course for Teachers!";
     await sendMessage(userMobileNumber, firstMessage);
     await createActivityLog(userMobileNumber, "text", "outbound", firstMessage, null);
 
@@ -1078,9 +1078,9 @@ const startCourseForUser = async (userMobileNumber, numbers_to_ignore) => {
     const level = courseName[0].trim();
 
     // Send course_bot_introduction_message
-    let intro_message = "Assalam o Alaikum 👋\nWelcome to Beaj Self Development Course for Teachers " + level;
+    let intro_message = "Assalam o Alaikum 👋\n\nWelcome to Beaj Self Development Course for Teachers " + level;
     if (level == "Level 1") {
-        intro_message += "!\nMa'am Zainab Qureshi, Ma'am Fizza Hasan and Ma'am Sameen Shahid will be your instructors.";
+        intro_message += "!\n\nMa'am Zainab Qureshi, Ma'am Fizza Hasan and Ma'am Sameen Shahid will be your instructors.";
     }
     await sendMessage(userMobileNumber, intro_message);
     await createActivityLog(userMobileNumber, "text", "outbound", intro_message, null);
