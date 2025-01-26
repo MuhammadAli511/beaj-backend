@@ -1215,13 +1215,6 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
     }
 
 
-    // Feedback Message
-    const randomNumber = Math.floor(Math.random() * 100) + 1;
-    if (randomNumber >= 50) {
-        let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + startingLesson.dataValues.activityAlias + " activity?";
-        await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
-        await createActivityLog(userMobileNumber, "template", "outbound", feedbackMessage, null);
-    }
 
     // FOR ALL ACTIVITIES
     if (lessonLast) {
@@ -1269,8 +1262,12 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
             await createActivityLog(userMobileNumber, "text", "outbound", dayEndingMessage, null);
         }
 
-        // Update acceptable messages list for the user
+        // Feedback Message
+        const randomNumber = Math.floor(Math.random() * 100) + 1;
         if (randomNumber >= 50) {
+            let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + startingLesson.dataValues.activityAlias + " activity?";
+            await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", feedbackMessage, null);
             await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next lesson", "it was great 😁", "it can be improved 🤔"]);
         } else {
             await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next lesson"]);
@@ -1284,7 +1281,11 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Lesson", null);
     } else {
         // Update acceptable messages list for the user
+        const randomNumber = Math.floor(Math.random() * 100) + 1;
         if (randomNumber >= 50) {
+            let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + startingLesson.dataValues.activityAlias + " activity?";
+            await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", feedbackMessage, null);
             await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next activity", "it was great 😁", "it can be improved 🤔"]);
         } else {
             await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next activity"]);
