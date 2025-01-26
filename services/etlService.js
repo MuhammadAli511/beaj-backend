@@ -13,6 +13,7 @@ import getWeeklyActivityCompleted1 from "../repositories/etl_weeklyScoreReposito
 import newWeekActivityScore from "../google_sheet_utils/newWeekActivityScore.js";
 import etl_T1Repository from "../repositories/etl_T1Repository.js";
 import DashboardUtils_load from "../google_sheet_utils/DashboardUtils.js";
+import CumulativeUtils_load from "../google_sheet_utils/cumulativeUtils.js";
 
 const runETL = async () => {
   try {
@@ -360,8 +361,8 @@ const runETL_Dashboard = async () => {
     let successRate2 = await etlRepository.getSuccessRate(99,'T2','Pilot');
     let successRate3 = await etlRepository.getSuccessRate(104,'T1','Pilot');
     let successRate4 = await etlRepository.getSuccessRate(103,'T2','Pilot');
-    let successRate5 = await etlRepository.getSuccessRate(105,'T2','');
-    let successRate6 = await etlRepository.getSuccessRate(106,'T1','');
+    let successRate6 = await etlRepository.getSuccessRate(105,'T2','');
+    let successRate5 = await etlRepository.getSuccessRate(106,'T1','');
 
     successRate1 = Object.values(successRate1[0]).map((value) => {
       return Number(value) || null;
@@ -398,6 +399,110 @@ const runETL_Dashboard = async () => {
       successRate6,
       funnel
     );
+
+      let courseId_l1 = 105;
+      let courseId_l2 = null;
+      let courseId_l3 = null;
+
+      let courseId_l10 = 106;
+      let courseId_l20 = null;
+      let courseId_l30 = null;
+
+  
+      let array_Lesson_List1 = await getWeeklyActivityCompleted1.getLessonCompletions(courseId_l1,courseId_l2,courseId_l3,'T1');
+      array_Lesson_List1 = array_Lesson_List1.map(obj => Object.values(obj).map(value => value));
+      
+      let array_Lesson_List2 = await getWeeklyActivityCompleted1.getLessonCompletions(courseId_l10,courseId_l20,courseId_l30,'T2');
+      array_Lesson_List2 = array_Lesson_List2.map(obj => Object.values(obj).map(value => value));
+
+      var array_Lesson_List = array_Lesson_List1.concat(array_Lesson_List2);
+    
+      
+      let array_activity_List1 = await getWeeklyActivityCompleted1.getActivity_Completions(courseId_l1,courseId_l2,courseId_l3,'T1');
+      array_activity_List1 = array_activity_List1.map(obj => Object.values(obj).map(value => value));
+
+      let array_activity_List2 = await getWeeklyActivityCompleted1.getActivity_Completions(courseId_l10,courseId_l20,courseId_l30,'T2');
+      array_activity_List2 = array_activity_List2.map(obj => Object.values(obj).map(value => value));
+
+      var array_activity_List = array_activity_List1.concat(array_activity_List2);
+  
+      let weekly_score_l1_list = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l1,'T1');
+      let weekly_score_l2_list = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l2,'T1');
+      let weekly_score_l3_list = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l3,'T1');
+      let weekly_score_l1_list0 = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l10,'T2');
+      let weekly_score_l2_list1 = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l20,'T2');
+      let weekly_score_l3_list2 = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l30,'T2');
+
+      let arrayT1_List2 = [];
+
+      for (let i = 0; i < weekly_score_l1_list.length; i++) {
+      
+        let l1_entry = weekly_score_l1_list[i];
+        let l2_entry = weekly_score_l2_list[i];
+        let l3_entry = weekly_score_l3_list[i];
+
+        arrayT1_List2.push([
+           i+1,
+          l1_entry.phoneNumber,
+          l1_entry.name,
+          l1_entry.final_percentage_week1,
+          l1_entry.final_percentage_week2,
+          l1_entry.final_percentage_week3,
+          l1_entry.final_percentage_week4,
+          null,
+          l2_entry.final_percentage_week1,
+          l2_entry.final_percentage_week2,
+          l2_entry.final_percentage_week3,
+          l2_entry.final_percentage_week4,
+          null,
+          l3_entry.final_percentage_week1,
+          l3_entry.final_percentage_week2,
+          l3_entry.final_percentage_week3,
+          l3_entry.final_percentage_week4,
+          null,
+          l1_entry.cohort,
+          l1_entry.targetGroup,
+        ])
+      }
+
+      for (let i = 0; i < weekly_score_l1_list0.length; i++) {
+      
+        let l1_entry = weekly_score_l1_list0[i];
+        let l2_entry = weekly_score_l2_list1[i];
+        let l3_entry = weekly_score_l3_list2[i];
+
+        arrayT1_List2.push([
+          i + 1 + weekly_score_l1_list.length,
+          l1_entry.phoneNumber,
+          l1_entry.name,
+          l1_entry.final_percentage_week1,
+          l1_entry.final_percentage_week2,
+          l1_entry.final_percentage_week3,
+          l1_entry.final_percentage_week4,
+          null,
+          l2_entry.final_percentage_week1,
+          l2_entry.final_percentage_week2,
+          l2_entry.final_percentage_week3,
+          l2_entry.final_percentage_week4,
+          null,
+          l3_entry.final_percentage_week1,
+          l3_entry.final_percentage_week2,
+          l3_entry.final_percentage_week3,
+          l3_entry.final_percentage_week4,
+          null,
+          l1_entry.cohort,
+          l1_entry.targetGroup,
+        ])
+      }
+      arrayT1_List2 = arrayT1_List2.map(obj => Object.values(obj).map(value => value));
+
+      console.log(array_Lesson_List);
+      
+      await CumulativeUtils_load(
+        array_Lesson_List,
+        array_activity_List,
+        arrayT1_List2
+      );
 
   } catch (error) {
     error.fileName = "etlService.js";

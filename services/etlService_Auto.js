@@ -14,7 +14,7 @@ const runETL = async (targetGroup,module,cohort,co_no,facilitator) => {
       courseId_l3 = null;
       flag_valid = 1;
     }
-    else if(co_no > 25 && co_no < 49 && targetGroup == "T2"){
+    else if(co_no > 24 && co_no < 49 && targetGroup == "T2"){
       courseId_l1 = 105;
       courseId_l2 = null;
       courseId_l3 = null;
@@ -33,7 +33,7 @@ const runETL = async (targetGroup,module,cohort,co_no,facilitator) => {
       flag_valid = 1;
     }
     
-   if(flag_valid == 1 && courseId_l1 !== null && courseId_l2 !== null && courseId_l3 !== null && module && facilitator){
+   if(flag_valid == 1  && module && facilitator){
       let arrayT1_List = [], ActivityCompletedCount = [];
       let last_activityCompleted_l1 = [], last_activityCompleted_l2 = [], last_activityCompleted_l3 = [];
       await new_loadDataToGoogleSheets(
@@ -46,17 +46,25 @@ const runETL = async (targetGroup,module,cohort,co_no,facilitator) => {
         last_activityCompleted_l2,
         last_activityCompleted_l3
         );
+
       flag_valid = 2;
+
       if(module == "Lesson"){
         arrayT1_List = await etlRepository.getLessonCompletions(courseId_l1,courseId_l2,courseId_l3,targetGroup,cohort);
         arrayT1_List = arrayT1_List.map(obj => Object.values(obj).map(value => value));
         }
 
       if(module == "Activity"){
-        // flag_valid = 3;
         arrayT1_List = await etlRepository.getActivity_Completions(courseId_l1,courseId_l2,courseId_l3,targetGroup,cohort);
         arrayT1_List = arrayT1_List.map(obj => Object.values(obj).map(value => value));
         ActivityCompletedCount = await etlRepository.getActivityNameCount(courseId_l1,courseId_l2,courseId_l3,targetGroup,cohort);
+
+        last_activityCompleted_l1 = await etlRepository.getLastActivityCompleted(courseId_l1,targetGroup,cohort);
+        last_activityCompleted_l1 = last_activityCompleted_l1.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
+        last_activityCompleted_l2 = await etlRepository.getLastActivityCompleted(courseId_l2,targetGroup,cohort);
+        last_activityCompleted_l2 = last_activityCompleted_l2.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
+        last_activityCompleted_l3 = await etlRepository.getLastActivityCompleted(courseId_l3,targetGroup,cohort);
+        last_activityCompleted_l3 = last_activityCompleted_l3.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
        }
 
       if(module == "Week"){
@@ -95,12 +103,6 @@ const runETL = async (targetGroup,module,cohort,co_no,facilitator) => {
             }
             arrayT1_List = arrayT1_List.map(obj => Object.values(obj).map(value => value));
       }
-        last_activityCompleted_l1 = await etlRepository.getLastActivityCompleted(courseId_l1,targetGroup,cohort);
-        last_activityCompleted_l1 = last_activityCompleted_l1.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
-        last_activityCompleted_l2 = await etlRepository.getLastActivityCompleted(courseId_l2,targetGroup,cohort);
-        last_activityCompleted_l2 = last_activityCompleted_l2.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
-        last_activityCompleted_l3 = await etlRepository.getLastActivityCompleted(courseId_l3,targetGroup,cohort);
-        last_activityCompleted_l3 = last_activityCompleted_l3.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
 
       await new_loadDataToGoogleSheets(
         arrayT1_List,
