@@ -1080,7 +1080,7 @@ const startCourseForUser = async (userMobileNumber, numbers_to_ignore) => {
     // Send course_bot_introduction_message
     let intro_message = "Assalam o Alaikum 👋\n\nWelcome to Beaj Self Development Course for Teachers " + level + "!";
     if (level == "Level 1") {
-        intro_message += "!\n\nMa'am Zainab Qureshi, Ma'am Fizza Hasan and Ma'am Sameen Shahid will be your instructors.";
+        intro_message += "\n\nMa'am Zainab Qureshi, Ma'am Fizza Hasan and Ma'am Sameen Shahid will be your instructors.";
     }
     await sendMessage(userMobileNumber, intro_message);
     await createActivityLog(userMobileNumber, "text", "outbound", intro_message, null);
