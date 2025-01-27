@@ -1233,9 +1233,6 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         const smallCourseName = strippedCourseName.replace(/\s/g, '').toLowerCase();
         const imageTag = "lesson_complete_image_lesson_" + lessonNumber.toString() + "_" + smallCourseName;
         let fileExtnesion = ".jpg";
-        if (smallCourseName == "level1") {
-            fileExtnesion = ".jpeg";
-        }
         const lessonCompleteImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/" + imageTag + fileExtnesion;
         await sendMediaMessage(userMobileNumber, lessonCompleteImage, 'image');
         await createActivityLog(userMobileNumber, "image", "outbound", lessonCompleteImage, null);
