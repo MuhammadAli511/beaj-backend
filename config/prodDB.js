@@ -17,7 +17,12 @@ const prodSequelize = new Sequelize(database, username, password, {
             rejectUnauthorized: false
         }
     },
-    logging: false
+    logging: false,
+    pool: {
+        max: 30,
+        min: 2,
+        idle: 10000,
+    }
 });
 
 export default prodSequelize;

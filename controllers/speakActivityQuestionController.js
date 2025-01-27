@@ -62,5 +62,5 @@ export default {
     getAllSpeakActivityQuestionController,
     getSpeakActivityQuestionByIdController,
     updateSpeakActivityQuestionController,
-    deleteSpeakActivityQuestionController
+    deleteSpeakActivityQuestionController,
 };

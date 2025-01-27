@@ -79,7 +79,34 @@ const dashboardCardsFunnelService = async () => {
     }
 };
 
+
+const lastActiveUsersService = async (days, cohorts) => {
+    try {
+        let filteredUsers = await waUsersMetadataRepository.getFilteredUsersWithControlGroupAndCohort(cohorts);
+        const lastActiveUsers = await waUserActivityLogsRepository.getLastActiveUsers(days, filteredUsers);
+        filteredUsers = filteredUsers
+            .map(user => {
+                const lastMessageTimestamp = lastActiveUsers.find(log => log.dataValues.phoneNumber === user.dataValues.phoneNumber)?.dataValues.timestamp;
+                if (!lastMessageTimestamp) return null;
+                const timeDiff = new Date() - lastMessageTimestamp;
+                const inactiveDays = Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));
+                if (inactiveDays > days) return null;
+                return {
+                    ...user.dataValues,
+                    lastMessageTimestamp,
+                    inactiveDays
+                };
+            })
+            .filter(user => user !== null);
+        return filteredUsers;
+    } catch (error) {
+        error.fileName = 'statsService.js';
+        throw error;
+    }
+};
+
 export default {
     totalContentStatsService,
-    dashboardCardsFunnelService
+    dashboardCardsFunnelService,
+    lastActiveUsersService
 };

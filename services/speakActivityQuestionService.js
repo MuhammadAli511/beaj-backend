@@ -11,6 +11,13 @@ const createSpeakActivityQuestionService = async (question, mediaFile, answer, l
         } else {
             if (activityType != 'conversationalAgencyBot') {
                 mediaUrl = await azureAIServices.azureTextToSpeechAndUpload(question);
+            } else {
+                if (question.includes("<question>")) {
+                    const questionText = question.match(/<question>(.*?)<\/question>/s)[1].trim();
+                    if (questionText != "") {
+                        mediaUrl = await azureAIServices.azureTextToSpeechAndUpload(questionText);
+                    }
+                }
             }
         }
 

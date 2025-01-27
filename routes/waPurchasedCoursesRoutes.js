@@ -1,5 +1,5 @@
 import express from 'express';
-import beajEmployeesAuth from '../middlewares/beajEmployeesAuth.js';
+import beajFacilitatorsAuth from '../middlewares/beajFacilitatorsAuth.js';
 import waPurchasedCoursesController from '../controllers/waPurchasedCoursesController.js';
 import errorHandler from '../middlewares/errorHandler.js';
 
@@ -11,19 +11,19 @@ router.get('/status', (req, res) => {
 });
 
 // GET api/waPurchasedCourses/getAllCoursesByPhoneNumber/:phoneNumber
-router.get('/getAllCoursesByPhoneNumber/:phoneNumber', beajEmployeesAuth, waPurchasedCoursesController.getAllCoursesByPhoneNumberController);
+router.get('/getAllCoursesByPhoneNumber/:phoneNumber', beajFacilitatorsAuth, waPurchasedCoursesController.getAllCoursesByPhoneNumberController);
 
 // GET  api/waPurchasedCourses/getPurchasedCoursesByPhoneNumber/:phoneNumber
-router.get('/getPurchasedCoursesByPhoneNumber/:phoneNumber', beajEmployeesAuth, waPurchasedCoursesController.getPurchasedCoursesByPhoneNumberController);
+router.get('/getPurchasedCoursesByPhoneNumber/:phoneNumber', beajFacilitatorsAuth, waPurchasedCoursesController.getPurchasedCoursesByPhoneNumberController);
 
 // GET api/waPurchasedCourses/getUnpurchasedCoursesByPhoneNumber/:phoneNumber
-router.get('/getUnpurchasedCoursesByPhoneNumber/:phoneNumber', beajEmployeesAuth, waPurchasedCoursesController.getUnpurchasedCoursesByPhoneNumberController);
+router.get('/getUnpurchasedCoursesByPhoneNumber/:phoneNumber', beajFacilitatorsAuth, waPurchasedCoursesController.getUnpurchasedCoursesByPhoneNumberController);
 
 // POST api/waPurchasedCourses/purchaseCourse
-router.post('/purchaseCourse', beajEmployeesAuth, waPurchasedCoursesController.purchaseCourseController);
+router.post('/purchaseCourse', beajFacilitatorsAuth, waPurchasedCoursesController.purchaseCourseController);
 
 // GET api/waPurchasedCourses/getCompletedCourse/:phoneNumber
-router.get('/getCompletedCourses/:phoneNumber', beajEmployeesAuth, waPurchasedCoursesController.getCompletedCourseController);
+router.get('/getCompletedCourses/:phoneNumber', beajFacilitatorsAuth, waPurchasedCoursesController.getCompletedCourseController);
 
 // Use error handler middleware
 router.use(errorHandler);

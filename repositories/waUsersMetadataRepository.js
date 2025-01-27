@@ -33,6 +33,9 @@ const deleteByPhoneNumber = async (phoneNumber) => {
 };
 
 const assignTargetGroup = async (phoneNumber, targetGroup) => {
+    if (targetGroup == "None") {
+        targetGroup = null;
+    }
     return await WA_UsersMetadata.update({
         targetGroup: targetGroup
     }, {
@@ -86,6 +89,31 @@ const getFreeDemoEndedUsersCount = async () => {
     });
 };
 
+const getFilteredUsersWithControlGroupAndCohort = async (cohorts) => {
+    if (cohorts.includes("All")) {
+        return await WA_UsersMetadata.findAll({
+            where: {
+                targetGroup: {
+                    [Sequelize.Op.in]: ["T1", "T2"]
+                },
+                cohort: {
+                    [Sequelize.Op.not]: null
+                }
+            }
+        });
+    }
+    return await WA_UsersMetadata.findAll({
+        where: {
+            cohort: {
+                [Sequelize.Op.in]: cohorts
+            },
+            targetGroup: {
+                [Sequelize.Op.in]: ["T1", "T2"]
+            }
+        }
+    });
+};
+
 export default {
     create,
     getAll,
@@ -97,5 +125,6 @@ export default {
     getRegisteredUsersCount,
     getSelectedUsersCount,
     getFreeDemoStartedUsersCount,
-    getFreeDemoEndedUsersCount
+    getFreeDemoEndedUsersCount,
+    getFilteredUsersWithControlGroupAndCohort
 };

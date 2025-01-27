@@ -11,14 +11,13 @@ import speakActivityQuestionRoutes from './speakActivityQuestionRoutes.js';
 import multipleChoiceQuestionRoutes from './multipleChoiceQuestionRoutes.js';
 import multipleChoiceQuestionAnswerRoutes from './multipleChoiceQuestionAnswerRoutes.js';
 import chatbotRoutes from './chatbotRoutes.js';
-import waUserRoutes from './waUserRoutes.js';
 import waUserActivityLogsRoutes from './waUserActivityLogsRoutes.js';
 import waUserMetadataRoutes from './waUserMetadataRoutes.js';
 import waConstantsRoutes from './waConstantsRoutes.js';
 import audioChatRoutes from './audioChatRoutes.js';
 import waPurchasedCoursesRoutes from './waPurchasedCoursesRoutes.js';
 import etlRoutes from './etlRoutes.js';
-
+import waFeedbackRoutes from './waFeedbackRoutes.js';
 const router = express.Router();
 
 // GET  api/status/
@@ -38,12 +37,12 @@ router.use('/speakActivityQuestion', speakActivityQuestionRoutes);
 router.use('/multipleChoiceQuestion', multipleChoiceQuestionRoutes);
 router.use('/multipleChoiceQuestionAnswer', multipleChoiceQuestionAnswerRoutes);
 router.use('/chatbot', chatbotRoutes);
-router.use('/wauser', waUserRoutes);
 router.use('/waUserActivityLogs', waUserActivityLogsRoutes);
 router.use('/waUserMetadata', waUserMetadataRoutes);
 router.use('/waConstants', waConstantsRoutes);
 router.use('/audioChat', audioChatRoutes);
 router.use('/waPurchasedCourses', waPurchasedCoursesRoutes);
+router.use('/waFeedback', waFeedbackRoutes);
 router.use('/etl_pipline', etlRoutes);
 
 export default router;

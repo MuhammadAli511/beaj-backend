@@ -1,14 +1,14 @@
 import etlRepository from "../repositories/etlRepository.js";
 import new_loadDataToGoogleSheets from "../google_sheet_utils/auto_GoogleSheetUtils.js";
 
-const runETL = async (targetGroup,module,cohort,co_no,facilitator) => {
+const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
   try {
     let courseId_l1 = null;
     let courseId_l2 = null;
     let courseId_l3 = null;
     let flag_valid = 0;
 
-    if(co_no > 0 && co_no < 25 && targetGroup == "T1"){
+    if (co_no > 0 && co_no < 25 && targetGroup == "T1") {
       courseId_l1 = 106;
       courseId_l2 = null;
       courseId_l3 = null;
@@ -20,13 +20,13 @@ const runETL = async (targetGroup,module,cohort,co_no,facilitator) => {
       courseId_l3 = null;
       flag_valid = 1;
     }
-    else if(cohort == "Pilot" && targetGroup == "T1"){
+    else if (cohort == "Pilot" && targetGroup == "T1") {
       courseId_l1 = 98;
       courseId_l2 = 104;
       courseId_l3 = null;
       flag_valid = 1;
     }
-    else if(cohort == "Pilot" && targetGroup == "T2"){
+    else if (cohort == "Pilot" && targetGroup == "T2") {
       courseId_l1 = 99;
       courseId_l2 = 103;
       courseId_l3 = null;
@@ -107,13 +107,13 @@ const runETL = async (targetGroup,module,cohort,co_no,facilitator) => {
       await new_loadDataToGoogleSheets(
         arrayT1_List,
         facilitator,
-       `${module} ${targetGroup}-${cohort}`,
+        `${module} ${targetGroup}-${cohort}`,
         flag_valid,
         ActivityCompletedCount,
         last_activityCompleted_l1,
         last_activityCompleted_l2,
         last_activityCompleted_l3
-        );
+      );
     }
 
   } catch (error) {

@@ -20,7 +20,19 @@ const dashboardCardsFunnelController = async (req, res, next) => {
     }
 };
 
+const lastActiveUsersController = async (req, res, next) => {
+    try {
+        const { days, cohorts } = req.body;
+        const lastActiveUsers = await service.lastActiveUsersService(days, cohorts);
+        res.status(200).send(lastActiveUsers);
+    } catch (error) {
+        error.fileName = 'statsController.js';
+        next(error);
+    }
+};
+
 export default {
     totalContentStatsController,
-    dashboardCardsFunnelController
+    dashboardCardsFunnelController,
+    lastActiveUsersController
 };
