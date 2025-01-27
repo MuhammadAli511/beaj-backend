@@ -22,7 +22,16 @@ const getSuccessRate = async (course_id, grp,cohort) => {
       } 
       else {
           const cohortList = [];
-          for (let i = 1; i <= 48; i++) {
+          let j = 1,k = 48;
+          if(grp == 'T1'){
+               j = 1;
+               k = 24;
+          } 
+          else{
+            j = 25;
+            k = 48;
+          }
+          for (let i = j; i <= k; i++) {
             cohortList.push(`'Cohort ${i}'`);
           }
           cohortCondition = `("cohort" = ${cohortList.join(' OR "cohort" = ')})`; 
@@ -59,9 +68,9 @@ const getSuccessRate = async (course_id, grp,cohort) => {
                 "Student_Number",
                 "Completed_Activities",
                 "Total_Activities",
-                CASE WHEN "Completed_Activities" >= ("Total_Activities" * 1.0) THEN 1 ELSE 0 END AS "Meets_Threshold_90",
-                CASE WHEN (("Completed_Activities" > ("Total_Activities" * 0.0)) and  ("Completed_Activities" < ("Total_Activities" * 1.0))) THEN 1 ELSE 0 END AS "Meets_Threshold_50",
-                CASE WHEN "Completed_Activities" = ("Total_Activities" * 0) THEN 1 ELSE 0 END AS "Meets_Threshold_0"
+                CASE WHEN ("Completed_Activities" = "Total_Activities") THEN 1 ELSE 0 END AS "Meets_Threshold_90",
+                CASE WHEN (("Completed_Activities" > 0) and  ("Completed_Activities" < "Total_Activities")) THEN 1 ELSE 0 END AS "Meets_Threshold_50",
+                CASE WHEN ("Completed_Activities" = 0) THEN 1 ELSE 0 END AS "Meets_Threshold_0"
             FROM 
                 StudentActivities
         )
