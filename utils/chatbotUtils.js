@@ -1802,7 +1802,8 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 }
 
                 // Send lesson message
-                let lessonMessage = "Listen to the audio question and send your answer as a voice message.💬";
+                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
+                lessonMessage += "\n\nListen to the audio question and send your answer as a voice message.💬";
 
                 // Text message
                 await sendMessage(userMobileNumber, lessonMessage);
