@@ -1261,7 +1261,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
 
         // Feedback Message
         const randomNumber = Math.floor(Math.random() * 100) + 1;
-        if (randomNumber >= 50) {
+        if (randomNumber >= 70) {
             let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + startingLesson.dataValues.activityAlias + " activity?";
             await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", feedbackMessage, null);
@@ -1279,7 +1279,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
     } else {
         // Update acceptable messages list for the user
         const randomNumber = Math.floor(Math.random() * 100) + 1;
-        if (randomNumber >= 50) {
+        if (randomNumber >= 70) {
             let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + startingLesson.dataValues.activityAlias + " activity?";
             await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", feedbackMessage, null);
