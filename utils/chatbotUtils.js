@@ -1841,10 +1841,11 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                     let userAnswerIsCorrect = false;
                     const recognizedTextWithoutPunctuation = recognizedText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"‘’“”?]/g, "").toLowerCase();
+                    const recognizedTextWithoutSpaces = recognizedTextWithoutPunctuation.trim();
                     for (let i = 0; i < answersArray.length; i++) {
                         const answerWithoutPunctuation = answersArray[i].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"‘’“”?]/g, "").toLowerCase();
                         const answerWithoutSpaces = answerWithoutPunctuation.trim();
-                        if (recognizedTextWithoutPunctuation == answerWithoutSpaces) {
+                        if (recognizedTextWithoutSpaces == answerWithoutSpaces) {
                             userAnswerIsCorrect = true;
                             break;
                         }
