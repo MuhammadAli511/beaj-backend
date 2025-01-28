@@ -35,16 +35,16 @@ const runETL = async () => {
     // const t1_l1_courseId = await courseId_gSheet("T1-Level 1 activity");
     // const t2_l1_courseId = await courseId_gSheet("T2-Level 1 activity");
 
-    const totalActivity_list1 = await etlRepository.getActivityTotalCount(t1_l1_courseId,t1_l2_courseId);
-    const totalActivity_list2 = await etlRepository.getActivityTotalCount(t2_l1_courseId,t2_l2_courseId);
-    
+    const totalActivity_list1 = await etlRepository.getActivityTotalCount(t1_l1_courseId, t1_l2_courseId);
+    const totalActivity_list2 = await etlRepository.getActivityTotalCount(t2_l1_courseId, t2_l2_courseId);
+
     let counts = totalActivity_list1.map(item => parseInt(item.count, 10));
     let activities = totalActivity_list1.map(item => item.activity);
 
     total_actvity1.push(counts, activities);
 
     counts = totalActivity_list2.map(item => parseInt(item.count, 10));
-    activities = totalActivity_list2.map(item => item.activity); 
+    activities = totalActivity_list2.map(item => item.activity);
 
     total_actvity2.push(counts, activities);
 
@@ -52,23 +52,23 @@ const runETL = async () => {
     const t1_activity_name_list1 = totalActivity_list1.map(item => item.activity);
     const t1_activity_name_list2 = totalActivity_list2.map(item => item.activity);
 
-    const activityCompleted_list1 = await etlRepository.getCompletedActivity(t1_l1_courseId,t1_l2_courseId, 'T1', t1_activity_name_list1,'Pilot');
-    const activityCompleted_list2 = await etlRepository.getCompletedActivity(t2_l1_courseId,t2_l2_courseId, 'T2', t1_activity_name_list2,'Pilot');
+    const activityCompleted_list1 = await etlRepository.getCompletedActivity(t1_l1_courseId, t1_l2_courseId, 'T1', t1_activity_name_list1, 'Pilot');
+    const activityCompleted_list2 = await etlRepository.getCompletedActivity(t2_l1_courseId, t2_l2_courseId, 'T2', t1_activity_name_list2, 'Pilot');
 
 
-    const successRate1 = await etlRepository.getSuccessRate(t1_l1_courseId,'T1','Pilot');
-    const successRate2 = await etlRepository.getSuccessRate(t2_l1_courseId,'T2','Pilot');
-    const successRate3 = await etlRepository.getSuccessRate(t1_l2_courseId,'T1','Pilot');
-    const successRate4 = await etlRepository.getSuccessRate(t2_l2_courseId,'T2','Pilot');
+    const successRate1 = await etlRepository.getSuccessRate(t1_l1_courseId, 'T1', 'Pilot');
+    const successRate2 = await etlRepository.getSuccessRate(t2_l1_courseId, 'T2', 'Pilot');
+    const successRate3 = await etlRepository.getSuccessRate(t1_l2_courseId, 'T1', 'Pilot');
+    const successRate4 = await etlRepository.getSuccessRate(t2_l2_courseId, 'T2', 'Pilot');
 
-    const pilot_lastActivityCompleted_t1_l1 = await etlRepository.getLastActivityCompleted(t1_l1_courseId,'T1','Pilot');
+    const pilot_lastActivityCompleted_t1_l1 = await etlRepository.getLastActivityCompleted(t1_l1_courseId, 'T1', 'Pilot');
     const pilot_lastActivityCompleted_t1_l1_Map = pilot_lastActivityCompleted_t1_l1.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
-    const pilot_lastActivityCompleted_t1_l2 = await etlRepository.getLastActivityCompleted(t1_l2_courseId,'T1','Pilot');
+    const pilot_lastActivityCompleted_t1_l2 = await etlRepository.getLastActivityCompleted(t1_l2_courseId, 'T1', 'Pilot');
     const pilot_lastActivityCompleted_t1_l2_Map = pilot_lastActivityCompleted_t1_l2.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
-    
-    const pilot_lastActivityCompleted_t2_l1 = await etlRepository.getLastActivityCompleted(t2_l1_courseId,'T2','Pilot');
+
+    const pilot_lastActivityCompleted_t2_l1 = await etlRepository.getLastActivityCompleted(t2_l1_courseId, 'T2', 'Pilot');
     const pilot_lastActivityCompleted_t2_l1_Map = pilot_lastActivityCompleted_t2_l1.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
-    const pilot_lastActivityCompleted_t2_l2 = await etlRepository.getLastActivityCompleted(t2_l2_courseId,'T2','Pilot');
+    const pilot_lastActivityCompleted_t2_l2 = await etlRepository.getLastActivityCompleted(t2_l2_courseId, 'T2', 'Pilot');
     const pilot_lastActivityCompleted_t2_l2_Map = pilot_lastActivityCompleted_t2_l2.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
 
 
@@ -89,18 +89,18 @@ const runETL = async () => {
     const success_list4 = Object.values(successRate4[0]).map((value) => {
       return Number(value) || null;
     });
-    
-      
+
+
     let arrayOfT1Activity_Pilot = [], arrayOfT1Activity_level_Pilot = [];
-    const activity_weekly_list1 = await getWeeklyActivityCompleted1.getWeeklyActivityCompleted("T1",t1_l1_courseId,'Pilot');
-    const activity_weekly_list2 = await getWeeklyActivityCompleted1.getWeeklyActivityCompleted("T2",t2_l1_courseId,'Pilot');
-    const activity_weekly_list3 = await getWeeklyActivityCompleted1.getWeeklyActivityCompleted("T1",t1_l2_courseId,'Pilot');
-    const activity_weekly_list4 = await getWeeklyActivityCompleted1.getWeeklyActivityCompleted("T2",t2_l2_courseId,'Pilot');
+    const activity_weekly_list1 = await getWeeklyActivityCompleted1.getWeeklyActivityCompleted("T1", t1_l1_courseId, 'Pilot');
+    const activity_weekly_list2 = await getWeeklyActivityCompleted1.getWeeklyActivityCompleted("T2", t2_l1_courseId, 'Pilot');
+    const activity_weekly_list3 = await getWeeklyActivityCompleted1.getWeeklyActivityCompleted("T1", t1_l2_courseId, 'Pilot');
+    const activity_weekly_list4 = await getWeeklyActivityCompleted1.getWeeklyActivityCompleted("T2", t2_l2_courseId, 'Pilot');
 
 
     let activityMap1 = [], activityMap2 = [];
 
-    for(const entry of activity_weekly_list1){
+    for (const entry of activity_weekly_list1) {
       activityMap1.push([
         entry.week1_activities,
         entry.week2_activities,
@@ -110,7 +110,7 @@ const runETL = async () => {
     }
     arrayOfT1Activity_level_Pilot.push(activityMap1);
     activityMap1 = []
-    for(const entry of activity_weekly_list3){
+    for (const entry of activity_weekly_list3) {
       activityMap1.push([
         entry.week1_activities,
         entry.week2_activities,
@@ -122,10 +122,10 @@ const runETL = async () => {
     arrayOfT1Activity_level_Pilot.push([]);
     arrayOfT1Activity_Pilot.push(arrayOfT1Activity_level_Pilot);
 
-    
+
     arrayOfT1Activity_level_Pilot = [];
 
-    for(const entry of activity_weekly_list2){
+    for (const entry of activity_weekly_list2) {
       activityMap2.push([
         entry.week1_activities,
         entry.week2_activities,
@@ -135,7 +135,7 @@ const runETL = async () => {
     }
     arrayOfT1Activity_level_Pilot.push(activityMap2);
     activityMap2 = []
-    for(const entry of activity_weekly_list4){
+    for (const entry of activity_weekly_list4) {
       activityMap2.push([
         entry.week1_activities,
         entry.week2_activities,
@@ -146,17 +146,18 @@ const runETL = async () => {
     arrayOfT1Activity_level_Pilot.push(activityMap2);
     arrayOfT1Activity_level_Pilot.push([]);
     arrayOfT1Activity_Pilot.push(arrayOfT1Activity_level_Pilot);
-    
+
 
 
     let arrayOfT1Lesson_Pilot = [], arrayOfT1Lesson_level_Pilot = [];
-    const lesson_completed_list1 = await etlRepository.getLessonCompletion(t1_l1_courseId,"T1",'Pilot');
-    const lesson_completed_list2 = await etlRepository.getLessonCompletion(t2_l1_courseId,"T2",'Pilot');
-    const lesson_completed_list3 = await etlRepository.getLessonCompletion(t1_l2_courseId,"T1",'Pilot');
-    const lesson_completed_list4 = await etlRepository.getLessonCompletion(t2_l2_courseId,"T2",'Pilot');
+    const lesson_completed_list1 = await etlRepository.getLessonCompletion(t1_l1_courseId, "T1", 'Pilot');
+    const lesson_completed_list2 = await etlRepository.getLessonCompletion(t2_l1_courseId, "T2", 'Pilot');
+    const lesson_completed_list3 = await etlRepository.getLessonCompletion(t1_l2_courseId, "T1", 'Pilot');
+    const lesson_completed_list4 = await etlRepository.getLessonCompletion(t2_l2_courseId, "T2", 'Pilot');
     let lessonMap1 = [], lessonMap2 = [];
 
-    for(const entry of lesson_completed_list1){``
+    for (const entry of lesson_completed_list1) {
+      ``
       lessonMap1.push([
         entry.week1,
         entry.week2,
@@ -166,7 +167,7 @@ const runETL = async () => {
     }
     arrayOfT1Lesson_level_Pilot.push(lessonMap1);
     lessonMap1 = [];
-    for(const entry of lesson_completed_list3){
+    for (const entry of lesson_completed_list3) {
       lessonMap1.push([
         entry.week1,
         entry.week2,
@@ -177,10 +178,10 @@ const runETL = async () => {
     arrayOfT1Lesson_level_Pilot.push(lessonMap1);
     arrayOfT1Lesson_level_Pilot.push([]);
     arrayOfT1Lesson_Pilot.push(arrayOfT1Lesson_level_Pilot);
-    
+
     arrayOfT1Lesson_level_Pilot = [];
 
-    for(const entry of lesson_completed_list2){
+    for (const entry of lesson_completed_list2) {
       lessonMap2.push([
         entry.week1,
         entry.week2,
@@ -190,7 +191,7 @@ const runETL = async () => {
     }
     arrayOfT1Lesson_level_Pilot.push(lessonMap2);
     lessonMap2 = [];
-    for(const entry of lesson_completed_list4){
+    for (const entry of lesson_completed_list4) {
       lessonMap2.push([
         entry.week1,
         entry.week2,
@@ -202,17 +203,17 @@ const runETL = async () => {
     arrayOfT1Lesson_level_Pilot.push([]);
     arrayOfT1Lesson_Pilot.push(arrayOfT1Lesson_level_Pilot);
 
-   
+
     // let pilot_t1_w1_weekly_Score_l1 = await etlRepository.getWeeklyScore(t1_l1_courseId,"T1", 4);
     // let pilot_t2_w1_weekly_Score_l1 = await etlRepository.getWeeklyScore(t2_l1_courseId,"T2", 4);
 
     // pilot_t1_w1_weekly_Score_l1 = pilot_t1_w1_weekly_Score_l1.map(entry => entry.final_percentage).map(value => [value]);
     // pilot_t2_w1_weekly_Score_l1 = pilot_t2_w1_weekly_Score_l1.map(entry => entry.final_percentage).map(value => [value]);
 
-    let pilot_t1_w1_weekly_Score = await etlRepository.getWeeklyScore(t1_l1_courseId,"T1",'Pilot' );
-    let pilot_t2_w1_weekly_Score = await etlRepository.getWeeklyScore(t2_l1_courseId,"T2",'Pilot');
-    let pilot_t1_w1_weekly_Score1 = await etlRepository.getWeeklyScore(t1_l2_courseId,"T1",'Pilot' );
-    let pilot_t2_w1_weekly_Score1 = await etlRepository.getWeeklyScore(t2_l2_courseId,"T2",'Pilot' );
+    let pilot_t1_w1_weekly_Score = await etlRepository.getWeeklyScore(t1_l1_courseId, "T1", 'Pilot');
+    let pilot_t2_w1_weekly_Score = await etlRepository.getWeeklyScore(t2_l1_courseId, "T2", 'Pilot');
+    let pilot_t1_w1_weekly_Score1 = await etlRepository.getWeeklyScore(t1_l2_courseId, "T1", 'Pilot');
+    let pilot_t2_w1_weekly_Score1 = await etlRepository.getWeeklyScore(t2_l2_courseId, "T2", 'Pilot');
 
     // let pilot_t1_l2_w2 = await etlRepository.getWeeklyScore_pilot(104,"T1",1);
     // pilot_t1_l2_w2 = pilot_t1_l2_w2.map(entry => entry.final_percentage).map(value => [value]);
@@ -249,7 +250,7 @@ const runETL = async () => {
       entry.final_percentage_week4,
     ]);
 
-  //  console.log(pilot_t1_w1_weekly_Score);
+    //  console.log(pilot_t1_w1_weekly_Score);
 
     // pilot_t1_w1_weekly_Score = pilot_t1_w1_weekly_Score.map(entry => entry.final_percentage).map(value => [value]);
     // pilot_t2_w1_weekly_Score = pilot_t2_w1_weekly_Score.map(entry => entry.final_percentage).map(value => [value]);
@@ -288,20 +289,20 @@ const runETL = async () => {
     // const weeklyCntT1 = await getWeeklyDate("T1", courseid3);
     // const weeklyCntT2 = await getWeeklyDate("T2", courseid4);
     const weeklyCntT1 = [];
-    const weeklyCntT2 =[];
+    const weeklyCntT2 = [];
     // console.log(success_list1);
-  //  console.log(arrayOfT1Activity_Pilot);
+    //  console.log(arrayOfT1Activity_Pilot);
 
-  await lesson_loadDataToGoogleSheets(
-    arrayOfT1Lesson_Pilot,
-    pilot_t1_w1_weekly_Score,
-    pilot_t2_w1_weekly_Score,
-    pilot_t1_w1_weekly_Score1,
-    pilot_t2_w1_weekly_Score1,
-    // pilot_t1_l2_w2
-    // pilot_t1_w1_weekly_Score_l1,
-    // pilot_t2_w1_weekly_Score_l1
-  );
+    await lesson_loadDataToGoogleSheets(
+      arrayOfT1Lesson_Pilot,
+      pilot_t1_w1_weekly_Score,
+      pilot_t2_w1_weekly_Score,
+      pilot_t1_w1_weekly_Score1,
+      pilot_t2_w1_weekly_Score1,
+      // pilot_t1_l2_w2
+      // pilot_t1_w1_weekly_Score_l1,
+      // pilot_t2_w1_weekly_Score_l1
+    );
 
     await new_loadDataToGoogleSheets(
       arrayOfT1Activity_Pilot,
@@ -333,7 +334,7 @@ const runETL = async () => {
       success_list2,
       success_list3,
       success_list4,
-      
+
     );
 
   } catch (error) {
@@ -357,12 +358,12 @@ const runETL_Dashboard = async () => {
     userMetadata_Rollout = userMetadata_Rollout.map(obj => Object.values(obj).map(value => value));
     userMetadata_overTime = userMetadata_overTime.map(obj => Object.values(obj).map(value => value));
 
-    let successRate1 = await etlRepository.getSuccessRate(98,'T1','Pilot');
-    let successRate2 = await etlRepository.getSuccessRate(99,'T2','Pilot');
-    let successRate3 = await etlRepository.getSuccessRate(104,'T1','Pilot');
-    let successRate4 = await etlRepository.getSuccessRate(103,'T2','Pilot');
-    let successRate6 = await etlRepository.getSuccessRate(105,'T2','');
-    let successRate5 = await etlRepository.getSuccessRate(106,'T1','');
+    let successRate1 = await etlRepository.getSuccessRate(98, 'T1', 'Pilot');
+    let successRate2 = await etlRepository.getSuccessRate(99, 'T2', 'Pilot');
+    let successRate3 = await etlRepository.getSuccessRate(104, 'T1', 'Pilot');
+    let successRate4 = await etlRepository.getSuccessRate(103, 'T2', 'Pilot');
+    let successRate6 = await etlRepository.getSuccessRate(105, 'T2', '');
+    let successRate5 = await etlRepository.getSuccessRate(106, 'T1', '');
 
     successRate1 = Object.values(successRate1[0]).map((value) => {
       return Number(value) || null;
@@ -384,7 +385,7 @@ const runETL_Dashboard = async () => {
     });
 
     // console.log(successRate4);
-    
+
 
     await DashboardUtils_load(
       userMetadata_Pilot,
@@ -400,109 +401,109 @@ const runETL_Dashboard = async () => {
       funnel
     );
 
-      let courseId_l1 = 105;
-      let courseId_l2 = null;
-      let courseId_l3 = null;
+    let courseId_l1 = 106;
+    let courseId_l2 = null;
+    let courseId_l3 = null;
 
-      let courseId_l10 = 106;
-      let courseId_l20 = null;
-      let courseId_l30 = null;
+    let courseId_l10 = 105;
+    let courseId_l20 = null;
+    let courseId_l30 = null;
 
-  
-      let array_Lesson_List1 = await getWeeklyActivityCompleted1.getLessonCompletions(courseId_l1,courseId_l2,courseId_l3,'T1');
-      array_Lesson_List1 = array_Lesson_List1.map(obj => Object.values(obj).map(value => value));
-      
-      let array_Lesson_List2 = await getWeeklyActivityCompleted1.getLessonCompletions(courseId_l10,courseId_l20,courseId_l30,'T2');
-      array_Lesson_List2 = array_Lesson_List2.map(obj => Object.values(obj).map(value => value));
 
-      var array_Lesson_List = array_Lesson_List1.concat(array_Lesson_List2);
-    
-      
-      let array_activity_List1 = await getWeeklyActivityCompleted1.getActivity_Completions(courseId_l1,courseId_l2,courseId_l3,'T1');
-      array_activity_List1 = array_activity_List1.map(obj => Object.values(obj).map(value => value));
+    let array_Lesson_List1 = await getWeeklyActivityCompleted1.getLessonCompletions(courseId_l1, courseId_l2, courseId_l3, 'T1');
+    array_Lesson_List1 = array_Lesson_List1.map(obj => Object.values(obj).map(value => value));
 
-      let array_activity_List2 = await getWeeklyActivityCompleted1.getActivity_Completions(courseId_l10,courseId_l20,courseId_l30,'T2');
-      array_activity_List2 = array_activity_List2.map(obj => Object.values(obj).map(value => value));
+    let array_Lesson_List2 = await getWeeklyActivityCompleted1.getLessonCompletions(courseId_l10, courseId_l20, courseId_l30, 'T2');
+    array_Lesson_List2 = array_Lesson_List2.map(obj => Object.values(obj).map(value => value));
 
-      var array_activity_List = array_activity_List1.concat(array_activity_List2);
-  
-      let weekly_score_l1_list = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l1,'T1');
-      let weekly_score_l2_list = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l2,'T1');
-      let weekly_score_l3_list = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l3,'T1');
-      let weekly_score_l1_list0 = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l10,'T2');
-      let weekly_score_l2_list1 = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l20,'T2');
-      let weekly_score_l3_list2 = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l30,'T2');
+    var array_Lesson_List = array_Lesson_List1.concat(array_Lesson_List2);
 
-      let arrayT1_List2 = [];
 
-      for (let i = 0; i < weekly_score_l1_list.length; i++) {
-      
-        let l1_entry = weekly_score_l1_list[i];
-        let l2_entry = weekly_score_l2_list[i];
-        let l3_entry = weekly_score_l3_list[i];
+    let array_activity_List1 = await getWeeklyActivityCompleted1.getActivity_Completions(courseId_l1, courseId_l2, courseId_l3, 'T1');
+    array_activity_List1 = array_activity_List1.map(obj => Object.values(obj).map(value => value));
 
-        arrayT1_List2.push([
-           i+1,
-          l1_entry.phoneNumber,
-          l1_entry.name,
-          l1_entry.final_percentage_week1,
-          l1_entry.final_percentage_week2,
-          l1_entry.final_percentage_week3,
-          l1_entry.final_percentage_week4,
-          null,
-          l2_entry.final_percentage_week1,
-          l2_entry.final_percentage_week2,
-          l2_entry.final_percentage_week3,
-          l2_entry.final_percentage_week4,
-          null,
-          l3_entry.final_percentage_week1,
-          l3_entry.final_percentage_week2,
-          l3_entry.final_percentage_week3,
-          l3_entry.final_percentage_week4,
-          null,
-          l1_entry.cohort,
-          l1_entry.targetGroup,
-        ])
-      }
+    let array_activity_List2 = await getWeeklyActivityCompleted1.getActivity_Completions(courseId_l10, courseId_l20, courseId_l30, 'T2');
+    array_activity_List2 = array_activity_List2.map(obj => Object.values(obj).map(value => value));
 
-      for (let i = 0; i < weekly_score_l1_list0.length; i++) {
-      
-        let l1_entry = weekly_score_l1_list0[i];
-        let l2_entry = weekly_score_l2_list1[i];
-        let l3_entry = weekly_score_l3_list2[i];
+    var array_activity_List = array_activity_List1.concat(array_activity_List2);
 
-        arrayT1_List2.push([
-          i + 1 + weekly_score_l1_list.length,
-          l1_entry.phoneNumber,
-          l1_entry.name,
-          l1_entry.final_percentage_week1,
-          l1_entry.final_percentage_week2,
-          l1_entry.final_percentage_week3,
-          l1_entry.final_percentage_week4,
-          null,
-          l2_entry.final_percentage_week1,
-          l2_entry.final_percentage_week2,
-          l2_entry.final_percentage_week3,
-          l2_entry.final_percentage_week4,
-          null,
-          l3_entry.final_percentage_week1,
-          l3_entry.final_percentage_week2,
-          l3_entry.final_percentage_week3,
-          l3_entry.final_percentage_week4,
-          null,
-          l1_entry.cohort,
-          l1_entry.targetGroup,
-        ])
-      }
-      arrayT1_List2 = arrayT1_List2.map(obj => Object.values(obj).map(value => value));
+    let weekly_score_l1_list = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l1, 'T1');
+    let weekly_score_l2_list = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l2, 'T1');
+    let weekly_score_l3_list = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l3, 'T1');
+    let weekly_score_l1_list0 = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l10, 'T2');
+    let weekly_score_l2_list1 = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l20, 'T2');
+    let weekly_score_l3_list2 = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l30, 'T2');
 
-      console.log(array_Lesson_List);
-      
-      await CumulativeUtils_load(
-        array_Lesson_List,
-        array_activity_List,
-        arrayT1_List2
-      );
+    let arrayT1_List2 = [];
+
+    for (let i = 0; i < weekly_score_l1_list.length; i++) {
+
+      let l1_entry = weekly_score_l1_list[i];
+      let l2_entry = weekly_score_l2_list[i];
+      let l3_entry = weekly_score_l3_list[i];
+
+      arrayT1_List2.push([
+        i + 1,
+        l1_entry.phoneNumber,
+        l1_entry.name,
+        l1_entry.final_percentage_week1,
+        l1_entry.final_percentage_week2,
+        l1_entry.final_percentage_week3,
+        l1_entry.final_percentage_week4,
+        null,
+        l2_entry.final_percentage_week1,
+        l2_entry.final_percentage_week2,
+        l2_entry.final_percentage_week3,
+        l2_entry.final_percentage_week4,
+        null,
+        l3_entry.final_percentage_week1,
+        l3_entry.final_percentage_week2,
+        l3_entry.final_percentage_week3,
+        l3_entry.final_percentage_week4,
+        null,
+        l1_entry.cohort,
+        l1_entry.targetGroup,
+      ])
+    }
+
+    for (let i = 0; i < weekly_score_l1_list0.length; i++) {
+
+      let l1_entry = weekly_score_l1_list0[i];
+      let l2_entry = weekly_score_l2_list1[i];
+      let l3_entry = weekly_score_l3_list2[i];
+
+      arrayT1_List2.push([
+        i + 1 + weekly_score_l1_list.length,
+        l1_entry.phoneNumber,
+        l1_entry.name,
+        l1_entry.final_percentage_week1,
+        l1_entry.final_percentage_week2,
+        l1_entry.final_percentage_week3,
+        l1_entry.final_percentage_week4,
+        null,
+        l2_entry.final_percentage_week1,
+        l2_entry.final_percentage_week2,
+        l2_entry.final_percentage_week3,
+        l2_entry.final_percentage_week4,
+        null,
+        l3_entry.final_percentage_week1,
+        l3_entry.final_percentage_week2,
+        l3_entry.final_percentage_week3,
+        l3_entry.final_percentage_week4,
+        null,
+        l1_entry.cohort,
+        l1_entry.targetGroup,
+      ])
+    }
+    arrayT1_List2 = arrayT1_List2.map(obj => Object.values(obj).map(value => value));
+
+    console.log(array_Lesson_List);
+
+    await CumulativeUtils_load(
+      array_Lesson_List,
+      array_activity_List,
+      arrayT1_List2
+    );
 
   } catch (error) {
     error.fileName = "etlService.js";
