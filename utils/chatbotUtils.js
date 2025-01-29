@@ -1833,14 +1833,8 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 // Get the current Listen and Speak question
                 const currentListenAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                 const answersArray = currentListenAndSpeakQuestion.dataValues.answer;
-                let recognizedText = "";
-                if (currentListenAndSpeakQuestion.dataValues.question.includes("contractions")) {
-                    prompt = "Question: " + currentListenAndSpeakQuestion.dataValues.question + "\n\nAnswer: " + answersArray[0];
-                    recognizedText = await azureAIServices.openaiSpeechToTextWithPrompt(messageContent.data, prompt);
-                }
-                else {
-                    recognizedText = await azureAIServices.openaiSpeechToText(messageContent.data);
-                }
+                let prompt = answersArray[0];
+                let recognizedText = await azureAIServices.openaiSpeechToTextWithPrompt(messageContent.data, prompt);
                 if (recognizedText) {
                     // Checking if user response is correct or not
 
