@@ -114,6 +114,16 @@ const getFilteredUsersWithControlGroupAndCohort = async (cohorts) => {
     });
 };
 
+const getByPhoneNumbers = async (phoneNumbers) => {
+    return await WA_UsersMetadata.findAll({
+        where: {
+            phoneNumber: {
+                [Sequelize.Op.in]: phoneNumbers
+            }
+        }
+    });
+};
+
 export default {
     create,
     getAll,
@@ -126,5 +136,6 @@ export default {
     getSelectedUsersCount,
     getFreeDemoStartedUsersCount,
     getFreeDemoEndedUsersCount,
-    getFilteredUsersWithControlGroupAndCohort
+    getFilteredUsersWithControlGroupAndCohort,
+    getByPhoneNumbers
 };
