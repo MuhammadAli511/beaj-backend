@@ -36,9 +36,9 @@ const getSpeakActivityQuestionByIdController = async (req, res, next) => {
 const updateSpeakActivityQuestionController = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { question, answer, lessonId, questionNumber } = req.body;
+        const { question, answer, lessonId, questionNumber, activityType } = req.body;
         const mediaFile = req.file;
-        await service.updateSpeakActivityQuestionService(id, question, mediaFile, answer, lessonId, questionNumber);
+        await service.updateSpeakActivityQuestionService(id, question, mediaFile, answer, lessonId, questionNumber, activityType);
         res.status(200).send({ message: "Question updated successfully" });
     } catch (error) {
         error.fileName = 'speakActivityQuestionController.js';
