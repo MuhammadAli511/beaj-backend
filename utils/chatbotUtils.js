@@ -2197,7 +2197,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                 // Send lesson message
                 let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\nWatch the video and practice speaking by sending a voice message.💬";
+                lessonMessage += "\n\nWatch the video 👇🏽 and practice speaking by sending a voice message.💬";
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
