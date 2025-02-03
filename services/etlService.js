@@ -497,7 +497,7 @@ const runETL_Dashboard = async () => {
     }
     arrayT1_List2 = arrayT1_List2.map(obj => Object.values(obj).map(value => value));
 
-    console.log(array_Lesson_List);
+    // console.log(array_Lesson_List);
 
     await CumulativeUtils_load(
       array_Lesson_List,

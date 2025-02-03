@@ -26,42 +26,42 @@ const lesson_loadDataToGoogleSheets = async (
     const authClient = await auth.getClient();
     const spreadsheetId = "1Nat0B3coOFoIeF_aO-vY-KHuqQxtjLYKx5lNPFBJndg";
 
-    for(let i=1; i<=2;i++){
-        var sheet_name = `Pilot T${i}-Lesson!`;
-        let pilot_lesson = pilot_t1_lesson[i-1];
-        if(i == 1){
-          pilot_lesson = pilot_t1_lesson[i-1];
+    for (let i = 1; i <= 2; i++) {
+      var sheet_name = `Pilot T${i}-Lesson!`;
+      let pilot_lesson = pilot_t1_lesson[i - 1];
+      if (i == 1) {
+        pilot_lesson = pilot_t1_lesson[i - 1];
+      }
+      else {
+        pilot_lesson = pilot_t1_lesson[i - 1];
+      }
+      for (let j = 1; j <= 3; j++) {
+        let sheet_range = ``;
+        let level_lesson = pilot_lesson[j - 1];
+        if (j == 1) {
+          sheet_range = `D3:G`;
+          level_lesson = pilot_lesson[j - 1];
         }
-        else{
-            pilot_lesson = pilot_t1_lesson[i-1];
+        if (j == 2) {
+          sheet_range = `I3:L`;
+          level_lesson = pilot_lesson[j - 1];
         }
-        for(let j=1;j<=3;j++){
-          let sheet_range = ``;
-          let level_lesson = pilot_lesson[j-1];
-          if(j==1){
-            sheet_range = `D3:G`;
-            level_lesson = pilot_lesson[j-1];
-          }
-          if(j==2){
-            sheet_range = `I3:L`;
-            level_lesson = pilot_lesson[j-1];
-          }
-          if(j==3){
-            sheet_range = `N3:Q`;
-            level_lesson = pilot_lesson[j-1];
-          }
-          await sheets.spreadsheets.values.update({
-            auth: authClient,
-            spreadsheetId,
-            range: sheet_name + sheet_range,
-            valueInputOption: "RAW",
-            resource: {
-              values: level_lesson,
-            },
-          });
+        if (j == 3) {
+          sheet_range = `N3:Q`;
+          level_lesson = pilot_lesson[j - 1];
         }
+        await sheets.spreadsheets.values.update({
+          auth: authClient,
+          spreadsheetId,
+          range: sheet_name + sheet_range,
+          valueInputOption: "RAW",
+          resource: {
+            values: level_lesson,
+          },
+        });
+      }
     }
-    console.log(pilot_t2_w1_weekly_Score);
+    // console.log(pilot_t2_w1_weekly_Score);
     await sheets.spreadsheets.values.update({
       auth: authClient,
       spreadsheetId,
@@ -81,7 +81,7 @@ const lesson_loadDataToGoogleSheets = async (
       },
     });
 
-    console.log(pilot_t1_w1_weekly_Score1);
+    // console.log(pilot_t1_w1_weekly_Score1);
     await sheets.spreadsheets.values.update({
       auth: authClient,
       spreadsheetId,
@@ -111,7 +111,7 @@ const lesson_loadDataToGoogleSheets = async (
     //   },
     // });
 
-    
+
     // await sheets.spreadsheets.values.update({
     //   auth: authClient,
     //   spreadsheetId,
@@ -123,7 +123,7 @@ const lesson_loadDataToGoogleSheets = async (
     // });
 
 
-    
+
 
     // await sheets.spreadsheets.values.update({
     //   auth: authClient,
@@ -144,7 +144,7 @@ const lesson_loadDataToGoogleSheets = async (
     //   },
     // });
 
-    
+
 
   } catch (error) {
     console.error("Error in loadDataToGoogleSheets:", error);

@@ -23,7 +23,7 @@ const getWeeklyDate = async (grp, courseid) => {
           entry.completion_match,
         ])
       );
-      
+
       scoreCount = [];
       for (const phoneNumber of phoneNumbers) {
         const completion_match = activityMap.get(phoneNumber) || 0;
@@ -98,7 +98,7 @@ const getWeeklyDate = async (grp, courseid) => {
         }
         scoreCount.push(score_pert);
       }
-      console.log("Score Count for week 4:", scoreCount);
+      // console.log("Score Count for week 4:", scoreCount);
       totalcount.push(scoreCount);
     }
 
