@@ -2227,6 +2227,10 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 // Extract user transcription
                 const userTranscription = pronunciationAssessment.recognizedText;
 
+                let disclaimerMessage = "This chatbot's speech-to-text may not recognize proper nouns accurately or may skip some words—please bear with us while we improve it.";
+                await sendMessage(userMobileNumber, disclaimerMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", disclaimerMessage, null);
+
                 // Text message
                 await sendMessage(userMobileNumber, "You said: " + userTranscription);
                 await createActivityLog(userMobileNumber, "text", "outbound", "You said: " + userTranscription, null);
