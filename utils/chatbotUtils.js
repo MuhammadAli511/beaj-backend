@@ -492,6 +492,12 @@ const createAndUploadSpeakingScoreImage = async (results) => {
     }
 };
 
+const extractMispronouncedWords = (results) => {
+    const words = Object.values(results.words);
+    const mispronouncedWords = words.filter(word => word.ErrorType === 'Mispronunciation' || word.AccuracyScore < 50);
+    return mispronouncedWords;
+};
+
 const getAcceptableMessagesList = async (activityType) => {
     if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot") {
         return ["audio"];
@@ -1045,8 +1051,6 @@ const startCourseForUser = async (userMobileNumber, numbers_to_ignore) => {
     const courseStartMonth = courseStartDate.getMonth();
     const courseStartDateOnly = courseStartDate.getDate();
 
-    console.log(todayYear, todayMonth, todayDate);
-    console.log(courseStartYear, courseStartMonth, courseStartDateOnly);
     // Check if today < course start date
     if (todayYear < courseStartYear || (todayYear === courseStartYear && todayMonth < courseStartMonth) || (todayYear === courseStartYear && todayMonth === courseStartMonth && todayDate < courseStartDateOnly)) {
         if (!numbers_to_ignore.includes(userMobileNumber)) {
@@ -1613,7 +1617,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     startingLesson.dataValues.activityAlias,
                     [userTranscription],
                     [userAudioFileUrl],
-                    null,
+                    [imageUrl],
                     null,
                     [pronunciationAssessment],
                     null,
@@ -1995,8 +1999,8 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         await endingMessage(userMobileNumber, currentUserState, startingLesson);
                     }
                 } else {
-                    // TODO: Handle if no speech recognized
-                    console.log("No speech recognized or an error occurred.");
+                    let logger = `No speech recognized or an error occurred. User: ${userMobileNumber}, Message Type: ${messageType}, Message Content: ${messageContent}`;
+                    console.log(logger);
                 }
             }
         }
@@ -2074,7 +2078,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     startingLesson.dataValues.activityAlias,
                     [userTranscription],
                     [userAudioFileUrl],
-                    null,
+                    [imageUrl],
                     null,
                     [pronunciationAssessment],
                     null,
@@ -2227,6 +2231,22 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 await sendMessage(userMobileNumber, "You said: " + userTranscription);
                 await createActivityLog(userMobileNumber, "text", "outbound", "You said: " + userTranscription, null);
 
+                // Extract mispronounced words
+                const mispronouncedWords = extractMispronouncedWords(pronunciationAssessment);
+
+                let correctedAudio = "";
+
+                if (mispronouncedWords.length > 0) {
+                    let modelResponse = "It looks like you've mispronounced a few words in your response. Here are the corrections:\n\n";
+                    for (const word of mispronouncedWords) {
+                        modelResponse += word.Word + (word === mispronouncedWords[mispronouncedWords.length - 1] ? "" : "...");
+                    }
+                    correctedAudio = await azureAIServices.azureTextToSpeechAndUpload(modelResponse);
+                    await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
+                    await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
+                    await sleep(5000);
+                }
+
                 // Generate pronunciation assessment message
                 const imageUrl = await createAndUploadSpeakingScoreImage(pronunciationAssessment);
 
@@ -2251,8 +2271,8 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     startingLesson.dataValues.activityAlias,
                     [userTranscription],
                     [userAudioFileUrl],
-                    null,
-                    null,
+                    [imageUrl],
+                    [correctedAudio],
                     [pronunciationAssessment],
                     null,
                     1,
@@ -2317,7 +2337,6 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 await createActivityLog(userMobileNumber, "text", "outbound", waitingMessage, null);
                 const recognizedText = await azureAIServices.azureSpeechToTextAnyLanguage(messageContent.data);
                 if (recognizedText != null && recognizedText != "") {
-                    console.log("Recognized Text: ", recognizedText);
                     let chatThread;
                     let chatThreadMain;
                     if (currentUserState.dataValues.questionNumber == 1) {
@@ -2334,7 +2353,6 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     // Language Detection
                     let modelLanguagePrompt = "Detect the majority of the language used in the provided text. Respond in one word only. The two options are: English or Urdu. You must respond with only one word."
                     const openaiFeedback = await azureAIServices.openaiCustomFeedback(recognizedText, modelLanguagePrompt);
-                    console.log("Language Detection: ", openaiFeedback);
                     if (openaiFeedback.toLowerCase().includes("english")) {
                         modelLanguagePrompt = "Respond in simple English."
                     } else {
@@ -2358,7 +2376,6 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     let threadMessages1 = await openai.beta.threads.messages.list(chatThread);
                     let attempts = 0;
                     while ((!threadMessages1.data[0].content[0] || threadMessages1.data[0].content[0].text.value == firstPrompt) && attempts < 30) {
-                        console.log("Thinking...");
                         await new Promise(resolve => setTimeout(resolve, 1000));
                         threadMessages1 = await openai.beta.threads.messages.list(chatThread);
                         attempts++;

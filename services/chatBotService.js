@@ -757,14 +757,6 @@ const webhookService = async (body, res) => {
                         const dayUnlockDateMonth = dayUnlockDate.getMonth();
                         const dayUnlockDateDate = dayUnlockDate.getDate();
 
-                        console.log(
-                            "Day Unlock Date:",
-                            dayUnlockDateYear,
-                            dayUnlockDateMonth,
-                            dayUnlockDateDate
-                        );
-                        console.log("Today:", todayYear, todayMonth, todayDate);
-
                         // Check if today is before the unlock date
                         if (
                             todayYear < dayUnlockDateYear ||
