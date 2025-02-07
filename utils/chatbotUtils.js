@@ -1265,8 +1265,9 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
 
         // Feedback Message
         const randomNumber = Math.floor(Math.random() * 100) + 1;
-        if (randomNumber >= 70) {
-            let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + startingLesson.dataValues.activityAlias + " activity?";
+        if (randomNumber >= 75) {
+            let cleanedAlias = startingLesson.dataValues.activityAlias.replace(/\?/g, '');
+            let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + cleanedAlias + " activity?";
             await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", feedbackMessage, null);
             await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next lesson", "it was great 😁", "it can be improved 🤔"]);
@@ -1283,8 +1284,9 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
     } else {
         // Update acceptable messages list for the user
         const randomNumber = Math.floor(Math.random() * 100) + 1;
-        if (randomNumber >= 70) {
-            let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + startingLesson.dataValues.activityAlias + " activity?";
+        if (randomNumber >= 75) {
+            let cleanedAlias = startingLesson.dataValues.activityAlias.replace(/\?/g, '');
+            let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + cleanedAlias + " activity?";
             await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", feedbackMessage, null);
             await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next activity", "it was great 😁", "it can be improved 🤔"]);
