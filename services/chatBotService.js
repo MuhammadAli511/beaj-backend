@@ -562,6 +562,8 @@ const webhookService = async (body, res) => {
                 "+923328251950",
                 "+923225812411",
                 "+923232658153",
+                "+923390001510",
+                "+923288954660",
                 "+923704558660"
             ];
 
@@ -754,14 +756,6 @@ const webhookService = async (body, res) => {
                         const dayUnlockDateYear = dayUnlockDate.getFullYear();
                         const dayUnlockDateMonth = dayUnlockDate.getMonth();
                         const dayUnlockDateDate = dayUnlockDate.getDate();
-
-                        console.log(
-                            "Day Unlock Date:",
-                            dayUnlockDateYear,
-                            dayUnlockDateMonth,
-                            dayUnlockDateDate
-                        );
-                        console.log("Today:", todayYear, todayMonth, todayDate);
 
                         // Check if today is before the unlock date
                         if (

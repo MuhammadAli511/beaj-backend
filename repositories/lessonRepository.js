@@ -260,6 +260,15 @@ const getActivityByLessonId = async (lessonId) => {
     return lesson.activity;
 };
 
+const getByLessonIds = async (lessonIds) => {
+    return await Lesson.findAll({
+        where: {
+            LessonId: {
+                [Sequelize.Op.in]: lessonIds
+            }
+        }
+    });
+};
 
 export default {
     totalLessonsRepository,
@@ -277,5 +286,6 @@ export default {
     getTotalDaysInCourse,
     getLessonsByCourse,
     getLessonIdsByCourseAndWeekAndActivityType,
-    getActivityByLessonId
+    getActivityByLessonId,
+    getByLessonIds
 };

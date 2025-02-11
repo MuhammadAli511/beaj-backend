@@ -1,4 +1,5 @@
 import Course from '../models/Course.js';
+import Sequelize from 'sequelize';
 
 const totalCoursesRepository = async () => {
     return await Course.count();
@@ -106,6 +107,16 @@ const getCourseByCourseName = async (courseName) => {
     return course;
 };
 
+const getByCourseIds = async (courseIds) => {
+    return await Course.findAll({
+        where: {
+            CourseId: {
+                [Sequelize.Op.in]: courseIds
+            }
+        }
+    });
+};
+
 export default {
     totalCoursesRepository,
     create,
@@ -119,5 +130,6 @@ export default {
     deleteByCourseCategoryId,
     getCourseIdByName,
     getCourseNameById,
-    getCourseByCourseName
+    getCourseByCourseName,
+    getByCourseIds
 };

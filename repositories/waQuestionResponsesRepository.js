@@ -362,6 +362,13 @@ const monologueScoreForList = async (phoneNumber, lessonIdList) => {
 };
 
 
+const getByActivityType = async (activityType) => {
+    return await WA_QuestionResponses.findAll({
+        where: {
+            activityType: activityType
+        }
+    });
+};
 
 
 
@@ -380,4 +387,5 @@ export default {
     watchAndSpeakScoreForList,
     readScoreForList,
     monologueScoreForList,
+    getByActivityType
 };

@@ -336,6 +336,158 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
     }
 }
 
+const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
+    try {
+        if (pronunciationAssessment === undefined || pronunciationAssessment == [] || pronunciationAssessment == null) {
+            return null;
+        };
+
+        const fluencyScoreNumber = Math.round(pronunciationAssessment.scoreNumber.fluencyScore);
+        const accuracyScoreNumber = Math.round(pronunciationAssessment.scoreNumber.accuracyScore);
+        const words = pronunciationAssessment.words;
+
+        // Set up canvas dimensions
+        const width = 900;
+        const height = 850;
+        const canvas = createCanvas(width, height);
+        const ctx = canvas.getContext('2d');
+
+        // Draw background
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, width, height);
+
+        // Load and add the company logo in the top - right corner
+        const image = await loadImage("https://beajbloblive.blob.core.windows.net/beajdocuments/logo.jpeg");  // Path to the logo image
+        ctx.drawImage(image, width - 160, 20, image.width / 7.5, image.height / 7.5);
+
+        // Add "YOUR SCORE" Title
+        ctx.font = 'bold 40px Arial';
+        ctx.fillStyle = '#000000';
+        ctx.fillText('YOUR SCORE', 50, 80);
+
+        // Add "Completeness" Bar with dynamic score
+        ctx.font = '25px Arial';
+        ctx.fillText('Correct Pronunciation', 50, 120);
+
+        // Draw light magenta background bar for full length
+        ctx.fillStyle = '#eecef7';
+        ctx.fillRect(50, 125, 790, 40);
+
+        // Draw dark magenta foreground bar for actual score
+        ctx.fillStyle = '#cb6ce6';
+        ctx.fillRect(50, 125, 790 * (accuracyScoreNumber / 100), 40);
+
+        // Add score text inside the bar
+        ctx.fillStyle = '#000000';
+        // Position till the end of dark magenta bar
+        ctx.fillText(`${accuracyScoreNumber}%`, 50 + 790 * (accuracyScoreNumber / 100) - 70, 155);
+
+
+        // Add "Pronunciation" Bar with dynamic score
+        ctx.font = '25px Arial';
+        ctx.fillText('Fluency', 50, 215);
+
+        // Draw light blue background bar for full length
+        ctx.fillStyle = '#B2EBF2';
+        ctx.fillRect(50, 220, 790, 40);
+
+        // Draw dark blue foreground bar for actual score
+        ctx.fillStyle = '#30D5C8';
+        ctx.fillRect(50, 220, 790 * (fluencyScoreNumber / 100), 40);
+
+        // Add score text inside the bar
+        ctx.fillStyle = '#000000';
+        // Position till the end of dark blue bar
+        ctx.fillText(`${fluencyScoreNumber}%`, 50 + 790 * (fluencyScoreNumber / 100) - 70, 250);
+
+
+        // Add "You said" section
+        ctx.font = 'bold 30px Arial';
+        ctx.fillText('You said', 50, 315);
+
+        // Create a paragraph format for the text
+        ctx.font = '25px Arial';
+        const marginLeft = 50;
+        const maxWidth = 850;
+        let lineHeight = 40;
+        let cursorX = marginLeft;
+        let cursorY = 355; // Starting Y position for the text
+
+        // Loop through words and handle line breaks
+        words.forEach((wordObj) => {
+            // If undefined, skip the word
+            if (wordObj == undefined) {
+                return;
+            }
+
+            // If not Mispronunciation, Omission, or None, skip the word
+            if (!['Mispronunciation', 'Omission', 'None'].includes(wordObj.PronunciationAssessment.ErrorType)) {
+                return;
+            }
+            const word = wordObj.Word;
+            const errorType = wordObj.PronunciationAssessment.ErrorType;
+            const wordAccuracyScore = wordObj.PronunciationAssessment.AccuracyScore;
+            const wordWidth = ctx.measureText(word).width + 15; // Measure width of the word
+
+            // If the word exceeds the max width, move to a new line
+            if (cursorX + wordWidth > maxWidth) {
+                cursorX = marginLeft; // Reset X position to the left margin
+                cursorY += lineHeight; // Move to the next line
+            }
+
+            if (errorType == 'Mispronunciation' || wordAccuracyScore < 50) {
+                // Highlight mispronounced words in yellow
+                ctx.fillStyle = '#FFD700'; // Yellow
+                ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
+                ctx.fillStyle = '#000000'; // Black text
+                ctx.fillText(word, cursorX, cursorY);
+            } else if (errorType == 'Omission') {
+                // Highlight skipped words in grey
+                ctx.fillStyle = '#A9A9A9'; // Grey
+                ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
+                ctx.fillStyle = '#000000'; // Black text
+                ctx.fillText(word, cursorX, cursorY);
+            } else if (errorType == 'None') {
+                // Regular words
+                ctx.fillStyle = '#000000';
+                ctx.fillText(word, cursorX, cursorY);
+            }
+
+            // Move cursor for the next word
+            cursorX += wordWidth;
+        });
+
+        // Add the legends at the bottom
+        ctx.font = '20px Arial';
+
+        // Mispronounced Words Legend (Yellow Circle)
+        ctx.fillStyle = '#FFD700'; // Yellow color
+        ctx.beginPath(); // Start a new path
+        ctx.arc(60, 820, 10, 0, 2 * Math.PI);
+        ctx.fill(); // Fill the circle
+        ctx.fillStyle = '#000000';
+        ctx.fillText('Mispronounced Words', 80, 827);
+
+        // Skipped Words Legend (Grey Circle)
+        ctx.fillStyle = '#A9A9A9'; // Grey color
+        ctx.beginPath(); // Start a new path
+        ctx.arc(350, 820, 10, 0, 2 * Math.PI);
+        ctx.fill(); // Fill the circle
+        ctx.fillStyle = '#000000';
+        ctx.fillText('Skipped Words', 370, 827);
+
+        // Convert the canvas to a buffer
+        const buffer = canvas.toBuffer('image/jpeg');
+
+        // Upload to Azure Blob Storage
+        const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
+        return imageUrl;
+    } catch (err) {
+        console.error('Error creating and uploading image:', err);
+        throw new Error('Failed to create and upload image');
+    }
+}
+
 const createAndUploadSpeakingScoreImage = async (results) => {
     try {
         if (results.pronunciationAssessment === undefined || results.pronunciationAssessment === null) {
@@ -490,6 +642,12 @@ const createAndUploadSpeakingScoreImage = async (results) => {
         console.error('Error creating and uploading image:', err);
         throw new Error('Failed to create and upload image');
     }
+};
+
+const extractMispronouncedWords = (results) => {
+    const words = Object.values(results.words);
+    const mispronouncedWords = words.filter(word => word.ErrorType === 'Mispronunciation' || word.AccuracyScore < 50);
+    return mispronouncedWords;
 };
 
 const getAcceptableMessagesList = async (activityType) => {
@@ -1045,8 +1203,6 @@ const startCourseForUser = async (userMobileNumber, numbers_to_ignore) => {
     const courseStartMonth = courseStartDate.getMonth();
     const courseStartDateOnly = courseStartDate.getDate();
 
-    console.log(todayYear, todayMonth, todayDate);
-    console.log(courseStartYear, courseStartMonth, courseStartDateOnly);
     // Check if today < course start date
     if (todayYear < courseStartYear || (todayYear === courseStartYear && todayMonth < courseStartMonth) || (todayYear === courseStartYear && todayMonth === courseStartMonth && todayDate < courseStartDateOnly)) {
         if (!numbers_to_ignore.includes(userMobileNumber)) {
@@ -1080,7 +1236,7 @@ const startCourseForUser = async (userMobileNumber, numbers_to_ignore) => {
     // Send course_bot_introduction_message
     let intro_message = "Assalam o Alaikum 👋\n\nWelcome to Beaj Self Development Course for Teachers " + level + "!";
     if (level == "Level 1") {
-        intro_message += "!\n\nMa'am Zainab Qureshi, Ma'am Fizza Hasan and Ma'am Sameen Shahid will be your instructors.";
+        intro_message += "\n\nMa'am Zainab Qureshi, Ma'am Fizza Hasan and Ma'am Sameen Shahid will be your instructors.";
     }
     await sendMessage(userMobileNumber, intro_message);
     await createActivityLog(userMobileNumber, "text", "outbound", intro_message, null);
@@ -1233,9 +1389,6 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         const smallCourseName = strippedCourseName.replace(/\s/g, '').toLowerCase();
         const imageTag = "lesson_complete_image_lesson_" + lessonNumber.toString() + "_" + smallCourseName;
         let fileExtnesion = ".jpg";
-        if (smallCourseName == "level1") {
-            fileExtnesion = ".jpeg";
-        }
         const lessonCompleteImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/" + imageTag + fileExtnesion;
         await sendMediaMessage(userMobileNumber, lessonCompleteImage, 'image');
         await createActivityLog(userMobileNumber, "image", "outbound", lessonCompleteImage, null);
@@ -1264,8 +1417,9 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
 
         // Feedback Message
         const randomNumber = Math.floor(Math.random() * 100) + 1;
-        if (randomNumber >= 50) {
-            let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + startingLesson.dataValues.activityAlias + " activity?";
+        if (randomNumber >= 75) {
+            let cleanedAlias = startingLesson.dataValues.activityAlias.replace(/\?/g, '');
+            let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + cleanedAlias + " activity?";
             await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", feedbackMessage, null);
             await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next lesson", "it was great 😁", "it can be improved 🤔"]);
@@ -1282,8 +1436,9 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
     } else {
         // Update acceptable messages list for the user
         const randomNumber = Math.floor(Math.random() * 100) + 1;
-        if (randomNumber >= 50) {
-            let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + startingLesson.dataValues.activityAlias + " activity?";
+        if (randomNumber >= 75) {
+            let cleanedAlias = startingLesson.dataValues.activityAlias.replace(/\?/g, '');
+            let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + cleanedAlias + " activity?";
             await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", feedbackMessage, null);
             await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next activity", "it was great 😁", "it can be improved 🤔"]);
@@ -1616,7 +1771,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     startingLesson.dataValues.activityAlias,
                     [userTranscription],
                     [userAudioFileUrl],
-                    null,
+                    [imageUrl],
                     null,
                     [pronunciationAssessment],
                     null,
@@ -1805,7 +1960,8 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 }
 
                 // Send lesson message
-                let lessonMessage = "Listen to the audio question and send your answer as a voice message.💬";
+                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
+                lessonMessage += "\n\nListen to the audio question and send your answer as a voice message.💬";
 
                 // Text message
                 await sendMessage(userMobileNumber, lessonMessage);
@@ -1835,18 +1991,18 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 // Get the current Listen and Speak question
                 const currentListenAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                 const answersArray = currentListenAndSpeakQuestion.dataValues.answer;
-                // OpenAI Speech to Text
-                let prompt = "Question: " + currentListenAndSpeakQuestion.dataValues.question + "\n\nAnswer: " + answersArray[0];
-                const recognizedText = await azureAIServices.openaiSpeechToTextWithPrompt(messageContent.data, prompt);
+                let prompt = answersArray[0];
+                let recognizedText = await azureAIServices.openaiSpeechToTextWithPrompt(messageContent.data, prompt);
                 if (recognizedText) {
                     // Checking if user response is correct or not
 
                     let userAnswerIsCorrect = false;
                     const recognizedTextWithoutPunctuation = recognizedText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"‘’“”?]/g, "").toLowerCase();
+                    const recognizedTextWithoutSpaces = recognizedTextWithoutPunctuation.trim();
                     for (let i = 0; i < answersArray.length; i++) {
                         const answerWithoutPunctuation = answersArray[i].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"‘’“”?]/g, "").toLowerCase();
                         const answerWithoutSpaces = answerWithoutPunctuation.trim();
-                        if (recognizedTextWithoutPunctuation == answerWithoutSpaces) {
+                        if (recognizedTextWithoutSpaces == answerWithoutSpaces) {
                             userAnswerIsCorrect = true;
                             break;
                         }
@@ -1997,8 +2153,8 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         await endingMessage(userMobileNumber, currentUserState, startingLesson);
                     }
                 } else {
-                    // TODO: Handle if no speech recognized
-                    console.log("No speech recognized or an error occurred.");
+                    let logger = `No speech recognized or an error occurred. User: ${userMobileNumber}, Message Type: ${messageType}, Message Content: ${messageContent}`;
+                    console.log(logger);
                 }
             }
         }
@@ -2076,7 +2232,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     startingLesson.dataValues.activityAlias,
                     [userTranscription],
                     [userAudioFileUrl],
-                    null,
+                    [imageUrl],
                     null,
                     [pronunciationAssessment],
                     null,
@@ -2199,7 +2355,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                 // Send lesson message
                 let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\nWatch the video and practice speaking by sending a voice message.💬";
+                lessonMessage += "\n\nWatch the video 👇🏽 and practice speaking by sending a voice message.💬";
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
@@ -2219,18 +2375,38 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 // Get the current Conversational Monologue Bot question
                 const currentConversationalMonologueBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
-                // Azure Pronunciation Assessment
-                const pronunciationAssessment = await azureAIServices.azureSpeakingAssessment(messageContent.data, currentConversationalMonologueBotQuestion.dataValues.question);
-
                 // Extract user transcription
-                const userTranscription = pronunciationAssessment.recognizedText;
+                const userTranscription = await azureAIServices.openaiSpeechToText(messageContent.data);
+
+                let disclaimerMessage = "This chatbot's speech-to-text may not recognize proper nouns accurately or may skip some words—please bear with us while we improve it.";
+                await sendMessage(userMobileNumber, disclaimerMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", disclaimerMessage, null);
 
                 // Text message
                 await sendMessage(userMobileNumber, "You said: " + userTranscription);
                 await createActivityLog(userMobileNumber, "text", "outbound", "You said: " + userTranscription, null);
 
+                // Azure Pronunciation Assessment
+                const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, userTranscription);
+
+                // Extract mispronounced words
+                const mispronouncedWords = extractMispronouncedWords(pronunciationAssessment);
+
+                let correctedAudio = "";
+
+                if (mispronouncedWords.length > 0) {
+                    let modelResponse = "It looks like you've mispronounced a few words in your response. Here are the corrections:\n\n";
+                    for (const word of mispronouncedWords) {
+                        modelResponse += word.Word + (word === mispronouncedWords[mispronouncedWords.length - 1] ? "" : "...");
+                    }
+                    correctedAudio = await azureAIServices.azureTextToSpeechAndUpload(modelResponse);
+                    await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
+                    await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
+                    await sleep(5000);
+                }
+
                 // Generate pronunciation assessment message
-                const imageUrl = await createAndUploadSpeakingScoreImage(pronunciationAssessment);
+                const imageUrl = await createAndUploadMonologueScoreImage(pronunciationAssessment);
 
                 // Media message
                 if (imageUrl) {
@@ -2253,8 +2429,8 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     startingLesson.dataValues.activityAlias,
                     [userTranscription],
                     [userAudioFileUrl],
-                    null,
-                    null,
+                    [imageUrl],
+                    [correctedAudio],
                     [pronunciationAssessment],
                     null,
                     1,
@@ -2319,7 +2495,6 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 await createActivityLog(userMobileNumber, "text", "outbound", waitingMessage, null);
                 const recognizedText = await azureAIServices.azureSpeechToTextAnyLanguage(messageContent.data);
                 if (recognizedText != null && recognizedText != "") {
-                    console.log("Recognized Text: ", recognizedText);
                     let chatThread;
                     let chatThreadMain;
                     if (currentUserState.dataValues.questionNumber == 1) {
@@ -2336,7 +2511,6 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     // Language Detection
                     let modelLanguagePrompt = "Detect the majority of the language used in the provided text. Respond in one word only. The two options are: English or Urdu. You must respond with only one word."
                     const openaiFeedback = await azureAIServices.openaiCustomFeedback(recognizedText, modelLanguagePrompt);
-                    console.log("Language Detection: ", openaiFeedback);
                     if (openaiFeedback.toLowerCase().includes("english")) {
                         modelLanguagePrompt = "Respond in simple English."
                     } else {
@@ -2360,7 +2534,6 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     let threadMessages1 = await openai.beta.threads.messages.list(chatThread);
                     let attempts = 0;
                     while ((!threadMessages1.data[0].content[0] || threadMessages1.data[0].content[0].text.value == firstPrompt) && attempts < 30) {
-                        console.log("Thinking...");
                         await new Promise(resolve => setTimeout(resolve, 1000));
                         threadMessages1 = await openai.beta.threads.messages.list(chatThread);
                         attempts++;
