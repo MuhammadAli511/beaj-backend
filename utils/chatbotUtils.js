@@ -336,6 +336,158 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
     }
 }
 
+const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
+    try {
+        if (pronunciationAssessment === undefined || pronunciationAssessment == [] || pronunciationAssessment == null) {
+            return null;
+        };
+
+        const fluencyScoreNumber = Math.round(pronunciationAssessment.scoreNumber.fluencyScore);
+        const accuracyScoreNumber = Math.round(pronunciationAssessment.scoreNumber.accuracyScore);
+        const words = pronunciationAssessment.words;
+
+        // Set up canvas dimensions
+        const width = 900;
+        const height = 850;
+        const canvas = createCanvas(width, height);
+        const ctx = canvas.getContext('2d');
+
+        // Draw background
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, width, height);
+
+        // Load and add the company logo in the top - right corner
+        const image = await loadImage("https://beajbloblive.blob.core.windows.net/beajdocuments/logo.jpeg");  // Path to the logo image
+        ctx.drawImage(image, width - 160, 20, image.width / 7.5, image.height / 7.5);
+
+        // Add "YOUR SCORE" Title
+        ctx.font = 'bold 40px Arial';
+        ctx.fillStyle = '#000000';
+        ctx.fillText('YOUR SCORE', 50, 80);
+
+        // Add "Completeness" Bar with dynamic score
+        ctx.font = '25px Arial';
+        ctx.fillText('Correct Pronunciation', 50, 120);
+
+        // Draw light magenta background bar for full length
+        ctx.fillStyle = '#eecef7';
+        ctx.fillRect(50, 125, 790, 40);
+
+        // Draw dark magenta foreground bar for actual score
+        ctx.fillStyle = '#cb6ce6';
+        ctx.fillRect(50, 125, 790 * (accuracyScoreNumber / 100), 40);
+
+        // Add score text inside the bar
+        ctx.fillStyle = '#000000';
+        // Position till the end of dark magenta bar
+        ctx.fillText(`${accuracyScoreNumber}%`, 50 + 790 * (accuracyScoreNumber / 100) - 70, 155);
+
+
+        // Add "Pronunciation" Bar with dynamic score
+        ctx.font = '25px Arial';
+        ctx.fillText('Fluency', 50, 215);
+
+        // Draw light blue background bar for full length
+        ctx.fillStyle = '#B2EBF2';
+        ctx.fillRect(50, 220, 790, 40);
+
+        // Draw dark blue foreground bar for actual score
+        ctx.fillStyle = '#30D5C8';
+        ctx.fillRect(50, 220, 790 * (fluencyScoreNumber / 100), 40);
+
+        // Add score text inside the bar
+        ctx.fillStyle = '#000000';
+        // Position till the end of dark blue bar
+        ctx.fillText(`${fluencyScoreNumber}%`, 50 + 790 * (fluencyScoreNumber / 100) - 70, 250);
+
+
+        // Add "You said" section
+        ctx.font = 'bold 30px Arial';
+        ctx.fillText('You said', 50, 315);
+
+        // Create a paragraph format for the text
+        ctx.font = '25px Arial';
+        const marginLeft = 50;
+        const maxWidth = 850;
+        let lineHeight = 40;
+        let cursorX = marginLeft;
+        let cursorY = 355; // Starting Y position for the text
+
+        // Loop through words and handle line breaks
+        words.forEach((wordObj) => {
+            // If undefined, skip the word
+            if (wordObj == undefined) {
+                return;
+            }
+
+            // If not Mispronunciation, Omission, or None, skip the word
+            if (!['Mispronunciation', 'Omission', 'None'].includes(wordObj.PronunciationAssessment.ErrorType)) {
+                return;
+            }
+            const word = wordObj.Word;
+            const errorType = wordObj.PronunciationAssessment.ErrorType;
+            const wordAccuracyScore = wordObj.PronunciationAssessment.AccuracyScore;
+            const wordWidth = ctx.measureText(word).width + 15; // Measure width of the word
+
+            // If the word exceeds the max width, move to a new line
+            if (cursorX + wordWidth > maxWidth) {
+                cursorX = marginLeft; // Reset X position to the left margin
+                cursorY += lineHeight; // Move to the next line
+            }
+
+            if (errorType == 'Mispronunciation' || wordAccuracyScore < 50) {
+                // Highlight mispronounced words in yellow
+                ctx.fillStyle = '#FFD700'; // Yellow
+                ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
+                ctx.fillStyle = '#000000'; // Black text
+                ctx.fillText(word, cursorX, cursorY);
+            } else if (errorType == 'Omission') {
+                // Highlight skipped words in grey
+                ctx.fillStyle = '#A9A9A9'; // Grey
+                ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
+                ctx.fillStyle = '#000000'; // Black text
+                ctx.fillText(word, cursorX, cursorY);
+            } else if (errorType == 'None') {
+                // Regular words
+                ctx.fillStyle = '#000000';
+                ctx.fillText(word, cursorX, cursorY);
+            }
+
+            // Move cursor for the next word
+            cursorX += wordWidth;
+        });
+
+        // Add the legends at the bottom
+        ctx.font = '20px Arial';
+
+        // Mispronounced Words Legend (Yellow Circle)
+        ctx.fillStyle = '#FFD700'; // Yellow color
+        ctx.beginPath(); // Start a new path
+        ctx.arc(60, 820, 10, 0, 2 * Math.PI);
+        ctx.fill(); // Fill the circle
+        ctx.fillStyle = '#000000';
+        ctx.fillText('Mispronounced Words', 80, 827);
+
+        // Skipped Words Legend (Grey Circle)
+        ctx.fillStyle = '#A9A9A9'; // Grey color
+        ctx.beginPath(); // Start a new path
+        ctx.arc(350, 820, 10, 0, 2 * Math.PI);
+        ctx.fill(); // Fill the circle
+        ctx.fillStyle = '#000000';
+        ctx.fillText('Skipped Words', 370, 827);
+
+        // Convert the canvas to a buffer
+        const buffer = canvas.toBuffer('image/jpeg');
+
+        // Upload to Azure Blob Storage
+        const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
+        return imageUrl;
+    } catch (err) {
+        console.error('Error creating and uploading image:', err);
+        throw new Error('Failed to create and upload image');
+    }
+}
+
 const createAndUploadSpeakingScoreImage = async (results) => {
     try {
         if (results.pronunciationAssessment === undefined || results.pronunciationAssessment === null) {
@@ -2223,11 +2375,8 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 // Get the current Conversational Monologue Bot question
                 const currentConversationalMonologueBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
-                // Azure Pronunciation Assessment
-                const pronunciationAssessment = await azureAIServices.azureSpeakingAssessment(messageContent.data, currentConversationalMonologueBotQuestion.dataValues.question);
-
                 // Extract user transcription
-                const userTranscription = pronunciationAssessment.recognizedText;
+                const userTranscription = await azureAIServices.openaiSpeechToText(messageContent.data);
 
                 let disclaimerMessage = "This chatbot's speech-to-text may not recognize proper nouns accurately or may skip some words—please bear with us while we improve it.";
                 await sendMessage(userMobileNumber, disclaimerMessage);
@@ -2236,6 +2385,9 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 // Text message
                 await sendMessage(userMobileNumber, "You said: " + userTranscription);
                 await createActivityLog(userMobileNumber, "text", "outbound", "You said: " + userTranscription, null);
+
+                // Azure Pronunciation Assessment
+                const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, userTranscription);
 
                 // Extract mispronounced words
                 const mispronouncedWords = extractMispronouncedWords(pronunciationAssessment);
@@ -2254,7 +2406,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 }
 
                 // Generate pronunciation assessment message
-                const imageUrl = await createAndUploadSpeakingScoreImage(pronunciationAssessment);
+                const imageUrl = await createAndUploadMonologueScoreImage(pronunciationAssessment);
 
                 // Media message
                 if (imageUrl) {
