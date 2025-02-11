@@ -23,13 +23,13 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
     else if (cohort == "Pilot" && targetGroup == "T1") {
       courseId_l1 = 98;
       courseId_l2 = 104;
-      courseId_l3 = null;
+      courseId_l3 = 109;
       flag_valid = 1;
     }
     else if (cohort == "Pilot" && targetGroup == "T2") {
       courseId_l1 = 99;
       courseId_l2 = 103;
-      courseId_l3 = null;
+      courseId_l3 = 108;
       flag_valid = 1;
     }
     

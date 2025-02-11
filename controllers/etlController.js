@@ -3,6 +3,7 @@ import etlService from "../services/etlService.js";
 
 const runETL = async () => {
     try {
+        console.log("ETL Pipeline Starting ...");
         await etlService.runETL_Dashboard();
     } catch (error) {
         error.fileName = "etlController.js";

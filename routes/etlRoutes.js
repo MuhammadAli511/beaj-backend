@@ -8,5 +8,6 @@ router.get("/status", (req, res) => {
 });
 router.get("/run-etl", etlController.runETL);
 router.post('/LessonSheet_Cohort', etlController.runETL1);
+router.get('/DashboardSheet', etlController.runETL);
 router.use(errorHandler);
 export default router;

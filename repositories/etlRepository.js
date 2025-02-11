@@ -21,35 +21,50 @@ const getSuccessRate = async (course_id, grp,cohort) => {
         cohortCondition = `m."cohort" = '${cohort}'`; 
       } 
       else {
-          const cohortList = [];
-          let j = 1,k = 48;
-          if(grp == 'T1'){
-               j = 1;
-               k = 24;
-          } 
-          else{
-            j = 25;
-            k = 48;
-          }
-          for (let i = j; i <= k; i++) {
-            cohortList.push(`'Cohort ${i}'`);
-          }
-          cohortCondition = `("cohort" = ${cohortList.join(' OR "cohort" = ')})`; 
+        if((grp == 'T1' || grp == 'T2') && cohort !== 'Pilot'){
+           cohortCondition = `m."cohort" != 'Pilot'`; 
       }
+    }
         let qry = `WITH StudentActivities AS (
             SELECT 
                 m."phoneNumber" AS "Student_Number", 
                 COUNT(l."lessonId") AS "Completed_Activities",
-                (SELECT COUNT("LessonId") 
-                 FROM "Lesson" 
-                 WHERE "courseId" = ${course_id} and "dayNumber" <= (SELECT 
-          CASE 
-            WHEN EXTRACT(DOW FROM CURRENT_DATE) = 0 THEN 7
-            ELSE EXTRACT(DOW FROM CURRENT_DATE)
-          END AS day_number)
-                   AND "weekNumber" <= (SELECT CEIL((CURRENT_DATE - DATE("courseStartDate")) / 6.0) 
-                                        FROM "Courses" 
-                                        WHERE "CourseId" = ${course_id})) AS "Total_Activities"
+                (SELECT 
+            CASE 
+                WHEN (CURRENT_TIMESTAMP - INTERVAL '1 month') > (SELECT "courseStartDate" FROM "Courses" WHERE "CourseId" = ${course_id}) 
+                THEN (SELECT COUNT("LessonId") FROM "Lesson" WHERE "courseId" = ${course_id})
+                ELSE (
+                    SELECT COUNT("LessonId") 
+                    FROM "Lesson" 
+                    WHERE "courseId" = ${course_id} 
+                    AND (
+        -- Include all lessons from previous weeks
+        "weekNumber" < (
+            SELECT CEIL(
+                ((CURRENT_TIMESTAMP - INTERVAL '7 hours')::DATE - DATE("courseStartDate")) / 6.0
+            ) 
+            FROM "Courses" WHERE "CourseId" = ${course_id}
+        )
+        -- Include only up to the current day's lessons in the current week
+        OR (
+            "weekNumber" = (
+                SELECT CEIL(
+                    ((CURRENT_TIMESTAMP - INTERVAL '7 hours')::DATE - DATE("courseStartDate")) / 6.0
+                ) 
+                FROM "Courses" WHERE "CourseId" = ${course_id}
+            )
+            AND "dayNumber" <= (
+                SELECT 
+                    CASE 
+                        WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP - INTERVAL '7 hours')) = 0 THEN 7
+                        ELSE EXTRACT(DOW FROM (CURRENT_TIMESTAMP - INTERVAL '7 hours'))
+                    END
+            )
+        )
+    )
+                )
+            END
+        ) AS "Total_Activities"
             FROM 
                 "wa_users_metadata" m
             LEFT JOIN 
@@ -68,7 +83,7 @@ const getSuccessRate = async (course_id, grp,cohort) => {
                 "Student_Number",
                 "Completed_Activities",
                 "Total_Activities",
-                CASE WHEN ("Completed_Activities" = "Total_Activities") THEN 1 ELSE 0 END AS "Meets_Threshold_90",
+                CASE WHEN ("Completed_Activities" >= "Total_Activities") THEN 1 ELSE 0 END AS "Meets_Threshold_90",
                 CASE WHEN (("Completed_Activities" > 0) and  ("Completed_Activities" < "Total_Activities")) THEN 1 ELSE 0 END AS "Meets_Threshold_50",
                 CASE WHEN ("Completed_Activities" = 0) THEN 1 ELSE 0 END AS "Meets_Threshold_0"
             FROM 
@@ -335,26 +350,21 @@ MAX(CASE WHEN pp."courseId" = ${course_id3} THEN pp."week4" END) AS "course3_wee
     COALESCE(pp."week3", 0) +
     COALESCE(pp."week4", 0), 0
 ) END) AS "course3_total",
-    NULLIF(
-    MAX(CASE WHEN pp."courseId" = ${course_id1} THEN 
-        COALESCE(pp."week1", 0) +
-        COALESCE(pp."week2", 0) +
-        COALESCE(pp."week3", 0) +
-        COALESCE(pp."week4", 0)
-    END) +
-    MAX(CASE WHEN pp."courseId" = ${course_id2} THEN 
-        COALESCE(pp."week1", 0) +
-        COALESCE(pp."week2", 0) +
-        COALESCE(pp."week3", 0) +
-        COALESCE(pp."week4", 0)
-    END) +
-    MAX(CASE WHEN pp."courseId" = ${course_id3} THEN 
-        COALESCE(pp."week1", 0) +
-        COALESCE(pp."week2", 0) +
-        COALESCE(pp."week3", 0) +
-        COALESCE(pp."week4", 0)
-    END), 0
-) AS grand_total
+   NULLIF(COALESCE(
+            MAX(CASE WHEN pp."courseId" = ${course_id1} THEN 
+                COALESCE(pp."week1", 0) + COALESCE(pp."week2", 0) + COALESCE(pp."week3", 0) + COALESCE(pp."week4", 0)
+            END), 0
+        ) +
+        COALESCE(
+            MAX(CASE WHEN pp."courseId" = ${course_id2} THEN 
+                COALESCE(pp."week1", 0) + COALESCE(pp."week2", 0) + COALESCE(pp."week3", 0) + COALESCE(pp."week4", 0)
+            END), 0
+        ) +
+        COALESCE(
+            MAX(CASE WHEN pp."courseId" = ${course_id3} THEN 
+                COALESCE(pp."week1", 0) + COALESCE(pp."week2", 0) + COALESCE(pp."week3", 0) + COALESCE(pp."week4", 0)
+            END), 0
+     ),0) AS grand_total
     FROM
         PivotedProgress pp
     GROUP BY
@@ -516,60 +526,24 @@ const getLessonCompletion = async (course_id,grp,cohort) => {
 
 const getLastActivityCompleted = async (course_id1, grp,cohort) => {
   try {
-//     const qry = `
-//       WITH LastCompletedLesson AS (
-//     SELECT 
-//         l."phoneNumber",
-//         MAX(l."lessonId") AS "lastLessonId"
-//     FROM 
-//         "wa_lessons_completed" l
-//     INNER JOIN 
-//         "wa_users_metadata" m 
-//     ON 
-//         l."phoneNumber" = m."phoneNumber"
-//     WHERE 
-//         l."completionStatus" = 'Completed'
-//         AND l."courseId" = ${course_id1}
-//         AND m."targetGroup" = '${grp}'
-//     GROUP BY 
-//         l."phoneNumber"
-//     )
-//     SELECT 
-//         s."LessonId",
-//        COUNT(DISTINCT l."phoneNumber") AS "total_students_completed",
-//         CASE 
-//     WHEN COUNT(DISTINCT CASE 
-//             WHEN lc."lastLessonId" = s."LessonId" THEN lc."phoneNumber"
-//             ELSE NULL
-//         END) = 0 THEN NULL
-//     ELSE COUNT(DISTINCT CASE 
-//             WHEN lc."lastLessonId" = s."LessonId" THEN lc."phoneNumber"
-//             ELSE NULL
-//         END)
-// END AS "students_last_completed"
-//     FROM 
-//         "Lesson" s
-//     LEFT JOIN 
-//         "wa_lessons_completed" l 
-//     ON 
-//         s."LessonId" = l."lessonId" 
-//         AND s."courseId" = l."courseId" 
-//         AND l."completionStatus" = 'Completed'
-//     LEFT JOIN 
-//         "wa_users_metadata" m 
-//     ON 
-//         l."phoneNumber" = m."phoneNumber"
-//          AND m."targetGroup" = '${grp}'
-//     LEFT JOIN 
-//         LastCompletedLesson lc 
-//     ON 
-//         lc."lastLessonId" = s."LessonId"
-//     WHERE 
-//         s."courseId" = ${course_id1}
-//     GROUP BY 
-//         s."LessonId"
-//     ORDER BY 
-//         s."weekNumber", s."dayNumber",s."SequenceNumber";`;
+    let flag = cohort;
+    let cohortCondition = '';
+    let total_cnt = [];
+   if(cohort == 'Pilots' || cohort == 'Rollout'){
+    if(cohort == 'Pilots'){cohort = 'Pilot'} else {cohort = ''}
+      total_cnt = await getCount_NotStartedActivity(course_id1, grp,cohort);
+    if (cohort === 'Pilot') {
+        cohortCondition = `m."cohort" = '${cohort}'`; 
+      } 
+      else {
+        if((grp == 'T1' || grp == 'T2') && cohort !== 'Pilot'){
+           cohortCondition = `m."cohort" != 'Pilot'`; 
+      }
+    }
+}
+else{
+    cohortCondition = `m."cohort" = '${cohort}'`; 
+}
 
 const qry =     `WITH TargetGroup AS (
     SELECT 
@@ -577,7 +551,7 @@ const qry =     `WITH TargetGroup AS (
     FROM 
         "wa_users_metadata" m
     WHERE 
-        m."targetGroup" = '${grp}' and m."cohort" = '${cohort}'
+        m."targetGroup" = '${grp}' and ${cohortCondition}
 ),
 get_lessonIds AS (
     SELECT 
@@ -634,14 +608,76 @@ ORDER BY
 
 
     const res = await sequelize.query(qry);
+    let finalOutput = [];
+    if(flag == 'Pilots' || flag == 'Rollout'){
+    finalOutput = [
+        { LessonId: 'Total', total_students_completed: parseInt(total_cnt[0].total_count, 10) },
+        { LessonId: 'Start', total_students_completed: parseInt(total_cnt[0].total_not_started, 10) },
+        ...res[0].map(item => ({
+          LessonId: item.LessonId,
+          total_students_completed: item.total_students_completed !== null ? parseInt(item.total_students_completed, 10) : null
+        }))
+      ];
+    }
+    else{
+        finalOutput = res[0];
+    }
+
+    // console.log(finalOutput);
 
     // console.log(res[0])
 
-    return res[0];
+    return finalOutput;
   } catch (error) {
     error.fileName = "etlRepository.js";
     throw error;
   }
+};
+const getCount_NotStartedActivity = async (course_id,grp,cohort) => {
+    try {
+        let cohortCondition = '';
+    if (cohort === 'Pilot') {
+        cohortCondition = `m."cohort" = '${cohort}'`; 
+      } 
+      else {
+        if((grp == 'T1' || grp == 'T2') && cohort !== 'Pilot'){
+           cohortCondition = `m."cohort" != 'Pilot'`; 
+      }
+    }
+        const qry = `
+           WITH TargetGroup AS (
+    SELECT 
+        m."phoneNumber"
+    FROM 
+        "wa_users_metadata" m
+    WHERE 
+        m."targetGroup" = '${grp}' 
+        AND ${cohortCondition}
+),
+UnattemptedPhoneNumbers AS (
+    SELECT 
+        tg."phoneNumber"
+    FROM 
+        TargetGroup tg
+    LEFT JOIN 
+        "wa_lessons_completed" l 
+    ON 
+        tg."phoneNumber" = l."phoneNumber" 
+        AND l."courseId" = ${course_id}
+    WHERE 
+        l."lessonId" IS NULL
+)
+SELECT 
+    (SELECT COUNT(*) FROM TargetGroup) AS "total_count",
+    (SELECT COUNT(*) FROM UnattemptedPhoneNumbers) AS "total_not_started";
+        `;
+  
+        const res = await sequelize.query(qry);
+        return res[0];
+    } catch (error) {
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
 };
 
 const getWeeklyScore = async (course_id,grp,cohort) => {
@@ -1385,4 +1421,4 @@ const getActivityNameCount = async (course_id1, course_id2,course_id3,grp,cohort
     }
 };
 
-export default { getDataFromPostgres, getSuccessRate, getActivityTotalCount,getCompletedActivity, getLessonCompletion,getLastActivityCompleted,getWeeklyScore,getWeeklyScore_pilot,getLessonCompletions,getActivity_Completions,getActivityNameCount };
+export default { getDataFromPostgres, getSuccessRate, getActivityTotalCount,getCompletedActivity, getLessonCompletion,getLastActivityCompleted,getWeeklyScore,getWeeklyScore_pilot,getCount_NotStartedActivity,getLessonCompletions,getActivity_Completions,getActivityNameCount };

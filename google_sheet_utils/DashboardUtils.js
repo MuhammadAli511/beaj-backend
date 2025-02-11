@@ -8,17 +8,31 @@ const creds = JSON.parse(
 const sheets = google.sheets("v4");
 
 const DashboardUtils_load = async (
-    userMetadata_Pilot,
-    userMetadata_Control,
-    userMetadata_Rollout,
-    userMetadata_overTime,
-    successRate1,
-    successRate2,
-    successRate3,
-    successRate4,
-    successRate5,
-    successRate6,
-    funnel
+  userMetadata_Pilot,
+      userMetadata_Control,
+      userMetadata_Rollout,
+      userMetadata_overTime,
+      successRate1,
+      successRate2,
+      successRate3,
+      successRate4,
+      successRate5,
+      successRate6,
+      successRate01,
+      successRate02,
+      last_activity_t1_l1,
+      last_activity_t2_l1,
+      cumulativeAvgAct_t1,
+      cumulativeAvgAct_t2,
+      dailyAvgAct_t1,
+      dailyAvgAct_t2,
+      funnel,
+      NotStartedCohort_T1,
+      NotStartedCohort_T2,
+      LastLessonCompleted_T1,
+      LastLessonCompleted_T2,
+      CohortWiseUpdateLag_T1,
+      CohortWiseUpdateLag_T2,
 ) => {
   try {
     const auth = new google.auth.GoogleAuth({
@@ -36,6 +50,13 @@ const DashboardUtils_load = async (
             `Users-metadata Control!A2:N`, 
             `Users-metadata Rollout!A2:N`, 
             `Users-metadata!I2:J`, 
+            `Dashboard-stats!V2:AB7`, 
+            `Dashboard Rollout!AA2:AG3`, 
+            `Dashboard Rollout!AI2:AL90`, 
+            `Dashboard Rollout!AA37:AD60`, 
+            `Dashboard Rollout!AA63:AD90`, 
+            `Dashboard Rollout!AA101:AC123`,
+            `Dashboard Rollout!AD101:AF123`,
         ],
     };
 
@@ -88,10 +109,81 @@ const DashboardUtils_load = async (
             range: `Dashboard-stats!V7:AB7`, 
             values: [successRate6],
           },
+
+          {
+            range: `Dashboard Rollout!AA2:AG2`, 
+            values: [successRate01],
+          },
+          {
+            range: `Dashboard Rollout!AA3:AG3`, 
+            values: [successRate02],
+          },
+
+          {
+            range: `Dashboard Rollout!AB27:AC27`, 
+            values: dailyAvgAct_t1,
+          },
+          {
+            range: `Dashboard Rollout!AB28:AC28`, 
+            values: dailyAvgAct_t2,
+          },
+
+          {
+            range: `Dashboard Rollout!AB32:AC32`, 
+            values: cumulativeAvgAct_t1,
+          },
+          {
+            range: `Dashboard Rollout!AB33:AC33`, 
+            values: cumulativeAvgAct_t2,
+          },
+
+
+          {
+            range: `Dashboard Rollout!AI2:AJ`, 
+            values: last_activity_t1_l1,
+          },
+          
+          {
+            range: `Dashboard Rollout!AK2:AL`, 
+            values: last_activity_t2_l1,
+          },
+
           {
             range: `Dashboard-stats!B2:F3`, 
             values: funnel,
           },
+
+          {
+            range: `Dashboard Rollout!AA37:AB60`, 
+            values: NotStartedCohort_T1,
+          },
+          
+          {
+            range: `Dashboard Rollout!AC37:AD60`, 
+            values: NotStartedCohort_T2,
+          },
+
+          {
+            range: `Dashboard Rollout!AA63:AB90`, 
+            values: LastLessonCompleted_T1,
+          },
+          
+          {
+            range: `Dashboard Rollout!AC63:AD90`, 
+            values: LastLessonCompleted_T2,
+          },
+
+
+          {
+            range: `Dashboard Rollout!AA101:AC123`, 
+            values: CohortWiseUpdateLag_T1,
+          },
+          
+          {
+            range: `Dashboard Rollout!AD101:AF123`, 
+            values: CohortWiseUpdateLag_T2,
+          },
+          
       ],
     };
     

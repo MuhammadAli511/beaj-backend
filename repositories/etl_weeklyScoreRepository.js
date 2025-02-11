@@ -289,65 +289,60 @@ PivotedProgress AS (
 ),
 AggregatedProgress AS (
     SELECT
-	    COALESCE(ROW_NUMBER() OVER (ORDER BY pp."targetGroup", pp."cohort", pp."phoneNumber" ASC) + COALESCE(${offsetT1},0) , 0) AS sr_no,
-            pp."phoneNumber",
-		    pp."name",
+        COALESCE(ROW_NUMBER() OVER (ORDER BY pp."targetGroup", pp."cohort", pp."phoneNumber" ASC) + COALESCE(${offsetT1}, 0), 0) AS sr_no,
+        pp."phoneNumber",
+        pp."name",
         MAX(CASE WHEN pp."courseId" = ${course_id1} THEN pp."week1" END) AS "course1_week1",
         MAX(CASE WHEN pp."courseId" = ${course_id1} THEN pp."week2" END) AS "course1_week2",
         MAX(CASE WHEN pp."courseId" = ${course_id1} THEN pp."week3" END) AS "course1_week3",
         MAX(CASE WHEN pp."courseId" = ${course_id1} THEN pp."week4" END) AS "course1_week4",
         MAX(CASE WHEN pp."courseId" = ${course_id1} THEN NULLIF(
-    COALESCE(pp."week1", 0) +
-    COALESCE(pp."week2", 0) +
-    COALESCE(pp."week3", 0) +
-    COALESCE(pp."week4", 0), 0
-) END) AS "course1_total",
+            COALESCE(pp."week1", 0) +
+            COALESCE(pp."week2", 0) +
+            COALESCE(pp."week3", 0) +
+            COALESCE(pp."week4", 0), 0
+        ) END) AS "course1_total",
         MAX(CASE WHEN pp."courseId" = ${course_id2} THEN pp."week1" END) AS "course2_week1",
         MAX(CASE WHEN pp."courseId" = ${course_id2} THEN pp."week2" END) AS "course2_week2",
         MAX(CASE WHEN pp."courseId" = ${course_id2} THEN pp."week3" END) AS "course2_week3",
         MAX(CASE WHEN pp."courseId" = ${course_id2} THEN pp."week4" END) AS "course2_week4",
         MAX(CASE WHEN pp."courseId" = ${course_id2} THEN NULLIF(
-    COALESCE(pp."week1", 0) +
-    COALESCE(pp."week2", 0) +
-    COALESCE(pp."week3", 0) +
-    COALESCE(pp."week4", 0), 0
-) END) AS "course2_total",
-    MAX(CASE WHEN pp."courseId" = ${course_id3} THEN pp."week1" END) AS "course3_week1",
-MAX(CASE WHEN pp."courseId" = ${course_id3} THEN pp."week2" END) AS "course3_week2",
-MAX(CASE WHEN pp."courseId" = ${course_id3} THEN pp."week3" END) AS "course3_week3",
-MAX(CASE WHEN pp."courseId" = ${course_id3} THEN pp."week4" END) AS "course3_week4",
-    MAX(CASE WHEN pp."courseId" = ${course_id3} THEN NULLIF(
-    COALESCE(pp."week1", 0) +
-    COALESCE(pp."week2", 0) +
-    COALESCE(pp."week3", 0) +
-    COALESCE(pp."week4", 0), 0
-) END) AS "course3_total",
-    NULLIF(
-    MAX(CASE WHEN pp."courseId" = ${course_id1} THEN 
-        COALESCE(pp."week1", 0) +
-        COALESCE(pp."week2", 0) +
-        COALESCE(pp."week3", 0) +
-        COALESCE(pp."week4", 0)
-    END) +
-    MAX(CASE WHEN pp."courseId" = ${course_id2} THEN 
-        COALESCE(pp."week1", 0) +
-        COALESCE(pp."week2", 0) +
-        COALESCE(pp."week3", 0) +
-        COALESCE(pp."week4", 0)
-    END) +
-    MAX(CASE WHEN pp."courseId" = ${course_id3} THEN 
-        COALESCE(pp."week1", 0) +
-        COALESCE(pp."week2", 0) +
-        COALESCE(pp."week3", 0) +
-        COALESCE(pp."week4", 0)
-    END), 0
-) AS grand_total,
-       pp."cohort",
-       pp."targetGroup"
+            COALESCE(pp."week1", 0) +
+            COALESCE(pp."week2", 0) +
+            COALESCE(pp."week3", 0) +
+            COALESCE(pp."week4", 0), 0
+        ) END) AS "course2_total",
+        MAX(CASE WHEN pp."courseId" = ${course_id3} THEN pp."week1" END) AS "course3_week1",
+        MAX(CASE WHEN pp."courseId" = ${course_id3} THEN pp."week2" END) AS "course3_week2",
+        MAX(CASE WHEN pp."courseId" = ${course_id3} THEN pp."week3" END) AS "course3_week3",
+        MAX(CASE WHEN pp."courseId" = ${course_id3} THEN pp."week4" END) AS "course3_week4",
+        MAX(CASE WHEN pp."courseId" = ${course_id3} THEN NULLIF(
+            COALESCE(pp."week1", 0) +
+            COALESCE(pp."week2", 0) +
+            COALESCE(pp."week3", 0) +
+            COALESCE(pp."week4", 0), 0
+        ) END) AS "course3_total",
+        NULLIF(COALESCE(
+            MAX(CASE WHEN pp."courseId" = ${course_id1} THEN 
+                COALESCE(pp."week1", 0) + COALESCE(pp."week2", 0) + COALESCE(pp."week3", 0) + COALESCE(pp."week4", 0)
+            END), 0
+        ) +
+        COALESCE(
+            MAX(CASE WHEN pp."courseId" = ${course_id2} THEN 
+                COALESCE(pp."week1", 0) + COALESCE(pp."week2", 0) + COALESCE(pp."week3", 0) + COALESCE(pp."week4", 0)
+            END), 0
+        ) +
+        COALESCE(
+            MAX(CASE WHEN pp."courseId" = ${course_id3} THEN 
+                COALESCE(pp."week1", 0) + COALESCE(pp."week2", 0) + COALESCE(pp."week3", 0) + COALESCE(pp."week4", 0)
+            END), 0
+     ),0) AS grand_total,
+        pp."cohort",
+        pp."targetGroup"
     FROM
         PivotedProgress pp
     GROUP BY
-        pp."phoneNumber",pp."name",pp."cohort",pp."targetGroup"
+        pp."phoneNumber", pp."name", pp."cohort", pp."targetGroup"
 )
 SELECT
     *
@@ -868,4 +863,505 @@ WHERE
   }
 };
 
-export default { getDataFromPostgres, getDataActivityComplete, getWeeklyActivityCompleted,getUserMetadataAll,getUserMetadataTime,getLessonCompletions,getActivity_Completions, getWeeklyScore };
+const getCumulative_AvgActivity_Rollout = async (course_id, grp, cohort) => {
+    try {
+
+        let cohortCondition = '';
+    if (cohort === 'Pilot') {
+        cohortCondition = `m."cohort" = '${cohort}'`; 
+      } 
+      else {
+        if((grp == 'T1' || grp == 'T2') && cohort !== 'Pilot'){
+           cohortCondition = `m."cohort" != 'Pilot'`; 
+      }
+    }
+
+        const qry = `
+           WITH grand_total_cte AS (
+    SELECT 
+        m."phoneNumber", 
+        SUM(CASE WHEN s."courseId" = ${course_id} THEN 1 ELSE 0 END) AS grand_total
+    FROM 
+        "wa_users_metadata" m 
+    LEFT JOIN 
+        "wa_lessons_completed" l 
+        ON m."phoneNumber" = l."phoneNumber" 
+        AND l."completionStatus" = 'Completed' 
+    LEFT JOIN 
+        "Lesson" s 
+        ON s."LessonId" = l."lessonId" 
+        AND s."courseId" = l."courseId" 
+        AND s."courseId" = ${course_id}
+    WHERE 
+        m."targetGroup" = '${grp}'
+        AND ${cohortCondition}
+    GROUP BY 
+        m."phoneNumber"
+),
+total_activities_cte AS (
+    SELECT COUNT("LessonId") AS "Total_Activities"
+    FROM "Lesson"
+    WHERE "courseId" = ${course_id}
+    AND (
+        -- Include all lessons from previous weeks
+        "weekNumber" < (
+            SELECT CEIL(
+                ((CURRENT_TIMESTAMP - INTERVAL '7 hours')::DATE - DATE("courseStartDate")) / 6.0
+            ) 
+            FROM "Courses" WHERE "CourseId" = ${course_id}
+        )
+        -- Include only up to the current day's lessons in the current week
+        OR (
+            "weekNumber" = (
+                SELECT CEIL(
+                    ((CURRENT_TIMESTAMP - INTERVAL '7 hours')::DATE - DATE("courseStartDate")) / 6.0
+                ) 
+                FROM "Courses" WHERE "CourseId" = ${course_id}
+            )
+            AND "dayNumber" <= (
+                SELECT 
+                    CASE 
+                        WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP - INTERVAL '7 hours')) = 0 THEN 7
+                        ELSE EXTRACT(DOW FROM (CURRENT_TIMESTAMP - INTERVAL '7 hours'))
+                    END
+            )
+        )
+    )
+)
+SELECT 
+    ROUND(SUM(grand_total) * 1.0 / NULLIF(COUNT(CASE WHEN grand_total > 0 THEN 1 END), 0), 2) AS average_ratio,
+    (SELECT "Total_Activities" FROM total_activities_cte) AS "Total_Activities"
+FROM 
+    grand_total_cte;
+        `;
+
+        const res = await sequelize.query(qry);
+        return res[0];
+    } catch (error) {
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
+};
+
+const getDaily_AvgActivity_Rollout = async (course_id,grp) => {
+    try {
+        const qry = `
+            WITH grand_total_cte AS (
+    SELECT 
+        m."phoneNumber", 
+        SUM(CASE WHEN s."courseId" IN (${course_id}) THEN 1 ELSE 0 END) AS grand_total
+    FROM 
+        "wa_users_metadata" m 
+    LEFT JOIN 
+        "wa_lessons_completed" l 
+        ON m."phoneNumber" = l."phoneNumber" 
+        AND l."completionStatus" = 'Completed' 
+    LEFT JOIN 
+        "Lesson" s 
+        ON s."LessonId" = l."lessonId" 
+        AND s."courseId" = l."courseId" 
+        AND s."courseId" IN (${course_id}) 
+        AND s."weekNumber" = (
+               SELECT CEIL(
+                   ((CURRENT_TIMESTAMP - INTERVAL '7 hours')::DATE - DATE("courseStartDate")) / 6.0
+               ) 
+               FROM "Courses" 
+               WHERE "CourseId" = ${course_id})
+	   AND "dayNumber" = (
+               SELECT 
+                   CASE 
+                       WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP - INTERVAL '7 hours')) = 0 THEN 7
+                       ELSE EXTRACT(DOW FROM (CURRENT_TIMESTAMP - INTERVAL '7 hours'))
+                   END AS day_number)
+    WHERE 
+        m."targetGroup" = '${grp}'
+        AND m."cohort" != 'Pilot' 
+    GROUP BY 
+        m."phoneNumber"
+)
+SELECT 
+    -- sum(grand_total) AS total_grand_total_count,
+    -- COUNT(CASE WHEN grand_total > 0 THEN 1 END) AS phone_count_with_grand_total_gt_zero,
+    round(sum(grand_total) * 1.0 / NULLIF(COUNT(CASE WHEN grand_total > 0 THEN 1 END), 0),2) AS average_ratio,
+	(SELECT COUNT("LessonId") 
+                 FROM "Lesson" 
+                 WHERE "courseId" = ${course_id} AND "dayNumber" = (
+               SELECT 
+                   CASE 
+                       WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP - INTERVAL '7 hours')) = 0 THEN 7
+                       ELSE EXTRACT(DOW FROM (CURRENT_TIMESTAMP - INTERVAL '7 hours'))
+                   END AS day_number)
+           AND "weekNumber" = (
+               SELECT CEIL(
+                   ((CURRENT_TIMESTAMP - INTERVAL '7 hours')::DATE - DATE("courseStartDate")) / 6.0
+               ) 
+               FROM "Courses" 
+               WHERE "CourseId" = ${course_id})) AS "Total_Activities"
+FROM 
+    grand_total_cte;
+        `;
+  
+        const res = await sequelize.query(qry);
+        return res[0];
+    } catch (error) {
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
+};
+
+const getNotStartCohortCount_Rollout = async (course_id,grp) => {
+    try {
+        const qry = `
+            WITH TargetGroup AS (
+    SELECT 
+        m."phoneNumber",
+		m."cohort"
+    FROM 
+        "wa_users_metadata" m
+    WHERE 
+        m."targetGroup" = '${grp}' 
+        AND m."cohort" != 'Pilot'
+    ),
+    UnattemptedPhoneNumbers AS (
+        SELECT 
+            tg."phoneNumber",
+            tg."cohort"
+        FROM 
+            TargetGroup tg
+        LEFT JOIN 
+            "wa_lessons_completed" l 
+        ON 
+            tg."phoneNumber" = l."phoneNumber" 
+            AND l."courseId" = ${course_id} and l."completionStatus" = 'Completed'
+        WHERE 
+            l."lessonId" IS  NULL
+    )
+    SELECT 
+     t."cohort", count(*) FROM UnattemptedPhoneNumbers t group by t."cohort" 
+	 order by CAST(SPLIT_PART(t."cohort", ' ', 2) AS INTEGER);
+        `;
+  
+        const res = await sequelize.query(qry);
+        return res[0];
+    } catch (error) {
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
+};
+const getCount_NotStartedActivity = async (course_id,grp,cohort) => {
+    try {
+        let cohortCondition = '';
+    if (cohort === 'Pilot') {
+        cohortCondition = `m."cohort" = '${cohort}'`; 
+      } 
+      else {
+        if((grp == 'T1' || grp == 'T2') && cohort !== 'Pilot'){
+           cohortCondition = `m."cohort" != 'Pilot'`; 
+      }
+    }
+        const qry = `
+           WITH TargetGroup AS (
+    SELECT 
+        m."phoneNumber"
+    FROM 
+        "wa_users_metadata" m
+    WHERE 
+        m."targetGroup" = '${grp}' 
+        AND ${cohortCondition}
+),
+UnattemptedPhoneNumbers AS (
+    SELECT 
+        tg."phoneNumber"
+    FROM 
+        TargetGroup tg
+    LEFT JOIN 
+        "wa_lessons_completed" l 
+    ON 
+        tg."phoneNumber" = l."phoneNumber" 
+        AND l."courseId" = ${course_id}
+    WHERE 
+        l."lessonId" IS NULL
+)
+SELECT 
+    (SELECT COUNT(*) FROM TargetGroup) AS "total_count",
+    (SELECT COUNT(*) FROM UnattemptedPhoneNumbers) AS "total_not_started";
+        `;
+  
+        const res = await sequelize.query(qry);
+        return res[0];
+    } catch (error) {
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
+};
+
+const getLastLessonCompleted_Rollout = async (course_id,grp,cohort) => {
+    try {
+    let flag = cohort;
+    let cohortCondition = '';
+    let total_cnt = [];
+   if(cohort == 'Pilots' || cohort == 'Rollout'){
+    if(cohort == 'Pilots'){cohort = 'Pilot'} else {cohort = ''}
+      total_cnt = await getCount_NotStartedActivity(course_id, grp,cohort);
+    if (cohort === 'Pilot') {
+        cohortCondition = `m."cohort" = '${cohort}'`; 
+      } 
+      else {
+        if((grp == 'T1' || grp == 'T2') && cohort !== 'Pilot'){
+           cohortCondition = `m."cohort" != 'Pilot'`; 
+      }
+    }
+}
+else{
+    cohortCondition = `m."cohort" = '${cohort}'`; 
+}
+
+//         const qry = `
+//             WITH TargetGroup AS (
+//     SELECT 
+//         m."phoneNumber"
+//     FROM 
+//         "wa_users_metadata" m
+//     WHERE 
+//         m."targetGroup" = '${grp}' 
+//         and ${cohortCondition}
+// ),
+// get_lessonIds AS (
+//     SELECT 
+//         "LessonId", 
+//         "weekNumber", 
+//         "dayNumber",
+//         "SequenceNumber" 
+//     FROM 
+//         "Lesson" 
+//     WHERE 
+//         "courseId" = ${course_id}
+// ),
+// LessonWithMaxTimestamp AS (
+//     SELECT 
+//         l."phoneNumber",
+//         l."lessonId",
+//         l."endTime",
+//         ROW_NUMBER() OVER (
+//             PARTITION BY l."phoneNumber" 
+//             ORDER BY l."endTime" DESC
+//         ) AS row_num
+//     FROM 
+//         "wa_lessons_completed" l
+//     INNER JOIN 
+//         TargetGroup tg 
+//     ON 
+//         l."phoneNumber" = tg."phoneNumber"
+//     WHERE 
+//         l."completionStatus" = 'Completed'
+//         AND l."courseId" = ${course_id}
+// ),
+// LessonCompletionCounts AS (
+//     SELECT 
+//         lw."lessonId",
+//         COUNT(lw."phoneNumber") AS "completionCount"
+//     FROM 
+//         LessonWithMaxTimestamp lw
+//     WHERE 
+//         lw.row_num = 1
+//     GROUP BY 
+//         lw."lessonId"
+// ),
+// LessonDays AS (
+//     SELECT 
+//         g."LessonId",
+//         ((g."weekNumber" - 1) * 6 + g."dayNumber") AS days,
+//         COALESCE(lcc."completionCount", 0) AS "total_students_completed"
+//     FROM 
+//         get_lessonIds g
+//     LEFT JOIN 
+//         LessonCompletionCounts lcc 
+//     ON 
+//         g."LessonId" = lcc."lessonId"
+// )
+// SELECT 
+//     CONCAT('day ', d.day) AS day,
+//     NULLIF(COALESCE(SUM(ld."total_students_completed"), 0),0) AS count
+// FROM 
+//     generate_series(1, 24) AS d(day)
+// LEFT JOIN 
+//     LessonDays ld 
+// ON 
+//     d.day = ld.days
+// GROUP BY 
+//     d.day
+// ORDER BY 
+//     d.day;
+//         `;
+
+
+const qry = `WITH "TargetGroup" AS (
+    SELECT 
+        "m"."phoneNumber"
+    FROM 
+        "wa_users_metadata" AS "m"
+    WHERE 
+        "m"."targetGroup" = '${grp}' 
+        AND ${cohortCondition}
+),
+"user_progress" AS (
+    SELECT 
+        "p"."phoneNumber",
+        "p"."currentWeek",
+        "p"."currentDay",
+        "p"."acceptableMessages",
+        CASE 
+            WHEN 'start next lesson' = ANY("p"."acceptableMessages") THEN 1 
+            ELSE 0 
+        END AS "lesson_completed_count"
+    FROM 
+        "wa_user_progress" AS "p"
+    INNER JOIN 
+        "TargetGroup" AS "t" 
+    ON 
+        "p"."phoneNumber" = "t"."phoneNumber" 
+        AND "p"."currentCourseId" = ${course_id}
+),
+get_dayCount as (
+SELECT 
+    "currentWeek",
+    "currentDay",
+    "lesson_completed_count",
+	-- (("currentWeek" - 1) * 6 + "currentDay") as day
+    CASE 
+        WHEN ("lesson_completed_count" = 1) 
+        THEN (("currentWeek" - 1) * 6 + "currentDay") 
+        ELSE (("currentWeek" - 1) * 6 + "currentDay" ) - 1
+    END AS "day"
+FROM 
+    "user_progress"
+	WHERE 
+    "currentWeek" IS NOT NULL 
+    AND "currentDay" IS NOT NULL
+ORDER BY 
+    "currentWeek", "currentDay"
+	),
+dayseries as (SELECT generate_series(0, 24) AS "day"),
+getvalues as (select "day",count(*) from get_dayCount g group by g."day")
+select CONCAT('day ', d."day") as "day",v."count" from dayseries d left join getvalues v 
+on d."day" = v."day" ORDER BY 
+    d."day";`;
+  
+        const res = await sequelize.query(qry);
+    let finalOutput = [];
+    if(flag == 'Pilots' || flag == 'Rollout'){
+    finalOutput = [
+        { day: 'Total', count: parseInt(total_cnt[0].total_count, 10) },
+        { day: 'Start', count: parseInt(total_cnt[0].total_not_started, 10) },
+        ...res[0].map(item => ({
+            day: item.day,
+            count: item.count !== null ? parseInt(item.count, 10) : null
+        }))
+      ];
+    }
+    else{
+        finalOutput = res[0];
+    }
+
+    return finalOutput;
+    } catch (error) {
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
+};
+
+const getCount_UpdateLagCohortWise = async (course_id,grp) => {
+    try {
+        const qry = `
+          WITH StudentActivities AS (
+            SELECT 
+                m."phoneNumber" AS "Student_Number",
+				m."cohort",
+                COUNT(l."lessonId") AS "Completed_Activities",
+                (SELECT 
+            CASE 
+                WHEN (CURRENT_TIMESTAMP - INTERVAL '1 month') > (SELECT "courseStartDate" FROM "Courses" WHERE "CourseId" = ${course_id}) 
+                THEN (SELECT COUNT("LessonId") FROM "Lesson" WHERE "courseId" = ${course_id})
+                ELSE (
+                    SELECT COUNT("LessonId") 
+                    FROM "Lesson" 
+                    WHERE "courseId" = ${course_id}
+                    AND (
+        -- Include all lessons from previous weeks
+        "weekNumber" < (
+            SELECT CEIL(
+                ((CURRENT_TIMESTAMP - INTERVAL '7 hours')::DATE - DATE("courseStartDate")) / 6.0
+            ) 
+            FROM "Courses" WHERE "CourseId" = ${course_id}
+        )
+        -- Include only up to the current day's lessons in the current week
+        OR (
+            "weekNumber" = (
+                SELECT CEIL(
+                    ((CURRENT_TIMESTAMP - INTERVAL '7 hours')::DATE - DATE("courseStartDate")) / 6.0
+                ) 
+                FROM "Courses" WHERE "CourseId" = ${course_id}
+            )
+            AND "dayNumber" <= (
+                SELECT 
+                    CASE 
+                        WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP - INTERVAL '7 hours')) = 0 THEN 7
+                        ELSE EXTRACT(DOW FROM (CURRENT_TIMESTAMP - INTERVAL '7 hours'))
+                    END
+            )
+        )
+    )
+                )
+            END
+        ) AS "Total_Activities"
+            FROM 
+                "wa_users_metadata" m
+            LEFT JOIN 
+                "wa_lessons_completed" l 
+            ON 
+                m."phoneNumber" = l."phoneNumber" 
+                AND l."courseId" = ${course_id} 
+                AND l."completionStatus" = 'Completed'
+            WHERE 
+                m."targetGroup" = '${grp}' and m."cohort" != 'Pilot' and m."cohort" != 'Cohort 0'
+            GROUP BY 
+                m."phoneNumber"
+        ),
+        ThresholdComparison AS (
+            SELECT 
+                "Student_Number",
+				"cohort",
+                "Completed_Activities",
+                "Total_Activities",
+                CASE WHEN ("Completed_Activities" >= "Total_Activities") THEN 1 ELSE 0 END AS "Meets_Threshold_90",
+                CASE WHEN (("Completed_Activities" > 0) and  ("Completed_Activities" < "Total_Activities")) THEN 1 ELSE 0 END AS "Meets_Threshold_50",
+                CASE WHEN ("Completed_Activities" = 0) THEN 1 ELSE 0 END AS "Meets_Threshold_0"
+            FROM 
+                StudentActivities
+        )
+        SELECT 
+		     "cohort",
+            SUM("Meets_Threshold_50")::INTEGER AS "lagging_behind_count",
+			SUM("Meets_Threshold_90")::INTEGER AS "up_to_date_count"
+            -- SUM("Meets_Threshold_0") AS "at_zero_count",
+            -- COUNT(*) AS "total_count",
+            -- ROUND((SUM("Meets_Threshold_90")::DECIMAL / COUNT(*) * 100),2) AS "up_to_date_percent",
+            -- ROUND((SUM("Meets_Threshold_50")::DECIMAL / COUNT(*) * 100),2) AS "lagging_behind_percent",
+            -- ROUND((SUM("Meets_Threshold_0")::DECIMAL / COUNT(*) * 100),2)  AS "at_zero_percent"
+        FROM 
+            ThresholdComparison group by "cohort" order by CAST(SPLIT_PART("cohort", ' ', 2) AS INTEGER);
+        `;
+  
+        const res = await sequelize.query(qry);
+        return res[0];
+    } catch (error) {
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
+};
+
+
+
+export default { getDataFromPostgres, getDataActivityComplete, getWeeklyActivityCompleted,getUserMetadataAll,getUserMetadataTime,getLessonCompletions,getActivity_Completions, getWeeklyScore,
+    getCumulative_AvgActivity_Rollout, getDaily_AvgActivity_Rollout, getNotStartCohortCount_Rollout,getLastLessonCompleted_Rollout, getCount_UpdateLagCohortWise
+ };
