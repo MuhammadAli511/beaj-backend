@@ -1571,7 +1571,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(firstMCQsQuestion.dataValues.Id);
                 const questionText = firstMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
                 let mcqMessage = questionText + "\n\n";
-                if (!questionText.includes("Choose the correct sentence:")) {
+                if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question")) {
                     mcqMessage += "Choose the correct answer:\n";
                 }
                 for (let i = 0; i < mcqAnswers.length; i++) {
@@ -1654,7 +1654,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(nextMCQsQuestion.dataValues.Id);
                     const questionText = nextMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
                     let mcqMessage = questionText + "\n\n";
-                    if (!questionText.includes("Choose the correct sentence:")) {
+                    if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question")) {
                         mcqMessage += "Choose the correct answer:\n";
                     }
                     for (let i = 0; i < mcqAnswers.length; i++) {
