@@ -753,7 +753,8 @@ const createActivityLog = async (
     actionType,
     messageDirection,
     messageContent,
-    metadata
+    metadata,
+    caption = null
 ) => {
     const userCurrentProgress = await waUserProgressRepository.getByPhoneNumber(
         phoneNumber
@@ -820,7 +821,7 @@ const createActivityLog = async (
         phoneNumber: phoneNumber,
         actionType: actionType,
         messageDirection: messageDirection,
-        messageContent: [finalMessageContent],
+        messageContent: [finalMessageContent, caption],
         metadata: metadata,
         courseId: courseId,
         lessonId: lessonId,
@@ -839,7 +840,7 @@ const extractConstantMessage = async (key) => {
     return formattedMessage;
 };
 
-const sendMediaMessage = async (to, mediaUrl, mediaType) => {
+const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null) => {
     try {
         if (mediaType == 'video') {
             await axios.post(
@@ -848,7 +849,7 @@ const sendMediaMessage = async (to, mediaUrl, mediaType) => {
                     messaging_product: 'whatsapp',
                     to: to,
                     type: 'video',
-                    video: { link: mediaUrl },
+                    video: { link: mediaUrl, caption: captionText },
                 },
                 {
                     headers: {
@@ -880,7 +881,7 @@ const sendMediaMessage = async (to, mediaUrl, mediaType) => {
                     messaging_product: 'whatsapp',
                     to: to,
                     type: 'image',
-                    image: { link: mediaUrl },
+                    image: { link: mediaUrl, caption: captionText },
                 },
                 {
                     headers: {
@@ -1137,6 +1138,11 @@ const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUs
         await createActivityLog(userMobileNumber, "text", "outbound", "Text message type kerain.", null);
         return false;
     }
+    else if (acceptableMessagesList.includes("let's start!")) {
+        await sendMessage(userMobileNumber, "Please write: \n\nLet's start!");
+        await createActivityLog(userMobileNumber, "text", "outbound", "Please write: \n\nLet's start!", null);
+        return false;
+    }
     // Write customized message based on the acceptable messages list
     let message = "Please write: \n\n";
     if (acceptableMessagesList.length > 1) {
@@ -1305,15 +1311,15 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
 
     await waLessonsCompletedRepository.endLessonByPhoneNumberAndLessonId(userMobileNumber, startingLesson.dataValues.LessonId);
 
+    // Check if the lesson is the last lesson of the day
+    const lessonLast = await lessonRepository.isLastLessonOfDay(startingLesson.dataValues.LessonId);
+
     // Activity Complete Sticker
     const activityCompleteSticker = await extractConstantMessage("activity_complete_sticker");
     await sendMediaMessage(userMobileNumber, activityCompleteSticker, 'sticker');
     await createActivityLog(userMobileNumber, "sticker", "outbound", activityCompleteSticker, null);
 
     await sleep(3000);
-
-    // Check if the lesson is the last lesson of the day
-    const lessonLast = await lessonRepository.isLastLessonOfDay(startingLesson.dataValues.LessonId);
 
 
     if (currentUserState.dataValues.engagement_type == "Free Demo") {
@@ -1379,10 +1385,21 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         // Lesson Number
         const lessonNumber = (startingLesson.dataValues.weekNumber - 1) * 6 + startingLesson.dataValues.dayNumber;
 
+        let goldBarCaption = "";
+
         // Lesson Complete Message
         const lessonCompleteMessage = "You have completed *" + lessonNumber + " out of 24* lessons in " + strippedCourseName + "!⭐️";
-        await sendMessage(userMobileNumber, lessonCompleteMessage);
-        await createActivityLog(userMobileNumber, "text", "outbound", lessonCompleteMessage, null);
+        goldBarCaption = lessonCompleteMessage;
+        // await sendMessage(userMobileNumber, lessonCompleteMessage);
+        // await createActivityLog(userMobileNumber, "text", "outbound", lessonCompleteMessage, null);
+
+        // Day Ending Message
+        if (startingLesson.dataValues.dayNumber >= 1 && startingLesson.dataValues.dayNumber <= 5) {
+            const dayEndingMessage = getDayEndingMessage(startingLesson.dataValues.dayNumber);
+            goldBarCaption += "\n\n" + dayEndingMessage;
+            // await sendMessage(userMobileNumber, dayEndingMessage);
+            // await createActivityLog(userMobileNumber, "text", "outbound", dayEndingMessage, null);
+        }
 
         // Lesson Complete Image
         // Gold Bars
@@ -1390,34 +1407,30 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         const imageTag = "lesson_complete_image_lesson_" + lessonNumber.toString() + "_" + smallCourseName;
         let fileExtnesion = ".jpg";
         const lessonCompleteImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/" + imageTag + fileExtnesion;
-        await sendMediaMessage(userMobileNumber, lessonCompleteImage, 'image');
-        await createActivityLog(userMobileNumber, "image", "outbound", lessonCompleteImage, null);
+        await sendMediaMessage(userMobileNumber, lessonCompleteImage, 'image', goldBarCaption);
+        await createActivityLog(userMobileNumber, "image", "outbound", lessonCompleteImage, null, goldBarCaption);
         // Sleep
         await sleep(5000);
 
         // Week end score image
         if (startingLesson.dataValues.dayNumber == 6) {
+            let weekMessage = "You have unlocked this week's challenge 🧩\nGo to your class-group to solve it. All the best! 👍🏽";
+
             const weekEndScore = await weekEndScoreCalculation(userMobileNumber, startingLesson.dataValues.weekNumber, currentUserState.currentCourseId);
             const weekEndScoreImage = await weekEndImage(weekEndScore, startingLesson.dataValues.weekNumber);
-            await sendMediaMessage(userMobileNumber, weekEndScoreImage, 'image');
-            await createActivityLog(userMobileNumber, "image", "outbound", weekEndScoreImage, null);
+            await sendMediaMessage(userMobileNumber, weekEndScoreImage, 'image', weekMessage);
+            await createActivityLog(userMobileNumber, "image", "outbound", weekEndScoreImage, null, weekMessage);
             await sleep(5000);
 
-            let weekMessage = "You have unlocked this week's challenge 🧩\nGo to your class-group to solve it. All the best! 👍🏽";
-            await sendMessage(userMobileNumber, weekMessage);
-            await createActivityLog(userMobileNumber, "text", "outbound", weekMessage, null);
-        }
-
-        // Day Ending Message
-        if (startingLesson.dataValues.dayNumber == 1 || startingLesson.dataValues.dayNumber == 2 || startingLesson.dataValues.dayNumber == 3 || startingLesson.dataValues.dayNumber == 4 || startingLesson.dataValues.dayNumber == 5) {
-            const dayEndingMessage = getDayEndingMessage(startingLesson.dataValues.dayNumber);
-            await sendMessage(userMobileNumber, dayEndingMessage);
-            await createActivityLog(userMobileNumber, "text", "outbound", dayEndingMessage, null);
+            // await sendMessage(userMobileNumber, weekMessage);
+            // await createActivityLog(userMobileNumber, "text", "outbound", weekMessage, null);
         }
 
         // Feedback Message
         const randomNumber = Math.floor(Math.random() * 100) + 1;
-        if (randomNumber >= 75) {
+        const messagesInLast60Seconds = await waUserActivityLogsRepository.countMessagesInLastnSeconds(userMobileNumber, 60);
+        console.log("Messages in last 60 seconds: ", messagesInLast60Seconds);
+        if (randomNumber >= 75 && messagesInLast60Seconds < 5) {
             let cleanedAlias = startingLesson.dataValues.activityAlias.replace(/\?/g, '');
             let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + cleanedAlias + " activity?";
             await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
@@ -1434,9 +1447,11 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         await sendButtonMessage(userMobileNumber, 'Are you ready to start your next lesson?', [{ id: 'start_next_lesson', title: 'Start Next Lesson' }]);
         await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Lesson", null);
     } else {
-        // Update acceptable messages list for the user
+        // Feedback Message
         const randomNumber = Math.floor(Math.random() * 100) + 1;
-        if (randomNumber >= 75) {
+        const messagesInLast60Seconds = await waUserActivityLogsRepository.countMessagesInLastnSeconds(userMobileNumber, 60);
+        console.log("Messages in last 60 seconds: ", messagesInLast60Seconds);
+        if (randomNumber >= 75 && messagesInLast60Seconds < 5) {
             let cleanedAlias = startingLesson.dataValues.activityAlias.replace(/\?/g, '');
             let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + cleanedAlias + " activity?";
             await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
@@ -1467,16 +1482,16 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
             lessonMessage += "\n\n" + removeHTMLTags(startingLesson.dataValues.text);
 
             // Text message
-            await sendMessage(userMobileNumber, lessonMessage);
-            await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+            // await sendMessage(userMobileNumber, lessonMessage);
+            // await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
             // Send video content
             const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
             let videoURL = documentFile[0].dataValues.video;
 
             // Media message
-            await sendMediaMessage(userMobileNumber, videoURL, 'video');
-            await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
+            await sendMediaMessage(userMobileNumber, videoURL, 'video', lessonMessage);
+            await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null, lessonMessage);
 
             // Sleep
             await sleep(12000);
@@ -1490,16 +1505,16 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
             lessonMessage += "\n\n" + removeHTMLTags(startingLesson.dataValues.text);
 
             // Text message
-            await sendMessage(userMobileNumber, lessonMessage);
-            await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+            // await sendMessage(userMobileNumber, lessonMessage);
+            // await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
             // Send video content
             const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
             let videoURL = documentFile[0].dataValues.video;
 
             // Media message
-            await sendMediaMessage(userMobileNumber, videoURL, 'video');
-            await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
+            await sendMediaMessage(userMobileNumber, videoURL, 'video', lessonMessage);
+            await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null, lessonMessage);
 
             // Sleep
             await sleep(12000);
@@ -1556,8 +1571,8 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(firstMCQsQuestion.dataValues.Id);
                 const questionText = firstMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
                 let mcqMessage = questionText + "\n\n";
-                if (!questionText.includes("Choose the correct sentence.")) {
-                    mcqMessage += "Choose the correct answer.\n";
+                if (!questionText.includes("Choose the correct sentence:")) {
+                    mcqMessage += "Choose the correct answer:\n";
                 }
                 for (let i = 0; i < mcqAnswers.length; i++) {
                     mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
@@ -1639,8 +1654,8 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(nextMCQsQuestion.dataValues.Id);
                     const questionText = nextMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
                     let mcqMessage = questionText + "\n\n";
-                    if (!questionText.includes("Choose the correct sentence.")) {
-                        mcqMessage += "Choose the correct answer.\n";
+                    if (!questionText.includes("Choose the correct sentence:")) {
+                        mcqMessage += "Choose the correct answer:\n";
                     }
                     for (let i = 0; i < mcqAnswers.length; i++) {
                         mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
@@ -1659,39 +1674,39 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     const scorePercentage = (totalScore / totalQuestions) * 100;
                     let message = "*Your score: " + totalScore + "/" + totalQuestions + ".*";
                     if (scorePercentage >= 0 && scorePercentage <= 60) {
-                        // message += "\nGood Effort! 👍🏽";
+                        message += "\n\nGood Effort! 👍🏽";
                         // Text message
                         await sendMessage(userMobileNumber, message);
                         await createActivityLog(userMobileNumber, "text", "outbound", message, null);
 
                         // Sticker
-                        const stickerURL = await extractConstantMessage("good_effort_sticker");
-                        await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
-                        await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
-                        await sleep(3000);
+                        // const stickerURL = await extractConstantMessage("good_effort_sticker");
+                        // await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
+                        // await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
+                        // await sleep(3000);
 
                     } else if (scorePercentage >= 61 && scorePercentage <= 79) {
-                        // message += "\nWell done! 🌟";
+                        message += "\n\nWell done! 🌟";
                         // Text message
                         await sendMessage(userMobileNumber, message);
                         await createActivityLog(userMobileNumber, "text", "outbound", message, null);
 
                         // Sticker
-                        const stickerURL = await extractConstantMessage("well_done_sticker");
-                        await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
-                        await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
-                        await sleep(3000);
+                        // const stickerURL = await extractConstantMessage("well_done_sticker");
+                        // await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
+                        // await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
+                        // await sleep(3000);
                     } else if (scorePercentage >= 80) {
-                        // message += "\nExcellent 🎉";
+                        message += "\n\nExcellent 🎉";
                         // Text message
                         await sendMessage(userMobileNumber, message);
                         await createActivityLog(userMobileNumber, "text", "outbound", message, null);
 
                         // Sticker
-                        const stickerURL = await extractConstantMessage("excellent_sticker");
-                        await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
-                        await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
-                        await sleep(3000);
+                        // const stickerURL = await extractConstantMessage("excellent_sticker");
+                        // await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
+                        // await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
+                        // await sleep(3000);
                     }
 
 
@@ -1720,16 +1735,16 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 // Update question number
                 await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.questionNumber);
 
+                const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
+                let videoCaptionText = "Question " + firstWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + ":\n\nPuri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
+
                 // Send question media file
-                await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
-                await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
-                await sleep(12000);
+                await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, 'video', videoCaptionText);
+                await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null, videoCaptionText);
 
                 // Send question text
-                const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
-                let message = "Question " + firstWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + ":\n\nPuri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
-                await sendMessage(userMobileNumber, message);
-                await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+                // await sendMessage(userMobileNumber, message);
+                // await createActivityLog(userMobileNumber, "text", "outbound", message, null);
 
                 // Update acceptable messages list for the user
                 await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
@@ -1784,18 +1799,16 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     // Update question number
                     await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.questionNumber);
 
+                    const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
+                    let videoCaptionText = "Question " + nextWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + ":\n\nPuri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
+
                     // Send question media file
-                    await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
-                    await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
-                    await sleep(12000);
+                    await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video', videoCaptionText);
+                    await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null, videoCaptionText);
 
                     // Send question text
-                    const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
-                    let message = "Question " + nextWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + ":\n\nPuri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
-
-                    // Text message
-                    await sendMessage(userMobileNumber, message);
-                    await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+                    // await sendMessage(userMobileNumber, message);
+                    // await createActivityLog(userMobileNumber, "text", "outbound", message, null);
                 } else {
                     // Reset Question Number, Retry Counter, and Activity Type
                     await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
@@ -2112,38 +2125,38 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         const scorePercentage = (totalScore / totalQuestions) * 100;
                         let message = "*Your score: " + totalScore + "/" + totalQuestions + ".*";
                         if (scorePercentage >= 0 && scorePercentage <= 60) {
-                            // message += "\nGood Effort! 👍🏽";
+                            message += "\n\nGood Effort! 👍🏽";
                             // Text message
                             await sendMessage(userMobileNumber, message);
                             await createActivityLog(userMobileNumber, "text", "outbound", message, null);
 
                             // Sticker
-                            const stickerURL = await extractConstantMessage("good_effort_sticker");
-                            await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
-                            await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
-                            await sleep(3000);
+                            // const stickerURL = await extractConstantMessage("good_effort_sticker");
+                            // await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
+                            // await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
+                            // await sleep(3000);
                         } else if (scorePercentage >= 61 && scorePercentage <= 79) {
-                            // message += "\nWell done! 🌟";
+                            message += "\n\nWell done! 🌟";
                             // Text message
                             await sendMessage(userMobileNumber, message);
                             await createActivityLog(userMobileNumber, "text", "outbound", message, null);
 
                             // Sticker
-                            const stickerURL = await extractConstantMessage("well_done_sticker");
-                            await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
-                            await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
-                            await sleep(3000);
+                            // const stickerURL = await extractConstantMessage("well_done_sticker");
+                            // await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
+                            // await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
+                            // await sleep(3000);
                         } else if (scorePercentage >= 80) {
-                            // message += "\nExcellent 🎉";
+                            message += "\n\nExcellent 🎉";
                             // Text message
                             await sendMessage(userMobileNumber, message);
                             await createActivityLog(userMobileNumber, "text", "outbound", message, null);
 
                             // Sticker
-                            const stickerURL = await extractConstantMessage("excellent_sticker");
-                            await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
-                            await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
-                            await sleep(3000);
+                            // const stickerURL = await extractConstantMessage("excellent_sticker");
+                            // await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
+                            // await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
+                            // await sleep(3000);
                         }
 
                         // Reset Question Number, Retry Counter, and Activity Type
@@ -2378,13 +2391,14 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 // Extract user transcription
                 const userTranscription = await azureAIServices.openaiSpeechToText(messageContent.data);
 
-                let disclaimerMessage = "This chatbot's speech-to-text may not recognize proper nouns accurately or may skip some words—please bear with us while we improve it.";
-                await sendMessage(userMobileNumber, disclaimerMessage);
-                await createActivityLog(userMobileNumber, "text", "outbound", disclaimerMessage, null);
+                let disclaimerAndUserTranscriptionMessage = "This chatbot's speech-to-text may not recognize proper nouns accurately or may skip some words—please bear with us while we improve it.";
+                // await sendMessage(userMobileNumber, disclaimerMessage);
+                // await createActivityLog(userMobileNumber, "text", "outbound", disclaimerMessage, null);
 
                 // Text message
-                await sendMessage(userMobileNumber, "You said: " + userTranscription);
-                await createActivityLog(userMobileNumber, "text", "outbound", "You said: " + userTranscription, null);
+                disclaimerAndUserTranscriptionMessage += "\n\nYou said: " + userTranscription;
+                await sendMessage(userMobileNumber, disclaimerAndUserTranscriptionMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", disclaimerAndUserTranscriptionMessage, null);
 
                 // Azure Pronunciation Assessment
                 const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, userTranscription);
