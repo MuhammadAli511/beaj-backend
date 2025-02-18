@@ -1,5 +1,6 @@
 import express from 'express';
 import beajEmployeesAuth from '../middlewares/beajEmployeesAuth.js';
+import beajFacilitatorsAuth from '../middlewares/beajFacilitatorsAuth.js';
 import courseController from '../controllers/courseController.js';
 import errorHandler from '../middlewares/errorHandler.js';
 
@@ -14,7 +15,7 @@ router.get('/status', (req, res) => {
 router.post('/create', beajEmployeesAuth, courseController.createCourseController);
 
 // GET  api/course/getAll
-router.get('/getAll', beajEmployeesAuth, courseController.getAllCourseController);
+router.get('/getAll', beajFacilitatorsAuth, courseController.getAllCourseController);
 
 // GET  api/course/getById/:id
 router.get('/getById/:id', beajEmployeesAuth, courseController.getCourseByIdController);

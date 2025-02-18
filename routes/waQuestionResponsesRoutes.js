@@ -1,6 +1,7 @@
 import express from 'express';
 import beajEmployeesAuth from '../middlewares/beajEmployeesAuth.js';
 import waQuestionResponsesController from '../controllers/waQuestionResponsesController.js';
+import beajFacilitatorsAuth from '../middlewares/beajFacilitatorsAuth.js';
 import errorHandler from '../middlewares/errorHandler.js';
 
 const router = express.Router();
@@ -14,7 +15,7 @@ router.get('/status', (req, res) => {
 router.get('/getAll', beajEmployeesAuth, waQuestionResponsesController.getAllWaQuestionResponsesController);
 
 // GET api/waQuestionResponses/getByActivityType/:activityType
-router.get('/getByActivityType/:activityType', beajEmployeesAuth, waQuestionResponsesController.getWaQuestionResponsesByActivityTypeController);
+router.get('/getByActivityType/:activityType', beajFacilitatorsAuth, waQuestionResponsesController.getWaQuestionResponsesByActivityTypeController);
 
 // Use error handler middleware
 router.use(errorHandler);
