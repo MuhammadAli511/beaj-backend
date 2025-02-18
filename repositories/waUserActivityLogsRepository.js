@@ -74,6 +74,23 @@ const getLastActiveUsers = async (days, filteredUsers) => {
     });
 };
 
+
+const countMessagesInLastnSeconds = async (phoneNumber, seconds) => {
+    const messages = await WA_UserActivityLogs.findAll({
+        where: {
+            phoneNumber: phoneNumber
+        },
+        order: [
+            ['timestamp', 'DESC']
+        ]
+    });
+    const now = new Date();
+    const lastnSeconds = new Date(now.getTime() - seconds * 1000);
+    const messagesInLastnSeconds = messages.filter(message => message.dataValues.timestamp > lastnSeconds);
+    return messagesInLastnSeconds.length;
+};
+
+
 export default {
     create,
     getAll,
@@ -83,5 +100,6 @@ export default {
     getByPhoneNumber,
     deleteByPhoneNumber,
     getCountBySpeciifcMessage,
-    getLastActiveUsers
+    getLastActiveUsers,
+    countMessagesInLastnSeconds
 };
