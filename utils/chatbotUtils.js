@@ -646,8 +646,14 @@ const createAndUploadSpeakingScoreImage = async (results) => {
 
 const extractMispronouncedWords = (results) => {
     const words = Object.values(results.words);
-    const mispronouncedWords = words.filter(word => word.ErrorType === 'Mispronunciation' || word.AccuracyScore < 50);
+    const mispronouncedWords = words.filter(word => word.PronunciationAssessment.ErrorType == 'Mispronunciation' || word.PronunciationAssessment.AccuracyScore < 50);
     return mispronouncedWords;
+};
+
+const extractTranscript = (results) => {
+    const words = Object.values(results.words);
+    const transcriptWords = words.filter(word => word.PronunciationAssessment.ErrorType != 'Omission');
+    return transcriptWords.map(word => word.Word).join(" ");
 };
 
 const getAcceptableMessagesList = async (activityType) => {
@@ -1314,10 +1320,12 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
     // Check if the lesson is the last lesson of the day
     const lessonLast = await lessonRepository.isLastLessonOfDay(startingLesson.dataValues.LessonId);
 
-    // Activity Complete Sticker
-    const activityCompleteSticker = await extractConstantMessage("activity_complete_sticker");
-    await sendMediaMessage(userMobileNumber, activityCompleteSticker, 'sticker');
-    await createActivityLog(userMobileNumber, "sticker", "outbound", activityCompleteSticker, null);
+    // Activity Complete Sticker - only send if not last lesson
+    if (!lessonLast) {
+        const activityCompleteSticker = await extractConstantMessage("activity_complete_sticker");
+        await sendMediaMessage(userMobileNumber, activityCompleteSticker, 'sticker');
+        await createActivityLog(userMobileNumber, "sticker", "outbound", activityCompleteSticker, null);
+    }
 
     await sleep(3000);
 
@@ -1571,7 +1579,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(firstMCQsQuestion.dataValues.Id);
                 const questionText = firstMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
                 let mcqMessage = questionText + "\n\n";
-                if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question")) {
+                if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question")) {
                     mcqMessage += "Choose the correct answer:\n";
                 }
                 for (let i = 0; i < mcqAnswers.length; i++) {
@@ -1654,7 +1662,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(nextMCQsQuestion.dataValues.Id);
                     const questionText = nextMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
                     let mcqMessage = questionText + "\n\n";
-                    if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question")) {
+                    if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question")) {
                         mcqMessage += "Choose the correct answer:\n";
                     }
                     for (let i = 0; i < mcqAnswers.length; i++) {
@@ -1756,7 +1764,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, currentWatchAndSpeakQuestion.dataValues.answer[0]);
 
                 // Extract user transcription from words
-                const userTranscription = await azureAIServices.openaiSpeechToText(messageContent.data);
+                const userTranscription = extractTranscript(pronunciationAssessment);
 
                 // Text message
                 await sendMessage(userMobileNumber, "You said: " + userTranscription);
@@ -2216,7 +2224,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, textWithoutPunctuationAndHtmlTags);
 
                 // Extract user transcription from words
-                const userTranscription = await azureAIServices.openaiSpeechToText(messageContent.data);
+                const userTranscription = extractTranscript(pronunciationAssessment);
 
                 // Text message
                 await sendMessage(userMobileNumber, "You said: " + userTranscription);
@@ -2406,8 +2414,17 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 // Extract mispronounced words
                 const mispronouncedWords = extractMispronouncedWords(pronunciationAssessment);
 
-                let correctedAudio = "";
+                // Generate pronunciation assessment message
+                const imageUrl = await createAndUploadMonologueScoreImage(pronunciationAssessment);
 
+                // Media message
+                if (imageUrl) {
+                    await sendMediaMessage(userMobileNumber, imageUrl, 'image');
+                    await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
+                    await sleep(5000);
+                }
+
+                let correctedAudio = "";
                 if (mispronouncedWords.length > 0) {
                     let modelResponse = "It looks like you've mispronounced a few words in your response. Here are the corrections:\n\n";
                     for (const word of mispronouncedWords) {
@@ -2416,16 +2433,6 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     correctedAudio = await azureAIServices.azureTextToSpeechAndUpload(modelResponse);
                     await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
                     await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
-                    await sleep(5000);
-                }
-
-                // Generate pronunciation assessment message
-                const imageUrl = await createAndUploadMonologueScoreImage(pronunciationAssessment);
-
-                // Media message
-                if (imageUrl) {
-                    await sendMediaMessage(userMobileNumber, imageUrl, 'image');
-                    await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
                     await sleep(5000);
                 }
 
