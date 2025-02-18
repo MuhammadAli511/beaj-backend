@@ -906,7 +906,7 @@ total_activities_cte AS (
         -- Include all lessons from previous weeks
         "weekNumber" < (
             SELECT CEIL(
-                ((CURRENT_TIMESTAMP - INTERVAL '7 hours')::DATE - DATE("courseStartDate")) / 6.0
+                ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 6.0
             ) 
             FROM "Courses" WHERE "CourseId" = ${course_id}
         )
@@ -914,15 +914,15 @@ total_activities_cte AS (
         OR (
             "weekNumber" = (
                 SELECT CEIL(
-                    ((CURRENT_TIMESTAMP - INTERVAL '7 hours')::DATE - DATE("courseStartDate")) / 6.0
+                    ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 6.0
                 ) 
                 FROM "Courses" WHERE "CourseId" = ${course_id}
             )
             AND "dayNumber" <= (
                 SELECT 
                     CASE 
-                        WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP - INTERVAL '7 hours')) = 0 THEN 7
-                        ELSE EXTRACT(DOW FROM (CURRENT_TIMESTAMP - INTERVAL '7 hours'))
+                        WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP)) = 0 THEN 6
+                        ELSE EXTRACT(DOW FROM (CURRENT_TIMESTAMP))
                     END
             )
         )
@@ -963,15 +963,15 @@ const getDaily_AvgActivity_Rollout = async (course_id,grp) => {
         AND s."courseId" IN (${course_id}) 
         AND s."weekNumber" = (
                SELECT CEIL(
-                   ((CURRENT_TIMESTAMP - INTERVAL '7 hours')::DATE - DATE("courseStartDate")) / 6.0
+                   ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 6.0
                ) 
                FROM "Courses" 
                WHERE "CourseId" = ${course_id})
 	   AND "dayNumber" = (
                SELECT 
                    CASE 
-                       WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP - INTERVAL '7 hours')) = 0 THEN 7
-                       ELSE EXTRACT(DOW FROM (CURRENT_TIMESTAMP - INTERVAL '7 hours'))
+                       WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP)) = 0 THEN 6
+                       ELSE EXTRACT(DOW FROM (CURRENT_TIMESTAMP))
                    END AS day_number)
     WHERE 
         m."targetGroup" = '${grp}'
@@ -988,12 +988,12 @@ SELECT
                  WHERE "courseId" = ${course_id} AND "dayNumber" = (
                SELECT 
                    CASE 
-                       WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP - INTERVAL '7 hours')) = 0 THEN 7
-                       ELSE EXTRACT(DOW FROM (CURRENT_TIMESTAMP - INTERVAL '7 hours'))
+                       WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP)) = 0 THEN 6
+                       ELSE EXTRACT(DOW FROM (CURRENT_TIMESTAMP))
                    END AS day_number)
            AND "weekNumber" = (
                SELECT CEIL(
-                   ((CURRENT_TIMESTAMP - INTERVAL '7 hours')::DATE - DATE("courseStartDate")) / 6.0
+                   ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 6.0
                ) 
                FROM "Courses" 
                WHERE "CourseId" = ${course_id})) AS "Total_Activities"
@@ -1290,7 +1290,7 @@ const getCount_UpdateLagCohortWise = async (course_id,grp) => {
         -- Include all lessons from previous weeks
         "weekNumber" < (
             SELECT CEIL(
-                ((CURRENT_TIMESTAMP - INTERVAL '7 hours')::DATE - DATE("courseStartDate")) / 6.0
+                ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 6.0
             ) 
             FROM "Courses" WHERE "CourseId" = ${course_id}
         )
@@ -1298,15 +1298,15 @@ const getCount_UpdateLagCohortWise = async (course_id,grp) => {
         OR (
             "weekNumber" = (
                 SELECT CEIL(
-                    ((CURRENT_TIMESTAMP - INTERVAL '7 hours')::DATE - DATE("courseStartDate")) / 6.0
+                    ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 6.0
                 ) 
                 FROM "Courses" WHERE "CourseId" = ${course_id}
             )
             AND "dayNumber" <= (
                 SELECT 
                     CASE 
-                        WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP - INTERVAL '7 hours')) = 0 THEN 7
-                        ELSE EXTRACT(DOW FROM (CURRENT_TIMESTAMP - INTERVAL '7 hours'))
+                        WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP)) = 0 THEN 6
+                        ELSE EXTRACT(DOW FROM (CURRENT_TIMESTAMP))
                     END
             )
         )
@@ -1341,8 +1341,8 @@ const getCount_UpdateLagCohortWise = async (course_id,grp) => {
         )
         SELECT 
 		     "cohort",
-            SUM("Meets_Threshold_50")::INTEGER AS "lagging_behind_count",
-			SUM("Meets_Threshold_90")::INTEGER AS "up_to_date_count"
+            NULLIF(SUM("Meets_Threshold_50")::INTEGER,0) AS "lagging_behind_count",
+			NULLIF(SUM("Meets_Threshold_90")::INTEGER,0) AS "up_to_date_count"
             -- SUM("Meets_Threshold_0") AS "at_zero_count",
             -- COUNT(*) AS "total_count",
             -- ROUND((SUM("Meets_Threshold_90")::DECIMAL / COUNT(*) * 100),2) AS "up_to_date_percent",
