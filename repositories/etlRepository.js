@@ -41,7 +41,7 @@ const getSuccessRate = async (course_id, grp,cohort) => {
         -- Include all lessons from previous weeks
         "weekNumber" < (
             SELECT CEIL(
-                ((CURRENT_TIMESTAMP - INTERVAL '7 hours')::DATE - DATE("courseStartDate")) / 6.0
+                ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 6.0
             ) 
             FROM "Courses" WHERE "CourseId" = ${course_id}
         )
@@ -49,15 +49,15 @@ const getSuccessRate = async (course_id, grp,cohort) => {
         OR (
             "weekNumber" = (
                 SELECT CEIL(
-                    ((CURRENT_TIMESTAMP - INTERVAL '7 hours')::DATE - DATE("courseStartDate")) / 6.0
+                    ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 6.0
                 ) 
                 FROM "Courses" WHERE "CourseId" = ${course_id}
             )
             AND "dayNumber" <= (
                 SELECT 
                     CASE 
-                        WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP - INTERVAL '7 hours')) = 0 THEN 7
-                        ELSE EXTRACT(DOW FROM (CURRENT_TIMESTAMP - INTERVAL '7 hours'))
+                        WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP)) = 0 THEN 6
+                        ELSE EXTRACT(DOW FROM (CURRENT_TIMESTAMP))
                     END
             )
         )

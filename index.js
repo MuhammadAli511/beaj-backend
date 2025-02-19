@@ -41,6 +41,10 @@ sequelize.authenticate()
         `Initial ETL process completed in ${totalTimeInitial / 1000} seconds.`
       );
       console.log("ETL process completed successfully.");
+
+      cron.schedule("0 9 * * *", async () => {
+        await runETLProcess("9:00 AM");
+      });
   
       cron.schedule("40 18 * * *", async () => {
         await runETLProcess("6:40 PM");
@@ -58,7 +62,7 @@ sequelize.authenticate()
         await runETLProcess("9:20 PM");
       });
   
-      console.log("ETL schedules set for 6:40 PM, 9:20 PM, 12:00 AM, and 12:00 PM.");
+      console.log("ETL schedules set for 9:00 AM, 6:40 PM, 9:20 PM, 12:00 AM, and 12:00 PM.");
     } catch (error) {
       console.error("Error during ETL process:", error);
     }
