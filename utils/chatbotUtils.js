@@ -1422,7 +1422,12 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
 
         // Week end score image
         if (startingLesson.dataValues.dayNumber == 6) {
-            let weekMessage = "You have unlocked this week's challenge 🧩\nGo to your class-group to solve it. All the best! 👍🏽";
+            let weekMessage = ""
+            if (strippedCourseName == "Level 3") {
+                weekMessage = "You have completed all 3 levels of the Beaj Self-Development Course.\n\nNow go to your class-group to let us know how your experience was. Thank You for sticking with us till the end! 🎉";
+            } else {
+                weekMessage = "You have unlocked this week's challenge 🧩\nGo to your class-group to solve it. All the best! 👍🏽";
+            }
 
             const weekEndScore = await weekEndScoreCalculation(userMobileNumber, startingLesson.dataValues.weekNumber, currentUserState.currentCourseId);
             const weekEndScoreImage = await weekEndImage(weekEndScore, startingLesson.dataValues.weekNumber);
