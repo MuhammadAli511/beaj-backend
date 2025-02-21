@@ -1396,7 +1396,12 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         let goldBarCaption = "";
 
         // Lesson Complete Message
-        const lessonCompleteMessage = "You have completed *" + lessonNumber + " out of 24* lessons in " + strippedCourseName + "!⭐️";
+        let lessonCompleteMessage = "";
+        if (lessonNumber == 24 && strippedCourseName == "Level 3") {
+            lessonCompleteMessage = "You have completed all 3 levels of the Beaj Self-Development Course! 🌟";
+        } else {
+            lessonCompleteMessage = "You have completed *" + lessonNumber + " out of 24* lessons in " + strippedCourseName + "!⭐️";
+        }
         goldBarCaption = lessonCompleteMessage;
         // await sendMessage(userMobileNumber, lessonCompleteMessage);
         // await createActivityLog(userMobileNumber, "text", "outbound", lessonCompleteMessage, null);
@@ -1414,7 +1419,12 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         const smallCourseName = strippedCourseName.replace(/\s/g, '').toLowerCase();
         const imageTag = "lesson_complete_image_lesson_" + lessonNumber.toString() + "_" + smallCourseName;
         let fileExtnesion = ".jpg";
-        const lessonCompleteImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/" + imageTag + fileExtnesion;
+        let lessonCompleteImage = "";
+        if (lessonNumber == 24 && strippedCourseName == "Level 3") {
+            lessonCompleteImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/course_end_gold_bars" + fileExtnesion;
+        } else {
+            lessonCompleteImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/" + imageTag + fileExtnesion;
+        }
         await sendMediaMessage(userMobileNumber, lessonCompleteImage, 'image', goldBarCaption);
         await createActivityLog(userMobileNumber, "image", "outbound", lessonCompleteImage, null, goldBarCaption);
         // Sleep
@@ -1424,7 +1434,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         if (startingLesson.dataValues.dayNumber == 6) {
             let weekMessage = ""
             if (strippedCourseName == "Level 3") {
-                weekMessage = "You have completed all 3 levels of the Beaj Self-Development Course.\n\nNow go to your class-group to let us know how your experience was. Thank You for sticking with us till the end! 🎉";
+                weekMessage = "You have unlocked this week's challenge! 🧩\nNow go to your class-group to solve it. Thank You for staying with us till the end! 👍🏽";
             } else {
                 weekMessage = "You have unlocked this week's challenge 🧩\nGo to your class-group to solve it. All the best! 👍🏽";
             }
@@ -1455,10 +1465,17 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
 
 
         // Sleep
-        await sleep(2000);
+        await sleep(4000);
 
-        await sendButtonMessage(userMobileNumber, 'Are you ready to start your next lesson?', [{ id: 'start_next_lesson', title: 'Start Next Lesson' }]);
-        await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Lesson", null);
+        if (lessonNumber == 24 && strippedCourseName == "Level 3") {
+            const congratsImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/congratulations.jpeg";
+            await sendMediaMessage(userMobileNumber, congratsImage, 'image', null);
+            await createActivityLog(userMobileNumber, "image", "outbound", congratsImage, null);
+            await sleep(5000);
+        } else {
+            await sendButtonMessage(userMobileNumber, 'Are you ready to start your next lesson?', [{ id: 'start_next_lesson', title: 'Start Next Lesson' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Lesson", null);
+        }
     } else {
         // Feedback Message
         const randomNumber = Math.floor(Math.random() * 100) + 1;
