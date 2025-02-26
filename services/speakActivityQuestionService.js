@@ -10,12 +10,12 @@ const createSpeakActivityQuestionService = async (question, mediaFile, answer, l
             mediaUrl = await azure_blob.uploadToBlobStorage(mediaFile);
         } else {
             if (activityType != 'conversationalAgencyBot') {
-                mediaUrl = await azureAIServices.azureTextToSpeechAndUpload(question);
+                mediaUrl = await azureAIServices.elevenLabsTextToSpeechAndUpload(question);
             } else {
                 if (question.includes("<question>")) {
                     const questionText = question.match(/<question>(.*?)<\/question>/s)[1].trim();
                     if (questionText != "") {
-                        mediaUrl = await azureAIServices.azureTextToSpeechAndUpload(questionText);
+                        mediaUrl = await azureAIServices.elevenLabsTextToSpeechAndUpload(questionText);
                     }
                 }
             }
@@ -49,12 +49,12 @@ const updateSpeakActivityQuestionService = async (id, question, mediaFile, answe
             mediaUrl = await azure_blob.uploadToBlobStorage(mediaFile);
         } else {
             if (activityType != 'conversationalAgencyBot') {
-                mediaUrl = await azureAIServices.azureTextToSpeechAndUpload(question);
+                mediaUrl = await azureAIServices.elevenLabsTextToSpeechAndUpload(question);
             } else {
                 if (question.includes("<question>")) {
                     const questionText = question.match(/<question>(.*?)<\/question>/s)[1].trim();
                     if (questionText != "") {
-                        mediaUrl = await azureAIServices.azureTextToSpeechAndUpload(questionText);
+                        mediaUrl = await azureAIServices.elevenLabsTextToSpeechAndUpload(questionText);
                     }
                 }
             }

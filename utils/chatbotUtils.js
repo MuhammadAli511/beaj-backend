@@ -2337,7 +2337,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     }
 
                     // Azure Text to Speech
-                    const openaiFeedbackAudio = await azureAIServices.azureTextToSpeechAndUpload(openaiFeedbackTranscript);
+                    const openaiFeedbackAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(openaiFeedbackTranscript);
 
                     // Media message
                     await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
@@ -2452,7 +2452,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     for (const word of mispronouncedWords) {
                         modelResponse += word.Word + (word === mispronouncedWords[mispronouncedWords.length - 1] ? "" : "...");
                     }
-                    correctedAudio = await azureAIServices.azureTextToSpeechAndUpload(modelResponse);
+                    correctedAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(modelResponse);
                     await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
                     await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
                     await sleep(5000);
@@ -2517,7 +2517,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 if (firstConversationalAgencyBotQuestion.dataValues.mediaFile != null && firstConversationalAgencyBotQuestion.dataValues.mediaFile.includes("http")) {
                     questionAudio = firstConversationalAgencyBotQuestion.dataValues.mediaFile;
                 } else {
-                    questionAudio = await azureAIServices.azureTextToSpeechAndUpload(questionText);
+                    questionAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(questionText);
                 }
 
                 // Update question number
@@ -2587,7 +2587,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         }
                     }
 
-                    const audioLink = await azureAIServices.azureTextToSpeechAndUpload(threadMessages1.data[0].content[0].text.value);
+                    const audioLink = await azureAIServices.elevenLabsTextToSpeechAndUpload(threadMessages1.data[0].content[0].text.value);
                     await sendMediaMessage(userMobileNumber, audioLink, 'audio');
                     await createActivityLog(userMobileNumber, "audio", "outbound", audioLink, null);
 

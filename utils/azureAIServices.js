@@ -8,7 +8,7 @@ import ffmpeg from "fluent-ffmpeg";
 import ffmpegPath from "ffmpeg-static";
 import _ from "lodash";
 import { diffArrays } from "diff";
-import openai_prompt from "../utils/prompts.js";
+import question_bot_prompt from "../utils/prompts.js";
 import { AzureOpenAI } from "openai";
 import OpenAI from "openai";
 import fs from "fs";
@@ -59,14 +59,14 @@ async function uploadAudioToAzure(audioData) {
     return blobUrl;
 };
 
-async function azureTextToSpeechAndUpload(text) {
+async function elevenLabsTextToSpeechAndUpload(text) {
     try {
         const client = new ElevenLabsClient({
             apiKey: process.env.ELEVENLABS_API_KEY,
         });
         const audio = await client.generate({
             voice: "NH0AbpVpD8W8R6jnEwVU",
-            model_id: "eleven_multilingual_v2",
+            model_id: "eleven_flash_v2_5",
             text,
         });
 
@@ -94,8 +94,6 @@ async function azureTextToSpeechAndUpload(text) {
         throw error;
     }
 }
-
-
 
 function convertOggToWav(oggBuffer) {
     return new Promise((resolve, reject) => {
@@ -155,26 +153,6 @@ async function openaiSpeechToTextWithPrompt(audioBuffer, prompt) {
             model: "whisper-1",
             language: 'en',
             prompt: prompt
-        });
-        return transcription.text;
-    } finally {
-        await unlink(tempFilePath);
-    }
-};
-
-async function openaiSpeechToTextAnyLanguage(audioBuffer) {
-    const openai = new OpenAI(process.env.OPENAI_API_KEY);
-
-    const uniqueFileName = `audio-${uuidv4()}.ogg`;
-    const tempFilePath = join(tmpdir(), uniqueFileName);
-
-    try {
-        await writeFile(tempFilePath, audioBuffer);
-
-        const transcription = await openai.audio.transcriptions.create({
-            file: fs.createReadStream(tempFilePath),
-            model: "whisper-1",
-            language: 'ur'
         });
         return transcription.text;
     } finally {
@@ -685,7 +663,7 @@ async function openaiFeedback(userTranscript) {
     const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
     const result = await client.chat.completions.create({
         messages: [
-            { role: "system", content: await openai_prompt() },
+            { role: "system", content: await question_bot_prompt() },
             { role: "user", content: userTranscript },
         ],
         model: "",
@@ -693,7 +671,6 @@ async function openaiFeedback(userTranscript) {
 
     return result.choices[0].message.content;
 }
-
 
 async function openaiCustomFeedback(userTranscript, modelPrompt) {
     const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
@@ -714,14 +691,13 @@ async function openaiCustomFeedback(userTranscript, modelPrompt) {
 }
 
 export default {
-    azureTextToSpeechAndUpload,
+    elevenLabsTextToSpeechAndUpload,
     azureSpeechToText,
     azurePronunciationAssessment,
     openaiFeedback,
     openaiSpeechToText,
     openaiCustomFeedback,
     azureSpeakingAssessment,
-    openaiSpeechToTextAnyLanguage,
     azureSpeechToTextAnyLanguage,
     openaiSpeechToTextWithPrompt
 };
