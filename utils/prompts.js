@@ -1,4 +1,4 @@
-const openai_prompt = async () => {
+const question_bot_prompt = async () => {
     const prompt = `
 You are a language coach who helps adult A1-level learners in Pakistan improve their spoken English skills. Analyze a transcript of user-spoken audio in English and provide constructive feedback to improve language proficiency. 
 
@@ -35,4 +35,4 @@ NOTE: In the response, don't include formatting characters like line end, tab, b
     return prompt;
 };
 
-export default openai_prompt;
+export default question_bot_prompt;

@@ -646,8 +646,14 @@ const createAndUploadSpeakingScoreImage = async (results) => {
 
 const extractMispronouncedWords = (results) => {
     const words = Object.values(results.words);
-    const mispronouncedWords = words.filter(word => word.ErrorType === 'Mispronunciation' || word.AccuracyScore < 50);
+    const mispronouncedWords = words.filter(word => word.PronunciationAssessment.ErrorType == 'Mispronunciation' || word.PronunciationAssessment.AccuracyScore < 50);
     return mispronouncedWords;
+};
+
+const extractTranscript = (results) => {
+    const words = Object.values(results.words);
+    const transcriptWords = words.filter(word => word.PronunciationAssessment.ErrorType != 'Omission');
+    return transcriptWords.map(word => word.Word).join(" ");
 };
 
 const getAcceptableMessagesList = async (activityType) => {
@@ -1314,10 +1320,12 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
     // Check if the lesson is the last lesson of the day
     const lessonLast = await lessonRepository.isLastLessonOfDay(startingLesson.dataValues.LessonId);
 
-    // Activity Complete Sticker
-    const activityCompleteSticker = await extractConstantMessage("activity_complete_sticker");
-    await sendMediaMessage(userMobileNumber, activityCompleteSticker, 'sticker');
-    await createActivityLog(userMobileNumber, "sticker", "outbound", activityCompleteSticker, null);
+    // Activity Complete Sticker - only send if not last lesson
+    if (!lessonLast) {
+        const activityCompleteSticker = await extractConstantMessage("activity_complete_sticker");
+        await sendMediaMessage(userMobileNumber, activityCompleteSticker, 'sticker');
+        await createActivityLog(userMobileNumber, "sticker", "outbound", activityCompleteSticker, null);
+    }
 
     await sleep(3000);
 
@@ -1388,7 +1396,12 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         let goldBarCaption = "";
 
         // Lesson Complete Message
-        const lessonCompleteMessage = "You have completed *" + lessonNumber + " out of 24* lessons in " + strippedCourseName + "!⭐️";
+        let lessonCompleteMessage = "";
+        if (lessonNumber == 24 && strippedCourseName == "Level 3") {
+            lessonCompleteMessage = "You have completed all 3 levels of the Beaj Self-Development Course! 🌟";
+        } else {
+            lessonCompleteMessage = "You have completed *" + lessonNumber + " out of 24* lessons in " + strippedCourseName + "!⭐️";
+        }
         goldBarCaption = lessonCompleteMessage;
         // await sendMessage(userMobileNumber, lessonCompleteMessage);
         // await createActivityLog(userMobileNumber, "text", "outbound", lessonCompleteMessage, null);
@@ -1406,7 +1419,12 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         const smallCourseName = strippedCourseName.replace(/\s/g, '').toLowerCase();
         const imageTag = "lesson_complete_image_lesson_" + lessonNumber.toString() + "_" + smallCourseName;
         let fileExtnesion = ".jpg";
-        const lessonCompleteImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/" + imageTag + fileExtnesion;
+        let lessonCompleteImage = "";
+        if (lessonNumber == 24 && strippedCourseName == "Level 3") {
+            lessonCompleteImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/course_end_gold_bars" + fileExtnesion;
+        } else {
+            lessonCompleteImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/" + imageTag + fileExtnesion;
+        }
         await sendMediaMessage(userMobileNumber, lessonCompleteImage, 'image', goldBarCaption);
         await createActivityLog(userMobileNumber, "image", "outbound", lessonCompleteImage, null, goldBarCaption);
         // Sleep
@@ -1414,7 +1432,12 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
 
         // Week end score image
         if (startingLesson.dataValues.dayNumber == 6) {
-            let weekMessage = "You have unlocked this week's challenge 🧩\nGo to your class-group to solve it. All the best! 👍🏽";
+            let weekMessage = ""
+            if (strippedCourseName == "Level 3") {
+                weekMessage = "You have unlocked this week's challenge! 🧩\nNow go to your class-group to solve it. Thank You for staying with us till the end! 👍🏽";
+            } else {
+                weekMessage = "You have unlocked this week's challenge 🧩\nGo to your class-group to solve it. All the best! 👍🏽";
+            }
 
             const weekEndScore = await weekEndScoreCalculation(userMobileNumber, startingLesson.dataValues.weekNumber, currentUserState.currentCourseId);
             const weekEndScoreImage = await weekEndImage(weekEndScore, startingLesson.dataValues.weekNumber);
@@ -1442,10 +1465,17 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
 
 
         // Sleep
-        await sleep(2000);
+        await sleep(4000);
 
-        await sendButtonMessage(userMobileNumber, 'Are you ready to start your next lesson?', [{ id: 'start_next_lesson', title: 'Start Next Lesson' }]);
-        await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Lesson", null);
+        if (lessonNumber == 24 && strippedCourseName == "Level 3") {
+            const congratsImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/congratulations.jpeg";
+            await sendMediaMessage(userMobileNumber, congratsImage, 'image', null);
+            await createActivityLog(userMobileNumber, "image", "outbound", congratsImage, null);
+            await sleep(5000);
+        } else {
+            await sendButtonMessage(userMobileNumber, 'Are you ready to start your next lesson?', [{ id: 'start_next_lesson', title: 'Start Next Lesson' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Lesson", null);
+        }
     } else {
         // Feedback Message
         const randomNumber = Math.floor(Math.random() * 100) + 1;
@@ -1571,7 +1601,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(firstMCQsQuestion.dataValues.Id);
                 const questionText = firstMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
                 let mcqMessage = questionText + "\n\n";
-                if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question")) {
+                if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question")) {
                     mcqMessage += "Choose the correct answer:\n";
                 }
                 for (let i = 0; i < mcqAnswers.length; i++) {
@@ -1654,7 +1684,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(nextMCQsQuestion.dataValues.Id);
                     const questionText = nextMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
                     let mcqMessage = questionText + "\n\n";
-                    if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question")) {
+                    if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question")) {
                         mcqMessage += "Choose the correct answer:\n";
                     }
                     for (let i = 0; i < mcqAnswers.length; i++) {
@@ -1756,7 +1786,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, currentWatchAndSpeakQuestion.dataValues.answer[0]);
 
                 // Extract user transcription from words
-                const userTranscription = await azureAIServices.openaiSpeechToText(messageContent.data);
+                const userTranscription = extractTranscript(pronunciationAssessment);
 
                 // Text message
                 await sendMessage(userMobileNumber, "You said: " + userTranscription);
@@ -2216,7 +2246,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, textWithoutPunctuationAndHtmlTags);
 
                 // Extract user transcription from words
-                const userTranscription = await azureAIServices.openaiSpeechToText(messageContent.data);
+                const userTranscription = extractTranscript(pronunciationAssessment);
 
                 // Text message
                 await sendMessage(userMobileNumber, "You said: " + userTranscription);
@@ -2307,7 +2337,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     }
 
                     // Azure Text to Speech
-                    const openaiFeedbackAudio = await azureAIServices.azureTextToSpeechAndUpload(openaiFeedbackTranscript);
+                    const openaiFeedbackAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(openaiFeedbackTranscript);
 
                     // Media message
                     await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
@@ -2406,19 +2436,6 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 // Extract mispronounced words
                 const mispronouncedWords = extractMispronouncedWords(pronunciationAssessment);
 
-                let correctedAudio = "";
-
-                if (mispronouncedWords.length > 0) {
-                    let modelResponse = "It looks like you've mispronounced a few words in your response. Here are the corrections:\n\n";
-                    for (const word of mispronouncedWords) {
-                        modelResponse += word.Word + (word === mispronouncedWords[mispronouncedWords.length - 1] ? "" : "...");
-                    }
-                    correctedAudio = await azureAIServices.azureTextToSpeechAndUpload(modelResponse);
-                    await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
-                    await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
-                    await sleep(5000);
-                }
-
                 // Generate pronunciation assessment message
                 const imageUrl = await createAndUploadMonologueScoreImage(pronunciationAssessment);
 
@@ -2426,6 +2443,18 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 if (imageUrl) {
                     await sendMediaMessage(userMobileNumber, imageUrl, 'image');
                     await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
+                    await sleep(5000);
+                }
+
+                let correctedAudio = "";
+                if (mispronouncedWords.length > 0) {
+                    let modelResponse = "It looks like you've mispronounced a few words in your response. Here are the corrections:\n\n";
+                    for (const word of mispronouncedWords) {
+                        modelResponse += word.Word + (word === mispronouncedWords[mispronouncedWords.length - 1] ? "" : "...");
+                    }
+                    correctedAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(modelResponse);
+                    await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
+                    await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
                     await sleep(5000);
                 }
 
@@ -2488,7 +2517,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 if (firstConversationalAgencyBotQuestion.dataValues.mediaFile != null && firstConversationalAgencyBotQuestion.dataValues.mediaFile.includes("http")) {
                     questionAudio = firstConversationalAgencyBotQuestion.dataValues.mediaFile;
                 } else {
-                    questionAudio = await azureAIServices.azureTextToSpeechAndUpload(questionText);
+                    questionAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(questionText);
                 }
 
                 // Update question number
@@ -2558,7 +2587,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         }
                     }
 
-                    const audioLink = await azureAIServices.azureTextToSpeechAndUpload(threadMessages1.data[0].content[0].text.value);
+                    const audioLink = await azureAIServices.elevenLabsTextToSpeechAndUpload(threadMessages1.data[0].content[0].text.value);
                     await sendMediaMessage(userMobileNumber, audioLink, 'audio');
                     await createActivityLog(userMobileNumber, "audio", "outbound", audioLink, null);
 
