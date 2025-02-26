@@ -17,11 +17,11 @@ import CumulativeUtils_load from "../google_sheet_utils/cumulativeUtils.js";
 
 const runCumulativeSheets = async() =>{
   let courseId_l1 = 106;
-  let courseId_l2 = null;
+  let courseId_l2 = 111;
   let courseId_l3 = null;
 
   let courseId_l10 = 105;
-  let courseId_l20 = null;
+  let courseId_l20 = 110;
   let courseId_l30 = null;
 
 
@@ -473,6 +473,9 @@ const runETL_Dashboard = async () => {
 
     let successRate01 = await etlRepository.getSuccessRate(106,'T1','');
     let successRate02 = await etlRepository.getSuccessRate(105,'T2','');
+    
+    let successRate03 = await etlRepository.getSuccessRate(111,'T1','');
+    let successRate04 = await etlRepository.getSuccessRate(110,'T2','');
 
     successRate1 = Object.values(successRate1[0]).map((value) => {
       return Number(value) || null;
@@ -500,6 +503,18 @@ const runETL_Dashboard = async () => {
       return Number(value) || null;
     });
 
+    successRate03 = Object.values(successRate03[0]).map((value) => {
+      return Number(value) || null;
+    });
+    successRate04 = Object.values(successRate04[0]).map((value) => {
+      return Number(value) || null;
+    });
+
+    let dailyAvgAct_t1 = await getWeeklyActivityCompleted1.getDaily_AvgActivity_Rollout(111,'T1');
+    dailyAvgAct_t1 = dailyAvgAct_t1.map(obj => Object.values(obj).map(value => Number(value)));
+    let dailyAvgAct_t2 = await getWeeklyActivityCompleted1.getDaily_AvgActivity_Rollout(110,'T2');
+    dailyAvgAct_t2 = dailyAvgAct_t2.map(obj => Object.values(obj).map(value => Number(value)));
+
     let last_activity_t1_l1 = await etlRepository.getLastActivityCompleted(106,'T1','Rollout');
     last_activity_t1_l1 = last_activity_t1_l1.map(obj => Object.values(obj).map(value => value));
     let last_activity_t2_l1 = await etlRepository.getLastActivityCompleted(105,'T2','Rollout');
@@ -509,11 +524,6 @@ const runETL_Dashboard = async () => {
     cumulativeAvgAct_t1 = cumulativeAvgAct_t1.map(obj => Object.values(obj).map(value => Number(value)));
     let cumulativeAvgAct_t2 = await getWeeklyActivityCompleted1.getCumulative_AvgActivity_Rollout(105,'T2','');
     cumulativeAvgAct_t2 = cumulativeAvgAct_t2.map(obj => Object.values(obj).map(value => Number(value)));
-
-    let dailyAvgAct_t1 = await getWeeklyActivityCompleted1.getDaily_AvgActivity_Rollout(106,'T1');
-    dailyAvgAct_t1 = dailyAvgAct_t1.map(obj => Object.values(obj).map(value => Number(value)));
-    let dailyAvgAct_t2 = await getWeeklyActivityCompleted1.getDaily_AvgActivity_Rollout(105,'T2');
-    dailyAvgAct_t2 = dailyAvgAct_t2.map(obj => Object.values(obj).map(value => Number(value)));
 
     let NotStartedCohort_T1 = await getWeeklyActivityCompleted1.getNotStartCohortCount_Rollout(106,'T1');
     NotStartedCohort_T1 = NotStartedCohort_T1.map(obj => [String(obj.cohort),Number(obj.count)]);
@@ -532,6 +542,37 @@ const runETL_Dashboard = async () => {
 
     let CohortWiseUpdateLag_T2 = await getWeeklyActivityCompleted1.getCount_UpdateLagCohortWise(105,'T2');
     CohortWiseUpdateLag_T2 = CohortWiseUpdateLag_T2.map(obj => Object.values(obj).map(value => value));
+
+
+
+    let last_activity_t1_l2 = await etlRepository.getLastActivityCompleted(111,'T1','Rollout');
+    last_activity_t1_l2 = last_activity_t1_l2.map(obj => Object.values(obj).map(value => value));
+    let last_activity_t2_l2 = await etlRepository.getLastActivityCompleted(110,'T2','Rollout');
+    last_activity_t2_l2 = last_activity_t2_l2.map(obj => Object.values(obj).map(value => value));
+
+    let cumulativeAvgAct_t1_l2 = await getWeeklyActivityCompleted1.getCumulative_AvgActivity_Rollout(111,'T1','');
+    cumulativeAvgAct_t1_l2 = cumulativeAvgAct_t1_l2.map(obj => Object.values(obj).map(value => Number(value)));
+    let cumulativeAvgAct_t2_l2 = await getWeeklyActivityCompleted1.getCumulative_AvgActivity_Rollout(110,'T2','');
+    cumulativeAvgAct_t2_l2 = cumulativeAvgAct_t2_l2.map(obj => Object.values(obj).map(value => Number(value)));
+
+    let NotStartedCohort_T1_l2 = await getWeeklyActivityCompleted1.getNotStartCohortCount_Rollout(111,'T1');
+    NotStartedCohort_T1_l2 = NotStartedCohort_T1_l2.map(obj => [String(obj.cohort),Number(obj.count)]);
+
+    let NotStartedCohort_T2_l2 = await getWeeklyActivityCompleted1.getNotStartCohortCount_Rollout(110,'T2');
+    NotStartedCohort_T2_l2 = NotStartedCohort_T2_l2.map(obj => [String(obj.cohort),Number(obj.count)]);
+
+    let LastLessonCompleted_T1_l2 = await getWeeklyActivityCompleted1.getLastLessonCompleted_Rollout(111,'T1','Rollout');
+    LastLessonCompleted_T1_l2 = LastLessonCompleted_T1_l2.map(obj => Object.values(obj).map(value => value));
+
+    let LastLessonCompleted_T2_l2 = await getWeeklyActivityCompleted1.getLastLessonCompleted_Rollout(110,'T2','Rollout');
+    LastLessonCompleted_T2_l2 = LastLessonCompleted_T2_l2.map(obj => Object.values(obj).map(value => value));
+    
+    let CohortWiseUpdateLag_T1_l2 = await getWeeklyActivityCompleted1.getCount_UpdateLagCohortWise(111,'T1');
+    CohortWiseUpdateLag_T1_l2 = CohortWiseUpdateLag_T1_l2.map(obj => Object.values(obj).map(value => value));
+
+    let CohortWiseUpdateLag_T2_l2 = await getWeeklyActivityCompleted1.getCount_UpdateLagCohortWise(110,'T2');
+    CohortWiseUpdateLag_T2_l2 = CohortWiseUpdateLag_T2_l2.map(obj => Object.values(obj).map(value => value));
+
     
 
     //  console.log(last_activity_t1_l1);
@@ -551,10 +592,16 @@ const runETL_Dashboard = async () => {
       successRate6,
       successRate01,
       successRate02,
+      successRate03,
+      successRate04,
       last_activity_t1_l1,
       last_activity_t2_l1,
       cumulativeAvgAct_t1,
       cumulativeAvgAct_t2,
+      last_activity_t1_l2,
+      last_activity_t2_l2,
+      cumulativeAvgAct_t1_l2,
+      cumulativeAvgAct_t2_l2,
       dailyAvgAct_t1,
       dailyAvgAct_t2,
       funnel,
@@ -563,7 +610,13 @@ const runETL_Dashboard = async () => {
       LastLessonCompleted_T1,
       LastLessonCompleted_T2,
       CohortWiseUpdateLag_T1,
-      CohortWiseUpdateLag_T2
+      CohortWiseUpdateLag_T2,
+      NotStartedCohort_T1_l2,
+      NotStartedCohort_T2_l2,
+      LastLessonCompleted_T1_l2,
+      LastLessonCompleted_T2_l2,
+      CohortWiseUpdateLag_T1_l2,
+      CohortWiseUpdateLag_T2_l2
     );
 
     await runCumulativeSheets();
