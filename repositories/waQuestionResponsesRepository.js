@@ -1,4 +1,5 @@
 import WA_QuestionResponses from '../models/WA_QuestionResponses.js';
+import question_bot_prompt from "../utils/prompts.js";
 import sequelize from '../config/sequelize.js';
 import Sequelize from 'sequelize';
 
@@ -370,6 +371,28 @@ const getByActivityType = async (activityType) => {
     });
 };
 
+const getPreviousMessages = async (phoneNumber, lessonId) => {
+    const responses = await WA_QuestionResponses.findAll({
+        where: {
+            phoneNumber: phoneNumber,
+            lessonId: lessonId
+        },
+        order: [
+            ['submissionDate', 'ASC']
+        ]
+    });
+
+    let finalMessages = [
+        { role: "system", content: await question_bot_prompt() },
+    ];
+
+    responses.forEach(response => {
+        finalMessages.push({ role: "user", content: response.dataValues.submittedAnswerText[0] });
+        finalMessages.push({ role: "assistant", content: response.dataValues.submittedFeedbackText[0] });
+    });
+
+    return finalMessages;
+};
 
 
 export default {
@@ -387,5 +410,6 @@ export default {
     watchAndSpeakScoreForList,
     readScoreForList,
     monologueScoreForList,
-    getByActivityType
+    getByActivityType,
+    getPreviousMessages
 };

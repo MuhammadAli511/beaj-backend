@@ -2321,14 +2321,21 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 const currentConversationBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
                 // OpenAI Speech to Text
-                const recognizedText = await azureAIServices.openaiSpeechToText(messageContent.data);
+                const recognizedText = await azureAIServices.elevenLabsSpeechToText(messageContent.data);
                 if (recognizedText) {
                     const message = `Please wait for an answer. \n\nYou said: ${recognizedText}`;
                     await sendMessage(userMobileNumber, message);
                     await createActivityLog(userMobileNumber, "text", "outbound", message, null);
 
+                    // Get all previous messages
+                    let previousMessages = await waQuestionResponsesRepository.getPreviousMessages(userMobileNumber, currentUserState.dataValues.currentLessonId);
+
+                    // Append transcript
+                    let currentMessage = { role: "user", content: recognizedText };
+                    previousMessages.push(currentMessage);
+
                     // OpenAI Feedback
-                    let openaiFeedbackTranscript = await azureAIServices.openaiFeedback(recognizedText);
+                    let openaiFeedbackTranscript = await azureAIServices.openaiFeedback(previousMessages);
 
                     // Extract corrected version of the answer
                     const correctedVersion = openaiFeedbackTranscript.match(/\[IMPROVED\](.*?)\[\/IMPROVED\]/);
@@ -2553,8 +2560,8 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                     // Language Detection
                     let modelLanguagePrompt = "Detect the majority of the language used in the provided text. Respond in one word only. The two options are: English or Urdu. You must respond with only one word."
-                    const openaiFeedback = await azureAIServices.openaiCustomFeedback(recognizedText, modelLanguagePrompt);
-                    if (openaiFeedback.toLowerCase().includes("english")) {
+                    const languageDetectionFeedback = await azureAIServices.openaiCustomFeedback(recognizedText, modelLanguagePrompt);
+                    if (languageDetectionFeedback.toLowerCase().includes("english")) {
                         modelLanguagePrompt = "Respond in simple English."
                     } else {
                         modelLanguagePrompt = "Use simple, easy-to-understand Urdu language, not jargon to respond."
