@@ -674,7 +674,7 @@ async function azureSpeakingAssessment(audioBuffer, topic) {
 async function openaiFeedback(previousMessages) {
     const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
     const apiKey = process.env.AZURE_OPENAI_API_KEY;
-    const apiVersion = "2023-03-15-preview";
+    const apiVersion = "2025-01-01-preview";
     const deployment = "gpt-4o-mini";
 
     const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
@@ -689,7 +689,7 @@ async function openaiFeedback(previousMessages) {
 async function openaiCustomFeedback(userTranscript, modelPrompt) {
     const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
     const apiKey = process.env.AZURE_OPENAI_API_KEY;
-    const apiVersion = "2023-03-15-preview";
+    const apiVersion = "2025-01-01-preview";
     const deployment = "gpt-4o-mini";
 
     const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });

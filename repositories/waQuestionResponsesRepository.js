@@ -1,7 +1,7 @@
 import WA_QuestionResponses from '../models/WA_QuestionResponses.js';
-import question_bot_prompt from "../utils/prompts.js";
 import sequelize from '../config/sequelize.js';
 import Sequelize from 'sequelize';
+import { question_bot_prompt } from "../utils/prompts.js";
 
 const create = async (phoneNumber, lessonId, questionId, activityType, alias, submittedAnswerText, submittedUserAudio, submittedFeedbackText, submittedFeedbackAudio, submittedFeedbackJson, correct, numberOfTries, submissionDate) => {
     const response = new WA_QuestionResponses({
@@ -382,18 +382,52 @@ const getPreviousMessages = async (phoneNumber, lessonId) => {
         ]
     });
 
-    let finalMessages = [
-        { role: "system", content: await question_bot_prompt() },
-    ];
+    let finalMessages = [];
 
-    responses.forEach(response => {
-        finalMessages.push({ role: "user", content: response.dataValues.submittedAnswerText[0] });
-        finalMessages.push({ role: "assistant", content: response.dataValues.submittedFeedbackText[0] });
-    });
+    if (responses.length > 0) {
+        responses.forEach(async (response, index) => {
+            if (index === 0) {
+                finalMessages.push({
+                    role: "user",
+                    content: await question_bot_prompt() + "\n\nUser Response: " + response.dataValues.submittedAnswerText[0]
+                });
+            } else {
+                finalMessages.push({
+                    role: "user",
+                    content: response.dataValues.submittedAnswerText[0]
+                });
+            }
+            finalMessages.push({
+                role: "assistant",
+                content: response.dataValues.submittedFeedbackText[0]
+            });
+        });
+    }
 
     return finalMessages;
 };
 
+const getLatestBotResponse = async (phoneNumber, lessonId) => {
+    const response = await WA_QuestionResponses.findOne({
+        where: {
+            phoneNumber: phoneNumber,
+            lessonId: lessonId
+        }
+    });
+
+    return response.dataValues.submittedFeedbackText[0];
+};
+
+const checkRecordExistsForPhoneNumberAndLessonId = async (phoneNumber, lessonId) => {
+    const response = await WA_QuestionResponses.findOne({
+        where: {
+            phoneNumber: phoneNumber,
+            lessonId: lessonId
+        }
+    });
+
+    return response ? false : true;
+};
 
 export default {
     create,
@@ -411,5 +445,7 @@ export default {
     readScoreForList,
     monologueScoreForList,
     getByActivityType,
-    getPreviousMessages
+    getPreviousMessages,
+    checkRecordExistsForPhoneNumberAndLessonId,
+    getLatestBotResponse
 };

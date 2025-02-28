@@ -21,6 +21,7 @@ import { createCanvas, registerFont, loadImage } from 'canvas';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import OpenAI from "openai";
+import { question_bot_prompt, wrapup_prompt } from "../utils/prompts.js";
 import lessonRepository from "../repositories/lessonRepository.js";
 
 dotenv.config();
@@ -1997,7 +1998,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 // Lesson Text
                 let lessonText = startingLesson.dataValues.text;
                 lessonText = removeHTMLTags(lessonText);
-                if (lessonText == "Let’s Start Questions👇🏽") {
+                if (lessonText == "Let's Start Questions👇🏽") {
                     await sendMessage(userMobileNumber, lessonText);
                     await createActivityLog(userMobileNumber, "text", "outbound", lessonText, null);
                 }
@@ -2040,10 +2041,10 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     // Checking if user response is correct or not
 
                     let userAnswerIsCorrect = false;
-                    const recognizedTextWithoutPunctuation = recognizedText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"‘’“”?]/g, "").toLowerCase();
+                    const recognizedTextWithoutPunctuation = recognizedText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"['']"?]/g, "").toLowerCase();
                     const recognizedTextWithoutSpaces = recognizedTextWithoutPunctuation.trim();
                     for (let i = 0; i < answersArray.length; i++) {
-                        const answerWithoutPunctuation = answersArray[i].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"‘’“”?]/g, "").toLowerCase();
+                        const answerWithoutPunctuation = answersArray[i].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"['']"?]/g, "").toLowerCase();
                         const answerWithoutSpaces = answerWithoutPunctuation.trim();
                         if (recognizedTextWithoutSpaces == answerWithoutSpaces) {
                             userAnswerIsCorrect = true;
@@ -2237,7 +2238,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 const lessonText = startingLesson.dataValues.text;
 
                 // Remove punctuation from the text
-                const textWithoutPunctuation = lessonText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"‘’“”]/g, "");
+                const textWithoutPunctuation = lessonText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"['']"?]/g, "");
 
                 // Remove HTML tags from the text
                 const textWithoutPunctuationAndHtmlTags = removeHTMLTags(textWithoutPunctuation);
@@ -2323,39 +2324,66 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 // OpenAI Speech to Text
                 const recognizedText = await azureAIServices.elevenLabsSpeechToText(messageContent.data);
                 if (recognizedText) {
-                    const message = `Please wait for an answer. \n\nYou said: ${recognizedText}`;
-                    await sendMessage(userMobileNumber, message);
-                    await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+                    const recordExists = await waQuestionResponsesRepository.checkRecordExistsForPhoneNumberAndLessonId(userMobileNumber, currentUserState.dataValues.currentLessonId);
+                    let openaiFeedbackTranscript = null;
+                    let openaiFeedbackAudio = null;
+                    let initialFeedbackResponse = null;
+                    if (recordExists) {
+                        const message = `Please wait for an answer. \n\nYou said: ${recognizedText}`;
+                        await sendMessage(userMobileNumber, message);
+                        await createActivityLog(userMobileNumber, "text", "outbound", message, null);
 
-                    // Get all previous messages
-                    let previousMessages = await waQuestionResponsesRepository.getPreviousMessages(userMobileNumber, currentUserState.dataValues.currentLessonId);
+                        // Get all previous messages
+                        let previousMessages = await waQuestionResponsesRepository.getPreviousMessages(userMobileNumber, currentUserState.dataValues.currentLessonId);
 
-                    // Append transcript
-                    let currentMessage = { role: "user", content: recognizedText };
-                    previousMessages.push(currentMessage);
+                        // Append transcript
+                        let currentMessage = { role: "user", content: await question_bot_prompt() + "\n\nQuestion: " + currentConversationBotQuestion.dataValues.question + "\n\nUser Response: " + recognizedText };
+                        previousMessages.push(currentMessage);
 
-                    // OpenAI Feedback
-                    let openaiFeedbackTranscript = await azureAIServices.openaiFeedback(previousMessages);
+                        // OpenAI Feedback
+                        openaiFeedbackTranscript = await azureAIServices.openaiFeedback(previousMessages);
+                        initialFeedbackResponse = openaiFeedbackTranscript;
 
-                    // Extract corrected version of the answer
-                    const correctedVersion = openaiFeedbackTranscript.match(/\[IMPROVED\](.*?)\[\/IMPROVED\]/);
-                    if (correctedVersion) {
-                        openaiFeedbackTranscript = openaiFeedbackTranscript.replace(/\[IMPROVED\](.*?)\[\/IMPROVED\]/, '');
-                    }
+                        // Extract corrected version of the answer
+                        const correctedVersion = openaiFeedbackTranscript.match(/\[IMPROVED\](.*?)\[\/IMPROVED\]/);
+                        if (correctedVersion) {
+                            openaiFeedbackTranscript = openaiFeedbackTranscript.replace(/\[IMPROVED\](.*?)\[\/IMPROVED\]/, '');
+                        }
 
-                    // Azure Text to Speech
-                    const openaiFeedbackAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(openaiFeedbackTranscript);
+                        // ElevenLabs Text to Speech
+                        openaiFeedbackAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(openaiFeedbackTranscript);
 
-                    // Media message
-                    await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
-                    await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
-                    await sleep(5000);
+                        // Media message
+                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
+                        await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
+                        await sleep(5000);
 
-                    // Send corrected version of the answer
-                    if (correctedVersion) {
-                        let correctMessage = "A corrected version of your answer is: " + correctedVersion[1];
-                        await sendMessage(userMobileNumber, correctMessage);
-                        await createActivityLog(userMobileNumber, "text", "outbound", correctMessage, null);
+                        // Send corrected version of the answer
+                        if (correctedVersion) {
+                            let correctMessage = "A corrected version of your answer is: " + correctedVersion[1] + "\n\n\nNow you try speaking the improved version by sending a voice message";
+                            await sendMessage(userMobileNumber, correctMessage);
+                            await createActivityLog(userMobileNumber, "text", "outbound", correctMessage, null);
+                        }
+                    } else {
+                        let finalMessages = null;
+                        let latestBotResponse = await waQuestionResponsesRepository.getLatestBotResponse(userMobileNumber, currentUserState.dataValues.currentLessonId);
+                        let improvedVersion = latestBotResponse.match(/\[IMPROVED\](.*?)\[\/IMPROVED\]/);
+                        let userResponse = "[USER_RESPONSE]" + recognizedText + "[/USER_RESPONSE]\n\n\n" + improvedVersion + "[/IMPROVED]";
+
+                        // OpenAI Feedback
+                        openaiFeedbackTranscript = await azureAIServices.openaiCustomFeedback(await wrapup_prompt(), userResponse);
+                        initialFeedbackResponse = openaiFeedbackTranscript;
+
+                        if (openaiFeedbackTranscript.toLowerCase().includes("can be improved")) {
+                            openaiFeedbackAudio = "https://beajbloblive.blob.core.windows.net/beajdocuments/better.mp3";
+                        } else if (openaiFeedbackTranscript.toLowerCase().includes("it was great")) {
+                            openaiFeedbackAudio = "https://beajbloblive.blob.core.windows.net/beajdocuments/ok.mp3";
+                        }
+
+                        // Media message
+                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
+                        await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
+                        await sleep(5000);
                     }
 
                     // Save user response to the database
@@ -2372,7 +2400,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         startingLesson.dataValues.activityAlias,
                         [recognizedText],
                         [userAudioFileUrl],
-                        [openaiFeedbackTranscript],
+                        [initialFeedbackResponse],
                         [openaiFeedbackAudio],
                         null,
                         null,
@@ -2380,14 +2408,8 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         submissionDate
                     );
 
-                    const nextConversationBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
-                    if (nextConversationBotQuestion) {
-                        // Update question number
-                        await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextConversationBotQuestion.dataValues.questionNumber);
-
-                        // Media message
-                        await sendMediaMessage(userMobileNumber, nextConversationBotQuestion.dataValues.mediaFile, 'audio');
-                        await createActivityLog(userMobileNumber, "audio", "outbound", nextConversationBotQuestion.dataValues.mediaFile, null);
+                    if (recordExists) {
+                        return;
                     } else {
                         // Reset Question Number, Retry Counter, and Activity Type
                         await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);

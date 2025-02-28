@@ -30,8 +30,18 @@ Present your feedback in a paragraph format that will be given to a text-to-spee
 
 Be as succinct as possible. Only exceed feedback of 100 words if the user's response is long also. Do not add bullet points or any other formatting.
 
-NOTE: At the end, produce an entire corrected or improved passage between the tags [IMPROVED] and [/IMPROVED], don't say anything else like here is the improved passage just put the improved passage between the tags.`
+NOTE: At the end, say "Now you try speaking the improved version by sending a voice message" and then produce an entire corrected or improved passage between the tags [IMPROVED] and [/IMPROVED], don't say anything else like here is the improved passage just put the improved passage between the tags.`
     return prompt;
 };
 
-export default question_bot_prompt;
+
+const wrapup_prompt = async () => {
+    const prompt = `
+If [USER_RESPONSE] and [IMPROVED] are similar, respond with "it was great"
+If [USER_RESPONSE] and [IMPROVED] are different, respond with "can be improved"
+
+Only respond with "can be improved" or "it was great" according to below user's response within the tags [USER_RESPONSE] and [/USER_RESPONSE]`
+    return prompt;
+};
+
+export { question_bot_prompt, wrapup_prompt };
