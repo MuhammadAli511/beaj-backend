@@ -1406,9 +1406,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         if (startingLesson.dataValues.dayNumber == 6) {
             let weekMessage = ""
             if (strippedCourseName == "Level 3") {
-                weekMessage = "You have unlocked this week's challenge! 🧩\nNow go to your class-group to solve it. Thank You for staying with us till the end! 👍🏽";
-            } else {
-                weekMessage = "You have unlocked this week's challenge 🧩\nGo to your class-group to solve it. All the best! 👍🏽";
+                weekMessage = "Thank You for staying with us till the end! 👍🏽";
             }
 
             const weekEndScore = await weekEndScoreCalculation(userMobileNumber, startingLesson.dataValues.weekNumber, currentUserState.currentCourseId);
@@ -2331,7 +2329,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                         // Send corrected version of the answer
                         if (correctedVersion) {
-                            let correctMessage = "A corrected version of your answer is: " + correctedVersion[1] + "\n\n\nNow try speaking the improved version by sending a voice message";
+                            let correctMessage = "A corrected version of your answer is: " + correctedVersion[1] + "\n\n\n*Now try speaking the improved version by sending a voice message* 💬";
                             await sendMessage(userMobileNumber, correctMessage);
                             await createActivityLog(userMobileNumber, "text", "outbound", correctMessage, null);
                         }
