@@ -39,6 +39,7 @@ let activity_types_to_repeat = [
     "read",
     "conversationalQuestionsBot",
     "conversationalMonologueBot",
+    "speakingPractice",
     "conversationalAgencyBot",
     "watchAndAudio",
     "watchAndImage",

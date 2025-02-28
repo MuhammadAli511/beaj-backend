@@ -161,9 +161,13 @@ const weekEndScoreCalculation = async (phoneNumber, weekNumber, courseId) => {
     const monologueLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'conversationalMonologueBot');
     const correctMonologue = await waQuestionResponsesRepository.monologueScoreForList(phoneNumber, monologueLessonIds);
 
+    // Get lessonIds for speakingPractice of that week
+    const speakingPracticeLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'speakingPractice');
+    const correctSpeakingPractice = await waQuestionResponsesRepository.monologueScoreForList(phoneNumber, speakingPracticeLessonIds);
+
     // Calculate sum of scores and sum of total scores and give percentage out of 100
-    const totalScore = correctMcqs + correctListenAndSpeak + correctWatchAndSpeak.score + correctRead.score + correctMonologue.score;
-    const totalQuestions = totalMcqs + totalListenAndSpeak + correctWatchAndSpeak.total + correctRead.total + correctMonologue.total;
+    const totalScore = correctMcqs + correctListenAndSpeak + correctWatchAndSpeak.score + correctRead.score + correctMonologue.score + correctSpeakingPractice.score;
+    const totalQuestions = totalMcqs + totalListenAndSpeak + correctWatchAndSpeak.total + correctRead.total + correctMonologue.total + correctSpeakingPractice.total;
     const percentage = Math.round((totalScore / totalQuestions) * 100);
     return percentage;
 };
@@ -442,13 +446,7 @@ const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
                 ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
                 ctx.fillStyle = '#000000'; // Black text
                 ctx.fillText(word, cursorX, cursorY);
-            } else if (errorType == 'Omission') {
-                // Highlight skipped words in grey
-                ctx.fillStyle = '#A9A9A9'; // Grey
-                ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
-                ctx.fillStyle = '#000000'; // Black text
-                ctx.fillText(word, cursorX, cursorY);
-            } else if (errorType == 'None') {
+            } else {
                 // Regular words
                 ctx.fillStyle = '#000000';
                 ctx.fillText(word, cursorX, cursorY);
@@ -469,14 +467,6 @@ const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
         ctx.fillStyle = '#000000';
         ctx.fillText('Mispronounced Words', 80, 827);
 
-        // Skipped Words Legend (Grey Circle)
-        ctx.fillStyle = '#A9A9A9'; // Grey color
-        ctx.beginPath(); // Start a new path
-        ctx.arc(350, 820, 10, 0, 2 * Math.PI);
-        ctx.fill(); // Fill the circle
-        ctx.fillStyle = '#000000';
-        ctx.fillText('Skipped Words', 370, 827);
-
         // Convert the canvas to a buffer
         const buffer = canvas.toBuffer('image/jpeg');
 
@@ -489,26 +479,29 @@ const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
     }
 }
 
-const createAndUploadSpeakingScoreImage = async (results) => {
+const createAndUploadSpeakingPracticeScoreImage = async (pronunciationAssessments) => {
     try {
-        if (results.pronunciationAssessment === undefined || results.pronunciationAssessment === null) {
+        if (pronunciationAssessments === undefined || pronunciationAssessments == [] || pronunciationAssessments == null) {
             return null;
-        }
-        let grammarScoreNumber;
+        };
 
-        if (results.contentAssessment === undefined || results.contentAssessment === null) {
-            grammarScoreNumber = 0;
-        } else {
-            grammarScoreNumber = Math.round(results.contentAssessment.GrammarScore);
-        }
+        let totalFluencyScore = 0;
+        let totalAccuracyScore = 0;
+        let allWords = [];
 
-        const fluencyScoreNumber = Math.round(results.pronunciationAssessment.FluencyScore);
-        const accuracyScoreNumber = Math.round(results.pronunciationAssessment.AccuracyScore);
-        const words = Object.values(results.words);
+        pronunciationAssessments.forEach(assessment => {
+            totalFluencyScore += Math.round(assessment.scoreNumber.fluencyScore || 0);
+            totalAccuracyScore += Math.round(assessment.scoreNumber.accuracyScore || 0);
+            if (assessment.words && Array.isArray(assessment.words)) {
+                allWords = [...allWords, ...assessment.words];
+            }
+        });
 
-        // Set up canvas dimensions
+        const avgFluencyScore = Math.round(totalFluencyScore / pronunciationAssessments.length);
+        const avgAccuracyScore = Math.round(totalAccuracyScore / pronunciationAssessments.length);
+
         const width = 900;
-        const height = 850;
+        const height = 950;
         const canvas = createCanvas(width, height);
         const ctx = canvas.getContext('2d');
 
@@ -516,8 +509,8 @@ const createAndUploadSpeakingScoreImage = async (results) => {
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, width, height);
 
-        // Load and add the company logo in the top-right corner
-        const image = await loadImage("https://beajbloblive.blob.core.windows.net/beajdocuments/logo.jpeg");
+        // Load and add the company logo in the top - right corner
+        const image = await loadImage("https://beajbloblive.blob.core.windows.net/beajdocuments/logo.jpeg");  // Path to the logo image
         ctx.drawImage(image, width - 160, 20, image.width / 7.5, image.height / 7.5);
 
         // Add "YOUR SCORE" Title
@@ -525,113 +518,91 @@ const createAndUploadSpeakingScoreImage = async (results) => {
         ctx.fillStyle = '#000000';
         ctx.fillText('YOUR SCORE', 50, 80);
 
-        // Initialize the starting y-coordinate for the bars
-        let barYStart = 120;
-
-        // Conditionally add "Grammar" bar
-        if (grammarScoreNumber > 0) {
-            ctx.font = '25px Arial';
-            ctx.fillText('Grammar Score', 50, barYStart);
-
-            // Draw light magenta background bar
-            ctx.fillStyle = '#eecef7';
-            ctx.fillRect(50, barYStart + 5, 790, 40);
-
-            // Draw dark magenta foreground bar
-            ctx.fillStyle = '#cb6ce6';
-            ctx.fillRect(50, barYStart + 5, 790 * (grammarScoreNumber / 100), 40);
-
-            // Add score text
-            ctx.fillStyle = '#000000';
-            ctx.fillText(`${grammarScoreNumber}%`, 50 + 790 * (grammarScoreNumber / 100) - 70, barYStart + 35);
-
-            barYStart += 95; // Move to the next bar position
-        }
-
-        // Add "Pronunciation" bar
+        // Add "Completeness" Bar with dynamic score
         ctx.font = '25px Arial';
-        ctx.fillText('Correct Pronunciation', 50, barYStart);
+        ctx.fillText('Correct Pronunciation', 50, 120);
 
-        // Draw light blue background bar
+        // Draw light magenta background bar for full length
+        ctx.fillStyle = '#eecef7';
+        ctx.fillRect(50, 125, 790, 40);
+
+        // Draw dark magenta foreground bar for actual score
+        ctx.fillStyle = '#cb6ce6';
+        ctx.fillRect(50, 125, 790 * (avgAccuracyScore / 100), 40);
+
+        // Add score text inside the bar
+        ctx.fillStyle = '#000000';
+        // Position till the end of dark magenta bar
+        ctx.fillText(`${avgAccuracyScore}%`, 50 + 790 * (avgAccuracyScore / 100) - 70, 155);
+
+        // Add "Pronunciation" Bar with dynamic score
+        ctx.font = '25px Arial';
+        ctx.fillText('Fluency', 50, 215);
+
+        // Draw light blue background bar for full length
         ctx.fillStyle = '#B2EBF2';
-        ctx.fillRect(50, barYStart + 5, 790, 40);
+        ctx.fillRect(50, 220, 790, 40);
 
-        // Draw dark blue foreground bar
+        // Draw dark blue foreground bar for actual score
         ctx.fillStyle = '#30D5C8';
-        ctx.fillRect(50, barYStart + 5, 790 * (accuracyScoreNumber / 100), 40);
+        ctx.fillRect(50, 220, 790 * (avgFluencyScore / 100), 40);
 
-        // Add score text
+        // Add score text inside the bar
         ctx.fillStyle = '#000000';
-        ctx.fillText(`${accuracyScoreNumber}%`, 50 + 790 * (accuracyScoreNumber / 100) - 70, barYStart + 35);
-
-        barYStart += 95; // Move to the next bar position
-
-        // Add "Fluency" bar
-        ctx.font = '25px Arial';
-        ctx.fillText('Fluency', 50, barYStart);
-
-        // Draw light yellow background bar
-        ctx.fillStyle = '#F0F4C3';
-        ctx.fillRect(50, barYStart + 5, 790, 40);
-
-        // Draw darker yellow foreground bar
-        ctx.fillStyle = '#C7EA46';
-        ctx.fillRect(50, barYStart + 5, 790 * (fluencyScoreNumber / 100), 40);
-
-        // Add score text
-        ctx.fillStyle = '#000000';
-        ctx.fillText(`${fluencyScoreNumber}%`, 50 + 790 * (fluencyScoreNumber / 100) - 70, barYStart + 35);
-
-        barYStart += 95; // Move to the "You said" section
+        // Position till the end of dark blue bar
+        ctx.fillText(`${avgFluencyScore}%`, 50 + 790 * (avgFluencyScore / 100) - 70, 250);
 
         // Add "You said" section
         ctx.font = 'bold 30px Arial';
-        ctx.fillText('You said', 50, barYStart);
+        ctx.fillText('You said', 50, 305);
 
-        // Format and render the words
-        ctx.font = '25px Arial';
+        // Create a paragraph format for the text
+        ctx.font = '17px Arial';
         const marginLeft = 50;
         const maxWidth = 850;
         let lineHeight = 40;
         let cursorX = marginLeft;
-        let cursorY = barYStart + 40;
+        let cursorY = 345; // Starting Y position for the text
 
-        words.forEach((wordObj) => {
-            if (!['Mispronunciation', 'Omission', 'None'].includes(wordObj.ErrorType)) {
-                return;
-            }
+        // Loop through words and handle line breaks
+        allWords.forEach(wordObj => {
             const word = wordObj.Word;
-            const errorType = wordObj.ErrorType;
-            const wordAccuracyScore = wordObj.AccuracyScore;
-            const wordWidth = ctx.measureText(word).width + 15;
+            const errorType = wordObj.PronunciationAssessment.ErrorType;
+            const wordAccuracyScore = wordObj.PronunciationAssessment.AccuracyScore;
+            const wordWidth = ctx.measureText(word).width + 15; // Measure width of the word
 
+            // If the word exceeds the max width, move to a new line
             if (cursorX + wordWidth > maxWidth) {
-                cursorX = marginLeft;
-                cursorY += lineHeight;
+                cursorX = marginLeft; // Reset X position to the left margin
+                cursorY += lineHeight; // Move to the next line
             }
 
             if (errorType == 'Mispronunciation' || wordAccuracyScore < 50) {
-                ctx.fillStyle = '#FFD700';
+                // Highlight mispronounced words in yellow
+                ctx.fillStyle = '#FFD700'; // Yellow
                 ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
-                ctx.fillStyle = '#000000';
+                ctx.fillStyle = '#000000'; // Black text
                 ctx.fillText(word, cursorX, cursorY);
-            } else if (errorType == 'None') {
+            } else {
+                // Regular words
                 ctx.fillStyle = '#000000';
                 ctx.fillText(word, cursorX, cursorY);
             }
 
+            // Move cursor for the next word
             cursorX += wordWidth;
         });
 
         // Add the legends at the bottom
         ctx.font = '20px Arial';
 
-        ctx.fillStyle = '#FFD700';
-        ctx.beginPath();
-        ctx.arc(60, 820, 10, 0, 2 * Math.PI);
-        ctx.fill();
+        // Mispronounced Words Legend (Yellow Circle)
+        ctx.fillStyle = '#FFD700'; // Yellow color
+        ctx.beginPath(); // Start a new path
+        ctx.arc(60, 920, 10, 0, 2 * Math.PI);
+        ctx.fill(); // Fill the circle
         ctx.fillStyle = '#000000';
-        ctx.fillText('Mispronounced Words', 80, 827);
+        ctx.fillText('Mispronounced Words', 80, 927);
 
         // Convert the canvas to a buffer
         const buffer = canvas.toBuffer('image/jpeg');
@@ -643,7 +614,7 @@ const createAndUploadSpeakingScoreImage = async (results) => {
         console.error('Error creating and uploading image:', err);
         throw new Error('Failed to create and upload image');
     }
-};
+}
 
 const extractMispronouncedWords = (results) => {
     const words = Object.values(results.words);
@@ -658,7 +629,7 @@ const extractTranscript = (results) => {
 };
 
 const getAcceptableMessagesList = async (activityType) => {
-    if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot") {
+    if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "speakingPractice") {
         return ["audio"];
     } else if (activityType === "watchAndImage") {
         return ["image"];
@@ -1107,7 +1078,7 @@ const demoCourseStart = async (userMobileNumber, startingLesson) => {
 const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUserState, currentLesson, messageType, messageContent) => {
     const acceptableMessagesList = currentUserState.dataValues.acceptableMessages;
     const activityType = currentUserState.dataValues.activityType;
-    if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "read") {
+    if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "read" || activityType === "speakingPractice") {
         if (acceptableMessagesList.includes("audio") && messageType === "audio") {
             return true;
         }
@@ -2655,6 +2626,116 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         // ENDING MESSAGE
                         await endingMessage(userMobileNumber, currentUserState, startingLesson);
                     }
+                }
+            }
+        } else if (activity == 'speakingPractice') {
+            if (currentUserState.dataValues.questionNumber === null) {
+                // Lesson Started Record
+                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
+
+                // Send lesson message
+                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
+                lessonMessage += "\n\nListen to the audio and respond to the question by sending a voice message.💬";
+                await sendMessage(userMobileNumber, lessonMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+
+                // Send first Speaking Practice question
+                const firstSpeakingPracticeQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
+
+                // Update question number
+                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstSpeakingPracticeQuestion.dataValues.questionNumber);
+
+                // Send question media file
+                await sendMediaMessage(userMobileNumber, firstSpeakingPracticeQuestion.dataValues.mediaFile, 'audio');
+                await createActivityLog(userMobileNumber, "audio", "outbound", firstSpeakingPracticeQuestion.dataValues.mediaFile, null);
+
+                // Update acceptable messages list for the user
+                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
+            } else if (messageType === 'audio') {
+                // Get the current Speaking Practice question
+                const currentSpeakingPracticeQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+
+                // Extract user transcription
+                const userTranscription = await azureAIServices.openaiSpeechToText(messageContent.data);
+
+                let disclaimerAndUserTranscriptionMessage = "This chatbot's speech-to-text may not recognize proper nouns accurately or may skip some words—please bear with us while we improve it.";
+                disclaimerAndUserTranscriptionMessage += "\n\nYou said: " + userTranscription;
+                await sendMessage(userMobileNumber, disclaimerAndUserTranscriptionMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", disclaimerAndUserTranscriptionMessage, null);
+
+                // Azure Pronunciation Assessment
+                const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, userTranscription);
+
+                // Save user response to the database
+                const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
+                const uniqueID = uuidv4();
+                const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
+                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                const submissionDate = new Date();
+                await waQuestionResponsesRepository.create(
+                    userMobileNumber,
+                    currentUserState.dataValues.currentLessonId,
+                    currentSpeakingPracticeQuestion.dataValues.id,
+                    activity,
+                    startingLesson.dataValues.activityAlias,
+                    [userTranscription],
+                    [userAudioFileUrl],
+                    null,
+                    null,
+                    [pronunciationAssessment],
+                    null,
+                    1,
+                    submissionDate
+                );
+
+                const nextSpeakingPracticeQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                if (nextSpeakingPracticeQuestion) {
+                    // Update question number
+                    await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextSpeakingPracticeQuestion.dataValues.questionNumber);
+
+                    // Send question media file
+                    await sendMediaMessage(userMobileNumber, nextSpeakingPracticeQuestion.dataValues.mediaFile, 'audio');
+                    await createActivityLog(userMobileNumber, "audio", "outbound", nextSpeakingPracticeQuestion.dataValues.mediaFile, null);
+                } else {
+                    const pronunciationAssessments = await waQuestionResponsesRepository.getAllJsonFeedbacksForPhoneNumberAndLessonId(userMobileNumber, currentUserState.dataValues.currentLessonId);
+                    const imageUrl = await createAndUploadSpeakingPracticeScoreImage(pronunciationAssessments);
+
+                    // Media message
+                    if (imageUrl) {
+                        await sendMediaMessage(userMobileNumber, imageUrl, 'image');
+                        await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
+                        await sleep(5000);
+                    }
+
+                    // Extract mispronounced words in a loop using pronunciationAssessments and extractMispronouncedWords function
+                    let mispronouncedWords = [];
+                    for (const assessment of pronunciationAssessments) {
+                        const singleMispronouncedWords = extractMispronouncedWords(assessment);
+                        mispronouncedWords.push(...singleMispronouncedWords);
+                    }
+
+                    // Remove duplicates from mispronouncedWords
+                    mispronouncedWords = [...new Set(mispronouncedWords)];
+
+
+                    let correctedAudio = "";
+                    if (mispronouncedWords.length > 0) {
+                        let modelResponse = "It looks like you've mispronounced a few words in your response. Here are the corrections:\n\n";
+                        for (const word of mispronouncedWords) {
+                            modelResponse += word.Word + (word === mispronouncedWords[mispronouncedWords.length - 1] ? "" : "...");
+                        }
+                        correctedAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(modelResponse);
+                        await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
+                        await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
+                        await sleep(5000);
+                    }
+
+
+                    // Reset Question Number, Retry Counter, and Activity Type
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+
+                    // ENDING MESSAGE
+                    await endingMessage(userMobileNumber, currentUserState, startingLesson);
                 }
             }
         }

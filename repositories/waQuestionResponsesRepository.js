@@ -318,31 +318,23 @@ const monologueScoreForList = async (phoneNumber, lessonIdList) => {
     let totalScore = 0;
     let maxScore = 0;
 
-    // Mapping through the results to extract, calculate, and sum the score data
+    // Mapping through the results to extract, calculate and sum the score data
     const individualScores = submittedFeedbackJson.map(response => {
         const jsonArray = response.get('submittedFeedbackJson'); // Get the JSON array
 
-        // Directly access the PronScore and FluencyScore if the JSON structure is valid
+        // Directly access the first element in the JSON array if it exists
         let accuracyScore = 0;
         let fluencyScore = 0;
-        let grammarScore = 0;
-
+        let compScore = 0;
         if (jsonArray && jsonArray.length > 0) {
             const parsedJson = jsonArray[0]; // Access the first JSON object directly
-            if (parsedJson) {
-                const pronAssessment = parsedJson.pronunciationAssessment;
-                if (pronAssessment) {
-                    accuracyScore = pronAssessment.AccuracyScore;
-                    fluencyScore = pronAssessment.FluencyScore;
-                }
-                const contentAssessment = parsedJson.contentAssessment;
-                if (contentAssessment) {
-                    grammarScore = contentAssessment.GrammarScore;
-                }
-            }
+            accuracyScore = parsedJson.scoreNumber.accuracyScore;
+            fluencyScore = parsedJson.scoreNumber.fluencyScore;
+            compScore = parsedJson.scoreNumber.compScore;
         }
+
         // Calculate the combined score for this entry with weightage of 5
-        const combinedScore = (accuracyScore + fluencyScore + grammarScore) / 300 * 5;
+        const combinedScore = (accuracyScore + fluencyScore + compScore) / 300 * 5;
         totalScore += combinedScore; // Accumulate the total score
         maxScore += 5; // Each entry now has a max score of 5
 
@@ -350,7 +342,7 @@ const monologueScoreForList = async (phoneNumber, lessonIdList) => {
             lessonId: response.get('lessonId'),
             accuracyScore: accuracyScore,
             fluencyScore: fluencyScore,
-            grammarScore: grammarScore,
+            compScore: compScore,
             combinedScore: combinedScore
         };
     });
@@ -429,6 +421,40 @@ const checkRecordExistsForPhoneNumberAndLessonId = async (phoneNumber, lessonId)
     return response ? false : true;
 };
 
+const getAllTranscriptsForPhoneNumberAndLessonId = async (phoneNumber, lessonId) => {
+    const response = await WA_QuestionResponses.findAll({
+        where: {
+            phoneNumber: phoneNumber,
+            lessonId: lessonId
+        }
+    });
+
+    let finalTranscript = "";
+    response.forEach(response => {
+        finalTranscript += response.dataValues.submittedAnswerText[0] + " ";
+    });
+
+    return finalTranscript;
+};
+
+const getAllJsonFeedbacksForPhoneNumberAndLessonId = async (phoneNumber, lessonId) => {
+    const response = await WA_QuestionResponses.findAll({
+        where: {
+            phoneNumber: phoneNumber,
+            lessonId: lessonId
+        }
+    });
+
+    let finalJsonFeedbacks = [];
+    response.forEach(response => {
+        finalJsonFeedbacks.push(response.dataValues.submittedFeedbackJson[0]);
+    });
+
+    return finalJsonFeedbacks;
+};
+
+
+
 export default {
     create,
     getAll,
@@ -447,5 +473,7 @@ export default {
     getByActivityType,
     getPreviousMessages,
     checkRecordExistsForPhoneNumberAndLessonId,
-    getLatestBotResponse
+    getLatestBotResponse,
+    getAllTranscriptsForPhoneNumberAndLessonId,
+    getAllJsonFeedbacksForPhoneNumberAndLessonId
 };
