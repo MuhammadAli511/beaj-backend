@@ -2331,7 +2331,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                         // Send corrected version of the answer
                         if (correctedVersion) {
-                            let correctMessage = "A corrected version of your answer is: " + correctedVersion[1] + "\n\n\nNow you try speaking the improved version by sending a voice message";
+                            let correctMessage = "A corrected version of your answer is: " + correctedVersion[1] + "\n\n\nNow try speaking the improved version by sending a voice message";
                             await sendMessage(userMobileNumber, correctMessage);
                             await createActivityLog(userMobileNumber, "text", "outbound", correctMessage, null);
                         }
