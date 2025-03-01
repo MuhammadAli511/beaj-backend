@@ -566,10 +566,19 @@ const createAndUploadSpeakingPracticeScoreImage = async (pronunciationAssessment
 
         // Loop through words and handle line breaks
         allWords.forEach(wordObj => {
+            if (wordObj == undefined) {
+                return;
+            }
+            if (!['Mispronunciation', 'None'].includes(wordObj.PronunciationAssessment.ErrorType)) {
+                return;
+            }
             const word = wordObj.Word;
             const errorType = wordObj.PronunciationAssessment.ErrorType;
+            if (errorType == 'Omission') {
+                return;
+            }
             const wordAccuracyScore = wordObj.PronunciationAssessment.AccuracyScore;
-            const wordWidth = ctx.measureText(word).width + 15; // Measure width of the word
+            const wordWidth = ctx.measureText(word).width + 13; // Measure width of the word
 
             // If the word exceeds the max width, move to a new line
             if (cursorX + wordWidth > maxWidth) {
