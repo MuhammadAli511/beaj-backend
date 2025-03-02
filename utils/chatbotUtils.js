@@ -626,8 +626,18 @@ const createAndUploadSpeakingPracticeScoreImage = async (pronunciationAssessment
 }
 
 const extractMispronouncedWords = (results) => {
+    if (!results || !results.words) {
+        return [];
+    }
+
     const words = Object.values(results.words);
-    const mispronouncedWords = words.filter(word => word.PronunciationAssessment.ErrorType == 'Mispronunciation' || word.PronunciationAssessment.AccuracyScore < 50);
+    const mispronouncedWords = words.filter(word => {
+        return word &&
+            word.PronunciationAssessment &&
+            (word.PronunciationAssessment.ErrorType === 'Mispronunciation' ||
+                word.PronunciationAssessment.AccuracyScore < 50);
+    });
+
     return mispronouncedWords;
 };
 
