@@ -147,7 +147,7 @@ const getCompletedActivity = async (course_id1, course_id2, grp, activity_name_l
       GROUP BY 
         m."phoneNumber"
       ORDER BY 
-        m."phoneNumber" ASC;`;
+        m."name" ASC;`;
 
     // const qry = `SELECT 
     // m."phoneNumber",
@@ -375,7 +375,7 @@ SELECT
 FROM
     AggregatedProgress
 ORDER BY
-    "phoneNumber";`;
+    "name";`;
 
 
     const res = await sequelize.query(qry);
@@ -512,7 +512,7 @@ const getLessonCompletion = async (course_id,grp,cohort) => {
       FROM
           PivotedProgress pp
       ORDER BY
-      pp."phoneNumber";`;
+      pp."name";`;
   
   
       const res = await sequelize.query(qry);
@@ -1088,7 +1088,7 @@ LEFT JOIN
 LEFT JOIN 
     wa_lessons_completed wc ON m."phoneNumber" = wc."phoneNumber"
 WHERE 
-    m."targetGroup" = '${grp}' and m."cohort" = '${cohort}' order by m."phoneNumber" asc;`;
+    m."targetGroup" = '${grp}' and m."cohort" = '${cohort}' order by m."name" asc;`;
 
 
     const res = await sequelize.query(qry);
@@ -1353,7 +1353,7 @@ const getActivity_Completions = async (course1_id, course2_id, course3_id, grp, 
             GROUP BY 
                 m."name", m."phoneNumber" 
             ORDER BY 
-                m."phoneNumber" ASC;
+                m."name" ASC;
         `;
 
         const res = await sequelize.query(qry);
@@ -1394,7 +1394,7 @@ const getActivityNameCount = async (course_id1, course_id2,course_id3,grp,cohort
       GROUP BY 
         m."phoneNumber"
       ORDER BY 
-        m."phoneNumber" ASC;`;
+        m."name" ASC;`;
 
         const res2 = await sequelize.query(qry2);
 

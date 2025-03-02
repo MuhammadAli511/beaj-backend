@@ -6,7 +6,7 @@ const getDataFromPostgres = async (grp) => {
 
     const res = await WA_UsersMetadata.findAll({
       where : {targetGroup : grp},
-      order: [["phoneNumber" , "ASC"]],
+      order: [["name" , "ASC"]],
     });
     
     return res;
@@ -25,7 +25,7 @@ const getDataActivityComplete = async (date, grp, course_id, weekno,cohort) => {
                   (select count(s."LessonId") from "Lesson" s where s."weekNumber" <= ${weekno}  and s."courseId" = ${course_id}) then 1 else 0 end as "completion_match"
                   from "wa_users_metadata" m left join "wa_lessons_completed" l on m."phoneNumber" = l."phoneNumber" and l."courseId" = ${course_id}
                   where m."targetGroup" = '${grp}' and m."cohort" = '${cohort}'
-                  group by m."name", m."phoneNumber" order by m."phoneNumber" asc;`;
+                  group by m."name", m."phoneNumber" order by m."name" asc;`;
 
 
     const res = await sequelize.query(qry);
@@ -54,7 +54,7 @@ const getWeeklyActivityCompleted = async (grp, course_id,cohort) => {
                 then 1 else null end as "completion_match4"
                 from "wa_users_metadata" m left join "wa_lessons_completed" l on m."phoneNumber" = l."phoneNumber" 
                 and l."completionStatus" = 'Completed' left join "Lesson" s on s."LessonId" = l."lessonId" and s."courseId" = l."courseId" and s."courseId" = ${course_id}
-                and s."weekNumber" IN (1,2,3,4) where m."targetGroup" = '${grp}' and m."cohort" = '${cohort}' group by m."name", m."phoneNumber" order by m."phoneNumber" asc;`;
+                and s."weekNumber" IN (1,2,3,4) where m."targetGroup" = '${grp}' and m."cohort" = '${cohort}' group by m."name", m."phoneNumber" order by m."name" asc;`;
 
     const res = await sequelize.query(qry);
 
@@ -349,7 +349,7 @@ SELECT
 FROM
     AggregatedProgress
 ORDER BY
-    "targetGroup","cohort","phoneNumber" asc;`;
+    "targetGroup","cohort","name" asc;`;
 
 
     const res = await sequelize.query(qry);
@@ -430,7 +430,7 @@ const getActivity_Completions = async (course1_id, course2_id, course3_id,grp) =
           GROUP BY 
               m."name", m."phoneNumber", m."cohort", m."targetGroup"
           ORDER BY 
-               m."targetGroup",m."cohort",m."phoneNumber" ASC;
+               m."targetGroup",m."cohort",m."name" ASC;
       `;
 
       const res = await sequelize.query(qry);
@@ -851,7 +851,7 @@ LEFT JOIN
 LEFT JOIN 
     wa_lessons_completed wc ON m."phoneNumber" = wc."phoneNumber"
 WHERE 
-    m."targetGroup" = '${grp}' and m."cohort" != 'Pilot' order by m."targetGroup",m."cohort", m."phoneNumber" asc;`;
+    m."targetGroup" = '${grp}' and m."cohort" != 'Pilot' order by m."targetGroup",m."cohort", m."name" asc;`;
 
 
     const res = await sequelize.query(qry);

@@ -1,6 +1,24 @@
 import etlRepository from "../repositories/etlRepository.js";
 import new_loadDataToGoogleSheets from "../google_sheet_utils/auto_GoogleSheetUtils.js";
 
+import { createCanvas, loadImage } from 'canvas';
+import fs from 'fs';
+import path from 'path';
+const percentages = {
+  bronze: "80%",
+  silver: "88%",
+  gold: "95%"
+};
+
+// Dynamic Names (Varying)
+const names = {
+  bronze: ["John Doe", "Alex Smith"], // Example: Multiple names in Bronze
+  silver: [],  // Example: No one in Silver
+  gold: ["Jane Smith", "Mark Lee", "Alice Brown"] // Example: Multiple names in Gold
+};
+
+
+
 const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
   try {
     let courseId_l1 = null;
@@ -102,6 +120,7 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
           ])
         }
         arrayT1_List = arrayT1_List.map(obj => Object.values(obj).map(value => value));
+        await modifyImage();
       }
 
       await new_loadDataToGoogleSheets(

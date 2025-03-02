@@ -100,4 +100,4 @@ const new_loadDataToGoogleSheets = async (
   }
 };
 
-export default new_loadDataToGoogleSheets;
+export default {new_loadDataToGoogleSheets};
