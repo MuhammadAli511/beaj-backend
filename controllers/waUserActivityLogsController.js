@@ -25,7 +25,20 @@ const getWaUserActivityLogByPhoneNumberController = async (req, res, next) => {
 };
 
 
+const getLastMessageTimeController = async (req, res, next) => {
+    try {
+        const result = await service.getLastMessageTimeService();
+        res.status(200).send(result);
+    } catch (error) {
+        error.fileName = 'waUserActivityLogsController.js';
+        next(error);
+    }
+};
+
+
+
 export default {
     getAllWaUserActivityLogsController,
-    getWaUserActivityLogByPhoneNumberController
+    getWaUserActivityLogByPhoneNumberController,
+    getLastMessageTimeController
 };
