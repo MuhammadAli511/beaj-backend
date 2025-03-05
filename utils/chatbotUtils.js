@@ -642,10 +642,20 @@ const extractMispronouncedWords = (results) => {
 };
 
 const extractTranscript = (results) => {
+    if (!results || !results.words) {
+        return "";
+    }
+
     const words = Object.values(results.words);
-    const transcriptWords = words.filter(word => word.PronunciationAssessment.ErrorType != 'Omission');
+    const transcriptWords = words.filter(word =>
+        word &&
+        word.PronunciationAssessment &&
+        word.PronunciationAssessment.ErrorType !== 'Omission'
+    );
+
     return transcriptWords.map(word => word.Word).join(" ");
 };
+
 
 const getAcceptableMessagesList = async (activityType) => {
     if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "speakingPractice") {
