@@ -317,7 +317,7 @@ PivotedProgress AS (
 ),
 AggregatedProgress AS (
     SELECT
-	    ROW_NUMBER() OVER (ORDER BY pp."phoneNumber") AS sr_no,
+	    ROW_NUMBER() OVER (ORDER BY pp."name") AS sr_no,
         pp."phoneNumber",
 		pp."name",
         MAX(CASE WHEN pp."courseId" = ${course_id1} THEN pp."week1" END) AS "course1_week1",
@@ -375,7 +375,7 @@ SELECT
 FROM
     AggregatedProgress
 ORDER BY
-    "phoneNumber";`;
+    "name";`;
 
 
     const res = await sequelize.query(qry);
@@ -1027,7 +1027,7 @@ wa_lessons_completed AS (
         m."phoneNumber"
 )
 SELECT 
-     ROW_NUMBER() OVER (ORDER BY m."phoneNumber") AS sr_no,
+     ROW_NUMBER() OVER (ORDER BY m."name") AS sr_no,
      m."phoneNumber", 
      m."name",
     CASE 
@@ -1040,7 +1040,7 @@ SELECT
                      ROUND((COALESCE(ls.listenAndSpeak_week1_correct_count, 0) + COALESCE(mc.mcqs_week1_correct_count, 0) + COALESCE(ws.watchAndSpeak_week1_score, 0) + 
                      COALESCE(rd.read_week1_score, 0) + COALESCE(cm.conversationalMonologue_week1_score, 0)) /
                     (COALESCE(ls.listenAndSpeak_week1_total, 0) + COALESCE(mc.mcqs_week1_total, 0) + COALESCE(ws.watchAndSpeak_week1_total, 0) + 
-                     COALESCE(rd.read_week1_total, 0) + COALESCE(cm.conversationalMonologue_week1_total, 0)) * 100, 2)
+                     COALESCE(rd.read_week1_total, 0) + COALESCE(cm.conversationalMonologue_week1_total, 0)) * 100, 0)
             END || '%'
         ELSE null
     END AS final_percentage_week1,
@@ -1055,7 +1055,7 @@ SELECT
                      ROUND((COALESCE(ls.listenAndSpeak_week2_correct_count, 0) + COALESCE(mc.mcqs_week2_correct_count, 0) + COALESCE(ws.watchAndSpeak_week2_score, 0) + 
                      COALESCE(rd.read_week2_score, 0) + COALESCE(cm.conversationalMonologue_week2_score, 0)) /
                     (COALESCE(ls.listenAndSpeak_week2_total, 0) + COALESCE(mc.mcqs_week2_total, 0) + COALESCE(ws.watchAndSpeak_week2_total, 0) + 
-                     COALESCE(rd.read_week2_total, 0) + COALESCE(cm.conversationalMonologue_week2_total, 0)) * 100, 2)
+                     COALESCE(rd.read_week2_total, 0) + COALESCE(cm.conversationalMonologue_week2_total, 0)) * 100, 0)
             END || '%'
         ELSE null
     END AS final_percentage_week2,
@@ -1070,7 +1070,7 @@ SELECT
                      ROUND((COALESCE(ls.listenAndSpeak_week3_correct_count, 0) + COALESCE(mc.mcqs_week3_correct_count, 0) + COALESCE(ws.watchAndSpeak_week3_score, 0) + 
                      COALESCE(rd.read_week3_score, 0) + COALESCE(cm.conversationalMonologue_week3_score, 0)) /
                     (COALESCE(ls.listenAndSpeak_week3_total, 0) + COALESCE(mc.mcqs_week3_total, 0) + COALESCE(ws.watchAndSpeak_week3_total, 0) + 
-                     COALESCE(rd.read_week3_total, 0) + COALESCE(cm.conversationalMonologue_week3_total, 0)) * 100, 2)
+                     COALESCE(rd.read_week3_total, 0) + COALESCE(cm.conversationalMonologue_week3_total, 0)) * 100, 0)
             END || '%'
         ELSE null
     END AS final_percentage_week3,
@@ -1085,7 +1085,7 @@ SELECT
                      ROUND((COALESCE(ls.listenAndSpeak_week4_correct_count, 0) + COALESCE(mc.mcqs_week4_correct_count, 0) + COALESCE(ws.watchAndSpeak_week4_score, 0) + 
                      COALESCE(rd.read_week4_score, 0) + COALESCE(cm.conversationalMonologue_week4_score, 0)) /
                     (COALESCE(ls.listenAndSpeak_week4_total, 0) + COALESCE(mc.mcqs_week4_total, 0) + COALESCE(ws.watchAndSpeak_week4_total, 0) + 
-                     COALESCE(rd.read_week4_total, 0) + COALESCE(cm.conversationalMonologue_week4_total, 0)) * 100, 2)
+                     COALESCE(rd.read_week4_total, 0) + COALESCE(cm.conversationalMonologue_week4_total, 0)) * 100, 0)
             END || '%'
         ELSE null
     END AS final_percentage_week4
@@ -1104,7 +1104,7 @@ LEFT JOIN
 LEFT JOIN 
     wa_lessons_completed wc ON m."phoneNumber" = wc."phoneNumber"
 WHERE 
-    m."targetGroup" = '${grp}' and m."cohort" = '${cohort}' order by m."phoneNumber" asc;`;
+    m."targetGroup" = '${grp}' and m."cohort" = '${cohort}' order by m."name" asc;`;
 
 
     const res = await sequelize.query(qry);
@@ -1324,7 +1324,7 @@ const getActivity_Completions = async (course1_id, course2_id, course3_id, grp, 
     try {
         const qry = `
             SELECT 
-                ROW_NUMBER() OVER (ORDER BY m."phoneNumber") AS sr_no,
+                ROW_NUMBER() OVER (ORDER BY m."name") AS sr_no,
                 m."phoneNumber", 
                 m."name",
                 SUM(CASE WHEN s."weekNumber" = 1 AND s."courseId" = ${course1_id} THEN 1 ELSE NULL END) AS "course1_week1_activities",
@@ -1369,7 +1369,7 @@ const getActivity_Completions = async (course1_id, course2_id, course3_id, grp, 
             GROUP BY 
                 m."name", m."phoneNumber" 
             ORDER BY 
-                m."phoneNumber" ASC;
+                m."name" ASC;
         `;
 
         const res = await sequelize.query(qry);
@@ -1382,14 +1382,16 @@ const getActivity_Completions = async (course1_id, course2_id, course3_id, grp, 
 
 const getActivityNameCount = async (course_id1, course_id2,course_id3,grp,cohort) => {
     try {
-    
       const qry1 = `select "activity", count("activity") from "Lesson" where "courseId" = ${course_id1} or "courseId" = ${course_id2} or "courseId" = ${course_id3}  group by "activity" order by "activity";`;
       const res1 = await sequelize.query(qry1);
-
+      let cohort1 = cohort;
       let activities = res1[0].map(item => item.activity);
 
       const dynamicSumActivity = activities.map(activity =>  `COALESCE(sum(case when s."activity" = '${activity}' then 1 else null end), null) as "${activity}"`).join(",\n");
-      const qry2 = `
+      let qry2 = ``;
+      if(cohort != ''){
+        cohort = `m."cohort" = '${cohort}'`;
+        qry2 = `
       SELECT 
         ${dynamicSumActivity}
       FROM 
@@ -1406,17 +1408,50 @@ const getActivityNameCount = async (course_id1, course_id2,course_id3,grp,cohort
         l."lessonId" = s."LessonId" 
         AND l."courseId" = s."courseId"
       WHERE 
-        m."targetGroup" = '${grp}' and m."cohort" = '${cohort}'
+        m."targetGroup" = '${grp}' and ${cohort}
       GROUP BY 
         m."phoneNumber"
       ORDER BY 
-        m."phoneNumber" ASC;`;
-
+        m."name" ASC;`;
+      }
+      else{
+        cohort = `m."cohort" != 'Pilot'`;
+        qry2 = `
+      SELECT 
+        ROW_NUMBER() OVER (ORDER BY MAX(m."cohort") ASC) AS row_number,
+        m."phoneNumber",
+        MAX(m."name") AS "name",
+        ${dynamicSumActivity},
+        max(m."cohort") as "cohort"
+      FROM 
+        "wa_users_metadata" m
+      LEFT JOIN 
+        "wa_lessons_completed" l 
+      ON 
+        m."phoneNumber" = l."phoneNumber" 
+        AND (l."courseId" = ${course_id1} OR l."courseId" = ${course_id2} OR l."courseId" = ${course_id3})
+        AND l."completionStatus" = 'Completed'
+      LEFT JOIN 
+        "Lesson" s 
+      ON 
+        l."lessonId" = s."LessonId" 
+        AND l."courseId" = s."courseId"
+      WHERE 
+        m."targetGroup" = '${grp}' and ${cohort}
+      GROUP BY 
+        m."phoneNumber"
+      ORDER BY 
+        m."cohort" ASC;`;
+      }
+    
         const res2 = await sequelize.query(qry2);
-
         let activityTotal = [];
 
         let counts = res1[0].map(item => parseInt(item.count, 10));
+        if (cohort1 == '') {
+            counts = [null, null, null, ...counts, null]; // Prepend 3 nulls and append 1 null to counts
+            activities = [null, null, null, ...activities, null]; // Prepend 3 nulls and append 1 null to activities
+        }
         activityTotal.push(counts);
 
         activityTotal.push(activities);
@@ -1427,7 +1462,7 @@ const getActivityNameCount = async (course_id1, course_id2,course_id3,grp,cohort
 
         activityTotal = activityTotal.concat(activityCompleted);
 
-        // console.log(activityTotal);
+        console.log(activityTotal);
 
   
       return activityTotal;
