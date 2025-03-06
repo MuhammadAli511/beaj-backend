@@ -40,6 +40,12 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+async function getAudioBufferFromAudioFileUrl(audioUrl) {
+    const response = await fetch(audioUrl);
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+}
+
 const removeUser = async (phoneNumber) => {
     await waUsersMetadataRepository.deleteByPhoneNumber(phoneNumber);
     await waUserProgressRepository.deleteByPhoneNumber(phoneNumber);
@@ -1510,10 +1516,6 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
             let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
             lessonMessage += "\n\n" + removeHTMLTags(startingLesson.dataValues.text);
 
-            // Text message
-            // await sendMessage(userMobileNumber, lessonMessage);
-            // await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
-
             // Send video content
             const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
             let videoURL = documentFile[0].dataValues.video;
@@ -1532,10 +1534,6 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
             // Send lesson message
             let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
             lessonMessage += "\n\n" + removeHTMLTags(startingLesson.dataValues.text);
-
-            // Text message
-            // await sendMessage(userMobileNumber, lessonMessage);
-            // await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
             // Send video content
             const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
@@ -1707,35 +1705,16 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         // Text message
                         await sendMessage(userMobileNumber, message);
                         await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-
-                        // Sticker
-                        // const stickerURL = await extractConstantMessage("good_effort_sticker");
-                        // await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
-                        // await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
-                        // await sleep(3000);
-
                     } else if (scorePercentage >= 61 && scorePercentage <= 79) {
                         message += "\n\nWell done! 🌟";
                         // Text message
                         await sendMessage(userMobileNumber, message);
                         await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-
-                        // Sticker
-                        // const stickerURL = await extractConstantMessage("well_done_sticker");
-                        // await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
-                        // await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
-                        // await sleep(3000);
                     } else if (scorePercentage >= 80) {
                         message += "\n\nExcellent 🎉";
                         // Text message
                         await sendMessage(userMobileNumber, message);
                         await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-
-                        // Sticker
-                        // const stickerURL = await extractConstantMessage("excellent_sticker");
-                        // await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
-                        // await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
-                        // await sleep(3000);
                     }
 
 
@@ -1771,18 +1750,121 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, 'video', videoCaptionText);
                 await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null, videoCaptionText);
 
-                // Send question text
-                // await sendMessage(userMobileNumber, message);
-                // await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-
                 // Update acceptable messages list for the user
                 await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
-            } else if (messageType === 'audio') {
+            }
+            else if (messageType === 'audio') {
+                // Get the current Watch And Speak question
+                const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                const retryCounter = currentUserState.dataValues.retryCounter;
+                if (retryCounter == 0 || retryCounter == null) {
+                    const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
+                    const uniqueID = uuidv4();
+                    const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
+                    const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                    const submissionDate = new Date();
+                    await waQuestionResponsesRepository.create(
+                        userMobileNumber,
+                        currentUserState.dataValues.currentLessonId,
+                        currentWatchAndSpeakQuestion.dataValues.id,
+                        activity,
+                        startingLesson.dataValues.activityAlias,
+                        null,
+                        [userAudioFileUrl],
+                        null,
+                        null,
+                        null,
+                        null,
+                        1,
+                        submissionDate
+                    );
+
+                    // Confirmation message asking to retry with yes and no buttons
+                    await sendButtonMessage(userMobileNumber, "Are you happy with your above response or do you want to retry?", [{ id: "happy", title: "I am happy" }, { id: "retry", title: "I want to retry" }]);
+                    await createActivityLog(userMobileNumber, "template", "outbound", "Are you happy with your above response or do you want to retry?", null);
+
+                    // Update acceptable messages list for the user
+                    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["i am happy", "i want to retry"]);
+                    return;
+                }
+                else {
+                    // Get the current Watch And Speak question
+                    const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+
+                    // Get audio url
+                    const audioUrl = await waQuestionResponsesRepository.getAudioUrlForPhoneNumberQuestionIdAndLessonId(userMobileNumber, currentWatchAndSpeakQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
+                    const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
+
+                    // Azure Pronunciation Assessment
+                    const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(audioBuffer, currentWatchAndSpeakQuestion.dataValues.answer[0]);
+
+                    // Extract user transcription from words
+                    const userTranscription = extractTranscript(pronunciationAssessment);
+
+                    // Text message
+                    await sendMessage(userMobileNumber, "You said: " + userTranscription);
+                    await createActivityLog(userMobileNumber, "text", "outbound", "You said: " + userTranscription, null);
+
+                    // Generate pronunciation assessment message
+                    const imageUrl = await createAndUploadScoreImage(pronunciationAssessment);
+
+                    if (imageUrl) {
+                        // Media message
+                        await sendMediaMessage(userMobileNumber, imageUrl, 'image');
+                        await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
+                        await sleep(5000);
+                    }
+
+                    const submissionDate = new Date();
+
+                    // Update user response to the database
+                    await waQuestionResponsesRepository.update(
+                        userMobileNumber,
+                        currentUserState.dataValues.currentLessonId,
+                        currentWatchAndSpeakQuestion.dataValues.id,
+                        activity,
+                        startingLesson.dataValues.activityAlias,
+                        [userTranscription],
+                        [audioUrl],
+                        [imageUrl],
+                        null,
+                        [pronunciationAssessment],
+                        null,
+                        retryCounter + 1,
+                        submissionDate
+                    );
+
+                    const nextWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                    if (nextWatchAndSpeakQuestion) {
+                        // Update question number
+                        await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.questionNumber);
+
+                        const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
+                        let videoCaptionText = "Question " + nextWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + ":\n\nPuri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
+
+                        // Send question media file
+                        await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video', videoCaptionText);
+                        await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null, videoCaptionText);
+
+                    } else {
+                        // Reset Question Number, Retry Counter, and Activity Type
+                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+
+                        // ENDING MESSAGE
+                        await endingMessage(userMobileNumber, currentUserState, startingLesson);
+                    }
+                    return;
+                }
+            }
+            else if (messageContent === 'i am happy') {
                 // Get the current Watch And Speak question
                 const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
+                const audioUrl = await waQuestionResponsesRepository.getAudioUrlForPhoneNumberQuestionIdAndLessonId(userMobileNumber, currentWatchAndSpeakQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
+                const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
+
                 // Azure Pronunciation Assessment
-                const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, currentWatchAndSpeakQuestion.dataValues.answer[0]);
+                const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(audioBuffer, currentWatchAndSpeakQuestion.dataValues.answer[0]);
 
                 // Extract user transcription from words
                 const userTranscription = extractTranscript(pronunciationAssessment);
@@ -1800,26 +1882,23 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
                     await sleep(5000);
                 }
-
-                // Save user response to the database
-                const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
-                const uniqueID = uuidv4();
-                const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
-                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
                 const submissionDate = new Date();
-                await waQuestionResponsesRepository.create(
+                const retryCounter = currentUserState.dataValues.retryCounter;
+
+                // Update user response to the database
+                await waQuestionResponsesRepository.update(
                     userMobileNumber,
                     currentUserState.dataValues.currentLessonId,
                     currentWatchAndSpeakQuestion.dataValues.id,
                     activity,
                     startingLesson.dataValues.activityAlias,
                     [userTranscription],
-                    [userAudioFileUrl],
+                    [audioUrl],
                     [imageUrl],
                     null,
                     [pronunciationAssessment],
                     null,
-                    1,
+                    retryCounter + 1,
                     submissionDate
                 );
 
@@ -1835,9 +1914,6 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video', videoCaptionText);
                     await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null, videoCaptionText);
 
-                    // Send question text
-                    // await sendMessage(userMobileNumber, message);
-                    // await createActivityLog(userMobileNumber, "text", "outbound", message, null);
                 } else {
                     // Reset Question Number, Retry Counter, and Activity Type
                     await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
@@ -1845,6 +1921,19 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     // ENDING MESSAGE
                     await endingMessage(userMobileNumber, currentUserState, startingLesson);
                 }
+                return;
+            }
+            else if (messageContent === 'i want to retry') {
+                // Send message to try again
+                await sendMessage(userMobileNumber, "Try sending a voice message again to the previous question.");
+                await createActivityLog(userMobileNumber, "text", "outbound", "Try sending a voice message again to the previous question.", null);
+
+                // Update acceptable messages list for the user
+                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
+
+                // Update retry counter
+                await waUserProgressRepository.updateRetryCounter(userMobileNumber, currentUserState.dataValues.retryCounter + 1);
+                return;
             }
         }
         else if (activity == 'watchAndAudio') {
@@ -2135,10 +2224,6 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         // Update question number
                         await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextListenAndSpeakQuestion.dataValues.questionNumber);
 
-                        // Media message
-                        // await sendMediaMessage(userMobileNumber, nextListenAndSpeakQuestion.dataValues.mediaFile, 'audio');
-                        // await createActivityLog(userMobileNumber, "audio", "outbound", nextListenAndSpeakQuestion.dataValues.mediaFile, null);
-
                         // Update acceptable messages list for the user
                         await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
                         // await sleep(5000);
@@ -2158,34 +2243,16 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                             // Text message
                             await sendMessage(userMobileNumber, message);
                             await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-
-                            // Sticker
-                            // const stickerURL = await extractConstantMessage("good_effort_sticker");
-                            // await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
-                            // await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
-                            // await sleep(3000);
                         } else if (scorePercentage >= 61 && scorePercentage <= 79) {
                             message += "\n\nWell done! 🌟";
                             // Text message
                             await sendMessage(userMobileNumber, message);
                             await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-
-                            // Sticker
-                            // const stickerURL = await extractConstantMessage("well_done_sticker");
-                            // await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
-                            // await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
-                            // await sleep(3000);
                         } else if (scorePercentage >= 80) {
                             message += "\n\nExcellent 🎉";
                             // Text message
                             await sendMessage(userMobileNumber, message);
                             await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-
-                            // Sticker
-                            // const stickerURL = await extractConstantMessage("excellent_sticker");
-                            // await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
-                            // await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
-                            // await sleep(3000);
                         }
 
                         // Reset Question Number, Retry Counter, and Activity Type
@@ -2449,8 +2516,6 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 const userTranscription = await azureAIServices.openaiSpeechToText(messageContent.data);
 
                 let disclaimerAndUserTranscriptionMessage = "This chatbot's speech-to-text may not recognize proper nouns accurately or may skip some words—please bear with us while we improve it.";
-                // await sendMessage(userMobileNumber, disclaimerMessage);
-                // await createActivityLog(userMobileNumber, "text", "outbound", disclaimerMessage, null);
 
                 // Text message
                 disclaimerAndUserTranscriptionMessage += "\n\nYou said: " + userTranscription;
@@ -2655,7 +2720,8 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     }
                 }
             }
-        } else if (activity == 'speakingPractice') {
+        }
+        else if (activity == 'speakingPractice') {
             if (currentUserState.dataValues.questionNumber === null) {
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());

@@ -453,6 +453,17 @@ const getAllJsonFeedbacksForPhoneNumberAndLessonId = async (phoneNumber, lessonI
     return finalJsonFeedbacks;
 };
 
+const getAudioUrlForPhoneNumberQuestionIdAndLessonId = async (phoneNumber, questionId, lessonId) => {
+    const response = await WA_QuestionResponses.findOne({
+        where: {
+            phoneNumber: phoneNumber,
+            questionId: questionId,
+            lessonId: lessonId
+        }
+    });
+
+    return response.dataValues.submittedUserAudio[0];
+};
 
 
 export default {
@@ -475,5 +486,6 @@ export default {
     checkRecordExistsForPhoneNumberAndLessonId,
     getLatestBotResponse,
     getAllTranscriptsForPhoneNumberAndLessonId,
-    getAllJsonFeedbacksForPhoneNumberAndLessonId
+    getAllJsonFeedbacksForPhoneNumberAndLessonId,
+    getAudioUrlForPhoneNumberQuestionIdAndLessonId
 };
