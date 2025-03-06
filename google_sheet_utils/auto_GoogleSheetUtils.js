@@ -385,110 +385,107 @@ const getTopThreeValues = (data, columnIndex) => {
 };
 
 
-const generateStarTeachersImage = async (arrayLevels_List, columnIndex, imagePath,facilitator) => {
-  try {
-    console.log("Generating star teachers image...");
-    const templatePath = path.join(__dirname, 'leaderboard.png'); // Adjust path if needed
-    // const outputPath = path.join(__dirname, 'output.png');
+// const generateStarTeachersImage = async (arrayLevels_List, columnIndex, imagePath,facilitator) => {
+//   try {
+//     console.log("Generating star teachers image...");
+//     const templatePath = path.join(__dirname, 'leaderboard.png'); // Adjust path if needed
     
-    // Use absolute paths instead of path.join
-    // const templatePath = `./leaderboard.png`;
-    const outputPath = `/output.png`;
+//     const outputPath = `/output.png`;
     
-    console.log(`Looking for template at: ${templatePath}`);
+//     console.log(`Looking for template at: ${templatePath}`);
     
-    // Check if input image exists
-    if (!fs.existsSync(templatePath)) {
-      console.error(`Template image not found at path: ${templatePath}`);
-      return null;
-    }
+//     // Check if input image exists
+//     if (!fs.existsSync(templatePath)) {
+//       console.error(`Template image not found at path: ${templatePath}`);
+//       return null;
+//     }
 
-    // Check if output directory exists and is writable
-    const outputDir = imagePath;
-    if (!fs.existsSync(outputDir)) {
-      console.error(`Output directory does not exist: ${outputDir}`);
-      return null;
-    }
+//     // Check if output directory exists and is writable
+//     const outputDir = imagePath;
+//     if (!fs.existsSync(outputDir)) {
+//       console.error(`Output directory does not exist: ${outputDir}`);
+//       return null;
+//     }
 
-    if (!fs.statSync(outputDir).isDirectory()) {
-      console.error(`Output path is not a directory: ${outputDir}`);
-      return null;
-    }
+//     if (!fs.statSync(outputDir).isDirectory()) {
+//       console.error(`Output path is not a directory: ${outputDir}`);
+//       return null;
+//     }
     
-    // Get top three performers and their scores from the specified column
-    const topPerformers = getTopPerformersWithNames(arrayLevels_List, columnIndex);
-    console.log("Top performers:", JSON.stringify(topPerformers, null, 2));
+//     // Get top three performers and their scores from the specified column
+//     const topPerformers = getTopPerformersWithNames(arrayLevels_List, columnIndex);
+//     console.log("Top performers:", JSON.stringify(topPerformers, null, 2));
     
-    if (topPerformers.length === 0) {
-      console.log("No performers found for this column");
-      return null;
-    }
+//     if (topPerformers.length === 0) {
+//       console.log("No performers found for this column");
+//       return null;
+//     }
     
-    // Load template image
-    console.log("Loading template image...");
-    const image = await loadImage(templatePath);
-    console.log(`Image loaded with dimensions: ${image.width}x${image.height}`);
+//     // Load template image
+//     console.log("Loading template image...");
+//     const image = await loadImage(templatePath);
+//     console.log(`Image loaded with dimensions: ${image.width}x${image.height}`);
     
-    // Create canvas with same dimensions as template
-    const canvas = createCanvas(image.width, image.height);
-    const ctx = canvas.getContext('2d');
+//     // Create canvas with same dimensions as template
+//     const canvas = createCanvas(image.width, image.height);
+//     const ctx = canvas.getContext('2d');
     
-    // Draw template on canvas
-    ctx.drawImage(image, 0, 0, image.width, image.height);
+//     // Draw template on canvas
+//     ctx.drawImage(image, 0, 0, image.width, image.height);
     
-    // Position parameters (adjust based on your template)
-    const positions = [
-      { scoreX: 345, scoreY: 367, nameX: 345, nameY: 485 }, // Gold (1st)
-      { scoreX: 493, scoreY: 367, nameX: 493, nameY: 485 }, // Silver (2nd)
-      { scoreX: 196, scoreY: 367, nameX: 196, nameY: 485 }  // Bronze (3rd)
-    ];
+//     // Position parameters (adjust based on your template)
+//     const positions = [
+//       { scoreX: 345, scoreY: 367, nameX: 345, nameY: 485 }, // Gold (1st)
+//       { scoreX: 493, scoreY: 367, nameX: 493, nameY: 485 }, // Silver (2nd)
+//       { scoreX: 196, scoreY: 367, nameX: 196, nameY: 485 }  // Bronze (3rd)
+//     ];
     
-    // Draw scores and names
-    for (let i = 0; i < Math.min(topPerformers.length, 3); i++) {
-      // Draw score
-      ctx.fillStyle = '#003399';
-      ctx.font = '900 26px Arial, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
+//     // Draw scores and names
+//     for (let i = 0; i < Math.min(topPerformers.length, 3); i++) {
+//       // Draw score
+//       ctx.fillStyle = '#003399';
+//       ctx.font = '900 26px Arial, sans-serif';
+//       ctx.textAlign = 'center';
+//       ctx.textBaseline = 'middle';
       
-      const scoreText = `${topPerformers[i].score}%`;
-      ctx.fillText(scoreText, positions[i].scoreX, positions[i].scoreY);
-      console.log(`Drew score ${scoreText} at ${positions[i].scoreX},${positions[i].scoreY}`);
+//       const scoreText = `${topPerformers[i].score}%`;
+//       ctx.fillText(scoreText, positions[i].scoreX, positions[i].scoreY);
+//       console.log(`Drew score ${scoreText} at ${positions[i].scoreX},${positions[i].scoreY}`);
       
-      // Draw names
-      ctx.font = '900 18px Arial, sans-serif';
-      const names = topPerformers[i].names;
+//       // Draw names
+//       ctx.font = '900 18px Arial, sans-serif';
+//       const names = topPerformers[i].names;
       
-      if (names.length === 1) {
-        // Single name
-        ctx.fillText(names[0], positions[i].nameX, positions[i].nameY);
-        console.log(`Drew name ${names[0]} at ${positions[i].nameX},${positions[i].nameY}`);
-      } else {
-        // Multiple names
-        const lineHeight = 24;
-        const startY = positions[i].nameY - ((names.length - 1) * lineHeight / 2);
+//       if (names.length === 1) {
+//         // Single name
+//         ctx.fillText(names[0], positions[i].nameX, positions[i].nameY);
+//         console.log(`Drew name ${names[0]} at ${positions[i].nameX},${positions[i].nameY}`);
+//       } else {
+//         // Multiple names
+//         const lineHeight = 24;
+//         const startY = positions[i].nameY - ((names.length - 1) * lineHeight / 2);
         
-        names.forEach((name, idx) => {
-          ctx.fillText(name, positions[i].nameX, startY + idx * lineHeight);
-          console.log(`Drew name ${name} at ${positions[i].nameX},${startY + idx * lineHeight}`);
-        });
-      }
-    }
+//         names.forEach((name, idx) => {
+//           ctx.fillText(name, positions[i].nameX, startY + idx * lineHeight);
+//           console.log(`Drew name ${name} at ${positions[i].nameX},${startY + idx * lineHeight}`);
+//         });
+//       }
+//     }
     
-    // Save image
-    // console.log(`Saving image to ${outputPath}...`);
-    const buffer = canvas.toBuffer('image/png');
-    // fs.writeFileSync(outputPath, buffer);
+//     // Save image
+//     // console.log(`Saving image to ${outputPath}...`);
+//     const buffer = canvas.toBuffer('image/png');
+//     // fs.writeFileSync(outputPath, buffer);
     
-    // console.log(`Star teachers image saved to ${outputPath}`);
-    uploadImageToCell(buffer, facilitator, 'W58');
-    return outputPath;
-  } catch (error) {
-    console.error("Error generating star teachers image:", error);
-    console.error(error.stack);
-    return null;
-  }
-};
+//     // console.log(`Star teachers image saved to ${outputPath}`);
+//     uploadImageToCell(buffer, facilitator, 'W58');
+//     return outputPath;
+//   } catch (error) {
+//     console.error("Error generating star teachers image:", error);
+//     console.error(error.stack);
+//     return null;
+//   }
+// };
 
 // Updated helper function to get top performers with their names
 const getTopPerformersWithNames = (data, columnIndex) => {
@@ -507,7 +504,7 @@ const getTopPerformersWithNames = (data, columnIndex) => {
         if (!scoreToNames.has(percentValue)) {
           scoreToNames.set(percentValue, []);
         }
-        scoreToNames.get(percentValue).push('• ' + name);
+        scoreToNames.get(percentValue).push(name);
       }
     }
   });
@@ -726,6 +723,150 @@ const uploadImageToCell = async (imageBuffer, facilitator, cellReference) => {
     }
     
     return false;
+  }
+};
+
+
+
+
+
+
+const generateStarTeachersImage = async (arrayLevels_List, columnIndex, imagePath, facilitator) => {
+  try {
+    console.log("Generating star teachers image...");
+    const templatePath = path.join(__dirname, 'leaderboard.png');
+    
+    const outputPath = `/output.png`;
+    
+    console.log(`Looking for template at: ${templatePath}`);
+    
+    // Check if input image exists
+    if (!fs.existsSync(templatePath)) {
+      console.error(`Template image not found at path: ${templatePath}`);
+      return null;
+    }
+    
+    // Get top three performers
+    const topPerformers = getTopPerformersWithNames(arrayLevels_List, columnIndex);
+    console.log("Top performers:", JSON.stringify(topPerformers, null, 2));
+    
+    if (topPerformers.length === 0) {
+      console.log("No performers found for this column");
+      return null;
+    }
+    
+    // Load template image
+    console.log("Loading template image...");
+    const image = await loadImage(templatePath);
+    console.log(`Image loaded with dimensions: ${image.width}x${image.height}`);
+    
+    // Create canvas with same dimensions as template
+    const canvas = createCanvas(image.width, image.height);
+    const ctx = canvas.getContext('2d');
+    
+    // Draw template on canvas
+    ctx.drawImage(image, 0, 0, image.width, image.height);
+    
+    // White box dimensions
+    const boxWidth = 120;
+    const boxHeight = 140;
+    
+    // Position parameters
+    const positions = [
+      { scoreX: 345, scoreY: 367, nameX: 345, nameY: 485, boxWidth: boxWidth, boxHeight: boxHeight }, // Gold (1st)
+      { scoreX: 493, scoreY: 367, nameX: 493, nameY: 485, boxWidth: boxWidth, boxHeight: boxHeight }, // Silver (2nd)
+      { scoreX: 196, scoreY: 367, nameX: 196, nameY: 485, boxWidth: boxWidth, boxHeight: boxHeight }  // Bronze (3rd)
+    ];
+    
+    // Draw scores and names
+    for (let i = 0; i < Math.min(topPerformers.length, 3); i++) {
+      // Draw score
+      ctx.fillStyle = '#003399';
+      ctx.font = '900 26px Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      const scoreText = `${topPerformers[i].score}%`;
+      ctx.fillText(scoreText, positions[i].scoreX, positions[i].scoreY);
+      
+      // Draw names
+      const names = topPerformers[i].names;
+      
+      // Set fixed font size to 16px
+      const fontSize = 17;
+      ctx.font = `900 ${fontSize}px Arial, sans-serif`;
+      ctx.fillStyle = '#003399';
+      ctx.textAlign = 'center';
+      
+      const lineHeight = fontSize * 1.3;
+      const boxPosition = positions[i];
+      
+      // Calculate total height needed for all names
+      let totalHeight = 0;
+      for (const name of names) {
+        const words = name.split(' ');
+        if (words.length <= 2) {
+          totalHeight += lineHeight;
+        } else {
+          totalHeight += Math.ceil(words.length / 2) * lineHeight;
+        }
+      }
+      
+      // Add spacing between different names
+      if (names.length > 1) {
+        totalHeight += (names.length - 1) * (fontSize * 0.2);
+      }
+      
+      // Calculate starting Y position to center all text vertically
+      let startY = boxPosition.nameY - (totalHeight / 2) + fontSize/2;
+      
+      // Draw each name
+      let currentY = startY;
+      for (let j = 0; j < names.length; j++) {
+        const name = names[j];
+        const words = name.split(' ');
+        
+        if (words.length <= 2) {
+          // 1 or 2 words - single line
+          ctx.fillText(`• ${name}`, boxPosition.nameX, currentY);
+          currentY += lineHeight;
+        } else {
+          // 3+ words - split into multiple lines
+          let currentLine = [];
+          let lineCount = 0;
+          
+          for (let k = 0; k < words.length; k++) {
+            currentLine.push(words[k]);
+            
+            // After adding 2 words or on the last word, print the line
+            if (currentLine.length === 2 || k === words.length - 1) {
+              const lineText = currentLine.join(' ');
+              const prefix = lineCount === 0 ? '• ' : '  '; // Bullet only on first line
+              
+              ctx.fillText(`${prefix}${lineText}`, boxPosition.nameX, currentY);
+              currentY += lineHeight;
+              
+              currentLine = [];
+              lineCount++;
+            }
+          }
+        }
+        
+        // Add small gap between different names
+        if (j < names.length - 1) {
+          currentY += fontSize * 0.2;
+        }
+      }
+    }
+    
+    // Save image
+    const buffer = canvas.toBuffer('image/png');
+    uploadImageToCell(buffer, facilitator, 'W58');
+    return outputPath;
+  } catch (error) {
+    console.error("Error generating star teachers image:", error);
+    console.error(error.stack);
+    return null;
   }
 };
 
