@@ -4,6 +4,11 @@ import fs from 'fs';
 import path from 'path';
 import { createCanvas, loadImage } from 'canvas';
 import { PassThrough } from "stream";
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 const creds = JSON.parse(
   await readFile(new URL('../my_cred.json', import.meta.url), 'utf-8')
@@ -221,7 +226,7 @@ const new_loadDataToGoogleSheets = async (
         await formatTopThreeInColumns(arrayLevels_List, facilitator);
          
         let columnIndex = await  getColumnIndexWithPercentageValues(arrayLevels_List, 2);
-        await generateStarTeachersImage(arrayLevels_List, columnIndex, 'D:/Beaj/new_code',facilitator);
+        await generateStarTeachersImage(arrayLevels_List, columnIndex, './',facilitator);
       }
       await retryOperation(() => 
         sheets.spreadsheets.values.batchUpdate({
@@ -383,10 +388,12 @@ const getTopThreeValues = (data, columnIndex) => {
 const generateStarTeachersImage = async (arrayLevels_List, columnIndex, imagePath,facilitator) => {
   try {
     console.log("Generating star teachers image...");
+    const templatePath = path.join(__dirname, 'leaderboard.png'); // Adjust path if needed
+    // const outputPath = path.join(__dirname, 'output.png');
     
     // Use absolute paths instead of path.join
-    const templatePath = `${imagePath}/input.png`;
-    const outputPath = `${imagePath}/output.png`;
+    // const templatePath = `./leaderboard.png`;
+    const outputPath = `/output.png`;
     
     console.log(`Looking for template at: ${templatePath}`);
     
@@ -469,11 +476,11 @@ const generateStarTeachersImage = async (arrayLevels_List, columnIndex, imagePat
     }
     
     // Save image
-    console.log(`Saving image to ${outputPath}...`);
+    // console.log(`Saving image to ${outputPath}...`);
     const buffer = canvas.toBuffer('image/png');
-    fs.writeFileSync(outputPath, buffer);
+    // fs.writeFileSync(outputPath, buffer);
     
-    console.log(`Star teachers image saved to ${outputPath}`);
+    // console.log(`Star teachers image saved to ${outputPath}`);
     uploadImageToCell(buffer, facilitator, 'W58');
     return outputPath;
   } catch (error) {
