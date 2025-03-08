@@ -15,7 +15,11 @@ import etl_T1Repository from "../repositories/etl_T1Repository.js";
 import DashboardUtils_load from "../google_sheet_utils/DashboardUtils.js";
 import CumulativeUtils_load from "../google_sheet_utils/cumulativeUtils.js";
 
+import etlService_auto from "./etlService_Auto.js";
 const runCumulativeSheets = async() =>{
+
+  // await etlService_auto.runETL('T2', 'Week', 'Cohort 41', 41, 10);
+
   let courseId_l1 = 106;
   let courseId_l2 = 111;
   let courseId_l3 = null;
@@ -112,12 +116,17 @@ const runCumulativeSheets = async() =>{
   }
   arrayT1_List2 = arrayT1_List2.map(obj => Object.values(obj).map(value => value));
 
+  let ActivityCompletedCount1 = await etlRepository.getActivityNameCount(courseId_l1, courseId_l2, courseId_l3, 'T1', '');
+  let ActivityCompletedCount2 = await etlRepository.getActivityNameCount(courseId_l10, courseId_l20, courseId_l30, 'T2', '');
+
   // console.log(array_Lesson_List1);
   
   await CumulativeUtils_load(
     array_Lesson_List,
     array_activity_List,
-    arrayT1_List2
+    arrayT1_List2,
+    ActivityCompletedCount1,
+    ActivityCompletedCount2,
   );
 }
 

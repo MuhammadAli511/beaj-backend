@@ -442,7 +442,8 @@ const getAllJsonFeedbacksForPhoneNumberAndLessonId = async (phoneNumber, lessonI
         where: {
             phoneNumber: phoneNumber,
             lessonId: lessonId
-        }
+        },
+        order: [['submissionDate', 'ASC']]
     });
 
     let finalJsonFeedbacks = [];
