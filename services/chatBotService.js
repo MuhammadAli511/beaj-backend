@@ -228,7 +228,6 @@ const webhookService = async (body, res) => {
                 const messageAuth = await checkUserMessageAndAcceptableMessages(
                     userMobileNumber,
                     currentUserState,
-                    message,
                     messageType,
                     messageContent
                 );
@@ -661,13 +660,33 @@ const webhookService = async (body, res) => {
             }
 
             if (message.type === "text" || message.type === "interactive") {
+                const currentLesson = await lessonRepository.getCurrentLesson(
+                    currentUserState.dataValues.currentLessonId
+                );
+                if (messageContent.toLowerCase().includes("yes") || messageContent.toLowerCase().includes("no")) {
+                    await sendCourseLessonToUser(
+                        userMobileNumber,
+                        currentUserState,
+                        currentLesson,
+                        messageType,
+                        messageContent
+                    );
+                    return;
+                }
+            }
+
+
+            if (message.type === "text" || message.type === "interactive") {
                 if (
                     messageContent.toLowerCase().includes("start next activity") ||
                     messageContent.toLowerCase().includes("start next lesson") ||
                     messageContent.toLowerCase().includes("it was great") ||
                     messageContent.toLowerCase().includes("it was great 😁") ||
                     messageContent.toLowerCase().includes("it can be improved") ||
-                    messageContent.toLowerCase().includes("it can be improved 🤔")
+                    messageContent.toLowerCase().includes("it can be improved 🤔") ||
+                    messageContent.toLowerCase().includes("yes") ||
+                    messageContent.toLowerCase().includes("no, try again") ||
+                    messageContent.toLowerCase().includes("no")
                 ) {
                     if (
                         messageContent.toLowerCase().includes("it was great") ||

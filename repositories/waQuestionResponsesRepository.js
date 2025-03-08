@@ -30,6 +30,62 @@ const getById = async (id) => {
     return await WA_QuestionResponses.findByPk(id);
 };
 
+const updateReplace = async (
+    phoneNumber,
+    lessonId,
+    questionId,
+    activityType,
+    alias,
+    submittedAnswerText,
+    submittedUserAudio,
+    submittedFeedbackText,
+    submittedFeedbackAudio,
+    submittedFeedbackJson,
+    correct,
+    numberOfTries,
+    submissionDate
+) => {
+    const updateFields = {};
+
+    if (submittedAnswerText) {
+        updateFields.submittedAnswerText = submittedAnswerText;
+    }
+    if (submittedUserAudio) {
+        updateFields.submittedUserAudio = submittedUserAudio;
+    }
+    if (submittedFeedbackText) {
+        updateFields.submittedFeedbackText = submittedFeedbackText;
+    }
+    if (submittedFeedbackAudio) {
+        updateFields.submittedFeedbackAudio = submittedFeedbackAudio;
+    }
+    if (correct !== null) {
+        updateFields.correct = correct;
+    }
+    if (submittedFeedbackJson) {
+        updateFields.submittedFeedbackJson = submittedFeedbackJson;
+    }
+
+    // Other fields to update (non-array fields)
+    updateFields.phoneNumber = phoneNumber;
+    updateFields.lessonId = lessonId;
+    updateFields.questionId = questionId;
+    updateFields.activityType = activityType;
+    updateFields.alias = alias;
+    updateFields.numberOfTries = numberOfTries;
+    updateFields.submissionDate = submissionDate;
+
+    // Execute the update query based on phoneNumber, lessonId, and questionId
+    return await WA_QuestionResponses.update(updateFields, {
+        where: {
+            phoneNumber: phoneNumber,
+            lessonId: lessonId,
+            questionId: questionId,
+        },
+    });
+};
+
+
 const update = async (
     phoneNumber,
     lessonId,
@@ -472,6 +528,7 @@ export default {
     getAll,
     getById,
     update,
+    updateReplace,
     deleteById,
     getTotalScore,
     getTotalQuestions,
