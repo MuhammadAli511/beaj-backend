@@ -574,8 +574,8 @@ const webhookService = async (body, res) => {
             );
             if (
                 (message.type == "text" || message.type == "interactive") &&
-                (messageContent.toLowerCase().includes("start") ||
-                    messageContent.toLowerCase().includes("start"))
+                (messageContent.toLowerCase() == "start" ||
+                    messageContent.toLowerCase() == "start!")
             ) {
                 if (currentUserState.dataValues.engagement_type == "Course Start") {
                     const startingLesson = await lessonRepository.getNextLesson(
