@@ -1156,9 +1156,9 @@ const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUs
         await createActivityLog(userMobileNumber, "text", "outbound", "Text message type kerain.", null);
         return false;
     }
-    if (acceptableMessagesList.includes("let's start!")) {
-        await sendMessage(userMobileNumber, "Please write: \n\nLet's start!");
-        await createActivityLog(userMobileNumber, "text", "outbound", "Please write: \n\nLet's start!", null);
+    if (acceptableMessagesList.includes("start")) {
+        await sendMessage(userMobileNumber, "Please write: \n\nstart");
+        await createActivityLog(userMobileNumber, "text", "outbound", "Please write: \n\nstart", null);
         return false;
     }
     // Write customized message based on the acceptable messages list
@@ -1173,13 +1173,6 @@ const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUs
     await sendMessage(userMobileNumber, message);
     await createActivityLog(userMobileNumber, "text", "outbound", message, null);
     return false;
-};
-
-const sendWrongMessages = async (userMobileNumber) => {
-    let message = "Please write: \n\nStart";
-    await sendMessage(userMobileNumber, message);
-    await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-    return;
 };
 
 const getNextCourse = async (userMobileNumber) => {
@@ -1276,11 +1269,11 @@ const startCourseForUser = async (userMobileNumber, numbers_to_ignore) => {
 
     // Send Button Message
     // "Are you ready to start level"
-    await sendButtonMessage(userMobileNumber, "Are you ready to start " + level + "?", [{ id: "lets_start", title: "Let's Start!" }]);
+    await sendButtonMessage(userMobileNumber, "Are you ready to start " + level + "?", [{ id: "lets_start", title: "Start" }]);
     await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start " + level + "?", null);
 
     // Update acceptable messages list for the user
-    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["lets start!", "let's start!"]);
+    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start"]);
     return;
 };
 
@@ -2853,7 +2846,6 @@ export {
     demoCourseStart,
     removeUser,
     checkUserMessageAndAcceptableMessages,
-    sendWrongMessages,
     getNextCourse,
     startCourseForUser,
     levelCourseStart,

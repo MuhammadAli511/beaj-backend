@@ -19,7 +19,6 @@ import {
     removeUser,
     checkUserMessageAndAcceptableMessages,
     sendMessage,
-    sendWrongMessages,
     startCourseForUser,
     levelCourseStart,
     sendCourseLessonToUser,
@@ -208,19 +207,12 @@ const webhookService = async (body, res) => {
 
             // DEMO COURSE
             // Step 1: If user does not exist, check if the first message is the onboarding message
-            if (!user && (messageContent == "start" || messageContent == "start!")) {
+            if (!user) {
                 await waUsersMetadataRepository.create({
                     phoneNumber: userMobileNumber,
                     userClickedLink: new Date(),
                 });
                 await outlineMessage(userMobileNumber);
-                return;
-            } else if (
-                !user &&
-                messageContent != "start" &&
-                messageContent != "start!"
-            ) {
-                await sendWrongMessages(userMobileNumber);
                 return;
             }
 
@@ -582,8 +574,8 @@ const webhookService = async (body, res) => {
             );
             if (
                 (message.type == "text" || message.type == "interactive") &&
-                (messageContent.toLowerCase().includes("lets start") ||
-                    messageContent.toLowerCase().includes("let's start"))
+                (messageContent.toLowerCase().includes("start") ||
+                    messageContent.toLowerCase().includes("start"))
             ) {
                 if (currentUserState.dataValues.engagement_type == "Course Start") {
                     const startingLesson = await lessonRepository.getNextLesson(
