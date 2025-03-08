@@ -57,7 +57,7 @@ const removeUser = async (phoneNumber) => {
 };
 
 const removeUserTillCourse = async (phoneNumber) => {
-    await waUserProgressRepository.update(phoneNumber, null, null, null, null, null, null, null, null, ["i want to start my course"]);
+    await waUserProgressRepository.update(phoneNumber, null, null, null, null, null, null, null, null, ["start my course"]);
     await waUserProgressRepository.updateEngagementType(phoneNumber, "School Input");
     await waUserActivityLogsRepository.deleteByPhoneNumber(phoneNumber);
     await waLessonsCompletedRepository.deleteByPhoneNumber(phoneNumber);
@@ -1072,7 +1072,7 @@ const thankYouMessage = async (userMobileNumber) => {
     const registrationImage = await extractConstantMessage("registration");
     await sendMediaMessage(userMobileNumber, registrationImage, 'image');
     await createActivityLog(userMobileNumber, "image", "outbound", registrationImage, null);
-    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["i want to start my course", "try demo"]);
+    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start my course", "try demo"]);
 
     await sleep(2000);
 
@@ -1359,7 +1359,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
             return;
         } else if (checkRegistrationComplete == true && lessonLast == true) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try demo again", "i want to start my course"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try demo again", "start my course"]);
 
             // Sleep
             await sleep(2000);
@@ -1383,7 +1383,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
             return;
         } else if (checkRegistrationComplete == true && lessonLast == false) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try next activity", "i want to start my course"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try next activity", "start my course"]);
 
             // Sleep
             await sleep(2000);

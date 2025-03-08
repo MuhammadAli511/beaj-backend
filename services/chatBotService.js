@@ -92,7 +92,7 @@ const uploadUserDataService = async (users) => {
             phoneNumber: newPhoneNumber,
             persona: user.school_role,
             engagement_type: "",
-            acceptableMessages: ["i want to start my course"],
+            acceptableMessages: ["start my course"],
             lastUpdated: new Date(),
         });
         if (user["Target.Group"] == "T1" || user["Target.Group"] == "T2") {
@@ -310,7 +310,7 @@ const webhookService = async (body, res) => {
                 currentUserState.dataValues.engagement_type == "School Input"
             ) {
                 if (
-                    !messageContent.toLowerCase().includes("i want to start my course")
+                    !messageContent.toLowerCase().includes("start my course")
                 ) {
                     if (user.dataValues.isTeacher != null) {
                         await waUsersMetadataRepository.update(userMobileNumber, {
@@ -570,7 +570,7 @@ const webhookService = async (body, res) => {
             // START MAIN COURSE
             if (
                 message.type == "text" &&
-                messageContent.toLowerCase().includes("i want to start my course")
+                messageContent.toLowerCase().includes("start my course")
             ) {
                 await startCourseForUser(userMobileNumber, numbers_to_ignore);
                 return;
@@ -725,7 +725,7 @@ const webhookService = async (body, res) => {
                             // update acceptable messages list for the user
                             await waUserProgressRepository.updateAcceptableMessagesList(
                                 userMobileNumber,
-                                ["i want to start my course"]
+                                ["start my course"]
                             );
                             return;
                         }
