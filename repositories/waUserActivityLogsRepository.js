@@ -90,6 +90,19 @@ const countMessagesInLastnSeconds = async (phoneNumber, seconds) => {
     return messagesInLastnSeconds.length;
 };
 
+const getLastMessageTime = async () => {
+    const lastMessages = await WA_UserActivityLogs.findAll({
+        attributes: [
+            'phoneNumber',
+            [Sequelize.fn('MAX', Sequelize.col('timestamp')), 'timestamp']
+        ],
+        group: ['phoneNumber']
+    });
+
+    return lastMessages;
+};
+
+
 
 export default {
     create,
@@ -101,5 +114,6 @@ export default {
     deleteByPhoneNumber,
     getCountBySpeciifcMessage,
     getLastActiveUsers,
-    countMessagesInLastnSeconds
+    countMessagesInLastnSeconds,
+    getLastMessageTime
 };

@@ -19,7 +19,6 @@ import {
     removeUser,
     checkUserMessageAndAcceptableMessages,
     sendMessage,
-    sendWrongMessages,
     startCourseForUser,
     levelCourseStart,
     sendCourseLessonToUser,
@@ -92,7 +91,7 @@ const uploadUserDataService = async (users) => {
             phoneNumber: newPhoneNumber,
             persona: user.school_role,
             engagement_type: "",
-            acceptableMessages: ["i want to start my course"],
+            acceptableMessages: ["start my course"],
             lastUpdated: new Date(),
         });
         if (user["Target.Group"] == "T1" || user["Target.Group"] == "T2") {
@@ -129,6 +128,7 @@ const webhookService = async (body, res) => {
                 message.audio?.id ||
                 message.video?.id ||
                 message.interactive?.button_reply?.title
+                || message.button?.text
                 }`;
             console.log(logger);
             if (message.type === "image") {
@@ -142,24 +142,13 @@ const webhookService = async (body, res) => {
                 messageContent = await retrieveMediaURL(message.video.id);
             } else if (message.type === "text") {
                 messageContent = message.text?.body.toLowerCase().trim() || "";
-                createActivityLog(
-                    userMobileNumber,
-                    "text",
-                    "inbound",
-                    message.text?.body,
-                    null
-                );
+                createActivityLog(userMobileNumber, "text", "inbound", message.text?.body, null);
             } else if (message.type === "interactive") {
-                messageContent = message.interactive.button_reply.title
-                    .toLowerCase()
-                    .trim();
-                createActivityLog(
-                    userMobileNumber,
-                    "template",
-                    "inbound",
-                    messageContent,
-                    null
-                );
+                messageContent = message.interactive.button_reply.title.toLowerCase().trim();
+                createActivityLog(userMobileNumber, "template", "inbound", messageContent, null);
+            } else if (message.type == "button") {
+                messageContent = message.button.text.toLowerCase().trim();
+                createActivityLog(userMobileNumber, "template", "inbound", messageContent, null);
             } else {
                 return;
             }
@@ -208,19 +197,12 @@ const webhookService = async (body, res) => {
 
             // DEMO COURSE
             // Step 1: If user does not exist, check if the first message is the onboarding message
-            if (!user && (messageContent == "start" || messageContent == "start!")) {
+            if (!user) {
                 await waUsersMetadataRepository.create({
                     phoneNumber: userMobileNumber,
                     userClickedLink: new Date(),
                 });
                 await outlineMessage(userMobileNumber);
-                return;
-            } else if (
-                !user &&
-                messageContent != "start" &&
-                messageContent != "start!"
-            ) {
-                await sendWrongMessages(userMobileNumber);
                 return;
             }
 
@@ -228,7 +210,6 @@ const webhookService = async (body, res) => {
                 const messageAuth = await checkUserMessageAndAcceptableMessages(
                     userMobileNumber,
                     currentUserState,
-                    message,
                     messageType,
                     messageContent
                 );
@@ -311,7 +292,7 @@ const webhookService = async (body, res) => {
                 currentUserState.dataValues.engagement_type == "School Input"
             ) {
                 if (
-                    !messageContent.toLowerCase().includes("i want to start my course")
+                    !messageContent.toLowerCase().includes("start my course")
                 ) {
                     if (user.dataValues.isTeacher != null) {
                         await waUsersMetadataRepository.update(userMobileNumber, {
@@ -571,7 +552,7 @@ const webhookService = async (body, res) => {
             // START MAIN COURSE
             if (
                 message.type == "text" &&
-                messageContent.toLowerCase().includes("i want to start my course")
+                messageContent.toLowerCase().includes("start my course")
             ) {
                 await startCourseForUser(userMobileNumber, numbers_to_ignore);
                 return;
@@ -583,8 +564,8 @@ const webhookService = async (body, res) => {
             );
             if (
                 (message.type == "text" || message.type == "interactive") &&
-                (messageContent.toLowerCase().includes("lets start") ||
-                    messageContent.toLowerCase().includes("let's start"))
+                (messageContent.toLowerCase() == "start" ||
+                    messageContent.toLowerCase() == "start!")
             ) {
                 if (currentUserState.dataValues.engagement_type == "Course Start") {
                     const startingLesson = await lessonRepository.getNextLesson(
@@ -661,13 +642,33 @@ const webhookService = async (body, res) => {
             }
 
             if (message.type === "text" || message.type === "interactive") {
+                const currentLesson = await lessonRepository.getCurrentLesson(
+                    currentUserState.dataValues.currentLessonId
+                );
+                if (messageContent.toLowerCase().includes("yes") || messageContent.toLowerCase().includes("no")) {
+                    await sendCourseLessonToUser(
+                        userMobileNumber,
+                        currentUserState,
+                        currentLesson,
+                        messageType,
+                        messageContent
+                    );
+                    return;
+                }
+            }
+
+
+            if (message.type === "text" || message.type === "interactive" || message.type === "button") {
                 if (
                     messageContent.toLowerCase().includes("start next activity") ||
                     messageContent.toLowerCase().includes("start next lesson") ||
                     messageContent.toLowerCase().includes("it was great") ||
                     messageContent.toLowerCase().includes("it was great 😁") ||
                     messageContent.toLowerCase().includes("it can be improved") ||
-                    messageContent.toLowerCase().includes("it can be improved 🤔")
+                    messageContent.toLowerCase().includes("it can be improved 🤔") ||
+                    messageContent.toLowerCase().includes("yes") ||
+                    messageContent.toLowerCase().includes("no, try again") ||
+                    messageContent.toLowerCase().includes("no")
                 ) {
                     if (
                         messageContent.toLowerCase().includes("it was great") ||
@@ -706,7 +707,7 @@ const webhookService = async (body, res) => {
                             // update acceptable messages list for the user
                             await waUserProgressRepository.updateAcceptableMessagesList(
                                 userMobileNumber,
-                                ["i want to start my course"]
+                                ["start my course"]
                             );
                             return;
                         }

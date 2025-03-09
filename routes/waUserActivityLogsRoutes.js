@@ -19,6 +19,9 @@ router.get('/getAll', beajFacilitatorsAuth, waUserActivityLogsController.getAllW
 // @query {number} [pageSize=15] - The number of logs per page
 router.get('/getByPhoneNumber/:phoneNumber', beajFacilitatorsAuth, waUserActivityLogsController.getWaUserActivityLogByPhoneNumberController);
 
+// GET api/waUserActivityLogs/getLastMessageTime
+router.get('/getLastMessageTime', beajFacilitatorsAuth, waUserActivityLogsController.getLastMessageTimeController);
+
 // Use error handler middleware
 router.use(errorHandler);
 
