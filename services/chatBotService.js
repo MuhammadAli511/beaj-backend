@@ -128,6 +128,7 @@ const webhookService = async (body, res) => {
                 message.audio?.id ||
                 message.video?.id ||
                 message.interactive?.button_reply?.title
+                || message.button?.text
                 }`;
             console.log(logger);
             if (message.type === "image") {
@@ -141,35 +142,13 @@ const webhookService = async (body, res) => {
                 messageContent = await retrieveMediaURL(message.video.id);
             } else if (message.type === "text") {
                 messageContent = message.text?.body.toLowerCase().trim() || "";
-                createActivityLog(
-                    userMobileNumber,
-                    "text",
-                    "inbound",
-                    message.text?.body,
-                    null
-                );
+                createActivityLog(userMobileNumber, "text", "inbound", message.text?.body, null);
             } else if (message.type === "interactive") {
-                messageContent = message.interactive.button_reply.title
-                    .toLowerCase()
-                    .trim();
-                createActivityLog(
-                    userMobileNumber,
-                    "template",
-                    "inbound",
-                    messageContent,
-                    null
-                );
-            } else if (message.type === "button") {
-                messageContent = message.button.text
-                    .toLowerCase()
-                    .trim();
-                createActivityLog(
-                    userMobileNumber,
-                    "template",
-                    "inbound",
-                    messageContent,
-                    null
-                );
+                messageContent = message.interactive.button_reply.title.toLowerCase().trim();
+                createActivityLog(userMobileNumber, "template", "inbound", messageContent, null);
+            } else if (message.type == "button") {
+                messageContent = message.button.text.toLowerCase().trim();
+                createActivityLog(userMobileNumber, "template", "inbound", messageContent, null);
             } else {
                 return;
             }
@@ -679,7 +658,7 @@ const webhookService = async (body, res) => {
             }
 
 
-            if (message.type === "text" || message.type === "interactive") {
+            if (message.type === "text" || message.type === "interactive" || message.type === "button") {
                 if (
                     messageContent.toLowerCase().includes("start next activity") ||
                     messageContent.toLowerCase().includes("start next lesson") ||
