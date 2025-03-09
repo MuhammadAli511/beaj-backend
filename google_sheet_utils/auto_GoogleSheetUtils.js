@@ -55,6 +55,7 @@ const new_loadDataToGoogleSheets = async (
     
     const authClient = await auth.getClient();
     const spreadsheetId = "1wAzQ21EL9ELMK-Isb9_jGnpM7RcneYvqt0UD0GAhS1U";
+    const fac_arr = [19, 20, 43, 44, 17, 18, 41, 42];
 
     if(edit_flag == 1){
 
@@ -224,9 +225,10 @@ const new_loadDataToGoogleSheets = async (
       if(module_week == "Week"){
         console.log("Formatting top three values...");
         await formatTopThreeInColumns(arrayLevels_List, facilitator);
-         
-        let columnIndex = await  getColumnIndexWithPercentageValues(arrayLevels_List, 2);
-        await generateStarTeachersImage(arrayLevels_List, columnIndex, './',facilitator);
+       
+          let columnIndex = await  getColumnIndexWithPercentageValues(arrayLevels_List, 2,facilitator);
+          await generateStarTeachersImage(arrayLevels_List, columnIndex, './',facilitator);
+       
       }
       await retryOperation(() => 
         sheets.spreadsheets.values.batchUpdate({
@@ -522,13 +524,20 @@ const getTopPerformersWithNames = (data, columnIndex) => {
 };
 
 // Updated column index finder function
-const getColumnIndexWithPercentageValues = (arrayLevels_List, minValues = 2) => {
+const getColumnIndexWithPercentageValues = (arrayLevels_List, minValues, facilitator) => {
   if (!arrayLevels_List || arrayLevels_List.length === 0) {
     throw new Error("arrayLevels_List is empty or undefined");
   }
 
   // Predefined list of column indexes to check
   const columnIndexes = [3, 4, 5, 6, 8, 9, 10, 11, 13, 14, 15, 16];
+  const fac_arr = [9,10];
+  
+  // Convert facilitator to number to ensure proper comparison
+  const numericFacilitator = parseInt(facilitator, 10);
+  
+  console.log(`Facilitator: ${facilitator}, Numeric: ${numericFacilitator}`);
+  console.log(`Is in special array: ${fac_arr.includes(numericFacilitator)}`);
 
   // Iterate through the column indexes in reverse order
   for (let i = columnIndexes.length - 1; i >= 0; i--) {
@@ -546,15 +555,25 @@ const getColumnIndexWithPercentageValues = (arrayLevels_List, minValues = 2) => 
       }
     }
 
-    // If the column has at least minValues percentage values, return it
+    // Debug logging
+    console.log(`Column ${col} has ${count} percentage values (min required: ${minValues})`);
+
+    // If the column has at least minValues percentage values, determine return value
     if (count >= minValues) {
-      return col;
+      // Check if the facilitator is in the special array
+      if (fac_arr.includes(numericFacilitator)) {
+        console.log(`Found suitable column ${col}, returning ${col-1} for special facilitator`);
+        return col - 1; // Return previous column for special facilitators
+      } else {
+        console.log(`Found suitable column ${col}, returning ${col} for regular facilitator`);
+        return col; // Return current column for regular facilitators
+      }
     }
   }
 
+  console.log("No column found with sufficient percentage values");
   throw new Error(`No column found with at least ${minValues} percentage values`);
 };
-
 const deleteImagesFromSheet = async (facilitator) => {
   try {
     console.log(`Deleting images from sheet for facilitator ${facilitator}...`);
@@ -793,7 +812,7 @@ const generateStarTeachersImage = async (arrayLevels_List, columnIndex, imagePat
       const names = topPerformers[i].names;
       
       // Set fixed font size to 16px
-      const fontSize = 17;
+      const fontSize = 14;
       ctx.font = `900 ${fontSize}px Arial, sans-serif`;
       ctx.fillStyle = '#003399';
       ctx.textAlign = 'center';
