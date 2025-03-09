@@ -159,6 +159,17 @@ const webhookService = async (body, res) => {
                     messageContent,
                     null
                 );
+            } else if (message.type === "button") {
+                messageContent = message.button.text
+                    .toLowerCase()
+                    .trim();
+                createActivityLog(
+                    userMobileNumber,
+                    "template",
+                    "inbound",
+                    messageContent,
+                    null
+                );
             } else {
                 return;
             }
