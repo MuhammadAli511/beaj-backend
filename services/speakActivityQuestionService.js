@@ -6,10 +6,10 @@ import speakActivityQuestionRepository from '../repositories/speakActivityQuesti
 const createSpeakActivityQuestionService = async (question, mediaFile, answer, lessonId, questionNumber, activityType) => {
     try {
         let mediaUrl = null;
-        if (mediaFile) {
+        if (mediaFile && typeof mediaFile === 'object') {
             mediaUrl = await azure_blob.uploadToBlobStorage(mediaFile);
         } else {
-            if (activityType != 'conversationalAgencyBot') {
+            if (activityType != 'conversationalAgencyBot' || mediaFile == null || mediaFile == undefined || mediaFile == "") {
                 mediaUrl = await azureAIServices.elevenLabsTextToSpeechAndUpload(question);
             } else {
                 if (question.includes("<question>")) {
@@ -47,6 +47,8 @@ const updateSpeakActivityQuestionService = async (id, question, mediaFile, answe
         let mediaUrl = null;
         if (mediaFile && typeof mediaFile === 'object') {
             mediaUrl = await azure_blob.uploadToBlobStorage(mediaFile);
+        } else if (typeof mediaFile === 'string' && mediaFile.trim() != "") {
+            mediaUrl = mediaFile;
         } else {
             if (activityType != 'conversationalAgencyBot') {
                 mediaUrl = await azureAIServices.elevenLabsTextToSpeechAndUpload(question);
