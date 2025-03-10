@@ -1,12 +1,12 @@
 import service from '../services/chatBotService.js';
 import dotenv from 'dotenv';
 dotenv.config();
+import https from 'https';
 import axios from 'axios';
 
 const webhookController = async (req, res, next) => {
     try {
         if (process.env.ENVIRONMENT == 'DEV') {
-            console.log("ENVIRONMENT", process.env.ENVIRONMENT);
             if (
                 req.body.entry &&
                 req.body.entry[0].changes &&
@@ -15,15 +15,29 @@ const webhookController = async (req, res, next) => {
             ) {
                 const message = req.body.entry[0].changes[0].value.messages[0];
                 const phone_number = "+" + message.from;
-                console.log("phone_number", phone_number);
 
-                const salmanEndpoint = "https://smiling-pro-sheep.ngrok-free.app";
-                const aliEndpoint = "https://sensibly-solid-aardvark.ngrok-free.app";
+                let incomingLink = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+
+                // Check if this is a direct request to the ngrok endpoints
+                if (incomingLink.includes("ngrok-free.app/api/chatbot/webhook")) {
+                    await service.webhookService(req.body, res);
+                    return;
+                }
+
+                // Define the ngrok endpoints for forwarding
+                const salmanEndpoint = "http://smiling-pro-sheep.ngrok-free.app/api/chatbot/webhook";
+                const aliEndpoint = "http://sensibly-solid-aardvark.ngrok-free.app/api/chatbot/webhook";
                 if (phone_number == "+923012232148") {
                     try {
-                        console.log("salmanEndpoint", salmanEndpoint);
                         const response = await axios.post(salmanEndpoint, req.body, {
-                            headers: req.headers,
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            httpsAgent: new https.Agent({
+                                rejectUnauthorized: false
+                            }),
+                            timeout: 10000 // 10 second timeout
                         });
 
                         return res.json(response.data);
@@ -34,9 +48,15 @@ const webhookController = async (req, res, next) => {
                 }
                 else if (phone_number == "+923225036358") {
                     try {
-                        console.log("aliEndpoint", aliEndpoint);
                         const response = await axios.post(aliEndpoint, req.body, {
-                            headers: req.headers,
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            httpsAgent: new https.Agent({
+                                rejectUnauthorized: false
+                            }),
+                            timeout: 10000 // 10 second timeout
                         });
 
                         return res.json(response.data);
@@ -46,13 +66,11 @@ const webhookController = async (req, res, next) => {
                     }
                 }
                 else {
-                    console.log("Number not found");
                     await service.webhookService(req.body, res);
                 }
             }
         }
         else {
-            console.log("PROD");
             await service.webhookService(req.body, res);
         }
     } catch (error) {
@@ -73,7 +91,6 @@ const verifyWebhookController = async (req, res, next) => {
 const uploadUserDataController = async (req, res, next) => {
     try {
         const { users } = req.body;
-
 
         const count = await service.uploadUserDataService(users);
         res.status(200).send({ message: `Successfully uploaded ${count} users.` });
