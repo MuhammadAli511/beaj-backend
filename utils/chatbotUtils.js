@@ -1778,8 +1778,8 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     );
 
                     // Confirmation message asking to retry with yes and no buttons
-                    await sendButtonMessage(userMobileNumber, "Submit response", [{ id: "yes", title: "Yes" }, { id: "no", title: "No, try again" }]);
-                    await createActivityLog(userMobileNumber, "template", "outbound", "Submit response", null);
+                    await sendButtonMessage(userMobileNumber, "Submit response? 🧐", [{ id: "yes", title: "Yes" }, { id: "no", title: "No, try again" }]);
+                    await createActivityLog(userMobileNumber, "template", "outbound", "Submit response? 🧐", null);
 
                     // Update acceptable messages list for the user
                     await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["yes", "no", "no, try again"]);
@@ -2854,5 +2854,6 @@ export {
     weekEndScoreCalculation,
     teacherInputMessage,
     schoolNameInputMessage,
-    createFeedback
+    createFeedback,
+    sendButtonMessage
 };

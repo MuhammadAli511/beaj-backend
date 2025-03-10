@@ -37,7 +37,10 @@ const updateSpeakActivityQuestionController = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { question, answer, lessonId, questionNumber, activityType } = req.body;
-        const mediaFile = req.file;
+        let mediaFile = req.file;
+        if (mediaFile == null || mediaFile == undefined || mediaFile == "") {
+            mediaFile = req.body.file;
+        }
         await service.updateSpeakActivityQuestionService(id, question, mediaFile, answer, lessonId, questionNumber, activityType);
         res.status(200).send({ message: "Question updated successfully" });
     } catch (error) {
