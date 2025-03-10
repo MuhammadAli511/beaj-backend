@@ -939,7 +939,6 @@ LEFT JOIN
 WHERE 
     m."targetGroup" = '${grp}' and m."cohort" != 'Pilot' order by m."targetGroup",m."cohort", m."phoneNumber" asc;`;
 
-
     const res = await sequelize.query(qry);
 
     return res[0];
