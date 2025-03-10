@@ -25,7 +25,8 @@ import {
     removeUserTillCourse,
     teacherInputMessage,
     schoolNameInputMessage,
-    createFeedback
+    createFeedback,
+    sendButtonMessage
 } from "../utils/chatbotUtils.js";
 
 dotenv.config();
@@ -693,17 +694,8 @@ const webhookService = async (body, res) => {
                             (currentUserState.dataValues.currentWeek - 1) * 6 +
                             currentUserState.dataValues.currentDay;
                         if (lessonNumberCheck >= 24) {
-                            await sendMessage(
-                                userMobileNumber,
-                                "You have completed all the lessons in this course. Please wait for the next course to start."
-                            );
-                            await createActivityLog(
-                                userMobileNumber,
-                                "text",
-                                "outbound",
-                                "You have completed all the lessons in this course. Please wait for the next course to start.",
-                                null
-                            );
+                            await sendButtonMessage(userMobileNumber, 'You have completed all the lessons in this course. Click the button below to proceed', [{ id: 'start_my_course', title: 'Start my course' }]);
+                            await createActivityLog(userMobileNumber, "template", "outbound", "You have completed all the lessons in this course. Click the button below to proceed", null);
                             // update acceptable messages list for the user
                             await waUserProgressRepository.updateAcceptableMessagesList(
                                 userMobileNumber,

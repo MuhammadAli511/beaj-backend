@@ -2854,5 +2854,6 @@ export {
     weekEndScoreCalculation,
     teacherInputMessage,
     schoolNameInputMessage,
-    createFeedback
+    createFeedback,
+    sendButtonMessage
 };
