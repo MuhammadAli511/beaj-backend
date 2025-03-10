@@ -5,20 +5,23 @@ import axios from 'axios';
 
 const webhookController = async (req, res, next) => {
     try {
-        if (process.env.ENVIRONMENT != 'DEV') {
+        if (process.env.ENVIRONMENT == 'DEV') {
+            console.log("ENVIRONMENT", process.env.ENVIRONMENT);
             if (
-                body.entry &&
-                body.entry[0].changes &&
-                body.entry[0].changes[0].value.messages &&
-                body.entry[0].changes[0].value.statuses == undefined
+                req.body.entry &&
+                req.body.entry[0].changes &&
+                req.body.entry[0].changes[0].value.messages &&
+                req.body.entry[0].changes[0].value.statuses == undefined
             ) {
                 const message = req.body.entry[0].changes[0].value.messages[0];
                 const phone_number = "+" + message.from;
+                console.log("phone_number", phone_number);
 
                 const salmanEndpoint = "https://smiling-pro-sheep.ngrok-free.app";
                 const aliEndpoint = "https://sensibly-solid-aardvark.ngrok-free.app";
                 if (phone_number == "+923012232148") {
                     try {
+                        console.log("salmanEndpoint", salmanEndpoint);
                         const response = await axios.post(salmanEndpoint, req.body, {
                             headers: req.headers,
                         });
@@ -31,6 +34,7 @@ const webhookController = async (req, res, next) => {
                 }
                 else if (phone_number == "+923225036358") {
                     try {
+                        console.log("aliEndpoint", aliEndpoint);
                         const response = await axios.post(aliEndpoint, req.body, {
                             headers: req.headers,
                         });
@@ -42,12 +46,14 @@ const webhookController = async (req, res, next) => {
                     }
                 }
                 else {
-                    await service.webhookService(body, res);
+                    console.log("Number not found");
+                    await service.webhookService(req.body, res);
                 }
             }
         }
         else {
-            await service.webhookService(body, res);
+            console.log("PROD");
+            await service.webhookService(req.body, res);
         }
     } catch (error) {
         error.fileName = 'chatBotController.js';
