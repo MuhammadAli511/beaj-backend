@@ -667,7 +667,9 @@ const getAcceptableMessagesList = async (activityType) => {
     }
 };
 
-const sendMessage = async (to, body) => {
+const sendMessage = async (to, body, retryAttempt = 0) => {
+    const MAX_RETRIES = 15;
+
     try {
         await axios.post(
             `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
@@ -686,10 +688,20 @@ const sendMessage = async (to, body) => {
         let logger = `Outbound Message: User: ${to}, Message Type: text, Message Content: ${body}`;
         console.log(logger);
     } catch (error) {
-        console.error(
-            "Error sending message:",
-            error.response ? error.response.data : error.message
-        );
+        const errData = error.response ? error.response.data : null;
+        if (errData && errData.error && errData.error.code === 131056) {
+            console.warn(`Pair rate limit hit (131056). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
+            if (retryAttempt < MAX_RETRIES) {
+                const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
+                console.log(`Retrying after ${waitTimeSeconds} seconds...`);
+                await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
+                return sendMessage(to, body, retryAttempt + 1);
+            } else {
+                console.error(`Max retries reached. Giving up on message to ${to}.`);
+            }
+        } else {
+            console.error("Error sending message:", errData ? errData : error.message);
+        }
     }
 };
 
@@ -849,7 +861,8 @@ const extractConstantMessage = async (key) => {
     return formattedMessage;
 };
 
-const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null) => {
+const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, retryAttempt = 0) => {
+    const MAX_RETRIES = 15;
     try {
         if (mediaType == 'video') {
             await axios.post(
@@ -922,11 +935,26 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null) => 
         let logger = `Outbound Message: User: ${to}, Message Type: ${mediaType}, Message Content: ${mediaUrl}`;
         console.log(logger);
     } catch (error) {
-        console.error('Error sending media message:', error.response ? error.response.data : error.message);
+        const errData = error.response ? error.response.data : null;
+        if (errData && errData.error && errData.error.code === 131056) {
+            console.warn(`Pair rate limit hit (131056). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
+            if (retryAttempt < MAX_RETRIES) {
+                const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
+                console.log(`Retrying after ${waitTimeSeconds} seconds...`);
+                await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
+                return sendMediaMessage(to, mediaUrl, mediaType, captionText, retryAttempt + 1);
+            } else {
+                console.error(`Max retries reached. Giving up on message to ${to}.`);
+            }
+        } else {
+            console.error("Error sending message:", errData ? errData : error.message);
+        }
     }
 };
 
-const sendButtonMessage = async (to, bodyText, buttonOptions) => {
+const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0) => {
+    const MAX_RETRIES = 15;
+
     try {
         const response = await axios.post(
             `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
@@ -961,7 +989,20 @@ const sendButtonMessage = async (to, bodyText, buttonOptions) => {
         let logger = `Outbound Message: User: ${to}, Message Type: button, Message Content: ${bodyText}`;
         console.log(logger);
     } catch (error) {
-        console.error('Error sending button message:', error.response ? error.response.data : error.message);
+        const errData = error.response ? error.response.data : null;
+        if (errData && errData.error && errData.error.code === 131056) {
+            console.warn(`Pair rate limit hit (131056). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
+            if (retryAttempt < MAX_RETRIES) {
+                const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
+                console.log(`Retrying after ${waitTimeSeconds} seconds...`);
+                await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
+                return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1);
+            } else {
+                console.error(`Max retries reached. Giving up on message to ${to}.`);
+            }
+        } else {
+            console.error("Error sending message:", errData ? errData : error.message);
+        }
     }
 };
 
