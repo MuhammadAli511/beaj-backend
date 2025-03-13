@@ -47,7 +47,7 @@ const updateSpeakActivityQuestionService = async (id, question, mediaFile, answe
         let mediaUrl = null;
         if (mediaFile && typeof mediaFile === 'object') {
             mediaUrl = await azure_blob.uploadToBlobStorage(mediaFile);
-        } else if (typeof mediaFile === 'string' && mediaFile.trim() != "") {
+        } else if (typeof mediaFile === 'string' && mediaFile.trim() != "" && activityType != 'conversationalAgencyBot' && activityType != 'conversationalQuestionsBot') {
             mediaUrl = mediaFile;
         } else {
             if (activityType != 'conversationalAgencyBot') {
