@@ -56,9 +56,9 @@ const new_loadDataToGoogleSheets = async (
     const authClient = await auth.getClient();
     const spreadsheetId = "1wAzQ21EL9ELMK-Isb9_jGnpM7RcneYvqt0UD0GAhS1U";
     const fac_arr = [19, 20, 43, 44, 17, 18, 41, 42];
+     arrayLevels_List = capitalizeNames(arrayLevels_List);
 
     if(edit_flag == 1){
-
       console.log("Clearing existing data...");
       await retryOperation(() => 
         sheets.spreadsheets.values.update({
@@ -246,6 +246,21 @@ const new_loadDataToGoogleSheets = async (
     error.fileName = "googleSheetUtils.js";
     throw error; // Re-throw so caller knows there was an error
   }
+};
+
+const capitalizeNames = (arrayLevels_List) => {
+  return arrayLevels_List.map(row => {
+    // Ensure the row has at least 3 columns and the third column is a string
+    if (row.length > 2 && typeof row[2] === 'string') {
+      // Split the name into words, capitalize each word, and join them back
+      const capitalized = row[2]
+        .split(' ') // Split by spaces
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()) // Capitalize first letter
+        .join(' '); // Join back with spaces
+      row[2] = capitalized; // Update the name in the row
+    }
+    return row;
+  });
 };
 
 const formatTopThreeInColumns = async (arrayLevels_List, facilitator) => {
