@@ -9,15 +9,15 @@ const createSpeakActivityQuestionService = async (question, mediaFile, answer, l
         if (mediaFile && typeof mediaFile === 'object') {
             mediaUrl = await azure_blob.uploadToBlobStorage(mediaFile);
         } else {
-            if (activityType != 'conversationalAgencyBot' || mediaFile == null || mediaFile == undefined || mediaFile == "") {
-                mediaUrl = await azureAIServices.elevenLabsTextToSpeechAndUpload(question);
-            } else {
+            if (activityType == 'conversationalAgencyBot') {
                 if (question.includes("<question>")) {
                     const questionText = question.match(/<question>(.*?)<\/question>/s)[1].trim();
                     if (questionText != "") {
                         mediaUrl = await azureAIServices.elevenLabsTextToSpeechAndUpload(questionText);
                     }
                 }
+            } else {
+                mediaUrl = await azureAIServices.elevenLabsTextToSpeechAndUpload(question);
             }
         }
 
