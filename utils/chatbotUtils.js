@@ -2233,7 +2233,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         await waUserProgressRepository.updateRetryCounter(userMobileNumber, 0);
 
                         // Text message
-                        let correctMessage = "You said:\n" + recognizedText + "\n✅ Great!";
+                        let correctMessage = "You said:\n\n" + recognizedText + "\n✅ Great!";
                         await sendMessage(userMobileNumber, correctMessage);
                         await createActivityLog(userMobileNumber, "text", "outbound", correctMessage, null);
                     }
@@ -2244,7 +2244,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                             await waUserProgressRepository.updateRetryCounter(userMobileNumber, currentUserState.dataValues.retryCounter + 1);
 
                             // Text message
-                            let wrongMessage = "You said:\n" + recognizedText + "\n❌ Try Again!";
+                            let wrongMessage = "You said:\n\n" + recognizedText + "\n❌ Try Again!";
                             await sendMessage(userMobileNumber, wrongMessage);
                             await createActivityLog(userMobileNumber, "text", "outbound", wrongMessage, null);
                             return;
@@ -2253,7 +2253,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                             await waUserProgressRepository.updateRetryCounter(userMobileNumber, 0);
 
                             // Text message
-                            let wrongMessage = "You said:\n" + recognizedText + "\n❌ The correct answer is: " + answersArray[0];
+                            let wrongMessage = "You said:\n\n" + recognizedText + "\n❌ The correct answer is: " + answersArray[0];
                             await sendMessage(userMobileNumber, wrongMessage);
                             await createActivityLog(userMobileNumber, "text", "outbound", wrongMessage, null);
                         }
@@ -2665,93 +2665,143 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 await createActivityLog(userMobileNumber, "text", "outbound", waitingMessage, null);
                 const recognizedText = await azureAIServices.azureSpeechToTextAnyLanguage(messageContent.data);
                 if (recognizedText != null && recognizedText != "") {
-                    let chatThread;
-                    let chatThreadMain;
                     if (currentUserState.dataValues.questionNumber == 1) {
-                        chatThreadMain = await openai.beta.threads.create();
-                        chatThread = chatThreadMain.id;
-                        await waUserProgressRepository.updateOpenaiThreadId(userMobileNumber, null);
-                        await waUserProgressRepository.updateOpenaiThreadId(userMobileNumber, chatThread);
-                    } else {
-                        chatThread = await waUserProgressRepository.getOpenaiThreadId(userMobileNumber);
-                        chatThread = chatThread.dataValues.openaiThreadId;
-                    }
-
-
-                    // Language Detection
-                    let modelLanguagePrompt = "Detect the majority of the language used in the provided text. Respond in one word only. The two options are: English or Urdu. You must respond with only one word."
-                    const languageDetectionFeedback = await azureAIServices.openaiCustomFeedback(recognizedText, modelLanguagePrompt);
-                    if (languageDetectionFeedback.toLowerCase().includes("english")) {
-                        modelLanguagePrompt = "Respond in simple English."
-                    } else {
-                        modelLanguagePrompt = "Use simple, easy-to-understand Urdu language, not jargon to respond."
-                    }
-                    let firstPrompt = currentConversationalAgencyBotQuestion.dataValues.question + "\n\n\n" + modelLanguagePrompt;
-                    firstPrompt += "\n\n\nMy response: " + recognizedText;
-
-                    await openai.beta.threads.messages.create(
-                        chatThread,
-                        {
-                            role: "user", content: firstPrompt
+                        // Language Detection
+                        let modelLanguagePrompt = "Detect the majority of the language used in the provided text. Respond in one word only. The two options are: English or Urdu. You must respond with only one word."
+                        const languageDetectionFeedback = await azureAIServices.openaiCustomFeedback(recognizedText, modelLanguagePrompt);
+                        if (languageDetectionFeedback.toLowerCase().includes("english")) {
+                            modelLanguagePrompt = "Respond in simple English."
+                        } else {
+                            modelLanguagePrompt = "Use simple, easy-to-understand Urdu language, not jargon to respond."
                         }
-                    );
+                        let firstPrompt = currentConversationalAgencyBotQuestion.dataValues.question + "\n\n\n" + modelLanguagePrompt;
+                        firstPrompt += "\n\n\nMy response: " + recognizedText;
 
-                    await openai.beta.threads.runs.create(
-                        chatThread,
-                        { assistant_id: "asst_6zTBy1Esn6WuM9pLujyfT3y8" }
-                    );
+                        let messagesArray = [
+                            {
+                                role: "system",
+                                content: "You are a Teacher-Coach working with teachers from low-resource backgrounds in Pakistan. Your approach is focused on the importance of nervous system regulation and relationship-based education."
+                            },
+                            {
+                                role: "user",
+                                content: firstPrompt
+                            }
+                        ]
 
-                    let threadMessages1 = await openai.beta.threads.messages.list(chatThread);
-                    let attempts = 0;
-                    while ((!threadMessages1.data[0].content[0] || threadMessages1.data[0].content[0].text.value == firstPrompt) && attempts < 30) {
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                        threadMessages1 = await openai.beta.threads.messages.list(chatThread);
-                        attempts++;
-                        if (attempts >= 30) {
-                            await sendMessage(userMobileNumber, "Please try again.");
-                            await createActivityLog(userMobileNumber, "text", "outbound", "Please try again.", null);
-                            return;
+                        let openaiFeedbackTranscript = await azureAIServices.openaiFeedback(messagesArray);
+                        let initialFeedbackResponse = openaiFeedbackTranscript;
+
+                        let openaiFeedbackAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(initialFeedbackResponse);
+                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
+                        await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
+
+                        await sleep(5000);
+
+                        // Save to question responses
+                        const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
+                        const uniqueID = uuidv4();
+                        const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
+                        const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                        const submissionDate = new Date();
+                        await waQuestionResponsesRepository.create(
+                            userMobileNumber,
+                            currentUserState.dataValues.currentLessonId,
+                            currentConversationalAgencyBotQuestion.dataValues.id,
+                            activity,
+                            startingLesson.dataValues.activityAlias,
+                            [recognizedText],
+                            [userAudioFileUrl],
+                            [initialFeedbackResponse],
+                            [openaiFeedbackAudio],
+                            null,
+                            null,
+                            1,
+                            submissionDate
+                        );
+
+                        const nextConversationalAgencyBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                        if (nextConversationalAgencyBotQuestion) {
+                            // Update question number
+                            await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextConversationalAgencyBotQuestion.dataValues.questionNumber);
+                        } else {
+                            // Reset Question Number, Retry Counter, and Activity Type
+                            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+
+                            // ENDING MESSAGE
+                            await endingMessage(userMobileNumber, currentUserState, startingLesson);
                         }
-                    }
-
-                    const audioLink = await azureAIServices.elevenLabsTextToSpeechAndUpload(threadMessages1.data[0].content[0].text.value);
-                    await sendMediaMessage(userMobileNumber, audioLink, 'audio');
-                    await createActivityLog(userMobileNumber, "audio", "outbound", audioLink, null);
-
-                    await sleep(5000);
-
-                    // Save to question responses
-                    const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
-                    const uniqueID = uuidv4();
-                    const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
-                    const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
-                    const submissionDate = new Date();
-                    await waQuestionResponsesRepository.create(
-                        userMobileNumber,
-                        currentUserState.dataValues.currentLessonId,
-                        currentConversationalAgencyBotQuestion.dataValues.id,
-                        activity,
-                        startingLesson.dataValues.activityAlias,
-                        [recognizedText],
-                        [userAudioFileUrl],
-                        [threadMessages1.data[0].content[0].text.value],
-                        [audioLink],
-                        null,
-                        null,
-                        1,
-                        submissionDate
-                    );
-
-                    const nextConversationalAgencyBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
-                    if (nextConversationalAgencyBotQuestion) {
-                        // Update question number
-                        await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextConversationalAgencyBotQuestion.dataValues.questionNumber);
                     } else {
-                        // Reset Question Number, Retry Counter, and Activity Type
-                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+                        const previousConversationalAgencyBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber - 1);
+                        // Language Detection
+                        let modelLanguagePrompt = "Detect the majority of the language used in the provided text. Respond in one word only. The two options are: English or Urdu. You must respond with only one word."
+                        const languageDetectionFeedback = await azureAIServices.openaiCustomFeedback(recognizedText, modelLanguagePrompt);
+                        if (languageDetectionFeedback.toLowerCase().includes("english")) {
+                            modelLanguagePrompt = "Respond in simple English."
+                        } else {
+                            modelLanguagePrompt = "Use simple, easy-to-understand Urdu language, not jargon to respond."
+                        }
+                        let secondPrompt = currentConversationalAgencyBotQuestion.dataValues.question + "\n\n\n" + modelLanguagePrompt;
+                        secondPrompt += "\n\n\nMy response: " + recognizedText;
 
-                        // ENDING MESSAGE
-                        await endingMessage(userMobileNumber, currentUserState, startingLesson);
+                        let previousMessages = await waQuestionResponsesRepository.getPreviousMessagesForAgencyBot(userMobileNumber, currentUserState.dataValues.currentLessonId, previousConversationalAgencyBotQuestion.dataValues.question);
+                        previousMessages.push({
+                            role: "user",
+                            content: secondPrompt
+                        });
+
+                        let messagesArray = [
+                            {
+                                role: "system",
+                                content: "You are a Teacher-Coach working with teachers from low-resource backgrounds in Pakistan. Your approach is focused on the importance of nervous system regulation and relationship-based education."
+                            }
+                        ]
+
+                        previousMessages.forEach(message => {
+                            messagesArray.push(message);
+                        });
+
+                        let openaiFeedbackTranscript = await azureAIServices.openaiFeedback(messagesArray);
+                        let initialFeedbackResponse = openaiFeedbackTranscript;
+
+                        let openaiFeedbackAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(initialFeedbackResponse);
+                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
+                        await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
+
+                        await sleep(5000);
+
+                        // Save to question responses
+                        const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
+                        const uniqueID = uuidv4();
+                        const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
+                        const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                        const submissionDate = new Date();
+                        await waQuestionResponsesRepository.create(
+                            userMobileNumber,
+                            currentUserState.dataValues.currentLessonId,
+                            currentConversationalAgencyBotQuestion.dataValues.id,
+                            activity,
+                            startingLesson.dataValues.activityAlias,
+                            [recognizedText],
+                            [userAudioFileUrl],
+                            [initialFeedbackResponse],
+                            [openaiFeedbackAudio],
+                            null,
+                            null,
+                            1,
+                            submissionDate
+                        );
+
+                        const nextConversationalAgencyBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                        if (nextConversationalAgencyBotQuestion) {
+                            // Update question number
+                            await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextConversationalAgencyBotQuestion.dataValues.questionNumber);
+                        } else {
+                            // Reset Question Number, Retry Counter, and Activity Type
+                            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+
+                            // ENDING MESSAGE
+                            await endingMessage(userMobileNumber, currentUserState, startingLesson);
+                        }
                     }
                 }
             }

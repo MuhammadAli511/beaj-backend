@@ -455,6 +455,41 @@ const getPreviousMessages = async (phoneNumber, lessonId) => {
     return finalMessages;
 };
 
+const getPreviousMessagesForAgencyBot = async (phoneNumber, lessonId, questionText) => {
+    const responses = await WA_QuestionResponses.findAll({
+        where: {
+            phoneNumber: phoneNumber,
+            lessonId: lessonId
+        },
+        order: [
+            ['submissionDate', 'ASC']
+        ]
+    });
+
+    let finalMessages = [];
+
+    if (responses.length > 0) {
+        responses.forEach(async (response, index) => {
+            if (index === 0) {
+                finalMessages.push({
+                    role: "user",
+                    content: questionText + "\n\n\nMy response: " + response.dataValues.submittedAnswerText[0]
+                });
+            } else {
+                finalMessages.push({
+                    role: "user",
+                    content: response.dataValues.submittedAnswerText[0]
+                });
+            }
+            finalMessages.push({
+                role: "assistant",
+                content: response.dataValues.submittedFeedbackText[0]
+            });
+        });
+    }
+    return finalMessages;
+};
+
 const getLatestBotResponse = async (phoneNumber, lessonId) => {
     const response = await WA_QuestionResponses.findOne({
         where: {
@@ -545,5 +580,6 @@ export default {
     getLatestBotResponse,
     getAllTranscriptsForPhoneNumberAndLessonId,
     getAllJsonFeedbacksForPhoneNumberAndLessonId,
-    getAudioUrlForPhoneNumberQuestionIdAndLessonId
+    getAudioUrlForPhoneNumberQuestionIdAndLessonId,
+    getPreviousMessagesForAgencyBot
 };
