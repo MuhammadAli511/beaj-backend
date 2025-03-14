@@ -2167,12 +2167,10 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     // Checking if user response is correct or not
 
                     let userAnswerIsCorrect = false;
-                    const recognizedTextWithoutPunctuation = recognizedText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"['']"?]/g, "").toLowerCase();
-                    const recognizedTextWithoutSpaces = recognizedTextWithoutPunctuation.trim();
+                    const recognizedTextCleaned = recognizedText.replace(/[^a-z0-9 ]/gi, "").toLowerCase().trim();
                     for (let i = 0; i < answersArray.length; i++) {
-                        const answerWithoutPunctuation = answersArray[i].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"['']"?]/g, "").toLowerCase();
-                        const answerWithoutSpaces = answerWithoutPunctuation.trim();
-                        if (recognizedTextWithoutSpaces == answerWithoutSpaces) {
+                        const answerCleaned = answersArray[i].replace(/[^a-z0-9 ]/gi, "").toLowerCase().trim();
+                        if (recognizedTextCleaned == answerCleaned) {
                             userAnswerIsCorrect = true;
                             break;
                         }
@@ -2341,19 +2339,27 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 // Get the current Read question text
                 const lessonText = startingLesson.dataValues.text;
 
-                // Remove punctuation from the text
-                const textWithoutPunctuation = lessonText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"['']"?]/g, "");
-
                 // Remove HTML tags from the text
-                const textWithoutPunctuationAndHtmlTags = removeHTMLTags(textWithoutPunctuation);
+                const textWithoutHtmlTags = removeHTMLTags(lessonText);
+
+                console.log(textWithoutHtmlTags);
+
+                // Remove punctuation from the text
+                const textWithoutPunctuationAndHtmlTags = textWithoutHtmlTags.replace(/[^a-z0-9 ]/gi, "").toLowerCase().trim();
+
+                console.log(textWithoutPunctuationAndHtmlTags);
 
                 // Azure Pronunciation Assessment
                 const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, textWithoutPunctuationAndHtmlTags);
+
+                console.log("HERE 1")
 
                 // Extract user transcription from words
                 const userTranscription = extractTranscript(pronunciationAssessment);
 
                 const imageUrl = await createAndUploadScoreImage(pronunciationAssessment);
+
+                console.log("HERE 2")
 
                 if (imageUrl) {
                     // Media message
