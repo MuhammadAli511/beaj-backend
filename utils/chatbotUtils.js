@@ -2342,24 +2342,16 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 // Remove HTML tags from the text
                 const textWithoutHtmlTags = removeHTMLTags(lessonText);
 
-                console.log(textWithoutHtmlTags);
-
                 // Remove punctuation from the text
                 const textWithoutPunctuationAndHtmlTags = textWithoutHtmlTags.replace(/[^a-z0-9 ]/gi, "").toLowerCase().trim();
 
-                console.log(textWithoutPunctuationAndHtmlTags);
-
                 // Azure Pronunciation Assessment
                 const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, textWithoutPunctuationAndHtmlTags);
-
-                console.log("HERE 1")
 
                 // Extract user transcription from words
                 const userTranscription = extractTranscript(pronunciationAssessment);
 
                 const imageUrl = await createAndUploadScoreImage(pronunciationAssessment);
-
-                console.log("HERE 2")
 
                 if (imageUrl) {
                     // Media message
