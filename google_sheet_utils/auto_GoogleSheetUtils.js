@@ -538,6 +538,24 @@ const getTopPerformersWithNames = (data, columnIndex) => {
   return sortedScores;
 };
 
+function getColumnForDate(currentDate, startDate) {
+  const columnIndexes = [3, 4, 5, 6, 8, 9, 10, 11, 13, 14, 15, 16];
+  const week_no = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4];
+  // Convert to Date objects
+  const start = new Date(startDate);
+  const current = new Date(currentDate);
+
+  // Calculate the difference in days
+  const diffInDays = Math.floor((current - start) / (1000 * 60 * 60 * 24));
+
+  // Find the current week number from start
+  const currentWeek = Math.floor(diffInDays / 7) + 1;
+
+  // Find the column index based on week number
+  const weekIndex = (currentWeek - 1) % week_no.length;
+  return columnIndexes[weekIndex];
+}
+
 // Updated column index finder function
 const getColumnIndexWithPercentageValues = (arrayLevels_List, minValues, facilitator) => {
   if (!arrayLevels_List || arrayLevels_List.length === 0) {
@@ -546,6 +564,7 @@ const getColumnIndexWithPercentageValues = (arrayLevels_List, minValues, facilit
 
   // Predefined list of column indexes to check
   const columnIndexes = [3, 4, 5, 6, 8, 9, 10, 11, 13, 14, 15, 16];
+  const week_no = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4];
   const fac_arr = [9,10];
   
   // Convert facilitator to number to ensure proper comparison
@@ -577,8 +596,12 @@ const getColumnIndexWithPercentageValues = (arrayLevels_List, minValues, facilit
     if (count >= minValues) {
       // Check if the facilitator is in the special array
       if (fac_arr.includes(numericFacilitator)) {
+        const startDate = "2025-02-03";  // Course start date
+        const currentDate = new Date();  // Current date (change for testing)
+        const column = getColumnForDate(currentDate, startDate);
+
         console.log(`Found suitable column ${col}, returning ${col-1} for special facilitator`);
-        return col - 1; // Return previous column for special facilitators
+        return column; // Return previous column for special facilitators
       } else {
         console.log(`Found suitable column ${col}, returning ${col} for regular facilitator`);
         return col; // Return current column for regular facilitators
