@@ -139,7 +139,7 @@ const weekEndImage = async (score, week) => {
         const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
         return imageUrl;
     } catch (err) {
-        console.error('Error creating and uploading image:', err);
+        console.log('Error creating and uploading image:', err);
         throw new Error('Failed to create and upload image');
     }
 }
@@ -341,7 +341,7 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
         const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
         return imageUrl;
     } catch (err) {
-        console.error('Error creating and uploading image:', err);
+        console.log('Error creating and uploading image:', err);
         throw new Error('Failed to create and upload image');
     }
 }
@@ -477,7 +477,7 @@ const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
         const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
         return imageUrl;
     } catch (err) {
-        console.error('Error creating and uploading image:', err);
+        console.log('Error creating and uploading image:', err);
         throw new Error('Failed to create and upload image');
     }
 }
@@ -622,7 +622,7 @@ const createAndUploadSpeakingPracticeScoreImage = async (pronunciationAssessment
         const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
         return imageUrl;
     } catch (err) {
-        console.error('Error creating and uploading image:', err);
+        console.log('Error creating and uploading image:', err);
         throw new Error('Failed to create and upload image');
     }
 }
@@ -690,17 +690,17 @@ const sendMessage = async (to, body, retryAttempt = 0) => {
     } catch (error) {
         const errData = error.response ? error.response.data : null;
         if (errData && errData.error && errData.error.code === 131056) {
-            console.warn(`Pair rate limit hit (131056). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
+            console.log(`Pair rate limit hit (131056). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
             if (retryAttempt < MAX_RETRIES) {
                 const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
                 console.log(`Retrying after ${waitTimeSeconds} seconds...`);
                 await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
                 return sendMessage(to, body, retryAttempt + 1);
             } else {
-                console.error(`Max retries reached. Giving up on message to ${to}.`);
+                console.log(`Max retries reached. Giving up on message to ${to}.`);
             }
         } else {
-            console.error("Error sending message:", errData ? errData : error.message);
+            console.log("Error sending message:", errData ? errData : error.message);
         }
     }
 };
@@ -930,24 +930,24 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, ret
             );
         }
         else {
-            console.error('Invalid media type:', mediaType);
+            console.log('Invalid media type:', mediaType);
         }
         let logger = `Outbound Message: User: ${to}, Message Type: ${mediaType}, Message Content: ${mediaUrl}`;
         console.log(logger);
     } catch (error) {
         const errData = error.response ? error.response.data : null;
         if (errData && errData.error && errData.error.code === 131056) {
-            console.warn(`Pair rate limit hit (131056). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
+            console.log(`Pair rate limit hit (131056). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
             if (retryAttempt < MAX_RETRIES) {
                 const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
                 console.log(`Retrying after ${waitTimeSeconds} seconds...`);
                 await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
                 return sendMediaMessage(to, mediaUrl, mediaType, captionText, retryAttempt + 1);
             } else {
-                console.error(`Max retries reached. Giving up on message to ${to}.`);
+                console.log(`Max retries reached. Giving up on message to ${to}.`);
             }
         } else {
-            console.error("Error sending message:", errData ? errData : error.message);
+            console.log("Error sending message:", errData ? errData : error.message);
         }
     }
 };
@@ -991,17 +991,17 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0) 
     } catch (error) {
         const errData = error.response ? error.response.data : null;
         if (errData && errData.error && errData.error.code === 131056) {
-            console.warn(`Pair rate limit hit (131056). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
+            console.log(`Pair rate limit hit (131056). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
             if (retryAttempt < MAX_RETRIES) {
                 const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
                 console.log(`Retrying after ${waitTimeSeconds} seconds...`);
                 await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
                 return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1);
             } else {
-                console.error(`Max retries reached. Giving up on message to ${to}.`);
+                console.log(`Max retries reached. Giving up on message to ${to}.`);
             }
         } else {
-            console.error("Error sending message:", errData ? errData : error.message);
+            console.log("Error sending message:", errData ? errData : error.message);
         }
     }
 };
@@ -2916,7 +2916,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
             }
         }
     } catch (error) {
-        console.error('Error sending lesson to user:', error);
+        console.log('Error sending lesson to user:', error);
         error.fileName = 'chatBotService.js';
         throw error;
     }
