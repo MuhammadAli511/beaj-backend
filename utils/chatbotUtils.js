@@ -293,7 +293,7 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
                 cursorY += lineHeight; // Move to the next line
             }
 
-            if (errorType == 'Mispronunciation' || wordAccuracyScore < 50) {
+            if (errorType == 'Mispronunciation' || wordAccuracyScore < 80) {
                 // Highlight mispronounced words in yellow
                 ctx.fillStyle = '#FFD700'; // Yellow
                 ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
@@ -443,7 +443,7 @@ const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
                 cursorY += lineHeight; // Move to the next line
             }
 
-            if (errorType == 'Mispronunciation' || wordAccuracyScore < 50) {
+            if (errorType == 'Mispronunciation' || wordAccuracyScore < 80) {
                 // Highlight mispronounced words in yellow
                 ctx.fillStyle = '#FFD700'; // Yellow
                 ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
@@ -588,7 +588,7 @@ const createAndUploadSpeakingPracticeScoreImage = async (pronunciationAssessment
                 cursorY += lineHeight; // Move to the next line
             }
 
-            if (errorType == 'Mispronunciation' || wordAccuracyScore < 50) {
+            if (errorType == 'Mispronunciation' || wordAccuracyScore < 80) {
                 // Highlight mispronounced words in yellow
                 ctx.fillStyle = '#FFD700'; // Yellow
                 ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
@@ -637,7 +637,7 @@ const extractMispronouncedWords = (results) => {
         return word &&
             word.PronunciationAssessment &&
             (word.PronunciationAssessment.ErrorType === 'Mispronunciation' ||
-                word.PronunciationAssessment.AccuracyScore < 50);
+                word.PronunciationAssessment.AccuracyScore < 80);
     });
 
     return mispronouncedWords;
