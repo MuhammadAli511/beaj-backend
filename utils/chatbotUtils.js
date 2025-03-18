@@ -261,7 +261,7 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
         ctx.fillText(`${fluencyScoreNumber}%`, 50 + 790 * (fluencyScoreNumber / 100) - 70, 345);
 
         ctx.font = 'bold 30px Arial';
-        ctx.fillText('You said', 50, 410);
+        ctx.fillText('You said:', 50, 410);
 
         // Create a paragraph format for the text
         ctx.font = '25px Arial';
@@ -272,7 +272,7 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
         let cursorY = 450; // Starting Y position for the text
 
         // Loop through words and handle line breaks
-        words.forEach((wordObj) => {
+        words.forEach((wordObj, index) => {
             // If undefined, skip the word
             if (wordObj == undefined) {
                 return;
@@ -282,7 +282,15 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
             if (!['Mispronunciation', 'Omission', 'None'].includes(wordObj.PronunciationAssessment.ErrorType)) {
                 return;
             }
-            const word = wordObj.Word;
+            let word = wordObj.Word;
+
+            // Capitalize only the first letter of the first word
+            if (index == 0) {
+                word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+            } else {
+                word = word.toLowerCase();
+            }
+
             const errorType = wordObj.PronunciationAssessment.ErrorType;
             const wordAccuracyScore = wordObj.PronunciationAssessment.AccuracyScore;
             const wordWidth = ctx.measureText(word).width + 15; // Measure width of the word
@@ -411,7 +419,7 @@ const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
         ctx.fillText(`${fluencyScoreNumber}%`, 50 + 790 * (fluencyScoreNumber / 100) - 70, 250);
 
         ctx.font = 'bold 30px Arial';
-        ctx.fillText('You said', 50, 315);
+        ctx.fillText('You said:', 50, 315);
 
         // Create a paragraph format for the text
         ctx.font = '25px Arial';
@@ -556,7 +564,7 @@ const createAndUploadSpeakingPracticeScoreImage = async (pronunciationAssessment
         ctx.fillText(`${avgFluencyScore}%`, 50 + 790 * (avgFluencyScore / 100) - 70, 250);
 
         ctx.font = 'bold 30px Arial';
-        ctx.fillText('You said', 50, 305);
+        ctx.fillText('You said:', 50, 305);
 
         // Create a paragraph format for the text
         ctx.font = '17px Arial';
@@ -655,7 +663,14 @@ const extractTranscript = (results) => {
         word.PronunciationAssessment.ErrorType !== 'Omission'
     );
 
-    return transcriptWords.map(word => word.Word).join(" ");
+    const transcript = transcriptWords.map(word => word.Word).join(" ");
+
+    // Capitalize first letter of the first word if it's alphabetic
+    if (transcript.length > 0 && /[a-zA-Z]/.test(transcript[0])) {
+        return transcript[0].toUpperCase() + transcript.slice(1);
+    }
+
+    return transcript;
 };
 
 
