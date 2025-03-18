@@ -2668,9 +2668,9 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         let modelLanguagePrompt = "Detect the majority of the language used in the provided text. Respond in one word only. The two options are: English or Urdu. You must respond with only one word."
                         const languageDetectionFeedback = await azureAIServices.openaiCustomFeedback(recognizedText, modelLanguagePrompt);
                         if (languageDetectionFeedback.toLowerCase().includes("english")) {
-                            modelLanguagePrompt = "Respond in simple English."
+                            modelLanguagePrompt = "Respond in simple and easy-to-understand English within 100 words."
                         } else {
-                            modelLanguagePrompt = "Use simple, easy-to-understand Urdu language, not jargon to respond."
+                            modelLanguagePrompt = "Use simple, easy-to-understand Urdu language, not jargon to respond within 100 words."
                         }
                         let firstPrompt = currentConversationalAgencyBotQuestion.dataValues.question + "\n\n\n" + modelLanguagePrompt;
                         firstPrompt += "\n\n\nMy response: " + recognizedText;
@@ -2734,7 +2734,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         let modelLanguagePrompt = "Detect the majority of the language used in the provided text. Respond in one word only. The two options are: English or Urdu. You must respond with only one word."
                         const languageDetectionFeedback = await azureAIServices.openaiCustomFeedback(recognizedText, modelLanguagePrompt);
                         if (languageDetectionFeedback.toLowerCase().includes("english")) {
-                            modelLanguagePrompt = "Respond in simple English."
+                            modelLanguagePrompt = "Respond in simple and easy-to-understand English."
                         } else {
                             modelLanguagePrompt = "Use simple, easy-to-understand Urdu language, not jargon to respond."
                         }
