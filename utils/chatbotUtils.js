@@ -301,7 +301,7 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
                 cursorY += lineHeight; // Move to the next line
             }
 
-            if (errorType == 'Mispronunciation' || wordAccuracyScore < 80) {
+            if (errorType == 'Mispronunciation' || wordAccuracyScore < 70) {
                 // Highlight mispronounced words in yellow
                 ctx.fillStyle = '#FFD700'; // Yellow
                 ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
@@ -451,7 +451,7 @@ const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
                 cursorY += lineHeight; // Move to the next line
             }
 
-            if (errorType == 'Mispronunciation' || wordAccuracyScore < 80) {
+            if (errorType == 'Mispronunciation' || wordAccuracyScore < 70) {
                 // Highlight mispronounced words in yellow
                 ctx.fillStyle = '#FFD700'; // Yellow
                 ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
@@ -596,7 +596,7 @@ const createAndUploadSpeakingPracticeScoreImage = async (pronunciationAssessment
                 cursorY += lineHeight; // Move to the next line
             }
 
-            if (errorType == 'Mispronunciation' || wordAccuracyScore < 80) {
+            if (errorType == 'Mispronunciation' || wordAccuracyScore < 70) {
                 // Highlight mispronounced words in yellow
                 ctx.fillStyle = '#FFD700'; // Yellow
                 ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
@@ -644,8 +644,8 @@ const extractMispronouncedWords = (results) => {
     const mispronouncedWords = words.filter(word => {
         return word &&
             word.PronunciationAssessment &&
-            (word.PronunciationAssessment.ErrorType === 'Mispronunciation' ||
-                word.PronunciationAssessment.AccuracyScore < 80);
+            (word.PronunciationAssessment.ErrorType == 'Mispronunciation' ||
+                word.PronunciationAssessment.AccuracyScore < 70);
     });
 
     return mispronouncedWords;
