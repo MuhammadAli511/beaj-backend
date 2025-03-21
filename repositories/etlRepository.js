@@ -1483,9 +1483,6 @@ const getActivityNameCount = async (course_id1, course_id2,course_id3,grp,cohort
         m."phoneNumber"
       ORDER BY 
         m."name" ASC;`;
-<<<<<<< HEAD
-
-=======
       }
       else{
         cohort = `m."cohort" != 'Pilot'`;
@@ -1517,7 +1514,6 @@ const getActivityNameCount = async (course_id1, course_id2,course_id3,grp,cohort
         m."cohort" ASC;`;
       }
     
->>>>>>> master
         const res2 = await sequelize.query(qry2);
         let activityTotal = [];
 

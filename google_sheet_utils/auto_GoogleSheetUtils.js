@@ -248,9 +248,6 @@ const new_loadDataToGoogleSheets = async (
   }
 };
 
-<<<<<<< HEAD
-export default {new_loadDataToGoogleSheets};
-=======
 const formatTopThreeInColumns = async (arrayLevels_List, facilitator) => {
   try {
     const auth = new google.auth.GoogleAuth({
@@ -893,4 +890,3 @@ const generateStarTeachersImage = async (arrayLevels_List, columnIndex, imagePat
 };
 
 export default new_loadDataToGoogleSheets;
->>>>>>> master

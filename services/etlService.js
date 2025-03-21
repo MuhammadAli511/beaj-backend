@@ -17,13 +17,9 @@ import CumulativeUtils_load from "../google_sheet_utils/cumulativeUtils.js";
 
 import etlService_auto from "./etlService_Auto.js";
 const runCumulativeSheets = async() =>{
-<<<<<<< HEAD
-  
-=======
 
   // await etlService_auto.runETL('T2', 'Week', 'Cohort 41', 41, 10);
 
->>>>>>> master
   let courseId_l1 = 106;
   let courseId_l2 = 111;
   let courseId_l3 = null;
