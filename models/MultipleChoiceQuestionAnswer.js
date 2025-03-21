@@ -1,7 +1,7 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../config/sequelize.js';
 
-class MultipleChoiceQuestionAnswer extends Model {}
+class MultipleChoiceQuestionAnswer extends Model { }
 
 MultipleChoiceQuestionAnswer.init({
   Id: {
@@ -24,6 +24,14 @@ MultipleChoiceQuestionAnswer.init({
   IsCorrect: {
     type: DataTypes.BOOLEAN,
     allowNull: false
+  },
+  CustomAnswerFeedbackText: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  CustomAnswerFeedbackImage: {
+    type: DataTypes.STRING,
+    allowNull: true
   },
   MultipleChoiceQuestionId: {
     type: DataTypes.INTEGER,

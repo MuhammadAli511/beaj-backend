@@ -967,7 +967,7 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, ret
     }
 };
 
-const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0) => {
+const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, questionImage = null) => {
     const MAX_RETRIES = 15;
 
     try {
@@ -1651,6 +1651,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 // Send question
                 const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(firstMCQsQuestion.dataValues.Id);
                 const questionText = firstMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
+                const questionImage = firstMCQsQuestion.dataValues.QuestionImageUrl;
                 let mcqMessage = questionText + "\n\n";
                 if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
                     mcqMessage += "Choose the correct answer:\n";

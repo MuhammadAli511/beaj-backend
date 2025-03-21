@@ -1,14 +1,16 @@
 import MultipleChoiceQuestionAnswer from "../models/MultipleChoiceQuestionAnswer.js";
 import Sequelize from 'sequelize';
 
-const create = async (answerText, answerImageUrl, answerAudioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber) => {
+const create = async (answerText, answerImageUrl, answerAudioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber, customAnswerFeedbackText, customAnswerFeedbackImage) => {
     const multipleChoiceQuestionAnswer = new MultipleChoiceQuestionAnswer({
         AnswerText: answerText,
         AnswerImageUrl: answerImageUrl,
         AnswerAudioUrl: answerAudioUrl,
         IsCorrect: isCorrect,
         MultipleChoiceQuestionId: multipleChoiceQuestionId,
-        SequenceNumber: sequenceNumber
+        SequenceNumber: sequenceNumber,
+        CustomAnswerFeedbackText: customAnswerFeedbackText,
+        CustomAnswerFeedbackImage: customAnswerFeedbackImage
     });
     await multipleChoiceQuestionAnswer.save();
     return multipleChoiceQuestionAnswer;
@@ -24,14 +26,16 @@ const getById = async (id) => {
     return multipleChoiceQuestionAnswer;
 };
 
-const update = async (id, answerText, answerImageUrl, answerAudioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber) => {
+const update = async (id, answerText, answerImageUrl, answerAudioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber, customAnswerFeedbackText, customAnswerFeedbackImage) => {
     return await MultipleChoiceQuestionAnswer.update({
         AnswerText: answerText,
         AnswerImageUrl: answerImageUrl,
         AnswerAudioUrl: answerAudioUrl,
         IsCorrect: isCorrect,
         MultipleChoiceQuestionId: multipleChoiceQuestionId,
-        SequenceNumber: sequenceNumber
+        SequenceNumber: sequenceNumber,
+        CustomAnswerFeedbackText: customAnswerFeedbackText,
+        CustomAnswerFeedbackImage: customAnswerFeedbackImage
     }, {
         where: {
             Id: id
