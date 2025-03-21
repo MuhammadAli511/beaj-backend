@@ -3,7 +3,7 @@ import new_loadDataToGoogleSheets from "../google_sheet_utils/auto_GoogleSheetUt
 
 const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
   try {
-    const targetDate = new Date(2025, 2, 24);
+    const targetDate = new Date(2025, 2, 21);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -57,21 +57,30 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
   
         if (module == "Lesson") {
           arrayT1_List = await etlRepository.getLessonCompletions(courseId_l1, courseId_l2, courseId_l3, targetGroup, cohort);
-          arrayT1_List = arrayT1_List.filter(record => record.course2_week4 !== '6');
+          arrayT1_List = arrayT1_List.filter(record => record.course2_week3 !== '6');
           // console.log(arrayT1_List);
           arrayT1_List = arrayT1_List.map(obj => Object.values(obj).map(value => value));
+          let sr_no = 1;
+          for (let record of arrayT1_List) {
+              record[0] = sr_no++;
+          }
+
         }
   
         if (module == "Activity") {
           arrayT1_List = await etlRepository.getActivity_Completions(courseId_l1, courseId_l2, courseId_l3, targetGroup, cohort);
           if(targetGroup == "T1"){
-            arrayT1_List = arrayT1_List.filter(record => record.course2_week4_activities !== '18');
+            arrayT1_List = arrayT1_List.filter(record => record.course2_week3_activities !== '19');
           }
           else{
             arrayT1_List = arrayT1_List.filter(record => record.course2_week4_activities !== '20');
           }
          
           arrayT1_List = arrayT1_List.map(obj => Object.values(obj).map(value => value));
+          let sr_no = 1;
+          for (let record of arrayT1_List) {
+              record[0] = sr_no++;
+          }
           // ActivityCompletedCount = await etlRepository.getActivityNameCount(courseId_l1, courseId_l2, courseId_l3, targetGroup, cohort);
           ActivityCompletedCount = []
           last_activityCompleted_l1 = await etlRepository.getLastActivityCompleted(courseId_l1, targetGroup, cohort);
@@ -115,10 +124,13 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
               null
             ])
           }
-          arrayT1_List = arrayT1_List.filter(record => record[11] === null);
+          arrayT1_List = arrayT1_List.filter(record => record[10] === null);
           // console.log(arrayT1_List);
           arrayT1_List = arrayT1_List.map(obj => Object.values(obj).map(value => value));
-  
+          let sr_no = 1;
+          for (let record of arrayT1_List) {
+              record[0] = sr_no++;
+          }
            
         }
   
