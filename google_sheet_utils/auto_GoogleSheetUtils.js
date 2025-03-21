@@ -56,9 +56,9 @@ const new_loadDataToGoogleSheets = async (
     const authClient = await auth.getClient();
     const spreadsheetId = "1wAzQ21EL9ELMK-Isb9_jGnpM7RcneYvqt0UD0GAhS1U";
     const fac_arr = [19, 20, 43, 44, 17, 18, 41, 42];
+     arrayLevels_List = capitalizeNames(arrayLevels_List);
 
     if(edit_flag == 1){
-
       console.log("Clearing existing data...");
       await retryOperation(() => 
         sheets.spreadsheets.values.update({
@@ -248,6 +248,21 @@ const new_loadDataToGoogleSheets = async (
   }
 };
 
+const capitalizeNames = (arrayLevels_List) => {
+  return arrayLevels_List.map(row => {
+    // Ensure the row has at least 3 columns and the third column is a string
+    if (row.length > 2 && typeof row[2] === 'string') {
+      // Split the name into words, capitalize each word, and join them back
+      const capitalized = row[2]
+        .split(' ') // Split by spaces
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()) // Capitalize first letter
+        .join(' '); // Join back with spaces
+      row[2] = capitalized; // Update the name in the row
+    }
+    return row;
+  });
+};
+
 const formatTopThreeInColumns = async (arrayLevels_List, facilitator) => {
   try {
     const auth = new google.auth.GoogleAuth({
@@ -289,7 +304,7 @@ const formatTopThreeInColumns = async (arrayLevels_List, facilitator) => {
       
       if (topValues.length === 0) continue;
 
-      console.log(`Column ${colIndex} top values:`, topValues);
+      // console.log(`Column ${colIndex} top values:`, topValues);
 
       // Colors for top three values
       const colors = [
@@ -339,11 +354,11 @@ const formatTopThreeInColumns = async (arrayLevels_List, facilitator) => {
 
     // Apply formatting in chunks to avoid quota limits
     const chunkSize = 10;
-    console.log(`Processing ${allRequests.length} formatting requests in chunks of ${chunkSize}`);
+    // console.log(`Processing ${allRequests.length} formatting requests in chunks of ${chunkSize}`);
     
     for (let i = 0; i < allRequests.length; i += chunkSize) {
       const chunk = allRequests.slice(i, i + chunkSize);
-      console.log(`Processing chunk ${i/chunkSize + 1} of ${Math.ceil(allRequests.length/chunkSize)}`);
+      // console.log(`Processing chunk ${i/chunkSize + 1} of ${Math.ceil(allRequests.length/chunkSize)}`);
       
       await retryOperation(() => 
         sheets.spreadsheets.batchUpdate({
@@ -523,6 +538,24 @@ const getTopPerformersWithNames = (data, columnIndex) => {
   return sortedScores;
 };
 
+function getColumnForDate(currentDate, startDate) {
+  const columnIndexes = [3, 4, 5, 6, 8, 9, 10, 11, 13, 14, 15, 16];
+  const week_no = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4];
+  // Convert to Date objects
+  const start = new Date(startDate);
+  const current = new Date(currentDate);
+
+  // Calculate the difference in days
+  const diffInDays = Math.floor((current - start) / (1000 * 60 * 60 * 24));
+
+  // Find the current week number from start
+  const currentWeek = Math.floor(diffInDays / 7) + 1;
+
+  // Find the column index based on week number
+  const weekIndex = (currentWeek - 1) % week_no.length;
+  return columnIndexes[weekIndex];
+}
+
 // Updated column index finder function
 const getColumnIndexWithPercentageValues = (arrayLevels_List, minValues, facilitator) => {
   if (!arrayLevels_List || arrayLevels_List.length === 0) {
@@ -531,13 +564,14 @@ const getColumnIndexWithPercentageValues = (arrayLevels_List, minValues, facilit
 
   // Predefined list of column indexes to check
   const columnIndexes = [3, 4, 5, 6, 8, 9, 10, 11, 13, 14, 15, 16];
+  const week_no = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4];
   const fac_arr = [9,10];
   
   // Convert facilitator to number to ensure proper comparison
   const numericFacilitator = parseInt(facilitator, 10);
   
-  console.log(`Facilitator: ${facilitator}, Numeric: ${numericFacilitator}`);
-  console.log(`Is in special array: ${fac_arr.includes(numericFacilitator)}`);
+  // console.log(`Facilitator: ${facilitator}, Numeric: ${numericFacilitator}`);
+  // console.log(`Is in special array: ${fac_arr.includes(numericFacilitator)}`);
 
   // Iterate through the column indexes in reverse order
   for (let i = columnIndexes.length - 1; i >= 0; i--) {
@@ -556,16 +590,20 @@ const getColumnIndexWithPercentageValues = (arrayLevels_List, minValues, facilit
     }
 
     // Debug logging
-    console.log(`Column ${col} has ${count} percentage values (min required: ${minValues})`);
+    // console.log(`Column ${col} has ${count} percentage values (min required: ${minValues})`);
 
     // If the column has at least minValues percentage values, determine return value
     if (count >= minValues) {
       // Check if the facilitator is in the special array
       if (fac_arr.includes(numericFacilitator)) {
-        console.log(`Found suitable column ${col}, returning ${col-1} for special facilitator`);
-        return col - 1; // Return previous column for special facilitators
+        const startDate = "2025-02-03";  // Course start date
+        const currentDate = new Date();  // Current date (change for testing)
+        const column = getColumnForDate(currentDate, startDate);
+
+        // console.log(`Found suitable column ${col}, returning ${col-1} for special facilitator`);
+        return column; // Return previous column for special facilitators
       } else {
-        console.log(`Found suitable column ${col}, returning ${col} for regular facilitator`);
+        // console.log(`Found suitable column ${col}, returning ${col} for regular facilitator`);
         return col; // Return current column for regular facilitators
       }
     }
@@ -767,7 +805,7 @@ const generateStarTeachersImage = async (arrayLevels_List, columnIndex, imagePat
     
     // Get top three performers
     const topPerformers = getTopPerformersWithNames(arrayLevels_List, columnIndex);
-    console.log("Top performers:", JSON.stringify(topPerformers, null, 2));
+    // console.log("Top performers:", JSON.stringify(topPerformers, null, 2));
     
     if (topPerformers.length === 0) {
       console.log("No performers found for this column");
@@ -777,7 +815,7 @@ const generateStarTeachersImage = async (arrayLevels_List, columnIndex, imagePat
     // Load template image
     console.log("Loading template image...");
     const image = await loadImage(templatePath);
-    console.log(`Image loaded with dimensions: ${image.width}x${image.height}`);
+    // console.log(`Image loaded with dimensions: ${image.width}x${image.height}`);
     
     // Create canvas with same dimensions as template
     const canvas = createCanvas(image.width, image.height);
