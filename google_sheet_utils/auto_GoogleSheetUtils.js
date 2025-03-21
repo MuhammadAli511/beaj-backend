@@ -908,14 +908,12 @@ const generateStarTeachersImage = async (arrayLevels_List, columnIndex, imagePat
             }
           }
         }
-        
         // Add small gap between different names
         if (j < names.length - 1) {
           currentY += fontSize * 0.2;
         }
       }
     }
-    
     // Save image
     const buffer = canvas.toBuffer('image/png');
     uploadImageToCell(buffer, facilitator, 'W58');
