@@ -1,6 +1,7 @@
 import WA_QuestionResponses from '../models/WA_QuestionResponses.js';
 import sequelize from '../config/sequelize.js';
 import Sequelize from 'sequelize';
+import { question_bot_prompt } from "../utils/prompts.js";
 
 const create = async (phoneNumber, lessonId, questionId, activityType, alias, submittedAnswerText, submittedUserAudio, submittedFeedbackText, submittedFeedbackAudio, submittedFeedbackJson, correct, numberOfTries, submissionDate) => {
     const response = new WA_QuestionResponses({
@@ -28,6 +29,62 @@ const getAll = async () => {
 const getById = async (id) => {
     return await WA_QuestionResponses.findByPk(id);
 };
+
+const updateReplace = async (
+    phoneNumber,
+    lessonId,
+    questionId,
+    activityType,
+    alias,
+    submittedAnswerText,
+    submittedUserAudio,
+    submittedFeedbackText,
+    submittedFeedbackAudio,
+    submittedFeedbackJson,
+    correct,
+    numberOfTries,
+    submissionDate
+) => {
+    const updateFields = {};
+
+    if (submittedAnswerText) {
+        updateFields.submittedAnswerText = submittedAnswerText;
+    }
+    if (submittedUserAudio) {
+        updateFields.submittedUserAudio = submittedUserAudio;
+    }
+    if (submittedFeedbackText) {
+        updateFields.submittedFeedbackText = submittedFeedbackText;
+    }
+    if (submittedFeedbackAudio) {
+        updateFields.submittedFeedbackAudio = submittedFeedbackAudio;
+    }
+    if (correct !== null) {
+        updateFields.correct = correct;
+    }
+    if (submittedFeedbackJson) {
+        updateFields.submittedFeedbackJson = submittedFeedbackJson;
+    }
+
+    // Other fields to update (non-array fields)
+    updateFields.phoneNumber = phoneNumber;
+    updateFields.lessonId = lessonId;
+    updateFields.questionId = questionId;
+    updateFields.activityType = activityType;
+    updateFields.alias = alias;
+    updateFields.numberOfTries = numberOfTries;
+    updateFields.submissionDate = submissionDate;
+
+    // Execute the update query based on phoneNumber, lessonId, and questionId
+    return await WA_QuestionResponses.update(updateFields, {
+        where: {
+            phoneNumber: phoneNumber,
+            lessonId: lessonId,
+            questionId: questionId,
+        },
+    });
+};
+
 
 const update = async (
     phoneNumber,
@@ -317,31 +374,23 @@ const monologueScoreForList = async (phoneNumber, lessonIdList) => {
     let totalScore = 0;
     let maxScore = 0;
 
-    // Mapping through the results to extract, calculate, and sum the score data
+    // Mapping through the results to extract, calculate and sum the score data
     const individualScores = submittedFeedbackJson.map(response => {
         const jsonArray = response.get('submittedFeedbackJson'); // Get the JSON array
 
-        // Directly access the PronScore and FluencyScore if the JSON structure is valid
+        // Directly access the first element in the JSON array if it exists
         let accuracyScore = 0;
         let fluencyScore = 0;
-        let grammarScore = 0;
-
+        let compScore = 0;
         if (jsonArray && jsonArray.length > 0) {
             const parsedJson = jsonArray[0]; // Access the first JSON object directly
-            if (parsedJson) {
-                const pronAssessment = parsedJson.pronunciationAssessment;
-                if (pronAssessment) {
-                    accuracyScore = pronAssessment.AccuracyScore;
-                    fluencyScore = pronAssessment.FluencyScore;
-                }
-                const contentAssessment = parsedJson.contentAssessment;
-                if (contentAssessment) {
-                    grammarScore = contentAssessment.GrammarScore;
-                }
-            }
+            accuracyScore = parsedJson.scoreNumber.accuracyScore;
+            fluencyScore = parsedJson.scoreNumber.fluencyScore;
+            compScore = parsedJson.scoreNumber.compScore;
         }
+
         // Calculate the combined score for this entry with weightage of 5
-        const combinedScore = (accuracyScore + fluencyScore + grammarScore) / 300 * 5;
+        const combinedScore = (accuracyScore + fluencyScore + compScore) / 300 * 5;
         totalScore += combinedScore; // Accumulate the total score
         maxScore += 5; // Each entry now has a max score of 5
 
@@ -349,7 +398,7 @@ const monologueScoreForList = async (phoneNumber, lessonIdList) => {
             lessonId: response.get('lessonId'),
             accuracyScore: accuracyScore,
             fluencyScore: fluencyScore,
-            grammarScore: grammarScore,
+            compScore: compScore,
             combinedScore: combinedScore
         };
     });
@@ -370,6 +419,108 @@ const getByActivityType = async (activityType) => {
     });
 };
 
+const getPreviousMessages = async (phoneNumber, lessonId) => {
+    const responses = await WA_QuestionResponses.findAll({
+        where: {
+            phoneNumber: phoneNumber,
+            lessonId: lessonId
+        },
+        order: [
+            ['submissionDate', 'ASC']
+        ]
+    });
+
+    let finalMessages = [];
+
+    if (responses.length > 0) {
+        responses.forEach(async (response, index) => {
+            if (index === 0) {
+                finalMessages.push({
+                    role: "user",
+                    content: await question_bot_prompt() + "\n\nUser Response: " + response.dataValues.submittedAnswerText[0]
+                });
+            } else {
+                finalMessages.push({
+                    role: "user",
+                    content: response.dataValues.submittedAnswerText[0]
+                });
+            }
+            finalMessages.push({
+                role: "assistant",
+                content: response.dataValues.submittedFeedbackText[0]
+            });
+        });
+    }
+
+    return finalMessages;
+};
+
+const getLatestBotResponse = async (phoneNumber, lessonId) => {
+    const response = await WA_QuestionResponses.findOne({
+        where: {
+            phoneNumber: phoneNumber,
+            lessonId: lessonId
+        }
+    });
+
+    return response.dataValues.submittedFeedbackText[0];
+};
+
+const checkRecordExistsForPhoneNumberAndLessonId = async (phoneNumber, lessonId) => {
+    const response = await WA_QuestionResponses.findOne({
+        where: {
+            phoneNumber: phoneNumber,
+            lessonId: lessonId
+        }
+    });
+
+    return response ? false : true;
+};
+
+const getAllTranscriptsForPhoneNumberAndLessonId = async (phoneNumber, lessonId) => {
+    const response = await WA_QuestionResponses.findAll({
+        where: {
+            phoneNumber: phoneNumber,
+            lessonId: lessonId
+        }
+    });
+
+    let finalTranscript = "";
+    response.forEach(response => {
+        finalTranscript += response.dataValues.submittedAnswerText[0] + " ";
+    });
+
+    return finalTranscript;
+};
+
+const getAllJsonFeedbacksForPhoneNumberAndLessonId = async (phoneNumber, lessonId) => {
+    const response = await WA_QuestionResponses.findAll({
+        where: {
+            phoneNumber: phoneNumber,
+            lessonId: lessonId
+        },
+        order: [['submissionDate', 'ASC']]
+    });
+
+    let finalJsonFeedbacks = [];
+    response.forEach(response => {
+        finalJsonFeedbacks.push(response.dataValues.submittedFeedbackJson[0]);
+    });
+
+    return finalJsonFeedbacks;
+};
+
+const getAudioUrlForPhoneNumberQuestionIdAndLessonId = async (phoneNumber, questionId, lessonId) => {
+    const response = await WA_QuestionResponses.findOne({
+        where: {
+            phoneNumber: phoneNumber,
+            questionId: questionId,
+            lessonId: lessonId
+        }
+    });
+
+    return response.dataValues.submittedUserAudio[0];
+};
 
 
 export default {
@@ -377,6 +528,7 @@ export default {
     getAll,
     getById,
     update,
+    updateReplace,
     deleteById,
     getTotalScore,
     getTotalQuestions,
@@ -387,5 +539,11 @@ export default {
     watchAndSpeakScoreForList,
     readScoreForList,
     monologueScoreForList,
-    getByActivityType
+    getByActivityType,
+    getPreviousMessages,
+    checkRecordExistsForPhoneNumberAndLessonId,
+    getLatestBotResponse,
+    getAllTranscriptsForPhoneNumberAndLessonId,
+    getAllJsonFeedbacksForPhoneNumberAndLessonId,
+    getAudioUrlForPhoneNumberQuestionIdAndLessonId
 };

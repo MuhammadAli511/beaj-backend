@@ -64,7 +64,7 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
         last_activityCompleted_l2,
         last_activityCompleted_l3
       );
-
+      let module_week = module;
       flag_valid = 2;
 
       if (module == "Lesson") {
@@ -86,7 +86,6 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
       }
 
       if (module == "Week") {
-
         let weekly_score_l1_list = await etlRepository.getWeeklyScore(courseId_l1, targetGroup, cohort);
         let weekly_score_l2_list = await etlRepository.getWeeklyScore(courseId_l2, targetGroup, cohort);
         let weekly_score_l3_list = await etlRepository.getWeeklyScore(courseId_l3, targetGroup, cohort);
@@ -120,7 +119,12 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
           ])
         }
         arrayT1_List = arrayT1_List.map(obj => Object.values(obj).map(value => value));
+<<<<<<< HEAD
         await modifyImage();
+=======
+
+        // console.log(arrayT1_List);
+>>>>>>> master
       }
 
       await new_loadDataToGoogleSheets(
@@ -131,7 +135,8 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
         ActivityCompletedCount,
         last_activityCompleted_l1,
         last_activityCompleted_l2,
-        last_activityCompleted_l3
+        last_activityCompleted_l3,
+        module_week,
       );
     }
 

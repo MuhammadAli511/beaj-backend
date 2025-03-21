@@ -317,7 +317,7 @@ PivotedProgress AS (
 ),
 AggregatedProgress AS (
     SELECT
-	    ROW_NUMBER() OVER (ORDER BY pp."phoneNumber") AS sr_no,
+	    ROW_NUMBER() OVER (ORDER BY pp."name") AS sr_no,
         pp."phoneNumber",
 		pp."name",
         MAX(CASE WHEN pp."courseId" = ${course_id1} THEN pp."week1" END) AS "course1_week1",
@@ -855,10 +855,14 @@ conversational_monologue AS (
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'contentAssessment'->>'CompScore')::DECIMAL, 0)
+                               --                      ELSEIF (l."courseId" = 107)
+       --                          COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
+       --                          COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
+       --                          COALESCE(("submittedFeedbackJson"[1]->'contentAssessment'->>'GrammarScore')::DECIMAL, 0)
                             ELSE
-                                COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'contentAssessment'->>'GrammarScore')::DECIMAL, 0)
+							    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
+			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
+			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
                         END
                     ELSE NULL
                 END
@@ -875,10 +879,14 @@ conversational_monologue AS (
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'contentAssessment'->>'CompScore')::DECIMAL, 0)
+                               --                      ELSEIF (l."courseId" = 107)
+       --                          COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
+       --                          COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
+       --                          COALESCE(("submittedFeedbackJson"[1]->'contentAssessment'->>'GrammarScore')::DECIMAL, 0)
                             ELSE
-                                COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'contentAssessment'->>'GrammarScore')::DECIMAL, 0)
+							    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
+			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
+			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
                         END
                     ELSE NULL
                 END
@@ -895,10 +903,14 @@ conversational_monologue AS (
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'contentAssessment'->>'CompScore')::DECIMAL, 0)
+                               --                      ELSEIF (l."courseId" = 107)
+       --                          COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
+       --                          COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
+       --                          COALESCE(("submittedFeedbackJson"[1]->'contentAssessment'->>'GrammarScore')::DECIMAL, 0)
                             ELSE
-                                COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'contentAssessment'->>'GrammarScore')::DECIMAL, 0)
+							    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
+			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
+			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
                         END
                     ELSE NULL
                 END
@@ -915,10 +927,14 @@ conversational_monologue AS (
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'contentAssessment'->>'CompScore')::DECIMAL, 0)
+                               --                      ELSEIF (l."courseId" = 107)
+       --                          COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
+       --                          COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
+       --                          COALESCE(("submittedFeedbackJson"[1]->'contentAssessment'->>'GrammarScore')::DECIMAL, 0)
                             ELSE
-                                COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'contentAssessment'->>'GrammarScore')::DECIMAL, 0)
+							    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
+			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
+			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
                         END
                     ELSE NULL
                 END
@@ -931,6 +947,74 @@ conversational_monologue AS (
         course_activities l ON l."LessonId" = q."lessonId"
     WHERE 
         l."activity" = 'conversationalMonologueBot' 
+        AND q."phoneNumber" IN (SELECT "phoneNumber" FROM target_group_users)
+    GROUP BY 
+        q."phoneNumber"
+),
+Speaking_practice AS (
+    SELECT 
+        q."phoneNumber",
+        COALESCE(
+            SUM(
+                CASE 
+                    WHEN l."weekNumber" = 1 THEN 
+							    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
+			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
+			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
+                       
+                    ELSE NULL
+                END
+            ) / 300 * 5, 0
+        ) AS Speaking_practice_week1_score,
+        COUNT(CASE WHEN l."weekNumber" = 1 THEN 1 ELSE NULL END) * 5 AS Speaking_practice_week1_total,
+   
+        COALESCE(
+            SUM(
+                CASE 
+                    WHEN l."weekNumber" = 2 THEN 
+							    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
+			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
+			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
+                
+                    ELSE NULL
+                END
+            ) / 300 * 5, 0
+        ) AS Speaking_practice_week2_score,
+        COUNT(CASE WHEN l."weekNumber" = 2 THEN 1 ELSE NULL END) * 5 AS Speaking_practice_week2_total,
+
+        COALESCE(
+            SUM(
+                CASE 
+                    WHEN l."weekNumber" = 3 THEN 
+							    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
+			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
+			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
+                  
+                    ELSE NULL
+                END
+            ) / 300 * 5, 0
+        ) AS Speaking_practice_week3_score,
+        COUNT(CASE WHEN l."weekNumber" = 3 THEN 1 ELSE NULL END) * 5 AS Speaking_practice_week3_total,
+
+        COALESCE(
+            SUM(
+                CASE 
+                    WHEN l."weekNumber" = 4 THEN 
+							    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
+			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
+			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
+                  
+                    ELSE NULL
+                END
+            ) / 300 * 5, 0
+        ) AS Speaking_practice_week4_score,
+        COUNT(CASE WHEN l."weekNumber" = 4 THEN 1 ELSE NULL END) * 5 AS Speaking_practice_week4_total
+    FROM 
+        "wa_question_responses" q 
+    LEFT JOIN 
+        course_activities l ON l."LessonId" = q."lessonId"
+    WHERE 
+        l."activity" = 'speakingPractice' 
         AND q."phoneNumber" IN (SELECT "phoneNumber" FROM target_group_users)
     GROUP BY 
         q."phoneNumber"
@@ -1011,20 +1095,20 @@ wa_lessons_completed AS (
         m."phoneNumber"
 )
 SELECT 
-     ROW_NUMBER() OVER (ORDER BY m."phoneNumber") AS sr_no,
+     ROW_NUMBER() OVER (ORDER BY m."name") AS sr_no,
      m."phoneNumber", 
      m."name",
     CASE 
         WHEN wc.completion_activity_week1 = 1 THEN
             CASE 
                 WHEN COALESCE(ls.listenAndSpeak_week1_total, 0) + COALESCE(mc.mcqs_week1_total, 0) + COALESCE(ws.watchAndSpeak_week1_total, 0) + 
-                     COALESCE(rd.read_week1_total, 0) + COALESCE(cm.conversationalMonologue_week1_total, 0) = 0
+                     COALESCE(rd.read_week1_total, 0) + COALESCE(cm.conversationalMonologue_week1_total, 0) + COALESCE(sp.Speaking_practice_week1_total, 0) = 0
                 THEN null
                 ELSE 
                      ROUND((COALESCE(ls.listenAndSpeak_week1_correct_count, 0) + COALESCE(mc.mcqs_week1_correct_count, 0) + COALESCE(ws.watchAndSpeak_week1_score, 0) + 
-                     COALESCE(rd.read_week1_score, 0) + COALESCE(cm.conversationalMonologue_week1_score, 0)) /
+                     COALESCE(rd.read_week1_score, 0) + COALESCE(cm.conversationalMonologue_week1_score, 0) + COALESCE(sp.Speaking_practice_week1_score, 0)) /
                     (COALESCE(ls.listenAndSpeak_week1_total, 0) + COALESCE(mc.mcqs_week1_total, 0) + COALESCE(ws.watchAndSpeak_week1_total, 0) + 
-                     COALESCE(rd.read_week1_total, 0) + COALESCE(cm.conversationalMonologue_week1_total, 0)) * 100, 2)
+                     COALESCE(rd.read_week1_total, 0) + COALESCE(cm.conversationalMonologue_week1_total, 0) + COALESCE(sp.Speaking_practice_week1_total, 0)) * 100, 0)
             END || '%'
         ELSE null
     END AS final_percentage_week1,
@@ -1033,13 +1117,13 @@ SELECT
         WHEN wc.completion_activity_week2 = 1 THEN
             CASE 
                 WHEN COALESCE(ls.listenAndSpeak_week2_total, 0) + COALESCE(mc.mcqs_week2_total, 0) + COALESCE(ws.watchAndSpeak_week2_total, 0) + 
-                     COALESCE(rd.read_week2_total, 0) + COALESCE(cm.conversationalMonologue_week2_total, 0) = 0
+                     COALESCE(rd.read_week2_total, 0) + COALESCE(cm.conversationalMonologue_week2_total, 0) + COALESCE(sp.Speaking_practice_week2_total, 0) = 0
                 THEN null
                 ELSE 
                      ROUND((COALESCE(ls.listenAndSpeak_week2_correct_count, 0) + COALESCE(mc.mcqs_week2_correct_count, 0) + COALESCE(ws.watchAndSpeak_week2_score, 0) + 
-                     COALESCE(rd.read_week2_score, 0) + COALESCE(cm.conversationalMonologue_week2_score, 0)) /
+                     COALESCE(rd.read_week2_score, 0) + COALESCE(cm.conversationalMonologue_week2_score, 0) + COALESCE(sp.Speaking_practice_week2_score, 0)) /
                     (COALESCE(ls.listenAndSpeak_week2_total, 0) + COALESCE(mc.mcqs_week2_total, 0) + COALESCE(ws.watchAndSpeak_week2_total, 0) + 
-                     COALESCE(rd.read_week2_total, 0) + COALESCE(cm.conversationalMonologue_week2_total, 0)) * 100, 2)
+                     COALESCE(rd.read_week2_total, 0) + COALESCE(cm.conversationalMonologue_week2_total, 0) + COALESCE(sp.Speaking_practice_week2_total, 0)) * 100, 0)
             END || '%'
         ELSE null
     END AS final_percentage_week2,
@@ -1048,13 +1132,13 @@ SELECT
         WHEN wc.completion_activity_week3 = 1 THEN
             CASE 
                 WHEN COALESCE(ls.listenAndSpeak_week3_total, 0) + COALESCE(mc.mcqs_week3_total, 0) + COALESCE(ws.watchAndSpeak_week3_total, 0) + 
-                     COALESCE(rd.read_week3_total, 0) + COALESCE(cm.conversationalMonologue_week3_total, 0) = 0
+                     COALESCE(rd.read_week3_total, 0) + COALESCE(cm.conversationalMonologue_week3_total, 0) + COALESCE(sp.Speaking_practice_week3_total, 0) = 0
                 THEN null
                 ELSE 
                      ROUND((COALESCE(ls.listenAndSpeak_week3_correct_count, 0) + COALESCE(mc.mcqs_week3_correct_count, 0) + COALESCE(ws.watchAndSpeak_week3_score, 0) + 
-                     COALESCE(rd.read_week3_score, 0) + COALESCE(cm.conversationalMonologue_week3_score, 0)) /
+                     COALESCE(rd.read_week3_score, 0) + COALESCE(cm.conversationalMonologue_week3_score, 0) + COALESCE(sp.Speaking_practice_week3_score, 0)) /
                     (COALESCE(ls.listenAndSpeak_week3_total, 0) + COALESCE(mc.mcqs_week3_total, 0) + COALESCE(ws.watchAndSpeak_week3_total, 0) + 
-                     COALESCE(rd.read_week3_total, 0) + COALESCE(cm.conversationalMonologue_week3_total, 0)) * 100, 2)
+                     COALESCE(rd.read_week3_total, 0) + COALESCE(cm.conversationalMonologue_week3_total, 0) + COALESCE(sp.Speaking_practice_week3_total, 0)) * 100, 0)
             END || '%'
         ELSE null
     END AS final_percentage_week3,
@@ -1063,13 +1147,13 @@ SELECT
         WHEN wc.completion_activity_week4 = 1 THEN
             CASE 
                 WHEN COALESCE(ls.listenAndSpeak_week4_total, 0) + COALESCE(mc.mcqs_week4_total, 0) + COALESCE(ws.watchAndSpeak_week4_total, 0) + 
-                     COALESCE(rd.read_week4_total, 0) + COALESCE(cm.conversationalMonologue_week4_total, 0) = 0
+                     COALESCE(rd.read_week4_total, 0) + COALESCE(cm.conversationalMonologue_week4_total, 0) + COALESCE(sp.Speaking_practice_week4_total, 0) = 0
                 THEN null
                 ELSE 
                      ROUND((COALESCE(ls.listenAndSpeak_week4_correct_count, 0) + COALESCE(mc.mcqs_week4_correct_count, 0) + COALESCE(ws.watchAndSpeak_week4_score, 0) + 
-                     COALESCE(rd.read_week4_score, 0) + COALESCE(cm.conversationalMonologue_week4_score, 0)) /
+                     COALESCE(rd.read_week4_score, 0) + COALESCE(cm.conversationalMonologue_week4_score, 0) + COALESCE(sp.Speaking_practice_week4_score, 0)) /
                     (COALESCE(ls.listenAndSpeak_week4_total, 0) + COALESCE(mc.mcqs_week4_total, 0) + COALESCE(ws.watchAndSpeak_week4_total, 0) + 
-                     COALESCE(rd.read_week4_total, 0) + COALESCE(cm.conversationalMonologue_week4_total, 0)) * 100, 2)
+                     COALESCE(rd.read_week4_total, 0) + COALESCE(cm.conversationalMonologue_week4_total, 0) + COALESCE(sp.Speaking_practice_week4_total, 0)) * 100, 0)
             END || '%'
         ELSE null
     END AS final_percentage_week4
@@ -1085,6 +1169,8 @@ LEFT JOIN
     read_activity rd ON m."phoneNumber" = rd."phoneNumber"
 LEFT JOIN 
     conversational_monologue cm ON m."phoneNumber" = cm."phoneNumber"
+LEFT JOIN 
+    Speaking_practice sp ON m."phoneNumber" = sp."phoneNumber"
 LEFT JOIN 
     wa_lessons_completed wc ON m."phoneNumber" = wc."phoneNumber"
 WHERE 
@@ -1308,7 +1394,7 @@ const getActivity_Completions = async (course1_id, course2_id, course3_id, grp, 
     try {
         const qry = `
             SELECT 
-                ROW_NUMBER() OVER (ORDER BY m."phoneNumber") AS sr_no,
+                ROW_NUMBER() OVER (ORDER BY m."name") AS sr_no,
                 m."phoneNumber", 
                 m."name",
                 SUM(CASE WHEN s."weekNumber" = 1 AND s."courseId" = ${course1_id} THEN 1 ELSE NULL END) AS "course1_week1_activities",
@@ -1366,14 +1452,16 @@ const getActivity_Completions = async (course1_id, course2_id, course3_id, grp, 
 
 const getActivityNameCount = async (course_id1, course_id2,course_id3,grp,cohort) => {
     try {
-    
       const qry1 = `select "activity", count("activity") from "Lesson" where "courseId" = ${course_id1} or "courseId" = ${course_id2} or "courseId" = ${course_id3}  group by "activity" order by "activity";`;
       const res1 = await sequelize.query(qry1);
-
+      let cohort1 = cohort;
       let activities = res1[0].map(item => item.activity);
 
       const dynamicSumActivity = activities.map(activity =>  `COALESCE(sum(case when s."activity" = '${activity}' then 1 else null end), null) as "${activity}"`).join(",\n");
-      const qry2 = `
+      let qry2 = ``;
+      if(cohort != ''){
+        cohort = `m."cohort" = '${cohort}'`;
+        qry2 = `
       SELECT 
         ${dynamicSumActivity}
       FROM 
@@ -1390,17 +1478,54 @@ const getActivityNameCount = async (course_id1, course_id2,course_id3,grp,cohort
         l."lessonId" = s."LessonId" 
         AND l."courseId" = s."courseId"
       WHERE 
-        m."targetGroup" = '${grp}' and m."cohort" = '${cohort}'
+        m."targetGroup" = '${grp}' and ${cohort}
       GROUP BY 
         m."phoneNumber"
       ORDER BY 
         m."name" ASC;`;
+<<<<<<< HEAD
 
+=======
+      }
+      else{
+        cohort = `m."cohort" != 'Pilot'`;
+        qry2 = `
+      SELECT 
+        ROW_NUMBER() OVER (ORDER BY MAX(m."cohort") ASC) AS row_number,
+        m."phoneNumber",
+        MAX(m."name") AS "name",
+        ${dynamicSumActivity},
+        max(m."cohort") as "cohort"
+      FROM 
+        "wa_users_metadata" m
+      LEFT JOIN 
+        "wa_lessons_completed" l 
+      ON 
+        m."phoneNumber" = l."phoneNumber" 
+        AND (l."courseId" = ${course_id1} OR l."courseId" = ${course_id2} OR l."courseId" = ${course_id3})
+        AND l."completionStatus" = 'Completed'
+      LEFT JOIN 
+        "Lesson" s 
+      ON 
+        l."lessonId" = s."LessonId" 
+        AND l."courseId" = s."courseId"
+      WHERE 
+        m."targetGroup" = '${grp}' and ${cohort}
+      GROUP BY 
+        m."phoneNumber"
+      ORDER BY 
+        m."cohort" ASC;`;
+      }
+    
+>>>>>>> master
         const res2 = await sequelize.query(qry2);
-
         let activityTotal = [];
 
         let counts = res1[0].map(item => parseInt(item.count, 10));
+        if (cohort1 == '') {
+            counts = [null, null, null, ...counts, null]; // Prepend 3 nulls and append 1 null to counts
+            activities = [null, null, null, ...activities, null]; // Prepend 3 nulls and append 1 null to activities
+        }
         activityTotal.push(counts);
 
         activityTotal.push(activities);
@@ -1411,7 +1536,7 @@ const getActivityNameCount = async (course_id1, course_id2,course_id3,grp,cohort
 
         activityTotal = activityTotal.concat(activityCompleted);
 
-        // console.log(activityTotal);
+        console.log(activityTotal);
 
   
       return activityTotal;

@@ -9,8 +9,13 @@ const getWaUserActivityLogByPhoneNumberService = async (phoneNumber, page = 1, p
     return await waUserActivityLogsRepository.getByPhoneNumber(phoneNumber, pageSize, offset);
 };
 
+const getLastMessageTimeService = async () => {
+    return await waUserActivityLogsRepository.getLastMessageTime();
+};
+
 
 export default {
     getAllWaUserActivityLogsService,
-    getWaUserActivityLogByPhoneNumberService
+    getWaUserActivityLogByPhoneNumberService,
+    getLastMessageTimeService
 };

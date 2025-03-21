@@ -21,6 +21,7 @@ import { createCanvas, registerFont, loadImage } from 'canvas';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import OpenAI from "openai";
+import { question_bot_prompt, wrapup_prompt } from "../utils/prompts.js";
 import lessonRepository from "../repositories/lessonRepository.js";
 
 dotenv.config();
@@ -39,6 +40,12 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+async function getAudioBufferFromAudioFileUrl(audioUrl) {
+    const response = await fetch(audioUrl);
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+}
+
 const removeUser = async (phoneNumber) => {
     await waUsersMetadataRepository.deleteByPhoneNumber(phoneNumber);
     await waUserProgressRepository.deleteByPhoneNumber(phoneNumber);
@@ -50,7 +57,7 @@ const removeUser = async (phoneNumber) => {
 };
 
 const removeUserTillCourse = async (phoneNumber) => {
-    await waUserProgressRepository.update(phoneNumber, null, null, null, null, null, null, null, null, ["i want to start my course"]);
+    await waUserProgressRepository.update(phoneNumber, null, null, null, null, null, null, null, null, ["start my course"]);
     await waUserProgressRepository.updateEngagementType(phoneNumber, "School Input");
     await waUserActivityLogsRepository.deleteByPhoneNumber(phoneNumber);
     await waLessonsCompletedRepository.deleteByPhoneNumber(phoneNumber);
@@ -160,9 +167,13 @@ const weekEndScoreCalculation = async (phoneNumber, weekNumber, courseId) => {
     const monologueLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'conversationalMonologueBot');
     const correctMonologue = await waQuestionResponsesRepository.monologueScoreForList(phoneNumber, monologueLessonIds);
 
+    // Get lessonIds for speakingPractice of that week
+    const speakingPracticeLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'speakingPractice');
+    const correctSpeakingPractice = await waQuestionResponsesRepository.monologueScoreForList(phoneNumber, speakingPracticeLessonIds);
+
     // Calculate sum of scores and sum of total scores and give percentage out of 100
-    const totalScore = correctMcqs + correctListenAndSpeak + correctWatchAndSpeak.score + correctRead.score + correctMonologue.score;
-    const totalQuestions = totalMcqs + totalListenAndSpeak + correctWatchAndSpeak.total + correctRead.total + correctMonologue.total;
+    const totalScore = correctMcqs + correctListenAndSpeak + correctWatchAndSpeak.score + correctRead.score + correctMonologue.score + correctSpeakingPractice.score;
+    const totalQuestions = totalMcqs + totalListenAndSpeak + correctWatchAndSpeak.total + correctRead.total + correctMonologue.total + correctSpeakingPractice.total;
     const percentage = Math.round((totalScore / totalQuestions) * 100);
     return percentage;
 };
@@ -249,7 +260,6 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
         ctx.fillStyle = '#000000';
         ctx.fillText(`${fluencyScoreNumber}%`, 50 + 790 * (fluencyScoreNumber / 100) - 70, 345);
 
-        // Add "You said" section
         ctx.font = 'bold 30px Arial';
         ctx.fillText('You said', 50, 410);
 
@@ -400,8 +410,6 @@ const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
         // Position till the end of dark blue bar
         ctx.fillText(`${fluencyScoreNumber}%`, 50 + 790 * (fluencyScoreNumber / 100) - 70, 250);
 
-
-        // Add "You said" section
         ctx.font = 'bold 30px Arial';
         ctx.fillText('You said', 50, 315);
 
@@ -441,13 +449,7 @@ const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
                 ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
                 ctx.fillStyle = '#000000'; // Black text
                 ctx.fillText(word, cursorX, cursorY);
-            } else if (errorType == 'Omission') {
-                // Highlight skipped words in grey
-                ctx.fillStyle = '#A9A9A9'; // Grey
-                ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
-                ctx.fillStyle = '#000000'; // Black text
-                ctx.fillText(word, cursorX, cursorY);
-            } else if (errorType == 'None') {
+            } else {
                 // Regular words
                 ctx.fillStyle = '#000000';
                 ctx.fillText(word, cursorX, cursorY);
@@ -468,13 +470,150 @@ const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
         ctx.fillStyle = '#000000';
         ctx.fillText('Mispronounced Words', 80, 827);
 
-        // Skipped Words Legend (Grey Circle)
-        ctx.fillStyle = '#A9A9A9'; // Grey color
+        // Convert the canvas to a buffer
+        const buffer = canvas.toBuffer('image/jpeg');
+
+        // Upload to Azure Blob Storage
+        const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
+        return imageUrl;
+    } catch (err) {
+        console.error('Error creating and uploading image:', err);
+        throw new Error('Failed to create and upload image');
+    }
+}
+
+const createAndUploadSpeakingPracticeScoreImage = async (pronunciationAssessments) => {
+    try {
+        if (pronunciationAssessments === undefined || pronunciationAssessments == [] || pronunciationAssessments == null) {
+            return null;
+        };
+
+        let totalFluencyScore = 0;
+        let totalAccuracyScore = 0;
+        let allWords = [];
+
+        pronunciationAssessments.forEach(assessment => {
+            totalFluencyScore += Math.round(assessment.scoreNumber.fluencyScore || 0);
+            totalAccuracyScore += Math.round(assessment.scoreNumber.accuracyScore || 0);
+            if (assessment.words && Array.isArray(assessment.words)) {
+                allWords = [...allWords, ...assessment.words];
+            }
+        });
+
+        const avgFluencyScore = Math.round(totalFluencyScore / pronunciationAssessments.length);
+        const avgAccuracyScore = Math.round(totalAccuracyScore / pronunciationAssessments.length);
+
+        const width = 900;
+        const height = 950;
+        const canvas = createCanvas(width, height);
+        const ctx = canvas.getContext('2d');
+
+        // Draw background
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, width, height);
+
+        // Load and add the company logo in the top - right corner
+        const image = await loadImage("https://beajbloblive.blob.core.windows.net/beajdocuments/logo.jpeg");  // Path to the logo image
+        ctx.drawImage(image, width - 160, 20, image.width / 7.5, image.height / 7.5);
+
+        // Add "YOUR SCORE" Title
+        ctx.font = 'bold 40px Arial';
+        ctx.fillStyle = '#000000';
+        ctx.fillText('YOUR SCORE', 50, 80);
+
+        // Add "Completeness" Bar with dynamic score
+        ctx.font = '25px Arial';
+        ctx.fillText('Correct Pronunciation', 50, 120);
+
+        // Draw light magenta background bar for full length
+        ctx.fillStyle = '#eecef7';
+        ctx.fillRect(50, 125, 790, 40);
+
+        // Draw dark magenta foreground bar for actual score
+        ctx.fillStyle = '#cb6ce6';
+        ctx.fillRect(50, 125, 790 * (avgAccuracyScore / 100), 40);
+
+        // Add score text inside the bar
+        ctx.fillStyle = '#000000';
+        // Position till the end of dark magenta bar
+        ctx.fillText(`${avgAccuracyScore}%`, 50 + 790 * (avgAccuracyScore / 100) - 70, 155);
+
+        // Add "Pronunciation" Bar with dynamic score
+        ctx.font = '25px Arial';
+        ctx.fillText('Fluency', 50, 215);
+
+        // Draw light blue background bar for full length
+        ctx.fillStyle = '#B2EBF2';
+        ctx.fillRect(50, 220, 790, 40);
+
+        // Draw dark blue foreground bar for actual score
+        ctx.fillStyle = '#30D5C8';
+        ctx.fillRect(50, 220, 790 * (avgFluencyScore / 100), 40);
+
+        // Add score text inside the bar
+        ctx.fillStyle = '#000000';
+        // Position till the end of dark blue bar
+        ctx.fillText(`${avgFluencyScore}%`, 50 + 790 * (avgFluencyScore / 100) - 70, 250);
+
+        ctx.font = 'bold 30px Arial';
+        ctx.fillText('You said', 50, 305);
+
+        // Create a paragraph format for the text
+        ctx.font = '17px Arial';
+        const marginLeft = 50;
+        const maxWidth = 850;
+        let lineHeight = 40;
+        let cursorX = marginLeft;
+        let cursorY = 345; // Starting Y position for the text
+
+        // Loop through words and handle line breaks
+        allWords.forEach(wordObj => {
+            if (wordObj == undefined) {
+                return;
+            }
+            if (!['Mispronunciation', 'None'].includes(wordObj.PronunciationAssessment.ErrorType)) {
+                return;
+            }
+            const word = wordObj.Word;
+            const errorType = wordObj.PronunciationAssessment.ErrorType;
+            if (errorType == 'Omission') {
+                return;
+            }
+            const wordAccuracyScore = wordObj.PronunciationAssessment.AccuracyScore;
+            const wordWidth = ctx.measureText(word).width + 13; // Measure width of the word
+
+            // If the word exceeds the max width, move to a new line
+            if (cursorX + wordWidth > maxWidth) {
+                cursorX = marginLeft; // Reset X position to the left margin
+                cursorY += lineHeight; // Move to the next line
+            }
+
+            if (errorType == 'Mispronunciation' || wordAccuracyScore < 50) {
+                // Highlight mispronounced words in yellow
+                ctx.fillStyle = '#FFD700'; // Yellow
+                ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
+                ctx.fillStyle = '#000000'; // Black text
+                ctx.fillText(word, cursorX, cursorY);
+            } else {
+                // Regular words
+                ctx.fillStyle = '#000000';
+                ctx.fillText(word, cursorX, cursorY);
+            }
+
+            // Move cursor for the next word
+            cursorX += wordWidth;
+        });
+
+        // Add the legends at the bottom
+        ctx.font = '20px Arial';
+
+        // Mispronounced Words Legend (Yellow Circle)
+        ctx.fillStyle = '#FFD700'; // Yellow color
         ctx.beginPath(); // Start a new path
-        ctx.arc(350, 820, 10, 0, 2 * Math.PI);
+        ctx.arc(60, 920, 10, 0, 2 * Math.PI);
         ctx.fill(); // Fill the circle
         ctx.fillStyle = '#000000';
-        ctx.fillText('Skipped Words', 370, 827);
+        ctx.fillText('Mispronounced Words', 80, 927);
 
         // Convert the canvas to a buffer
         const buffer = canvas.toBuffer('image/jpeg');
@@ -488,176 +627,40 @@ const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
     }
 }
 
-const createAndUploadSpeakingScoreImage = async (results) => {
-    try {
-        if (results.pronunciationAssessment === undefined || results.pronunciationAssessment === null) {
-            return null;
-        }
-        let grammarScoreNumber;
-
-        if (results.contentAssessment === undefined || results.contentAssessment === null) {
-            grammarScoreNumber = 0;
-        } else {
-            grammarScoreNumber = Math.round(results.contentAssessment.GrammarScore);
-        }
-
-        const fluencyScoreNumber = Math.round(results.pronunciationAssessment.FluencyScore);
-        const accuracyScoreNumber = Math.round(results.pronunciationAssessment.AccuracyScore);
-        const words = Object.values(results.words);
-
-        // Set up canvas dimensions
-        const width = 900;
-        const height = 850;
-        const canvas = createCanvas(width, height);
-        const ctx = canvas.getContext('2d');
-
-        // Draw background
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, width, height);
-
-        // Load and add the company logo in the top-right corner
-        const image = await loadImage("https://beajbloblive.blob.core.windows.net/beajdocuments/logo.jpeg");
-        ctx.drawImage(image, width - 160, 20, image.width / 7.5, image.height / 7.5);
-
-        // Add "YOUR SCORE" Title
-        ctx.font = 'bold 40px Arial';
-        ctx.fillStyle = '#000000';
-        ctx.fillText('YOUR SCORE', 50, 80);
-
-        // Initialize the starting y-coordinate for the bars
-        let barYStart = 120;
-
-        // Conditionally add "Grammar" bar
-        if (grammarScoreNumber > 0) {
-            ctx.font = '25px Arial';
-            ctx.fillText('Grammar Score', 50, barYStart);
-
-            // Draw light magenta background bar
-            ctx.fillStyle = '#eecef7';
-            ctx.fillRect(50, barYStart + 5, 790, 40);
-
-            // Draw dark magenta foreground bar
-            ctx.fillStyle = '#cb6ce6';
-            ctx.fillRect(50, barYStart + 5, 790 * (grammarScoreNumber / 100), 40);
-
-            // Add score text
-            ctx.fillStyle = '#000000';
-            ctx.fillText(`${grammarScoreNumber}%`, 50 + 790 * (grammarScoreNumber / 100) - 70, barYStart + 35);
-
-            barYStart += 95; // Move to the next bar position
-        }
-
-        // Add "Pronunciation" bar
-        ctx.font = '25px Arial';
-        ctx.fillText('Correct Pronunciation', 50, barYStart);
-
-        // Draw light blue background bar
-        ctx.fillStyle = '#B2EBF2';
-        ctx.fillRect(50, barYStart + 5, 790, 40);
-
-        // Draw dark blue foreground bar
-        ctx.fillStyle = '#30D5C8';
-        ctx.fillRect(50, barYStart + 5, 790 * (accuracyScoreNumber / 100), 40);
-
-        // Add score text
-        ctx.fillStyle = '#000000';
-        ctx.fillText(`${accuracyScoreNumber}%`, 50 + 790 * (accuracyScoreNumber / 100) - 70, barYStart + 35);
-
-        barYStart += 95; // Move to the next bar position
-
-        // Add "Fluency" bar
-        ctx.font = '25px Arial';
-        ctx.fillText('Fluency', 50, barYStart);
-
-        // Draw light yellow background bar
-        ctx.fillStyle = '#F0F4C3';
-        ctx.fillRect(50, barYStart + 5, 790, 40);
-
-        // Draw darker yellow foreground bar
-        ctx.fillStyle = '#C7EA46';
-        ctx.fillRect(50, barYStart + 5, 790 * (fluencyScoreNumber / 100), 40);
-
-        // Add score text
-        ctx.fillStyle = '#000000';
-        ctx.fillText(`${fluencyScoreNumber}%`, 50 + 790 * (fluencyScoreNumber / 100) - 70, barYStart + 35);
-
-        barYStart += 95; // Move to the "You said" section
-
-        // Add "You said" section
-        ctx.font = 'bold 30px Arial';
-        ctx.fillText('You said', 50, barYStart);
-
-        // Format and render the words
-        ctx.font = '25px Arial';
-        const marginLeft = 50;
-        const maxWidth = 850;
-        let lineHeight = 40;
-        let cursorX = marginLeft;
-        let cursorY = barYStart + 40;
-
-        words.forEach((wordObj) => {
-            if (!['Mispronunciation', 'Omission', 'None'].includes(wordObj.ErrorType)) {
-                return;
-            }
-            const word = wordObj.Word;
-            const errorType = wordObj.ErrorType;
-            const wordAccuracyScore = wordObj.AccuracyScore;
-            const wordWidth = ctx.measureText(word).width + 15;
-
-            if (cursorX + wordWidth > maxWidth) {
-                cursorX = marginLeft;
-                cursorY += lineHeight;
-            }
-
-            if (errorType == 'Mispronunciation' || wordAccuracyScore < 50) {
-                ctx.fillStyle = '#FFD700';
-                ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
-                ctx.fillStyle = '#000000';
-                ctx.fillText(word, cursorX, cursorY);
-            } else if (errorType == 'None') {
-                ctx.fillStyle = '#000000';
-                ctx.fillText(word, cursorX, cursorY);
-            }
-
-            cursorX += wordWidth;
-        });
-
-        // Add the legends at the bottom
-        ctx.font = '20px Arial';
-
-        ctx.fillStyle = '#FFD700';
-        ctx.beginPath();
-        ctx.arc(60, 820, 10, 0, 2 * Math.PI);
-        ctx.fill();
-        ctx.fillStyle = '#000000';
-        ctx.fillText('Mispronounced Words', 80, 827);
-
-        // Convert the canvas to a buffer
-        const buffer = canvas.toBuffer('image/jpeg');
-
-        // Upload to Azure Blob Storage
-        const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
-        return imageUrl;
-    } catch (err) {
-        console.error('Error creating and uploading image:', err);
-        throw new Error('Failed to create and upload image');
-    }
-};
-
 const extractMispronouncedWords = (results) => {
+    if (!results || !results.words) {
+        return [];
+    }
+
     const words = Object.values(results.words);
-    const mispronouncedWords = words.filter(word => word.PronunciationAssessment.ErrorType == 'Mispronunciation' || word.PronunciationAssessment.AccuracyScore < 50);
+    const mispronouncedWords = words.filter(word => {
+        return word &&
+            word.PronunciationAssessment &&
+            (word.PronunciationAssessment.ErrorType === 'Mispronunciation' ||
+                word.PronunciationAssessment.AccuracyScore < 50);
+    });
+
     return mispronouncedWords;
 };
 
 const extractTranscript = (results) => {
+    if (!results || !results.words) {
+        return "";
+    }
+
     const words = Object.values(results.words);
-    const transcriptWords = words.filter(word => word.PronunciationAssessment.ErrorType != 'Omission');
+    const transcriptWords = words.filter(word =>
+        word &&
+        word.PronunciationAssessment &&
+        word.PronunciationAssessment.ErrorType !== 'Omission'
+    );
+
     return transcriptWords.map(word => word.Word).join(" ");
 };
 
+
 const getAcceptableMessagesList = async (activityType) => {
-    if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot") {
+    if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "speakingPractice") {
         return ["audio"];
     } else if (activityType === "watchAndImage") {
         return ["image"];
@@ -1069,7 +1072,7 @@ const thankYouMessage = async (userMobileNumber) => {
     const registrationImage = await extractConstantMessage("registration");
     await sendMediaMessage(userMobileNumber, registrationImage, 'image');
     await createActivityLog(userMobileNumber, "image", "outbound", registrationImage, null);
-    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["i want to start my course", "try demo"]);
+    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start my course", "try demo"]);
 
     await sleep(2000);
 
@@ -1103,26 +1106,35 @@ const demoCourseStart = async (userMobileNumber, startingLesson) => {
     return;
 };
 
-const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUserState, currentLesson, messageType, messageContent) => {
+const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUserState, messageType, messageContent) => {
     const acceptableMessagesList = currentUserState.dataValues.acceptableMessages;
     const activityType = currentUserState.dataValues.activityType;
-    if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "read") {
+    if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "read" || activityType === "speakingPractice") {
         if (acceptableMessagesList.includes("audio") && messageType === "audio") {
             return true;
         }
     }
-    else if (activityType === "watchAndImage" && messageType === "image") {
+    if (activityType === "watchAndImage" && messageType === "image") {
         return true;
     }
-    else if (activityType === "watchAndImage" && messageType != "image") {
+    if (activityType === "watchAndImage" && messageType != "image") {
         await sendMessage(userMobileNumber, "Image bhejain.");
         await createActivityLog(userMobileNumber, "text", "outbound", "Image bhejain.", null);
         return false;
     }
-    else if (messageType === "text" && acceptableMessagesList.includes("text")) {
+    if (messageType === "text" && acceptableMessagesList.includes("text")) {
         return true;
     }
-    else if (acceptableMessagesList.includes(messageContent.toLowerCase())) {
+    if (acceptableMessagesList.includes("yes") && acceptableMessagesList.includes("no")) {
+        if (messageContent.toLowerCase() == "yes" || messageContent.toLowerCase() == "no" || messageContent.toLowerCase() == "no, try again") {
+            return true;
+        } else {
+            await sendMessage(userMobileNumber, "yes or no type kerain.");
+            await createActivityLog(userMobileNumber, "text", "outbound", "yes or no type kerain.", null);
+            return false;
+        }
+    }
+    if (acceptableMessagesList.includes(messageContent.toLowerCase())) {
         return true;
     }
 
@@ -1133,20 +1145,20 @@ const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUs
         return false;
     }
     // If list has "audio"
-    else if (acceptableMessagesList.includes("audio")) {
+    if (acceptableMessagesList.includes("audio")) {
         await sendMessage(userMobileNumber, "Voice message record karke bhejain.");
         await createActivityLog(userMobileNumber, "text", "outbound", "Voice message record karke bhejain.", null);
         return false;
     }
     // If list has "text"
-    else if (acceptableMessagesList.includes("text")) {
+    if (acceptableMessagesList.includes("text")) {
         await sendMessage(userMobileNumber, "Text message type kerain.");
         await createActivityLog(userMobileNumber, "text", "outbound", "Text message type kerain.", null);
         return false;
     }
-    else if (acceptableMessagesList.includes("let's start!")) {
-        await sendMessage(userMobileNumber, "Please write: \n\nLet's start!");
-        await createActivityLog(userMobileNumber, "text", "outbound", "Please write: \n\nLet's start!", null);
+    if (acceptableMessagesList.includes("start")) {
+        await sendMessage(userMobileNumber, "Please write: \n\nstart");
+        await createActivityLog(userMobileNumber, "text", "outbound", "Please write: \n\nstart", null);
         return false;
     }
     // Write customized message based on the acceptable messages list
@@ -1161,13 +1173,6 @@ const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUs
     await sendMessage(userMobileNumber, message);
     await createActivityLog(userMobileNumber, "text", "outbound", message, null);
     return false;
-};
-
-const sendWrongMessages = async (userMobileNumber) => {
-    let message = "Please write: \n\nStart";
-    await sendMessage(userMobileNumber, message);
-    await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-    return;
 };
 
 const getNextCourse = async (userMobileNumber) => {
@@ -1263,11 +1268,11 @@ const startCourseForUser = async (userMobileNumber, numbers_to_ignore) => {
 
     // Send Button Message
     // "Are you ready to start level"
-    await sendButtonMessage(userMobileNumber, "Are you ready to start " + level + "?", [{ id: "lets_start", title: "Let's Start!" }]);
+    await sendButtonMessage(userMobileNumber, "Are you ready to start " + level + "?", [{ id: "lets_start", title: "Start" }]);
     await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start " + level + "?", null);
 
     // Update acceptable messages list for the user
-    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["lets start!", "let's start!"]);
+    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start"]);
     return;
 };
 
@@ -1346,7 +1351,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
             return;
         } else if (checkRegistrationComplete == true && lessonLast == true) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try demo again", "i want to start my course"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try demo again", "start my course"]);
 
             // Sleep
             await sleep(2000);
@@ -1370,7 +1375,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
             return;
         } else if (checkRegistrationComplete == true && lessonLast == false) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try next activity", "i want to start my course"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["try next activity", "start my course"]);
 
             // Sleep
             await sleep(2000);
@@ -1433,9 +1438,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         if (startingLesson.dataValues.dayNumber == 6) {
             let weekMessage = ""
             if (strippedCourseName == "Level 3") {
-                weekMessage = "You have unlocked this week's challenge! 🧩\nNow go to your class-group to solve it. Thank You for staying with us till the end! 👍🏽";
-            } else {
-                weekMessage = "You have unlocked this week's challenge 🧩\nGo to your class-group to solve it. All the best! 👍🏽";
+                weekMessage = "Thank You for staying with us till the end! 👍🏽";
             }
 
             const weekEndScore = await weekEndScoreCalculation(userMobileNumber, startingLesson.dataValues.weekNumber, currentUserState.currentCourseId);
@@ -1510,10 +1513,6 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
             let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
             lessonMessage += "\n\n" + removeHTMLTags(startingLesson.dataValues.text);
 
-            // Text message
-            // await sendMessage(userMobileNumber, lessonMessage);
-            // await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
-
             // Send video content
             const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
             let videoURL = documentFile[0].dataValues.video;
@@ -1532,10 +1531,6 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
             // Send lesson message
             let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
             lessonMessage += "\n\n" + removeHTMLTags(startingLesson.dataValues.text);
-
-            // Text message
-            // await sendMessage(userMobileNumber, lessonMessage);
-            // await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
             // Send video content
             const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
@@ -1600,7 +1595,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(firstMCQsQuestion.dataValues.Id);
                 const questionText = firstMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
                 let mcqMessage = questionText + "\n\n";
-                if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question")) {
+                if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
                     mcqMessage += "Choose the correct answer:\n";
                 }
                 for (let i = 0; i < mcqAnswers.length; i++) {
@@ -1683,7 +1678,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(nextMCQsQuestion.dataValues.Id);
                     const questionText = nextMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
                     let mcqMessage = questionText + "\n\n";
-                    if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question")) {
+                    if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
                         mcqMessage += "Choose the correct answer:\n";
                     }
                     for (let i = 0; i < mcqAnswers.length; i++) {
@@ -1707,35 +1702,16 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         // Text message
                         await sendMessage(userMobileNumber, message);
                         await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-
-                        // Sticker
-                        // const stickerURL = await extractConstantMessage("good_effort_sticker");
-                        // await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
-                        // await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
-                        // await sleep(3000);
-
                     } else if (scorePercentage >= 61 && scorePercentage <= 79) {
                         message += "\n\nWell done! 🌟";
                         // Text message
                         await sendMessage(userMobileNumber, message);
                         await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-
-                        // Sticker
-                        // const stickerURL = await extractConstantMessage("well_done_sticker");
-                        // await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
-                        // await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
-                        // await sleep(3000);
                     } else if (scorePercentage >= 80) {
                         message += "\n\nExcellent 🎉";
                         // Text message
                         await sendMessage(userMobileNumber, message);
                         await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-
-                        // Sticker
-                        // const stickerURL = await extractConstantMessage("excellent_sticker");
-                        // await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
-                        // await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
-                        // await sleep(3000);
                     }
 
 
@@ -1771,60 +1747,159 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, 'video', videoCaptionText);
                 await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null, videoCaptionText);
 
-                // Send question text
-                // await sendMessage(userMobileNumber, message);
-                // await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-
                 // Update acceptable messages list for the user
                 await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
-            } else if (messageType === 'audio') {
+            }
+            else if (messageType === 'audio') {
+                // Get the current Watch And Speak question
+                const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                const retryCounter = currentUserState.dataValues.retryCounter;
+                if (retryCounter == 0 || retryCounter == null) {
+                    const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
+                    const uniqueID = uuidv4();
+                    const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
+                    const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                    const submissionDate = new Date();
+                    await waQuestionResponsesRepository.create(
+                        userMobileNumber,
+                        currentUserState.dataValues.currentLessonId,
+                        currentWatchAndSpeakQuestion.dataValues.id,
+                        activity,
+                        startingLesson.dataValues.activityAlias,
+                        null,
+                        [userAudioFileUrl],
+                        null,
+                        null,
+                        null,
+                        null,
+                        1,
+                        submissionDate
+                    );
+
+                    // Confirmation message asking to retry with yes and no buttons
+                    await sendButtonMessage(userMobileNumber, "Submit response? 🧐", [{ id: "yes", title: "Yes" }, { id: "no", title: "No, try again" }]);
+                    await createActivityLog(userMobileNumber, "template", "outbound", "Submit response? 🧐", null);
+
+                    // Update acceptable messages list for the user
+                    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["yes", "no", "no, try again"]);
+                    return;
+                }
+                else {
+                    // Get the current Watch And Speak question
+                    const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+
+                    // Azure Pronunciation Assessment
+                    const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, currentWatchAndSpeakQuestion.dataValues.answer[0]);
+
+                    // Extract user transcription from words
+                    const userTranscription = extractTranscript(pronunciationAssessment);
+
+                    // Generate pronunciation assessment message
+                    const imageUrl = await createAndUploadScoreImage(pronunciationAssessment);
+
+                    if (imageUrl) {
+                        // Media message
+                        await sendMediaMessage(userMobileNumber, imageUrl, 'image', "You said: " + userTranscription);
+                        await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null, "You said: " + userTranscription);
+                        await sleep(5000);
+                    }
+
+                    const submissionDate = new Date();
+                    const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
+                    const uniqueID = uuidv4();
+                    const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
+                    const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                    // Update user response to the database
+                    await waQuestionResponsesRepository.updateReplace(
+                        userMobileNumber,
+                        currentUserState.dataValues.currentLessonId,
+                        currentWatchAndSpeakQuestion.dataValues.id,
+                        activity,
+                        startingLesson.dataValues.activityAlias,
+                        [userTranscription],
+                        [userAudioFileUrl],
+                        [imageUrl],
+                        null,
+                        [pronunciationAssessment],
+                        null,
+                        retryCounter + 1,
+                        submissionDate
+                    );
+
+                    const nextWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                    if (nextWatchAndSpeakQuestion) {
+                        // Update acceptable messages list for the user
+                        await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
+                        await waUserProgressRepository.updateRetryCounter(userMobileNumber, 0);
+
+                        // Update question number
+                        await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.questionNumber);
+
+                        const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
+                        let videoCaptionText = "Question " + nextWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + ":\n\nPuri video dekhein👆🏽. Phir video ke akhri jumley ko ek voice message mein bol kar bhejhein.💬"
+
+                        // Send question media file
+                        await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video', videoCaptionText);
+                        await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null, videoCaptionText);
+
+                    } else {
+                        // Reset Question Number, Retry Counter, and Activity Type
+                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+
+                        // ENDING MESSAGE
+                        await endingMessage(userMobileNumber, currentUserState, startingLesson);
+                    }
+                    return;
+                }
+            }
+            else if (messageContent == 'yes') {
                 // Get the current Watch And Speak question
                 const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
+                const audioUrl = await waQuestionResponsesRepository.getAudioUrlForPhoneNumberQuestionIdAndLessonId(userMobileNumber, currentWatchAndSpeakQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
+                const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
+
                 // Azure Pronunciation Assessment
-                const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, currentWatchAndSpeakQuestion.dataValues.answer[0]);
+                const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(audioBuffer, currentWatchAndSpeakQuestion.dataValues.answer[0]);
 
                 // Extract user transcription from words
                 const userTranscription = extractTranscript(pronunciationAssessment);
-
-                // Text message
-                await sendMessage(userMobileNumber, "You said: " + userTranscription);
-                await createActivityLog(userMobileNumber, "text", "outbound", "You said: " + userTranscription, null);
 
                 // Generate pronunciation assessment message
                 const imageUrl = await createAndUploadScoreImage(pronunciationAssessment);
 
                 if (imageUrl) {
                     // Media message
-                    await sendMediaMessage(userMobileNumber, imageUrl, 'image');
-                    await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
+                    await sendMediaMessage(userMobileNumber, imageUrl, 'image', "You said: " + userTranscription);
+                    await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null, "You said: " + userTranscription);
                     await sleep(5000);
                 }
-
-                // Save user response to the database
-                const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
-                const uniqueID = uuidv4();
-                const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
-                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
                 const submissionDate = new Date();
-                await waQuestionResponsesRepository.create(
+                const retryCounter = currentUserState.dataValues.retryCounter;
+
+                // Update user response to the database
+                await waQuestionResponsesRepository.updateReplace(
                     userMobileNumber,
                     currentUserState.dataValues.currentLessonId,
                     currentWatchAndSpeakQuestion.dataValues.id,
                     activity,
                     startingLesson.dataValues.activityAlias,
                     [userTranscription],
-                    [userAudioFileUrl],
+                    [audioUrl],
                     [imageUrl],
                     null,
                     [pronunciationAssessment],
                     null,
-                    1,
+                    retryCounter + 1,
                     submissionDate
                 );
 
                 const nextWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                 if (nextWatchAndSpeakQuestion) {
+                    // Update acceptable messages list for the user
+                    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
+                    await waUserProgressRepository.updateRetryCounter(userMobileNumber, 0);
+
                     // Update question number
                     await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.questionNumber);
 
@@ -1835,9 +1910,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video', videoCaptionText);
                     await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null, videoCaptionText);
 
-                    // Send question text
-                    // await sendMessage(userMobileNumber, message);
-                    // await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+                    return;
                 } else {
                     // Reset Question Number, Retry Counter, and Activity Type
                     await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
@@ -1845,6 +1918,19 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     // ENDING MESSAGE
                     await endingMessage(userMobileNumber, currentUserState, startingLesson);
                 }
+                return;
+            }
+            else if (messageContent == 'no, try again' || messageContent == 'no') {
+                // Send message to try again
+                await sendMessage(userMobileNumber, "Okay record your voice message again.");
+                await createActivityLog(userMobileNumber, "text", "outbound", "Okay record your voice message again.", null);
+
+                // Update acceptable messages list for the user
+                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
+
+                // Update retry counter
+                await waUserProgressRepository.updateRetryCounter(userMobileNumber, currentUserState.dataValues.retryCounter + 1);
+                return;
             }
         }
         else if (activity == 'watchAndAudio') {
@@ -1996,7 +2082,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 // Lesson Text
                 let lessonText = startingLesson.dataValues.text;
                 lessonText = removeHTMLTags(lessonText);
-                if (lessonText == "Let’s Start Questions👇🏽") {
+                if (lessonText == "Let's Start Questions👇🏽") {
                     await sendMessage(userMobileNumber, lessonText);
                     await createActivityLog(userMobileNumber, "text", "outbound", lessonText, null);
                 }
@@ -2039,10 +2125,10 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     // Checking if user response is correct or not
 
                     let userAnswerIsCorrect = false;
-                    const recognizedTextWithoutPunctuation = recognizedText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"‘’“”?]/g, "").toLowerCase();
+                    const recognizedTextWithoutPunctuation = recognizedText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"['']"?]/g, "").toLowerCase();
                     const recognizedTextWithoutSpaces = recognizedTextWithoutPunctuation.trim();
                     for (let i = 0; i < answersArray.length; i++) {
-                        const answerWithoutPunctuation = answersArray[i].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"‘’“”?]/g, "").toLowerCase();
+                        const answerWithoutPunctuation = answersArray[i].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"['']"?]/g, "").toLowerCase();
                         const answerWithoutSpaces = answerWithoutPunctuation.trim();
                         if (recognizedTextWithoutSpaces == answerWithoutSpaces) {
                             userAnswerIsCorrect = true;
@@ -2135,10 +2221,6 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         // Update question number
                         await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextListenAndSpeakQuestion.dataValues.questionNumber);
 
-                        // Media message
-                        // await sendMediaMessage(userMobileNumber, nextListenAndSpeakQuestion.dataValues.mediaFile, 'audio');
-                        // await createActivityLog(userMobileNumber, "audio", "outbound", nextListenAndSpeakQuestion.dataValues.mediaFile, null);
-
                         // Update acceptable messages list for the user
                         await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
                         // await sleep(5000);
@@ -2158,34 +2240,16 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                             // Text message
                             await sendMessage(userMobileNumber, message);
                             await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-
-                            // Sticker
-                            // const stickerURL = await extractConstantMessage("good_effort_sticker");
-                            // await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
-                            // await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
-                            // await sleep(3000);
                         } else if (scorePercentage >= 61 && scorePercentage <= 79) {
                             message += "\n\nWell done! 🌟";
                             // Text message
                             await sendMessage(userMobileNumber, message);
                             await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-
-                            // Sticker
-                            // const stickerURL = await extractConstantMessage("well_done_sticker");
-                            // await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
-                            // await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
-                            // await sleep(3000);
                         } else if (scorePercentage >= 80) {
                             message += "\n\nExcellent 🎉";
                             // Text message
                             await sendMessage(userMobileNumber, message);
                             await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-
-                            // Sticker
-                            // const stickerURL = await extractConstantMessage("excellent_sticker");
-                            // await sendMediaMessage(userMobileNumber, stickerURL, 'sticker');
-                            // await createActivityLog(userMobileNumber, "sticker", "outbound", stickerURL, null);
-                            // await sleep(3000);
                         }
 
                         // Reset Question Number, Retry Counter, and Activity Type
@@ -2236,7 +2300,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 const lessonText = startingLesson.dataValues.text;
 
                 // Remove punctuation from the text
-                const textWithoutPunctuation = lessonText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"‘’“”]/g, "");
+                const textWithoutPunctuation = lessonText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"['']"?]/g, "");
 
                 // Remove HTML tags from the text
                 const textWithoutPunctuationAndHtmlTags = removeHTMLTags(textWithoutPunctuation);
@@ -2247,16 +2311,12 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 // Extract user transcription from words
                 const userTranscription = extractTranscript(pronunciationAssessment);
 
-                // Text message
-                await sendMessage(userMobileNumber, "You said: " + userTranscription);
-                await createActivityLog(userMobileNumber, "text", "outbound", "You said: " + userTranscription, null);
-
                 const imageUrl = await createAndUploadScoreImage(pronunciationAssessment);
 
                 if (imageUrl) {
                     // Media message
-                    await sendMediaMessage(userMobileNumber, imageUrl, 'image');
-                    await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
+                    await sendMediaMessage(userMobileNumber, imageUrl, 'image', "You said: " + userTranscription);
+                    await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null, "You said: " + userTranscription);
                     await sleep(5000);
                 }
 
@@ -2320,34 +2380,68 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 const currentConversationBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
                 // OpenAI Speech to Text
-                const recognizedText = await azureAIServices.openaiSpeechToText(messageContent.data);
+                const recognizedText = await azureAIServices.elevenLabsSpeechToText(messageContent.data);
                 if (recognizedText) {
-                    const message = `Please wait for an answer. \n\nYou said: ${recognizedText}`;
-                    await sendMessage(userMobileNumber, message);
-                    await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+                    const recordExists = await waQuestionResponsesRepository.checkRecordExistsForPhoneNumberAndLessonId(userMobileNumber, currentUserState.dataValues.currentLessonId);
+                    let openaiFeedbackTranscript = null;
+                    let openaiFeedbackAudio = null;
+                    let initialFeedbackResponse = null;
+                    if (recordExists) {
+                        const message = `Please wait for an answer. \n\nYou said: ${recognizedText}`;
+                        await sendMessage(userMobileNumber, message);
+                        await createActivityLog(userMobileNumber, "text", "outbound", message, null);
 
-                    // OpenAI Feedback
-                    let openaiFeedbackTranscript = await azureAIServices.openaiFeedback(recognizedText);
+                        // Get all previous messages
+                        let previousMessages = await waQuestionResponsesRepository.getPreviousMessages(userMobileNumber, currentUserState.dataValues.currentLessonId);
 
-                    // Extract corrected version of the answer
-                    const correctedVersion = openaiFeedbackTranscript.match(/\[IMPROVED\](.*?)\[\/IMPROVED\]/);
-                    if (correctedVersion) {
-                        openaiFeedbackTranscript = openaiFeedbackTranscript.replace(/\[IMPROVED\](.*?)\[\/IMPROVED\]/, '');
-                    }
+                        // Append transcript
+                        let currentMessage = { role: "user", content: await question_bot_prompt() + "\n\nQuestion: " + currentConversationBotQuestion.dataValues.question + "\n\nUser Response: " + recognizedText };
+                        previousMessages.push(currentMessage);
 
-                    // Azure Text to Speech
-                    const openaiFeedbackAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(openaiFeedbackTranscript);
+                        // OpenAI Feedback
+                        openaiFeedbackTranscript = await azureAIServices.openaiFeedback(previousMessages);
+                        initialFeedbackResponse = openaiFeedbackTranscript;
 
-                    // Media message
-                    await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
-                    await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
-                    await sleep(5000);
+                        // Extract corrected version of the answer
+                        const correctedVersion = openaiFeedbackTranscript.match(/\[IMPROVED\](.*?)\[\/IMPROVED\]/);
+                        if (correctedVersion) {
+                            openaiFeedbackTranscript = openaiFeedbackTranscript.replace(/\[IMPROVED\](.*?)\[\/IMPROVED\]/, '');
+                        }
 
-                    // Send corrected version of the answer
-                    if (correctedVersion) {
-                        let correctMessage = "A corrected version of your answer is: " + correctedVersion[1];
-                        await sendMessage(userMobileNumber, correctMessage);
-                        await createActivityLog(userMobileNumber, "text", "outbound", correctMessage, null);
+                        // ElevenLabs Text to Speech
+                        openaiFeedbackAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(openaiFeedbackTranscript);
+
+                        // Media message
+                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
+                        await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
+                        await sleep(5000);
+
+                        // Send corrected version of the answer
+                        if (correctedVersion) {
+                            let correctMessage = "A corrected version of your answer is: " + correctedVersion[1] + "\n\n\n*Now try speaking the improved version by sending a voice message* 💬";
+                            await sendMessage(userMobileNumber, correctMessage);
+                            await createActivityLog(userMobileNumber, "text", "outbound", correctMessage, null);
+                        }
+                    } else {
+                        let finalMessages = null;
+                        let latestBotResponse = await waQuestionResponsesRepository.getLatestBotResponse(userMobileNumber, currentUserState.dataValues.currentLessonId);
+                        let improvedVersion = latestBotResponse.match(/\[IMPROVED\](.*?)\[\/IMPROVED\]/);
+                        let userResponse = "[USER_RESPONSE]" + recognizedText + "[/USER_RESPONSE]\n\n\n" + improvedVersion + "[/IMPROVED]";
+
+                        // OpenAI Feedback
+                        openaiFeedbackTranscript = await azureAIServices.openaiCustomFeedback(await wrapup_prompt(), userResponse);
+                        initialFeedbackResponse = openaiFeedbackTranscript;
+
+                        if (openaiFeedbackTranscript.toLowerCase().includes("can be improved")) {
+                            openaiFeedbackAudio = "https://beajbloblive.blob.core.windows.net/beajdocuments/better.mp3";
+                        } else if (openaiFeedbackTranscript.toLowerCase().includes("it was great")) {
+                            openaiFeedbackAudio = "https://beajbloblive.blob.core.windows.net/beajdocuments/ok.mp3";
+                        }
+
+                        // Media message
+                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
+                        await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
+                        await sleep(5000);
                     }
 
                     // Save user response to the database
@@ -2364,7 +2458,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         startingLesson.dataValues.activityAlias,
                         [recognizedText],
                         [userAudioFileUrl],
-                        [openaiFeedbackTranscript],
+                        [initialFeedbackResponse],
                         [openaiFeedbackAudio],
                         null,
                         null,
@@ -2372,14 +2466,8 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         submissionDate
                     );
 
-                    const nextConversationBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
-                    if (nextConversationBotQuestion) {
-                        // Update question number
-                        await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextConversationBotQuestion.dataValues.questionNumber);
-
-                        // Media message
-                        await sendMediaMessage(userMobileNumber, nextConversationBotQuestion.dataValues.mediaFile, 'audio');
-                        await createActivityLog(userMobileNumber, "audio", "outbound", nextConversationBotQuestion.dataValues.mediaFile, null);
+                    if (recordExists) {
+                        return;
                     } else {
                         // Reset Question Number, Retry Counter, and Activity Type
                         await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
@@ -2421,8 +2509,6 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 const userTranscription = await azureAIServices.openaiSpeechToText(messageContent.data);
 
                 let disclaimerAndUserTranscriptionMessage = "This chatbot's speech-to-text may not recognize proper nouns accurately or may skip some words—please bear with us while we improve it.";
-                // await sendMessage(userMobileNumber, disclaimerMessage);
-                // await createActivityLog(userMobileNumber, "text", "outbound", disclaimerMessage, null);
 
                 // Text message
                 disclaimerAndUserTranscriptionMessage += "\n\nYou said: " + userTranscription;
@@ -2552,8 +2638,8 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                     // Language Detection
                     let modelLanguagePrompt = "Detect the majority of the language used in the provided text. Respond in one word only. The two options are: English or Urdu. You must respond with only one word."
-                    const openaiFeedback = await azureAIServices.openaiCustomFeedback(recognizedText, modelLanguagePrompt);
-                    if (openaiFeedback.toLowerCase().includes("english")) {
+                    const languageDetectionFeedback = await azureAIServices.openaiCustomFeedback(recognizedText, modelLanguagePrompt);
+                    if (languageDetectionFeedback.toLowerCase().includes("english")) {
                         modelLanguagePrompt = "Respond in simple English."
                     } else {
                         modelLanguagePrompt = "Use simple, easy-to-understand Urdu language, not jargon to respond."
@@ -2628,6 +2714,117 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 }
             }
         }
+        else if (activity == 'speakingPractice') {
+            if (currentUserState.dataValues.questionNumber === null) {
+                // Lesson Started Record
+                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
+
+                // Send lesson message
+                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
+                lessonMessage += "\n\nListen to the audio and respond to the question by sending a voice message.💬";
+                await sendMessage(userMobileNumber, lessonMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+
+                // Send first Speaking Practice question
+                const firstSpeakingPracticeQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
+
+                // Update question number
+                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstSpeakingPracticeQuestion.dataValues.questionNumber);
+
+                // Send question media file
+                await sendMediaMessage(userMobileNumber, firstSpeakingPracticeQuestion.dataValues.mediaFile, 'audio');
+                await createActivityLog(userMobileNumber, "audio", "outbound", firstSpeakingPracticeQuestion.dataValues.mediaFile, null);
+
+                // Update acceptable messages list for the user
+                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
+            } else if (messageType === 'audio') {
+                // Get the current Speaking Practice question
+                const currentSpeakingPracticeQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+
+                // Extract user transcription
+                const userTranscription = await azureAIServices.openaiSpeechToText(messageContent.data);
+
+                let disclaimerAndUserTranscriptionMessage = "This chatbot's speech-to-text may not recognize proper nouns accurately or may skip some words—please bear with us while we improve it.";
+                disclaimerAndUserTranscriptionMessage += "\n\nYou said: " + userTranscription;
+                await sendMessage(userMobileNumber, disclaimerAndUserTranscriptionMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", disclaimerAndUserTranscriptionMessage, null);
+
+                // Azure Pronunciation Assessment
+                const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, userTranscription);
+
+                // Save user response to the database
+                const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
+                const uniqueID = uuidv4();
+                const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
+                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                const submissionDate = new Date();
+                await waQuestionResponsesRepository.create(
+                    userMobileNumber,
+                    currentUserState.dataValues.currentLessonId,
+                    currentSpeakingPracticeQuestion.dataValues.id,
+                    activity,
+                    startingLesson.dataValues.activityAlias,
+                    [userTranscription],
+                    [userAudioFileUrl],
+                    null,
+                    null,
+                    [pronunciationAssessment],
+                    null,
+                    1,
+                    submissionDate
+                );
+
+                const nextSpeakingPracticeQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                if (nextSpeakingPracticeQuestion) {
+                    // Update question number
+                    await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextSpeakingPracticeQuestion.dataValues.questionNumber);
+
+                    // Send question media file
+                    await sendMediaMessage(userMobileNumber, nextSpeakingPracticeQuestion.dataValues.mediaFile, 'audio');
+                    await createActivityLog(userMobileNumber, "audio", "outbound", nextSpeakingPracticeQuestion.dataValues.mediaFile, null);
+                } else {
+                    const pronunciationAssessments = await waQuestionResponsesRepository.getAllJsonFeedbacksForPhoneNumberAndLessonId(userMobileNumber, currentUserState.dataValues.currentLessonId);
+                    const imageUrl = await createAndUploadSpeakingPracticeScoreImage(pronunciationAssessments);
+
+                    // Media message
+                    if (imageUrl) {
+                        await sendMediaMessage(userMobileNumber, imageUrl, 'image');
+                        await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
+                        await sleep(5000);
+                    }
+
+                    // Extract mispronounced words in a loop using pronunciationAssessments and extractMispronouncedWords function
+                    let mispronouncedWords = [];
+                    for (const assessment of pronunciationAssessments) {
+                        const singleMispronouncedWords = extractMispronouncedWords(assessment);
+                        mispronouncedWords.push(...singleMispronouncedWords);
+                    }
+
+                    // Remove duplicates from mispronouncedWords
+                    mispronouncedWords = [...new Set(mispronouncedWords)];
+
+
+                    let correctedAudio = "";
+                    if (mispronouncedWords.length > 0) {
+                        let modelResponse = "It looks like you've mispronounced a few words in your response. Here are the corrections:\n\n";
+                        for (const word of mispronouncedWords) {
+                            modelResponse += word.Word + (word === mispronouncedWords[mispronouncedWords.length - 1] ? "" : "...");
+                        }
+                        correctedAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(modelResponse);
+                        await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
+                        await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
+                        await sleep(5000);
+                    }
+
+
+                    // Reset Question Number, Retry Counter, and Activity Type
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+
+                    // ENDING MESSAGE
+                    await endingMessage(userMobileNumber, currentUserState, startingLesson);
+                }
+            }
+        }
     } catch (error) {
         console.error('Error sending lesson to user:', error);
         error.fileName = 'chatBotService.js';
@@ -2648,7 +2845,6 @@ export {
     demoCourseStart,
     removeUser,
     checkUserMessageAndAcceptableMessages,
-    sendWrongMessages,
     getNextCourse,
     startCourseForUser,
     levelCourseStart,
@@ -2657,5 +2853,6 @@ export {
     weekEndScoreCalculation,
     teacherInputMessage,
     schoolNameInputMessage,
-    createFeedback
+    createFeedback,
+    sendButtonMessage
 };

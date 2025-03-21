@@ -8,7 +8,6 @@ import ffmpeg from "fluent-ffmpeg";
 import ffmpegPath from "ffmpeg-static";
 import _ from "lodash";
 import { diffArrays } from "diff";
-import question_bot_prompt from "../utils/prompts.js";
 import { AzureOpenAI } from "openai";
 import OpenAI from "openai";
 import fs from "fs";
@@ -94,6 +93,24 @@ async function elevenLabsTextToSpeechAndUpload(text) {
         throw error;
     }
 }
+
+async function elevenLabsSpeechToText(audioBuffer) {
+    try {
+        const client = new ElevenLabsClient();
+        const audioBlob = new Blob([audioBuffer], { type: "audio/mp3" });
+        const transcription = await client.speechToText.convert({
+            file: audioBlob,
+            model_id: "scribe_v1",
+            language_code: "eng",
+        });
+
+        return transcription.text;
+    } catch (error) {
+        console.error("Error in ElevenLabs Speech-to-Text:", error);
+        throw new Error("Speech-to-Text conversion failed");
+    }
+}
+
 
 function convertOggToWav(oggBuffer) {
     return new Promise((resolve, reject) => {
@@ -654,18 +671,15 @@ async function azureSpeakingAssessment(audioBuffer, topic) {
     });
 }
 
-async function openaiFeedback(userTranscript) {
+async function openaiFeedback(previousMessages) {
     const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
     const apiKey = process.env.AZURE_OPENAI_API_KEY;
-    const apiVersion = "2023-03-15-preview";
+    const apiVersion = "2025-01-01-preview";
     const deployment = "gpt-4o-mini";
 
     const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
     const result = await client.chat.completions.create({
-        messages: [
-            { role: "system", content: await question_bot_prompt() },
-            { role: "user", content: userTranscript },
-        ],
+        messages: previousMessages,
         model: "",
     });
 
@@ -675,7 +689,7 @@ async function openaiFeedback(userTranscript) {
 async function openaiCustomFeedback(userTranscript, modelPrompt) {
     const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
     const apiKey = process.env.AZURE_OPENAI_API_KEY;
-    const apiVersion = "2023-03-15-preview";
+    const apiVersion = "2025-01-01-preview";
     const deployment = "gpt-4o-mini";
 
     const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
@@ -699,6 +713,7 @@ export default {
     openaiCustomFeedback,
     azureSpeakingAssessment,
     azureSpeechToTextAnyLanguage,
-    openaiSpeechToTextWithPrompt
+    openaiSpeechToTextWithPrompt,
+    elevenLabsSpeechToText
 };
 

@@ -17,7 +17,14 @@ const sequelize = new Sequelize(database, username, password, {
       rejectUnauthorized: false
     }
   },
-  logging: false
+  logging: false,
+  pool: {
+    max: 10,
+    min: 0
+  },
+  retry: {
+    max: 5,
+  }
 });
 
 export default sequelize;
