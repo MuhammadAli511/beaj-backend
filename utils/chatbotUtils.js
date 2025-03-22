@@ -139,7 +139,7 @@ const weekEndImage = async (score, week) => {
         const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
         return imageUrl;
     } catch (err) {
-        console.error('Error creating and uploading image:', err);
+        console.log('Error creating and uploading image:', err);
         throw new Error('Failed to create and upload image');
     }
 }
@@ -261,7 +261,7 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
         ctx.fillText(`${fluencyScoreNumber}%`, 50 + 790 * (fluencyScoreNumber / 100) - 70, 345);
 
         ctx.font = 'bold 30px Arial';
-        ctx.fillText('You said', 50, 410);
+        ctx.fillText('You said:', 50, 410);
 
         // Create a paragraph format for the text
         ctx.font = '25px Arial';
@@ -272,7 +272,7 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
         let cursorY = 450; // Starting Y position for the text
 
         // Loop through words and handle line breaks
-        words.forEach((wordObj) => {
+        words.forEach((wordObj, index) => {
             // If undefined, skip the word
             if (wordObj == undefined) {
                 return;
@@ -282,7 +282,15 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
             if (!['Mispronunciation', 'Omission', 'None'].includes(wordObj.PronunciationAssessment.ErrorType)) {
                 return;
             }
-            const word = wordObj.Word;
+            let word = wordObj.Word;
+
+            // Capitalize only the first letter of the first word
+            if (index == 0) {
+                word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+            } else {
+                word = word.toLowerCase();
+            }
+
             const errorType = wordObj.PronunciationAssessment.ErrorType;
             const wordAccuracyScore = wordObj.PronunciationAssessment.AccuracyScore;
             const wordWidth = ctx.measureText(word).width + 15; // Measure width of the word
@@ -293,7 +301,7 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
                 cursorY += lineHeight; // Move to the next line
             }
 
-            if (errorType == 'Mispronunciation' || wordAccuracyScore < 50) {
+            if (errorType == 'Mispronunciation' || wordAccuracyScore < 70) {
                 // Highlight mispronounced words in yellow
                 ctx.fillStyle = '#FFD700'; // Yellow
                 ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
@@ -341,7 +349,7 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
         const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
         return imageUrl;
     } catch (err) {
-        console.error('Error creating and uploading image:', err);
+        console.log('Error creating and uploading image:', err);
         throw new Error('Failed to create and upload image');
     }
 }
@@ -411,7 +419,7 @@ const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
         ctx.fillText(`${fluencyScoreNumber}%`, 50 + 790 * (fluencyScoreNumber / 100) - 70, 250);
 
         ctx.font = 'bold 30px Arial';
-        ctx.fillText('You said', 50, 315);
+        ctx.fillText('You said:', 50, 315);
 
         // Create a paragraph format for the text
         ctx.font = '25px Arial';
@@ -443,7 +451,7 @@ const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
                 cursorY += lineHeight; // Move to the next line
             }
 
-            if (errorType == 'Mispronunciation' || wordAccuracyScore < 50) {
+            if (errorType == 'Mispronunciation' || wordAccuracyScore < 70) {
                 // Highlight mispronounced words in yellow
                 ctx.fillStyle = '#FFD700'; // Yellow
                 ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
@@ -477,7 +485,7 @@ const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
         const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
         return imageUrl;
     } catch (err) {
-        console.error('Error creating and uploading image:', err);
+        console.log('Error creating and uploading image:', err);
         throw new Error('Failed to create and upload image');
     }
 }
@@ -556,7 +564,7 @@ const createAndUploadSpeakingPracticeScoreImage = async (pronunciationAssessment
         ctx.fillText(`${avgFluencyScore}%`, 50 + 790 * (avgFluencyScore / 100) - 70, 250);
 
         ctx.font = 'bold 30px Arial';
-        ctx.fillText('You said', 50, 305);
+        ctx.fillText('You said:', 50, 305);
 
         // Create a paragraph format for the text
         ctx.font = '17px Arial';
@@ -588,7 +596,7 @@ const createAndUploadSpeakingPracticeScoreImage = async (pronunciationAssessment
                 cursorY += lineHeight; // Move to the next line
             }
 
-            if (errorType == 'Mispronunciation' || wordAccuracyScore < 50) {
+            if (errorType == 'Mispronunciation' || wordAccuracyScore < 70) {
                 // Highlight mispronounced words in yellow
                 ctx.fillStyle = '#FFD700'; // Yellow
                 ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
@@ -622,7 +630,7 @@ const createAndUploadSpeakingPracticeScoreImage = async (pronunciationAssessment
         const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
         return imageUrl;
     } catch (err) {
-        console.error('Error creating and uploading image:', err);
+        console.log('Error creating and uploading image:', err);
         throw new Error('Failed to create and upload image');
     }
 }
@@ -636,8 +644,8 @@ const extractMispronouncedWords = (results) => {
     const mispronouncedWords = words.filter(word => {
         return word &&
             word.PronunciationAssessment &&
-            (word.PronunciationAssessment.ErrorType === 'Mispronunciation' ||
-                word.PronunciationAssessment.AccuracyScore < 50);
+            (word.PronunciationAssessment.ErrorType == 'Mispronunciation' ||
+                word.PronunciationAssessment.AccuracyScore < 70);
     });
 
     return mispronouncedWords;
@@ -655,7 +663,14 @@ const extractTranscript = (results) => {
         word.PronunciationAssessment.ErrorType !== 'Omission'
     );
 
-    return transcriptWords.map(word => word.Word).join(" ");
+    const transcript = transcriptWords.map(word => word.Word).join(" ");
+
+    // Capitalize first letter of the first word if it's alphabetic
+    if (transcript.length > 0 && /[a-zA-Z]/.test(transcript[0])) {
+        return transcript[0].toUpperCase() + transcript.slice(1);
+    }
+
+    return transcript;
 };
 
 
@@ -667,7 +682,9 @@ const getAcceptableMessagesList = async (activityType) => {
     }
 };
 
-const sendMessage = async (to, body) => {
+const sendMessage = async (to, body, retryAttempt = 0) => {
+    const MAX_RETRIES = 15;
+
     try {
         await axios.post(
             `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
@@ -686,10 +703,20 @@ const sendMessage = async (to, body) => {
         let logger = `Outbound Message: User: ${to}, Message Type: text, Message Content: ${body}`;
         console.log(logger);
     } catch (error) {
-        console.error(
-            "Error sending message:",
-            error.response ? error.response.data : error.message
-        );
+        const errData = error.response ? error.response.data : null;
+        if (errData && errData.error && errData.error.code === 131056) {
+            console.log(`Pair rate limit hit (131056). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
+            if (retryAttempt < MAX_RETRIES) {
+                const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
+                console.log(`Retrying after ${waitTimeSeconds} seconds...`);
+                await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
+                return sendMessage(to, body, retryAttempt + 1);
+            } else {
+                console.log(`Max retries reached. Giving up on message to ${to}.`);
+            }
+        } else {
+            console.log("Error sending message:", errData ? errData : error.message);
+        }
     }
 };
 
@@ -849,7 +876,8 @@ const extractConstantMessage = async (key) => {
     return formattedMessage;
 };
 
-const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null) => {
+const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, retryAttempt = 0) => {
+    const MAX_RETRIES = 15;
     try {
         if (mediaType == 'video') {
             await axios.post(
@@ -917,51 +945,122 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null) => 
             );
         }
         else {
-            console.error('Invalid media type:', mediaType);
+            console.log('Invalid media type:', mediaType);
         }
         let logger = `Outbound Message: User: ${to}, Message Type: ${mediaType}, Message Content: ${mediaUrl}`;
         console.log(logger);
     } catch (error) {
-        console.error('Error sending media message:', error.response ? error.response.data : error.message);
+        const errData = error.response ? error.response.data : null;
+        if (errData && errData.error && errData.error.code === 131056) {
+            console.log(`Pair rate limit hit (131056). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
+            if (retryAttempt < MAX_RETRIES) {
+                const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
+                console.log(`Retrying after ${waitTimeSeconds} seconds...`);
+                await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
+                return sendMediaMessage(to, mediaUrl, mediaType, captionText, retryAttempt + 1);
+            } else {
+                console.log(`Max retries reached. Giving up on message to ${to}.`);
+            }
+        } else {
+            console.log("Error sending message:", errData ? errData : error.message);
+        }
     }
 };
 
-const sendButtonMessage = async (to, bodyText, buttonOptions) => {
+const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, imageUrl = null) => {
+    const MAX_RETRIES = 15;
+
     try {
-        const response = await axios.post(
-            `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
-            {
-                messaging_product: 'whatsapp',
-                recipient_type: 'individual',
-                to: to,
-                type: 'interactive',
-                interactive: {
-                    type: 'button',
-                    body: {
-                        text: bodyText
-                    },
-                    action: {
-                        buttons: buttonOptions.map(option => ({
-                            type: 'reply',
-                            reply: {
-                                id: option.id,
-                                title: option.title
+        if (imageUrl) {
+            const response = await axios.post(
+                `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
+                {
+                    messaging_product: 'whatsapp',
+                    recipient_type: 'individual',
+                    to: to,
+                    type: 'interactive',
+                    interactive: {
+                        type: 'button',
+                        header: {
+                            type: 'image',
+                            image: {
+                                link: imageUrl
                             }
-                        }))
+                        },
+                        body: {
+                            text: bodyText
+                        },
+                        action: {
+                            buttons: buttonOptions.map(option => ({
+                                type: 'reply',
+                                reply: {
+                                    id: option.id,
+                                    title: option.title
+                                }
+                            }))
+                        }
                     }
-                }
-            },
-            {
-                headers: {
-                    Authorization: `Bearer ${whatsappToken}`,
-                    'Content-Type': 'application/json',
                 },
-            }
-        );
+                {
+                    headers: {
+                        Authorization: `Bearer ${whatsappToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+        } else {
+            const response = await axios.post(
+                `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
+                {
+                    messaging_product: 'whatsapp',
+                    recipient_type: 'individual',
+                    to: to,
+                    type: 'interactive',
+                    interactive: {
+                        type: 'button',
+                        body: {
+                            text: bodyText
+                        },
+                        action: {
+                            buttons: buttonOptions.map(option => ({
+                                type: 'reply',
+                                reply: {
+                                    id: option.id,
+                                    title: option.title
+                                }
+                            }))
+                        }
+                    }
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${whatsappToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+        }
         let logger = `Outbound Message: User: ${to}, Message Type: button, Message Content: ${bodyText}`;
         console.log(logger);
     } catch (error) {
-        console.error('Error sending button message:', error.response ? error.response.data : error.message);
+        const errData = error.response ? error.response.data : null;
+        if (errData && errData.error && errData.error.code === 131056) {
+            console.log(`Pair rate limit hit (131056). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
+            if (retryAttempt < MAX_RETRIES) {
+                const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
+                console.log(`Retrying after ${waitTimeSeconds} seconds...`);
+                await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
+                if (imageUrl) {
+                    return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, imageUrl);
+                } else {
+                    return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1);
+                }
+            } else {
+                console.log(`Max retries reached. Giving up on message to ${to}.`);
+            }
+        } else {
+            console.log("Error sending message:", errData ? errData : error.message);
+        }
     }
 };
 
@@ -1140,9 +1239,13 @@ const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUs
 
     // If list has "option a", "option b", "option c" then "option a", "option b", "option c" type kerain.
     if (acceptableMessagesList.includes("option a") && acceptableMessagesList.includes("option b") && acceptableMessagesList.includes("option c")) {
-        await sendMessage(userMobileNumber, "option a, option b, ya option c mein se koi aik button press kerain.");
-        await createActivityLog(userMobileNumber, "text", "outbound", "option a, option b, ya option c mein se koi aik button press kerain.", null);
-        return false;
+        if (messageContent.toLowerCase() == "a" || messageContent.toLowerCase() == "b" || messageContent.toLowerCase() == "c") {
+            return true;
+        } else {
+            await sendMessage(userMobileNumber, "option a, option b, ya option c mein se koi aik option type kerain.");
+            await createActivityLog(userMobileNumber, "text", "outbound", "option a, option b, ya option c mein se koi aik option type kerain.", null);
+            return false;
+        }
     }
     // If list has "audio"
     if (acceptableMessagesList.includes("audio")) {
@@ -1616,7 +1719,15 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                 // Upper and Lower case answers
                 const originalAnswer = messageContent;
-                const userAnswer = messageContent.toLowerCase();
+                let userAnswer = messageContent.toLowerCase();
+
+                if (userAnswer == "a") {
+                    userAnswer = "option a";
+                } else if (userAnswer == "b") {
+                    userAnswer = "option b";
+                } else if (userAnswer == "c") {
+                    userAnswer = "option c";
+                }
 
                 // Get all answers against the question
                 const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(currentMCQsQuestion.dataValues.Id);
@@ -2125,12 +2236,10 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     // Checking if user response is correct or not
 
                     let userAnswerIsCorrect = false;
-                    const recognizedTextWithoutPunctuation = recognizedText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"['']"?]/g, "").toLowerCase();
-                    const recognizedTextWithoutSpaces = recognizedTextWithoutPunctuation.trim();
+                    const recognizedTextCleaned = recognizedText.replace(/[^a-z0-9 ]/gi, "").toLowerCase().trim();
                     for (let i = 0; i < answersArray.length; i++) {
-                        const answerWithoutPunctuation = answersArray[i].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"['']"?]/g, "").toLowerCase();
-                        const answerWithoutSpaces = answerWithoutPunctuation.trim();
-                        if (recognizedTextWithoutSpaces == answerWithoutSpaces) {
+                        const answerCleaned = answersArray[i].replace(/[^a-z0-9 ]/gi, "").toLowerCase().trim();
+                        if (recognizedTextCleaned == answerCleaned) {
                             userAnswerIsCorrect = true;
                             break;
                         }
@@ -2191,7 +2300,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         await waUserProgressRepository.updateRetryCounter(userMobileNumber, 0);
 
                         // Text message
-                        let correctMessage = "You said:\n" + recognizedText + "\n✅ Great!";
+                        let correctMessage = "You said:\n\n" + recognizedText + "\n✅ Great!";
                         await sendMessage(userMobileNumber, correctMessage);
                         await createActivityLog(userMobileNumber, "text", "outbound", correctMessage, null);
                     }
@@ -2202,7 +2311,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                             await waUserProgressRepository.updateRetryCounter(userMobileNumber, currentUserState.dataValues.retryCounter + 1);
 
                             // Text message
-                            let wrongMessage = "You said:\n" + recognizedText + "\n❌ Try Again!";
+                            let wrongMessage = "You said:\n\n" + recognizedText + "\n❌ Try Again!";
                             await sendMessage(userMobileNumber, wrongMessage);
                             await createActivityLog(userMobileNumber, "text", "outbound", wrongMessage, null);
                             return;
@@ -2211,7 +2320,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                             await waUserProgressRepository.updateRetryCounter(userMobileNumber, 0);
 
                             // Text message
-                            let wrongMessage = "You said:\n" + recognizedText + "\n❌ The correct answer is: " + answersArray[0];
+                            let wrongMessage = "You said:\n\n" + recognizedText + "\n❌ The correct answer is: " + answersArray[0];
                             await sendMessage(userMobileNumber, wrongMessage);
                             await createActivityLog(userMobileNumber, "text", "outbound", wrongMessage, null);
                         }
@@ -2299,11 +2408,11 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 // Get the current Read question text
                 const lessonText = startingLesson.dataValues.text;
 
-                // Remove punctuation from the text
-                const textWithoutPunctuation = lessonText.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()'"['']"?]/g, "");
-
                 // Remove HTML tags from the text
-                const textWithoutPunctuationAndHtmlTags = removeHTMLTags(textWithoutPunctuation);
+                const textWithoutHtmlTags = removeHTMLTags(lessonText);
+
+                // Remove punctuation from the text
+                const textWithoutPunctuationAndHtmlTags = textWithoutHtmlTags.replace(/[^a-z0-9 ]/gi, "").toLowerCase().trim();
 
                 // Azure Pronunciation Assessment
                 const pronunciationAssessment = await azureAIServices.azurePronunciationAssessment(messageContent.data, textWithoutPunctuationAndHtmlTags);
@@ -2623,93 +2732,143 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 await createActivityLog(userMobileNumber, "text", "outbound", waitingMessage, null);
                 const recognizedText = await azureAIServices.azureSpeechToTextAnyLanguage(messageContent.data);
                 if (recognizedText != null && recognizedText != "") {
-                    let chatThread;
-                    let chatThreadMain;
                     if (currentUserState.dataValues.questionNumber == 1) {
-                        chatThreadMain = await openai.beta.threads.create();
-                        chatThread = chatThreadMain.id;
-                        await waUserProgressRepository.updateOpenaiThreadId(userMobileNumber, null);
-                        await waUserProgressRepository.updateOpenaiThreadId(userMobileNumber, chatThread);
-                    } else {
-                        chatThread = await waUserProgressRepository.getOpenaiThreadId(userMobileNumber);
-                        chatThread = chatThread.dataValues.openaiThreadId;
-                    }
-
-
-                    // Language Detection
-                    let modelLanguagePrompt = "Detect the majority of the language used in the provided text. Respond in one word only. The two options are: English or Urdu. You must respond with only one word."
-                    const languageDetectionFeedback = await azureAIServices.openaiCustomFeedback(recognizedText, modelLanguagePrompt);
-                    if (languageDetectionFeedback.toLowerCase().includes("english")) {
-                        modelLanguagePrompt = "Respond in simple English."
-                    } else {
-                        modelLanguagePrompt = "Use simple, easy-to-understand Urdu language, not jargon to respond."
-                    }
-                    let firstPrompt = currentConversationalAgencyBotQuestion.dataValues.question + "\n\n\n" + modelLanguagePrompt;
-                    firstPrompt += "\n\n\nMy response: " + recognizedText;
-
-                    await openai.beta.threads.messages.create(
-                        chatThread,
-                        {
-                            role: "user", content: firstPrompt
+                        // Language Detection
+                        let modelLanguagePrompt = "Detect the majority of the language used in the provided text. Respond in one word only. The two options are: English or Urdu. You must respond with only one word."
+                        const languageDetectionFeedback = await azureAIServices.openaiCustomFeedback(recognizedText, modelLanguagePrompt);
+                        if (languageDetectionFeedback.toLowerCase().includes("english")) {
+                            modelLanguagePrompt = "Respond in simple and easy-to-understand English within 100 words."
+                        } else {
+                            modelLanguagePrompt = "Use simple, easy-to-understand Urdu language, not jargon to respond within 100 words."
                         }
-                    );
+                        let firstPrompt = currentConversationalAgencyBotQuestion.dataValues.question + "\n\n\n" + modelLanguagePrompt;
+                        firstPrompt += "\n\n\nMy response: " + recognizedText;
 
-                    await openai.beta.threads.runs.create(
-                        chatThread,
-                        { assistant_id: "asst_6zTBy1Esn6WuM9pLujyfT3y8" }
-                    );
+                        let messagesArray = [
+                            {
+                                role: "system",
+                                content: "You are a Teacher-Coach working with teachers from low-resource backgrounds in Pakistan. Your approach is focused on the importance of nervous system regulation and relationship-based education."
+                            },
+                            {
+                                role: "user",
+                                content: firstPrompt
+                            }
+                        ]
 
-                    let threadMessages1 = await openai.beta.threads.messages.list(chatThread);
-                    let attempts = 0;
-                    while ((!threadMessages1.data[0].content[0] || threadMessages1.data[0].content[0].text.value == firstPrompt) && attempts < 30) {
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                        threadMessages1 = await openai.beta.threads.messages.list(chatThread);
-                        attempts++;
-                        if (attempts >= 30) {
-                            await sendMessage(userMobileNumber, "Please try again.");
-                            await createActivityLog(userMobileNumber, "text", "outbound", "Please try again.", null);
-                            return;
+                        let openaiFeedbackTranscript = await azureAIServices.openaiFeedback(messagesArray);
+                        let initialFeedbackResponse = openaiFeedbackTranscript;
+
+                        let openaiFeedbackAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(initialFeedbackResponse);
+                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
+                        await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
+
+                        await sleep(5000);
+
+                        // Save to question responses
+                        const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
+                        const uniqueID = uuidv4();
+                        const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
+                        const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                        const submissionDate = new Date();
+                        await waQuestionResponsesRepository.create(
+                            userMobileNumber,
+                            currentUserState.dataValues.currentLessonId,
+                            currentConversationalAgencyBotQuestion.dataValues.id,
+                            activity,
+                            startingLesson.dataValues.activityAlias,
+                            [recognizedText],
+                            [userAudioFileUrl],
+                            [initialFeedbackResponse],
+                            [openaiFeedbackAudio],
+                            null,
+                            null,
+                            1,
+                            submissionDate
+                        );
+
+                        const nextConversationalAgencyBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                        if (nextConversationalAgencyBotQuestion) {
+                            // Update question number
+                            await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextConversationalAgencyBotQuestion.dataValues.questionNumber);
+                        } else {
+                            // Reset Question Number, Retry Counter, and Activity Type
+                            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+
+                            // ENDING MESSAGE
+                            await endingMessage(userMobileNumber, currentUserState, startingLesson);
                         }
-                    }
-
-                    const audioLink = await azureAIServices.elevenLabsTextToSpeechAndUpload(threadMessages1.data[0].content[0].text.value);
-                    await sendMediaMessage(userMobileNumber, audioLink, 'audio');
-                    await createActivityLog(userMobileNumber, "audio", "outbound", audioLink, null);
-
-                    await sleep(5000);
-
-                    // Save to question responses
-                    const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
-                    const uniqueID = uuidv4();
-                    const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
-                    const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
-                    const submissionDate = new Date();
-                    await waQuestionResponsesRepository.create(
-                        userMobileNumber,
-                        currentUserState.dataValues.currentLessonId,
-                        currentConversationalAgencyBotQuestion.dataValues.id,
-                        activity,
-                        startingLesson.dataValues.activityAlias,
-                        [recognizedText],
-                        [userAudioFileUrl],
-                        [threadMessages1.data[0].content[0].text.value],
-                        [audioLink],
-                        null,
-                        null,
-                        1,
-                        submissionDate
-                    );
-
-                    const nextConversationalAgencyBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
-                    if (nextConversationalAgencyBotQuestion) {
-                        // Update question number
-                        await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextConversationalAgencyBotQuestion.dataValues.questionNumber);
                     } else {
-                        // Reset Question Number, Retry Counter, and Activity Type
-                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+                        const previousConversationalAgencyBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber - 1);
+                        // Language Detection
+                        let modelLanguagePrompt = "Detect the majority of the language used in the provided text. Respond in one word only. The two options are: English or Urdu. You must respond with only one word."
+                        const languageDetectionFeedback = await azureAIServices.openaiCustomFeedback(recognizedText, modelLanguagePrompt);
+                        if (languageDetectionFeedback.toLowerCase().includes("english")) {
+                            modelLanguagePrompt = "Respond in simple and easy-to-understand English."
+                        } else {
+                            modelLanguagePrompt = "Use simple, easy-to-understand Urdu language, not jargon to respond."
+                        }
+                        let secondPrompt = currentConversationalAgencyBotQuestion.dataValues.question + "\n\n\n" + modelLanguagePrompt;
+                        secondPrompt += "\n\n\nMy response: " + recognizedText;
 
-                        // ENDING MESSAGE
-                        await endingMessage(userMobileNumber, currentUserState, startingLesson);
+                        let previousMessages = await waQuestionResponsesRepository.getPreviousMessagesForAgencyBot(userMobileNumber, currentUserState.dataValues.currentLessonId, previousConversationalAgencyBotQuestion.dataValues.question);
+                        previousMessages.push({
+                            role: "user",
+                            content: secondPrompt
+                        });
+
+                        let messagesArray = [
+                            {
+                                role: "system",
+                                content: "You are a Teacher-Coach working with teachers from low-resource backgrounds in Pakistan. Your approach is focused on the importance of nervous system regulation and relationship-based education."
+                            }
+                        ]
+
+                        previousMessages.forEach(message => {
+                            messagesArray.push(message);
+                        });
+
+                        let openaiFeedbackTranscript = await azureAIServices.openaiFeedback(messagesArray);
+                        let initialFeedbackResponse = openaiFeedbackTranscript;
+
+                        let openaiFeedbackAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(initialFeedbackResponse);
+                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
+                        await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
+
+                        await sleep(5000);
+
+                        // Save to question responses
+                        const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
+                        const uniqueID = uuidv4();
+                        const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
+                        const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                        const submissionDate = new Date();
+                        await waQuestionResponsesRepository.create(
+                            userMobileNumber,
+                            currentUserState.dataValues.currentLessonId,
+                            currentConversationalAgencyBotQuestion.dataValues.id,
+                            activity,
+                            startingLesson.dataValues.activityAlias,
+                            [recognizedText],
+                            [userAudioFileUrl],
+                            [initialFeedbackResponse],
+                            [openaiFeedbackAudio],
+                            null,
+                            null,
+                            1,
+                            submissionDate
+                        );
+
+                        const nextConversationalAgencyBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                        if (nextConversationalAgencyBotQuestion) {
+                            // Update question number
+                            await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextConversationalAgencyBotQuestion.dataValues.questionNumber);
+                        } else {
+                            // Reset Question Number, Retry Counter, and Activity Type
+                            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+
+                            // ENDING MESSAGE
+                            await endingMessage(userMobileNumber, currentUserState, startingLesson);
+                        }
                     }
                 }
             }
@@ -2826,7 +2985,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
             }
         }
     } catch (error) {
-        console.error('Error sending lesson to user:', error);
+        console.log('Error sending lesson to user:', error);
         error.fileName = 'chatBotService.js';
         throw error;
     }
