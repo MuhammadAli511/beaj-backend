@@ -6,7 +6,7 @@ const getDataFromPostgres = async (grp) => {
 
     const res = await WA_UsersMetadata.findAll({
       where : {targetGroup : grp},
-      order: [["phoneNumber" , "ASC"]],
+      order: [["name" , "ASC"]],
     });
     
     return res;
@@ -25,7 +25,7 @@ const getDataActivityComplete = async (date, grp, course_id, weekno,cohort) => {
                   (select count(s."LessonId") from "Lesson" s where s."weekNumber" <= ${weekno}  and s."courseId" = ${course_id}) then 1 else 0 end as "completion_match"
                   from "wa_users_metadata" m left join "wa_lessons_completed" l on m."phoneNumber" = l."phoneNumber" and l."courseId" = ${course_id}
                   where m."targetGroup" = '${grp}' and m."cohort" = '${cohort}'
-                  group by m."name", m."phoneNumber" order by m."phoneNumber" asc;`;
+                  group by m."name", m."phoneNumber" order by m."name" asc;`;
 
 
     const res = await sequelize.query(qry);
@@ -54,7 +54,7 @@ const getWeeklyActivityCompleted = async (grp, course_id,cohort) => {
                 then 1 else null end as "completion_match4"
                 from "wa_users_metadata" m left join "wa_lessons_completed" l on m."phoneNumber" = l."phoneNumber" 
                 and l."completionStatus" = 'Completed' left join "Lesson" s on s."LessonId" = l."lessonId" and s."courseId" = l."courseId" and s."courseId" = ${course_id}
-                and s."weekNumber" IN (1,2,3,4) where m."targetGroup" = '${grp}' and m."cohort" = '${cohort}' group by m."name", m."phoneNumber" order by m."phoneNumber" asc;`;
+                and s."weekNumber" IN (1,2,3,4) where m."targetGroup" = '${grp}' and m."cohort" = '${cohort}' group by m."name", m."phoneNumber" order by m."name" asc;`;
 
     const res = await sequelize.query(qry);
 
@@ -164,7 +164,7 @@ const getLessonCompletions = async (course_id1,course_id2,course_id3,grp) => {
     FROM
         "Lesson"
     WHERE
-        "courseId" IN (${course_id1},${course_id2},${course_id3}) 
+        "courseId" IN (${course_id1},${course_id2},${course_id3})  and "status" = 'Active'
     GROUP BY
         "courseId", "weekNumber", "dayNumber"
 ),
@@ -349,7 +349,7 @@ SELECT
 FROM
     AggregatedProgress
 ORDER BY
-    "targetGroup","cohort","phoneNumber" asc;`;
+    "targetGroup","cohort","name" asc;`;
 
 
     const res = await sequelize.query(qry);
@@ -423,14 +423,14 @@ const getActivity_Completions = async (course1_id, course2_id, course3_id,grp) =
               ON s."LessonId" = l."lessonId" 
               AND s."courseId" = l."courseId" 
               AND s."courseId" IN (${course1_id}, ${course2_id}, ${course3_id}) 
-              AND s."weekNumber" IN (1, 2, 3, 4) 
+              AND s."weekNumber" IN (1, 2, 3, 4)  
           WHERE 
               m."targetGroup" = '${grp}'
               and m."cohort" != 'Pilot' 
           GROUP BY 
               m."name", m."phoneNumber", m."cohort", m."targetGroup"
           ORDER BY 
-               m."targetGroup",m."cohort",m."phoneNumber" ASC;
+               m."targetGroup",m."cohort",m."name" ASC;
       `;
 
       const res = await sequelize.query(qry);
@@ -786,13 +786,13 @@ wa_lessons_completed AS (
         COALESCE(SUM(CASE WHEN s."weekNumber" = 1 THEN 1 ELSE 0 END), 0) AS completed_activities_week1,
         (SELECT COALESCE(COUNT(s1."LessonId"), 0) 
          FROM "Lesson" s1 
-         WHERE s1."weekNumber" = 1 AND s1."courseId" = ${course_id}) AS total_activities_week1,
+         WHERE s1."weekNumber" = 1 AND s1."courseId" = ${course_id} and s1."status" = 'Active') AS total_activities_week1,
        
                 CASE 
                     WHEN COALESCE(SUM(CASE WHEN s."weekNumber" = 1 THEN 1 ELSE 0 END), 0) = 
                          (SELECT COALESCE(COUNT(s1."LessonId"), 0) 
                           FROM "Lesson" s1 
-                          WHERE s1."weekNumber" = 1 AND s1."courseId" = ${course_id})
+                          WHERE s1."weekNumber" = 1 AND s1."courseId" = ${course_id} and s1."status" = 'Active')
                     THEN 1
                     ELSE NULL
         END AS completion_activity_week1,
@@ -800,13 +800,13 @@ wa_lessons_completed AS (
         COALESCE(SUM(CASE WHEN s."weekNumber" = 2 THEN 1 ELSE 0 END), 0) AS completed_activities_week2,
         (SELECT COALESCE(COUNT(s1."LessonId"), 0) 
          FROM "Lesson" s1 
-         WHERE s1."weekNumber" = 2 AND s1."courseId" = ${course_id}) AS total_activities_week2,
+         WHERE s1."weekNumber" = 2 AND s1."courseId" = ${course_id} and s1."status" = 'Active') AS total_activities_week2,
        
                 CASE 
                     WHEN COALESCE(SUM(CASE WHEN s."weekNumber" = 2 THEN 1 ELSE 0 END), 0) = 
                          (SELECT COALESCE(COUNT(s1."LessonId"), 0) 
                           FROM "Lesson" s1 
-                          WHERE s1."weekNumber" = 2 AND s1."courseId" = ${course_id})
+                          WHERE s1."weekNumber" = 2 AND s1."courseId" = ${course_id} and s1."status" = 'Active')
                     THEN 1
                     ELSE NULL
               
@@ -815,13 +815,13 @@ wa_lessons_completed AS (
         COALESCE(SUM(CASE WHEN s."weekNumber" = 3 THEN 1 ELSE 0 END), 0) AS completed_activities_week3,
         (SELECT COALESCE(COUNT(s1."LessonId"), 0) 
          FROM "Lesson" s1 
-         WHERE s1."weekNumber" = 3 AND s1."courseId" = ${course_id}) AS total_activities_week3,
+         WHERE s1."weekNumber" = 3 AND s1."courseId" = ${course_id} and s1."status" = 'Active') AS total_activities_week3,
        
                 CASE 
                     WHEN COALESCE(SUM(CASE WHEN s."weekNumber" = 3 THEN 1 ELSE 0 END), 0) = 
                          (SELECT COALESCE(COUNT(s1."LessonId"), 0) 
                           FROM "Lesson" s1 
-                          WHERE s1."weekNumber" = 3 AND s1."courseId" = ${course_id})
+                          WHERE s1."weekNumber" = 3 AND s1."courseId" = ${course_id} and s1."status" = 'Active')
                     THEN 1
                     ELSE NULL
                 
@@ -830,13 +830,13 @@ wa_lessons_completed AS (
         COALESCE(SUM(CASE WHEN s."weekNumber" = 4 THEN 1 ELSE 0 END), 0) AS completed_activities_week4,
         (SELECT COALESCE(COUNT(s1."LessonId"), 0) 
          FROM "Lesson" s1 
-         WHERE s1."weekNumber" = 4 AND s1."courseId" = ${course_id}) AS total_activities_week4,
+         WHERE s1."weekNumber" = 4 AND s1."courseId" = ${course_id} and s1."status" = 'Active') AS total_activities_week4,
         
                 CASE 
                     WHEN COALESCE(SUM(CASE WHEN s."weekNumber" = 4 THEN 1 ELSE 0 END), 0) = 
                          (SELECT COALESCE(COUNT(s1."LessonId"), 0) 
                           FROM "Lesson" s1 
-                          WHERE s1."weekNumber" = 4 AND s1."courseId" = ${course_id})
+                          WHERE s1."weekNumber" = 4 AND s1."courseId" = ${course_id} and s1."status" = 'Active')
                     THEN 1
                     ELSE NULL
                 
@@ -937,7 +937,7 @@ LEFT JOIN
 LEFT JOIN 
     wa_lessons_completed wc ON m."phoneNumber" = wc."phoneNumber"
 WHERE 
-    m."targetGroup" = '${grp}' and m."cohort" != 'Pilot' order by m."targetGroup",m."cohort", m."phoneNumber" asc;`;
+    m."targetGroup" = '${grp}' and m."cohort" != 'Pilot' order by m."targetGroup",m."cohort", m."name" asc;`;
 
     const res = await sequelize.query(qry);
 
@@ -976,7 +976,7 @@ const getCumulative_AvgActivity_Rollout = async (course_id, grp, cohort) => {
         "Lesson" s 
         ON s."LessonId" = l."lessonId" 
         AND s."courseId" = l."courseId" 
-        AND s."courseId" = ${course_id}
+        AND s."courseId" = ${course_id} 
     WHERE 
         m."targetGroup" = '${grp}'
         AND ${cohortCondition}
@@ -986,12 +986,12 @@ const getCumulative_AvgActivity_Rollout = async (course_id, grp, cohort) => {
 total_activities_cte AS (
     SELECT COUNT("LessonId") AS "Total_Activities"
     FROM "Lesson"
-    WHERE "courseId" = ${course_id}
+    WHERE "courseId" = ${course_id} and "status" = 'Active'
     AND (
         -- Include all lessons from previous weeks
         "weekNumber" < (
             SELECT CEIL(
-                ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 6.0
+                ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 7.0
             ) 
             FROM "Courses" WHERE "CourseId" = ${course_id}
         )
@@ -999,14 +999,14 @@ total_activities_cte AS (
         OR (
             "weekNumber" = (
                 SELECT CEIL(
-                    ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 6.0
+                    ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 7.0
                 ) 
                 FROM "Courses" WHERE "CourseId" = ${course_id}
             )
             AND "dayNumber" <= (
                 SELECT 
                     CASE 
-                        WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP)) = 0 THEN 6
+                        WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP)) = 0 THEN 7
                         ELSE EXTRACT(DOW FROM (CURRENT_TIMESTAMP))
                     END
             )
@@ -1048,14 +1048,14 @@ const getDaily_AvgActivity_Rollout = async (course_id,grp) => {
         AND s."courseId" IN (${course_id}) 
         AND s."weekNumber" = (
                SELECT CEIL(
-                   ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 6.0
+                   ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 7.0
                ) 
                FROM "Courses" 
                WHERE "CourseId" = ${course_id})
 	   AND "dayNumber" = (
                SELECT 
                    CASE 
-                       WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP)) = 0 THEN 6
+                       WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP)) = 0 THEN 7
                        ELSE EXTRACT(DOW FROM (CURRENT_TIMESTAMP))
                    END AS day_number)
     WHERE 
@@ -1073,12 +1073,12 @@ SELECT
                  WHERE "courseId" = ${course_id} AND "dayNumber" = (
                SELECT 
                    CASE 
-                       WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP)) = 0 THEN 6
+                       WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP)) = 0 THEN 7
                        ELSE EXTRACT(DOW FROM (CURRENT_TIMESTAMP))
                    END AS day_number)
            AND "weekNumber" = (
                SELECT CEIL(
-                   ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 6.0
+                   ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 7.0
                ) 
                FROM "Courses" 
                WHERE "CourseId" = ${course_id})) AS "Total_Activities"
@@ -1366,16 +1366,16 @@ const getCount_UpdateLagCohortWise = async (course_id,grp) => {
                 (SELECT 
             CASE 
                 WHEN (CURRENT_TIMESTAMP - INTERVAL '1 month') > (SELECT "courseStartDate" FROM "Courses" WHERE "CourseId" = ${course_id}) 
-                THEN (SELECT COUNT("LessonId") FROM "Lesson" WHERE "courseId" = ${course_id})
+                THEN (SELECT COUNT("LessonId") FROM "Lesson" WHERE "courseId" = ${course_id} and "status" = 'Active')
                 ELSE (
                     SELECT COUNT("LessonId") 
                     FROM "Lesson" 
-                    WHERE "courseId" = ${course_id}
+                    WHERE "courseId" = ${course_id} and "status" = 'Active' 
                     AND (
         -- Include all lessons from previous weeks
         "weekNumber" < (
             SELECT CEIL(
-                ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 6.0
+                ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 7.0
             ) 
             FROM "Courses" WHERE "CourseId" = ${course_id}
         )
@@ -1383,14 +1383,14 @@ const getCount_UpdateLagCohortWise = async (course_id,grp) => {
         OR (
             "weekNumber" = (
                 SELECT CEIL(
-                    ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 6.0
+                    ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 7.0
                 ) 
                 FROM "Courses" WHERE "CourseId" = ${course_id}
             )
             AND "dayNumber" <= (
                 SELECT 
                     CASE 
-                        WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP)) = 0 THEN 6
+                        WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP)) = 0 THEN 7
                         ELSE EXTRACT(DOW FROM (CURRENT_TIMESTAMP))
                     END
             )

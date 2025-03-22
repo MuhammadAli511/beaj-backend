@@ -586,7 +586,7 @@ const runETL_Dashboard = async () => {
 
     //  console.log(last_activity_t1_l1);
 
-    console.log(dailyAvgAct_t1);
+    // console.log(dailyAvgAct_t1);
 
     await DashboardUtils_load(
       userMetadata_Pilot,

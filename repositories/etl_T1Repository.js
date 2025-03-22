@@ -12,7 +12,7 @@ const getDataFromPostgres = async (date, grp, course_id) => {
       `as "activity_completd" from "wa_users_metadata" m left join "wa_lessons_completed" l on m."phoneNumber" = l."phoneNumber" and l."courseId" = ${course_id} ` +
       `where m."targetGroup" = ` +
       `'${grp}' ` +
-      ` group by m."name", m."phoneNumber" order by m."phoneNumber" asc;`;
+      ` group by m."name", m."phoneNumber" order by m."name" asc;`;
 
     const res = await sequelize.query(qry);
 

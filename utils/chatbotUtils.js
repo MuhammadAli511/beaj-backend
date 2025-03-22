@@ -1300,7 +1300,6 @@ const getNextCourse = async (userMobileNumber) => {
         return nextCourse;
     }
     return null;
-
 };
 
 const startCourseForUser = async (userMobileNumber, numbers_to_ignore) => {

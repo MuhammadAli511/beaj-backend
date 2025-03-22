@@ -304,7 +304,7 @@ const formatTopThreeInColumns = async (arrayLevels_List, facilitator) => {
       
       if (topValues.length === 0) continue;
 
-      console.log(`Column ${colIndex} top values:`, topValues);
+      // console.log(`Column ${colIndex} top values:`, topValues);
 
       // Colors for top three values
       const colors = [
@@ -354,11 +354,11 @@ const formatTopThreeInColumns = async (arrayLevels_List, facilitator) => {
 
     // Apply formatting in chunks to avoid quota limits
     const chunkSize = 10;
-    console.log(`Processing ${allRequests.length} formatting requests in chunks of ${chunkSize}`);
+    // console.log(`Processing ${allRequests.length} formatting requests in chunks of ${chunkSize}`);
     
     for (let i = 0; i < allRequests.length; i += chunkSize) {
       const chunk = allRequests.slice(i, i + chunkSize);
-      console.log(`Processing chunk ${i/chunkSize + 1} of ${Math.ceil(allRequests.length/chunkSize)}`);
+      // console.log(`Processing chunk ${i/chunkSize + 1} of ${Math.ceil(allRequests.length/chunkSize)}`);
       
       await retryOperation(() => 
         sheets.spreadsheets.batchUpdate({
@@ -570,8 +570,8 @@ const getColumnIndexWithPercentageValues = (arrayLevels_List, minValues, facilit
   // Convert facilitator to number to ensure proper comparison
   const numericFacilitator = parseInt(facilitator, 10);
   
-  console.log(`Facilitator: ${facilitator}, Numeric: ${numericFacilitator}`);
-  console.log(`Is in special array: ${fac_arr.includes(numericFacilitator)}`);
+  // console.log(`Facilitator: ${facilitator}, Numeric: ${numericFacilitator}`);
+  // console.log(`Is in special array: ${fac_arr.includes(numericFacilitator)}`);
 
   // Iterate through the column indexes in reverse order
   for (let i = columnIndexes.length - 1; i >= 0; i--) {
@@ -590,7 +590,7 @@ const getColumnIndexWithPercentageValues = (arrayLevels_List, minValues, facilit
     }
 
     // Debug logging
-    console.log(`Column ${col} has ${count} percentage values (min required: ${minValues})`);
+    // console.log(`Column ${col} has ${count} percentage values (min required: ${minValues})`);
 
     // If the column has at least minValues percentage values, determine return value
     if (count >= minValues) {
@@ -599,11 +599,9 @@ const getColumnIndexWithPercentageValues = (arrayLevels_List, minValues, facilit
         const startDate = "2025-02-03";  // Course start date
         const currentDate = new Date();  // Current date (change for testing)
         const column = getColumnForDate(currentDate, startDate);
-
-        console.log(`Found suitable column ${col}, returning ${col-1} for special facilitator`);
         return column; // Return previous column for special facilitators
       } else {
-        console.log(`Found suitable column ${col}, returning ${col} for regular facilitator`);
+        // console.log(`Found suitable column ${col}, returning ${col} for regular facilitator`);
         return col; // Return current column for regular facilitators
       }
     }
@@ -805,7 +803,7 @@ const generateStarTeachersImage = async (arrayLevels_List, columnIndex, imagePat
     
     // Get top three performers
     const topPerformers = getTopPerformersWithNames(arrayLevels_List, columnIndex);
-    console.log("Top performers:", JSON.stringify(topPerformers, null, 2));
+    // console.log("Top performers:", JSON.stringify(topPerformers, null, 2));
     
     if (topPerformers.length === 0) {
       console.log("No performers found for this column");
@@ -815,7 +813,7 @@ const generateStarTeachersImage = async (arrayLevels_List, columnIndex, imagePat
     // Load template image
     console.log("Loading template image...");
     const image = await loadImage(templatePath);
-    console.log(`Image loaded with dimensions: ${image.width}x${image.height}`);
+    // console.log(`Image loaded with dimensions: ${image.width}x${image.height}`);
     
     // Create canvas with same dimensions as template
     const canvas = createCanvas(image.width, image.height);
@@ -908,14 +906,12 @@ const generateStarTeachersImage = async (arrayLevels_List, columnIndex, imagePat
             }
           }
         }
-        
         // Add small gap between different names
         if (j < names.length - 1) {
           currentY += fontSize * 0.2;
         }
       }
     }
-    
     // Save image
     const buffer = canvas.toBuffer('image/png');
     uploadImageToCell(buffer, facilitator, 'W58');
