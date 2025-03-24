@@ -2,17 +2,25 @@
 import azure_blob from '../utils/azureBlobStorage.js';
 import multipleChoiceQuestionAnswerRepository from '../repositories/multipleChoiceQuestionAnswerRepository.js';
 
-const createMultipleChoiceQuestionAnswerService = async (answerText, answerImageUrl, answerAudioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber, customAnswerFeedbackText, customAnswerFeedbackImage) => {
+const createMultipleChoiceQuestionAnswerService = async (answerText, answerImageUrl, answerAudioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber, customAnswerFeedbackText, customAnswerFeedbackImage, customAnswerFeedbackAudio) => {
     try {
         let imageUrl = null;
         let audioUrl = null;
+        let customAnswerFeedbackAudioUrl = null;
+        let customAnswerFeedbackImageUrl = null;
         if (answerImageUrl) {
             imageUrl = await azure_blob.uploadToBlobStorage(answerImageUrl);
         }
         if (answerAudioUrl) {
             audioUrl = await azure_blob.uploadToBlobStorage(answerAudioUrl);
         }
-        const multipleChoiceQuestionAnswer = await multipleChoiceQuestionAnswerRepository.create(answerText, imageUrl, audioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber, customAnswerFeedbackText, customAnswerFeedbackImage);
+        if (customAnswerFeedbackImage) {
+            customAnswerFeedbackImageUrl = await azure_blob.uploadToBlobStorage(customAnswerFeedbackImage);
+        }
+        if (customAnswerFeedbackAudio) {
+            customAnswerFeedbackAudioUrl = await azure_blob.uploadToBlobStorage(customAnswerFeedbackAudio);
+        }
+        const multipleChoiceQuestionAnswer = await multipleChoiceQuestionAnswerRepository.create(answerText, imageUrl, audioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber, customAnswerFeedbackText, customAnswerFeedbackImageUrl, customAnswerFeedbackAudioUrl);
         return multipleChoiceQuestionAnswer;
     } catch (error) {
         error.fileName = 'multipleChoiceQuestionAnswerService.js';
@@ -40,17 +48,25 @@ const getMultipleChoiceQuestionAnswerByIdService = async (id) => {
     }
 };
 
-const updateMultipleChoiceQuestionAnswerService = async (id, answerText, answerImageUrl, answerAudioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber, customAnswerFeedbackText, customAnswerFeedbackImage) => {
+const updateMultipleChoiceQuestionAnswerService = async (id, answerText, answerImageUrl, answerAudioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber, customAnswerFeedbackText, customAnswerFeedbackImage, customAnswerFeedbackAudio) => {
     try {
         let imageUrl = null;
         let audioUrl = null;
+        let customAnswerFeedbackAudioUrl = null;
+        let customAnswerFeedbackImageUrl = null;
         if (answerImageUrl) {
             imageUrl = await azure_blob.uploadToBlobStorage(answerImageUrl);
         }
         if (answerAudioUrl) {
             audioUrl = await azure_blob.uploadToBlobStorage(answerAudioUrl);
         }
-        const multipleChoiceQuestionAnswer = await multipleChoiceQuestionAnswerRepository.update(id, answerText, imageUrl, audioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber, customAnswerFeedbackText, customAnswerFeedbackImage);
+        if (customAnswerFeedbackImage) {
+            customAnswerFeedbackImageUrl = await azure_blob.uploadToBlobStorage(customAnswerFeedbackImage);
+        }
+        if (customAnswerFeedbackAudio) {
+            customAnswerFeedbackAudioUrl = await azure_blob.uploadToBlobStorage(customAnswerFeedbackAudio);
+        }
+        const multipleChoiceQuestionAnswer = await multipleChoiceQuestionAnswerRepository.update(id, answerText, imageUrl, audioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber, customAnswerFeedbackText, customAnswerFeedbackImageUrl, customAnswerFeedbackAudioUrl);
         return multipleChoiceQuestionAnswer;
     } catch (error) {
         error.fileName = 'multipleChoiceQuestionAnswerService.js';

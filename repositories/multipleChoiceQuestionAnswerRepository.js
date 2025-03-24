@@ -1,7 +1,7 @@
 import MultipleChoiceQuestionAnswer from "../models/MultipleChoiceQuestionAnswer.js";
 import Sequelize from 'sequelize';
 
-const create = async (answerText, answerImageUrl, answerAudioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber, customAnswerFeedbackText, customAnswerFeedbackImage) => {
+const create = async (answerText, answerImageUrl, answerAudioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber, customAnswerFeedbackText, customAnswerFeedbackImage, customAnswerFeedbackAudio) => {
     const multipleChoiceQuestionAnswer = new MultipleChoiceQuestionAnswer({
         AnswerText: answerText,
         AnswerImageUrl: answerImageUrl,
@@ -10,7 +10,8 @@ const create = async (answerText, answerImageUrl, answerAudioUrl, isCorrect, mul
         MultipleChoiceQuestionId: multipleChoiceQuestionId,
         SequenceNumber: sequenceNumber,
         CustomAnswerFeedbackText: customAnswerFeedbackText,
-        CustomAnswerFeedbackImage: customAnswerFeedbackImage
+        CustomAnswerFeedbackImage: customAnswerFeedbackImage,
+        CustomAnswerFeedbackAudio: customAnswerFeedbackAudio
     });
     await multipleChoiceQuestionAnswer.save();
     return multipleChoiceQuestionAnswer;
@@ -26,7 +27,7 @@ const getById = async (id) => {
     return multipleChoiceQuestionAnswer;
 };
 
-const update = async (id, answerText, answerImageUrl, answerAudioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber, customAnswerFeedbackText, customAnswerFeedbackImage) => {
+const update = async (id, answerText, answerImageUrl, answerAudioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber, customAnswerFeedbackText, customAnswerFeedbackImage, customAnswerFeedbackAudio) => {
     return await MultipleChoiceQuestionAnswer.update({
         AnswerText: answerText,
         AnswerImageUrl: answerImageUrl,
@@ -35,7 +36,8 @@ const update = async (id, answerText, answerImageUrl, answerAudioUrl, isCorrect,
         MultipleChoiceQuestionId: multipleChoiceQuestionId,
         SequenceNumber: sequenceNumber,
         CustomAnswerFeedbackText: customAnswerFeedbackText,
-        CustomAnswerFeedbackImage: customAnswerFeedbackImage
+        CustomAnswerFeedbackImage: customAnswerFeedbackImage,
+        CustomAnswerFeedbackAudio: customAnswerFeedbackAudio
     }, {
         where: {
             Id: id

@@ -33,6 +33,10 @@ MultipleChoiceQuestionAnswer.init({
     type: DataTypes.STRING,
     allowNull: true
   },
+  CustomAnswerFeedbackAudio: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   MultipleChoiceQuestionId: {
     type: DataTypes.INTEGER,
     allowNull: false,
