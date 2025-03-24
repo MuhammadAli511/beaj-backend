@@ -2203,7 +2203,8 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstListenAndSpeakQuestion.dataValues.questionNumber);
 
                 // Send question media file
-                await sendMediaMessage(userMobileNumber, firstListenAndSpeakQuestion.dataValues.mediaFile, 'audio');
+                await sendMediaMessage(userMobileNumber, firstListenAndSpeakQuestion.dataValues.mediaFile,
+                    firstListenAndSpeakQuestion.dataValues.mediaFile.endsWith('.mp4') ? 'video' : 'audio');
                 await createActivityLog(userMobileNumber, "audio", "outbound", firstListenAndSpeakQuestion.dataValues.mediaFile, null);
 
                 // Update acceptable messages list for the user
