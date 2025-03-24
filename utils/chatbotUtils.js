@@ -2518,7 +2518,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         }
 
                         // ElevenLabs Text to Speech
-                        openaiFeedbackAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(openaiFeedbackTranscript);
+                        openaiFeedbackAudio = await azureAIServices.openaiTextToSpeechAndUpload(openaiFeedbackTranscript);
 
                         // Media message
                         await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
@@ -2646,7 +2646,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     for (const word of mispronouncedWords) {
                         modelResponse += word.Word + (word === mispronouncedWords[mispronouncedWords.length - 1] ? "" : "...");
                     }
-                    correctedAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(modelResponse);
+                    correctedAudio = await azureAIServices.openaiTextToSpeechAndUpload(modelResponse);
                     await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
                     await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
                     await sleep(5000);
@@ -2711,7 +2711,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 if (firstConversationalAgencyBotQuestion.dataValues.mediaFile != null && firstConversationalAgencyBotQuestion.dataValues.mediaFile.includes("http")) {
                     questionAudio = firstConversationalAgencyBotQuestion.dataValues.mediaFile;
                 } else {
-                    questionAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(questionText);
+                    questionAudio = await azureAIServices.openaiTextToSpeechAndUpload(questionText);
                 }
 
                 // Update question number
@@ -2758,7 +2758,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         let openaiFeedbackTranscript = await azureAIServices.openaiFeedback(messagesArray);
                         let initialFeedbackResponse = openaiFeedbackTranscript;
 
-                        let openaiFeedbackAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(initialFeedbackResponse);
+                        let openaiFeedbackAudio = await azureAIServices.openaiTextToSpeechAndUpload(initialFeedbackResponse);
                         await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
                         await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
 
@@ -2830,7 +2830,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         let openaiFeedbackTranscript = await azureAIServices.openaiFeedback(messagesArray);
                         let initialFeedbackResponse = openaiFeedbackTranscript;
 
-                        let openaiFeedbackAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(initialFeedbackResponse);
+                        let openaiFeedbackAudio = await azureAIServices.openaiTextToSpeechAndUpload(initialFeedbackResponse);
                         await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
                         await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
 
@@ -2969,7 +2969,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         for (const word of mispronouncedWords) {
                             modelResponse += word.Word + (word === mispronouncedWords[mispronouncedWords.length - 1] ? "" : "...");
                         }
-                        correctedAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(modelResponse);
+                        correctedAudio = await azureAIServices.openaiTextToSpeechAndUpload(modelResponse);
                         await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
                         await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
                         await sleep(5000);
