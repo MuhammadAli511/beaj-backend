@@ -186,6 +186,7 @@ async function openaiTextToSpeechAndUpload(text) {
             model: "gpt-4o-mini-tts",
             voice: "nova",
             input: text,
+            instructions: "Use british pronunciation for English"
         });
 
         const buffer = Buffer.from(await mp3.arrayBuffer());
