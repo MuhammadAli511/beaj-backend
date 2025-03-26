@@ -1553,9 +1553,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
 
         // Feedback Message
         const randomNumber = Math.floor(Math.random() * 100) + 1;
-        const messagesInLast60Seconds = await waUserActivityLogsRepository.countMessagesInLastnSeconds(userMobileNumber, 60);
-        console.log("Messages in last 60 seconds: ", messagesInLast60Seconds);
-        if (randomNumber >= 75 && messagesInLast60Seconds < 5) {
+        if (randomNumber >= 75) {
             let cleanedAlias = startingLesson.dataValues.activityAlias.replace(/\?/g, '');
             let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + cleanedAlias + " activity?";
             await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
@@ -1581,9 +1579,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
     } else {
         // Feedback Message
         const randomNumber = Math.floor(Math.random() * 100) + 1;
-        const messagesInLast60Seconds = await waUserActivityLogsRepository.countMessagesInLastnSeconds(userMobileNumber, 60);
-        console.log("Messages in last 60 seconds: ", messagesInLast60Seconds);
-        if (randomNumber >= 75 && messagesInLast60Seconds < 5) {
+        if (randomNumber >= 75) {
             let cleanedAlias = startingLesson.dataValues.activityAlias.replace(/\?/g, '');
             let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + cleanedAlias + " activity?";
             await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
@@ -1694,7 +1690,6 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 // Send question
                 const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(firstMCQsQuestion.dataValues.Id);
                 const questionText = firstMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
-                const questionImage = firstMCQsQuestion.dataValues.QuestionImageUrl;
                 let mcqMessage = questionText + "\n\n";
                 if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
                     mcqMessage += "Choose the correct answer:\n";
@@ -1724,10 +1719,14 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                 // Check if the user answer is correct
                 let isCorrectAnswer = false;
+                let selectedAnswerIndex = -1;
                 for (let i = 0; i < mcqAnswers.length; i++) {
                     let matchWith = `option ${String.fromCharCode(65 + i)}`.toLowerCase();
-                    if (mcqAnswers[i].dataValues.IsCorrect === true && userAnswer == matchWith) {
-                        isCorrectAnswer = true;
+                    if (userAnswer == matchWith) {
+                        selectedAnswerIndex = i;
+                        if (mcqAnswers[i].dataValues.IsCorrect === true) {
+                            isCorrectAnswer = true;
+                        }
                         break;
                     }
                 }
@@ -1750,23 +1749,52 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     submissionDate
                 );
 
-                // Correct Answer Feedback
-                if (isCorrectAnswer) {
-                    // Text message
-                    await sendMessage(userMobileNumber, "✅ Great!");
-                    await createActivityLog(userMobileNumber, "text", "outbound", "✅ Great!", null);
-                }
-                // Incorrect Answer Feedback
-                else {
-                    let correctAnswer = "❌ The correct answer is ";
-                    for (let i = 0; i < mcqAnswers.length; i++) {
-                        if (mcqAnswers[i].dataValues.IsCorrect === true) {
-                            correctAnswer += "Option " + String.fromCharCode(65 + i) + ": " + mcqAnswers[i].dataValues.AnswerText;
+                // Check if custom feedback exists for the selected answer
+                if (selectedAnswerIndex !== -1) {
+                    const selectedAnswer = mcqAnswers[selectedAnswerIndex];
+                    const customFeedbackText = selectedAnswer.dataValues.CustomAnswerFeedbackText;
+                    const customFeedbackImage = selectedAnswer.dataValues.CustomAnswerFeedbackImage;
+                    const customFeedbackAudio = selectedAnswer.dataValues.CustomAnswerFeedbackAudio;
+
+                    // If not null based on the user selection send all the custom feedback which is not null
+                    if (customFeedbackText) {
+                        await sendMessage(userMobileNumber, customFeedbackText);
+                        await createActivityLog(userMobileNumber, "text", "outbound", customFeedbackText, null);
+                    }
+                    if (customFeedbackImage) {
+                        await sendMediaMessage(userMobileNumber, customFeedbackImage, 'image');
+                        await createActivityLog(userMobileNumber, "image", "outbound", customFeedbackImage, null);
+                    }
+                    if (customFeedbackAudio) {
+                        await sendMediaMessage(userMobileNumber, customFeedbackAudio, 'audio');
+                        await createActivityLog(userMobileNumber, "audio", "outbound", customFeedbackAudio, null);
+                    }
+
+                    if (!customFeedbackText && !customFeedbackImage && !customFeedbackAudio) {
+                        // Correct Answer Feedback
+                        if (isCorrectAnswer) {
+                            // Text message
+                            await sendMessage(userMobileNumber, "✅ Great!");
+                            await createActivityLog(userMobileNumber, "text", "outbound", "✅ Great!", null);
+                        }
+                        // Incorrect Answer Feedback
+                        else {
+                            let correctAnswer = "❌ The correct answer is ";
+                            for (let i = 0; i < mcqAnswers.length; i++) {
+                                if (mcqAnswers[i].dataValues.IsCorrect === true) {
+                                    correctAnswer += "Option " + String.fromCharCode(65 + i) + ": " + mcqAnswers[i].dataValues.AnswerText;
+                                }
+                            }
+                            // Text message
+                            await sendMessage(userMobileNumber, correctAnswer);
+                            await createActivityLog(userMobileNumber, "text", "outbound", correctAnswer, null);
                         }
                     }
-                    // Text message
-                    await sendMessage(userMobileNumber, correctAnswer);
-                    await createActivityLog(userMobileNumber, "text", "outbound", correctAnswer, null);
+                } else {
+                    // Fallback for invalid selection
+                    await sendMessage(userMobileNumber, "Invalid option selected. Please try again.");
+                    await createActivityLog(userMobileNumber, "text", "outbound", "Invalid option selected. Please try again.", null);
+                    return;
                 }
 
                 // Get next MCQ question
@@ -2203,9 +2231,9 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstListenAndSpeakQuestion.dataValues.questionNumber);
 
                 // Send question media file
-                await sendMediaMessage(userMobileNumber, firstListenAndSpeakQuestion.dataValues.mediaFile,
-                    firstListenAndSpeakQuestion.dataValues.mediaFile.endsWith('.mp4') ? 'video' : 'audio');
-                await createActivityLog(userMobileNumber, "audio", "outbound", firstListenAndSpeakQuestion.dataValues.mediaFile, null);
+                const mediaType = firstListenAndSpeakQuestion.dataValues.mediaFile.endsWith('.mp4') ? 'video' : 'audio';
+                await sendMediaMessage(userMobileNumber, firstListenAndSpeakQuestion.dataValues.mediaFile, mediaType);
+                await createActivityLog(userMobileNumber, mediaType, "outbound", firstListenAndSpeakQuestion.dataValues.mediaFile, null);
 
                 // Update acceptable messages list for the user
                 await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
@@ -2321,9 +2349,18 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         // Update question number
                         await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextListenAndSpeakQuestion.dataValues.questionNumber);
 
+                        const mediaType = nextListenAndSpeakQuestion.dataValues.mediaFile.endsWith('.mp4') ? 'video' : 'audio';
+                        if (mediaType == 'video') {
+                            await sendMediaMessage(userMobileNumber, nextListenAndSpeakQuestion.dataValues.mediaFile, 'video');
+                            await createActivityLog(userMobileNumber, "video", "outbound", nextListenAndSpeakQuestion.dataValues.mediaFile, null);
+                        }
+
                         // Update acceptable messages list for the user
                         await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
-                        // await sleep(5000);
+                        if (mediaType == 'video') {
+                            await sleep(5000);
+                        }
+
 
                         // Text message
                         const questionText = nextListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
