@@ -1150,10 +1150,10 @@ SELECT
                      COALESCE(rd.read_week4_total, 0) + COALESCE(cm.conversationalMonologue_week4_total, 0) + COALESCE(sp.Speaking_practice_week4_total, 0) = 0
                 THEN null
                 ELSE 
-                     ROUND((COALESCE(ls.listenAndSpeak_week4_correct_count, 0) + COALESCE(mc.mcqs_week4_correct_count, 0) + COALESCE(ws.watchAndSpeak_week4_score, 0) + 
-                     COALESCE(rd.read_week4_score, 0) + COALESCE(cm.conversationalMonologue_week4_score, 0) + COALESCE(sp.Speaking_practice_week4_score, 0)) /
-                    (COALESCE(ls.listenAndSpeak_week4_total, 0) + COALESCE(mc.mcqs_week4_total, 0) + COALESCE(ws.watchAndSpeak_week4_total, 0) + 
-                     COALESCE(rd.read_week4_total, 0) + COALESCE(cm.conversationalMonologue_week4_total, 0) + COALESCE(sp.Speaking_practice_week4_total, 0)) * 100, 0)
+                    ROUND((ROUND(COALESCE(ls.listenAndSpeak_week4_correct_count, 0),2) + ROUND(COALESCE(mc.mcqs_week4_correct_count, 0),2) + ROUND(COALESCE(ws.watchAndSpeak_week4_score, 0),2) + 
+                     ROUND(COALESCE(rd.read_week4_score, 0),2) + ROUND(COALESCE(cm.conversationalMonologue_week4_score, 0),2) + ROUND(COALESCE(sp.Speaking_practice_week4_score, 0),2)) /
+                    (ROUND(COALESCE(ls.listenAndSpeak_week4_total, 0),2) + ROUND(COALESCE(mc.mcqs_week4_total, 0),2) + ROUND(COALESCE(ws.watchAndSpeak_week4_total, 0),2) + 
+                     ROUND(COALESCE(rd.read_week4_total, 0),2) + ROUND(COALESCE(cm.conversationalMonologue_week4_total, 0),2) + ROUND(COALESCE(sp.Speaking_practice_week4_total, 0),2)) * 100, 0)
             END || '%'
         ELSE null
     END AS final_percentage_week4
@@ -1542,4 +1542,27 @@ const getActivityNameCount = async (course_id1, course_id2,course_id3,grp,cohort
     }
 };
 
-export default { getDataFromPostgres, getSuccessRate, getActivityTotalCount,getCompletedActivity, getLessonCompletion,getLastActivityCompleted,getWeeklyScore,getWeeklyScore_pilot,getCount_NotStartedActivity,getLessonCompletions,getActivity_Completions,getActivityNameCount };
+const getPhoneNumber_userNudges = async (course_id,grp,cohort,date) => {
+    try {
+        // console.log("Parameters:", { date, course_id, grp, cohort });
+        const qry = `
+           SELECT distinct m."phoneNumber"
+FROM "wa_users_metadata" m 
+ left JOIN "wa_lessons_completed" l
+  ON m."phoneNumber" = l."phoneNumber" 
+  AND l."completionStatus" = 'Completed'  
+  AND l."endTime" >= '${date}' and l."courseId" = ${course_id}
+WHERE m."targetGroup" = '${grp}' 
+  AND m."cohort" = '${cohort}'  AND l."phoneNumber" IS NOT NULL;
+        `;
+  
+        const res = await sequelize.query(qry);
+        // console.log(res[0]);
+        return res[0];
+    } catch (error) {
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
+};
+
+export default { getDataFromPostgres, getSuccessRate, getActivityTotalCount,getCompletedActivity, getLessonCompletion,getLastActivityCompleted,getWeeklyScore,getPhoneNumber_userNudges,getWeeklyScore_pilot,getCount_NotStartedActivity,getLessonCompletions,getActivity_Completions,getActivityNameCount };

@@ -1445,6 +1445,8 @@ const getCount_UpdateLagCohortWise = async (course_id,grp) => {
     }
 };
 
+
+
 export default { getDataFromPostgres, getDataActivityComplete, getWeeklyActivityCompleted,getUserMetadataAll,getUserMetadataTime,getLessonCompletions,getActivity_Completions, getWeeklyScore,
     getCumulative_AvgActivity_Rollout, getDaily_AvgActivity_Rollout, getNotStartCohortCount_Rollout,getLastLessonCompleted_Rollout, getCount_UpdateLagCohortWise
  };

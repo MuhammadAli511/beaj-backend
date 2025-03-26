@@ -226,7 +226,7 @@ const new_loadDataToGoogleSheets = async (
         console.log("Formatting top three values...");
         await formatTopThreeInColumns(arrayLevels_List, facilitator);
        
-          let columnIndex = await  getColumnIndexWithPercentageValues(arrayLevels_List, 2,facilitator);
+          let columnIndex = await  getColumnIndexWithPercentageValues(arrayLevels_List, 1,facilitator);
           await generateStarTeachersImage(arrayLevels_List, columnIndex, './',facilitator);
        
       }
