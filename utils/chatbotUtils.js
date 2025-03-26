@@ -1762,10 +1762,12 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         await createActivityLog(userMobileNumber, "text", "outbound", customFeedbackText, null);
                     }
                     if (customFeedbackImage) {
+                        await sleep(2000);
                         await sendMediaMessage(userMobileNumber, customFeedbackImage, 'image');
                         await createActivityLog(userMobileNumber, "image", "outbound", customFeedbackImage, null);
                     }
                     if (customFeedbackAudio) {
+                        await sleep(2000);
                         await sendMediaMessage(userMobileNumber, customFeedbackAudio, 'audio');
                         await createActivityLog(userMobileNumber, "audio", "outbound", customFeedbackAudio, null);
                     }
