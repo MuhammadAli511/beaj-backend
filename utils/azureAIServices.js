@@ -178,6 +178,28 @@ async function openaiSpeechToTextWithPrompt(audioBuffer, prompt) {
     }
 };
 
+async function openaiTextToSpeechAndUpload(text) {
+    try {
+        const openai = new OpenAI(process.env.OPENAI_API_KEY);
+
+        const mp3 = await openai.audio.speech.create({
+            model: "gpt-4o-mini-tts",
+            voice: "nova",
+            input: text,
+            instructions: "Use british pronunciation for English"
+        });
+
+        const buffer = Buffer.from(await mp3.arrayBuffer());
+        const tempFileName = `temp-${uuidv4()}.mp3`;
+        const tempFilePath = join(tmpdir(), tempFileName);
+        await writeFile(tempFilePath, buffer);
+        const audioUrl = await uploadAudioToAzure(buffer);
+        return audioUrl;
+    } catch (error) {
+        return await elevenLabsTextToSpeechAndUpload(text);
+    }
+};
+
 async function azureSpeechToText(audioBuffer) {
     return new Promise(async (resolve, reject) => {
         try {
@@ -768,6 +790,7 @@ export default {
     openaiSpeechToTextWithPrompt,
     elevenLabsSpeechToText,
     geminiFeedback,
-    geminiCustomFeedback
+    geminiCustomFeedback,
+    openaiTextToSpeechAndUpload
 };
 

@@ -967,7 +967,11 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, ret
     }
 };
 
+<<<<<<< HEAD
 const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, imageUrl = null, videoUrl = null) => {
+=======
+const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, imageUrl = null) => {
+>>>>>>> master
     const MAX_RETRIES = 15;
 
     try {
@@ -1008,6 +1012,7 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
                     },
                 }
             );
+<<<<<<< HEAD
         } else if (videoUrl) {
             const response = await axios.post(
                 `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
@@ -1047,6 +1052,9 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
             );
         }
         else {
+=======
+        } else {
+>>>>>>> master
             const response = await axios.post(
                 `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
                 {
@@ -1090,8 +1098,11 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
                 await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
                 if (imageUrl) {
                     return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, imageUrl);
+<<<<<<< HEAD
                 } else if (videoUrl) {
                     return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, null, videoUrl);
+=======
+>>>>>>> master
                 } else {
                     return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1);
                 }
@@ -1279,9 +1290,13 @@ const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUs
 
     // If list has "option a", "option b", "option c" then "option a", "option b", "option c" type kerain.
     if (acceptableMessagesList.includes("option a") && acceptableMessagesList.includes("option b") && acceptableMessagesList.includes("option c")) {
-        await sendMessage(userMobileNumber, "option a, option b, ya option c mein se koi aik button press kerain.");
-        await createActivityLog(userMobileNumber, "text", "outbound", "option a, option b, ya option c mein se koi aik button press kerain.", null);
-        return false;
+        if (messageContent.toLowerCase() == "a" || messageContent.toLowerCase() == "b" || messageContent.toLowerCase() == "c") {
+            return true;
+        } else {
+            await sendMessage(userMobileNumber, "option a, option b, ya option c mein se koi aik option type kerain.");
+            await createActivityLog(userMobileNumber, "text", "outbound", "option a, option b, ya option c mein se koi aik option type kerain.", null);
+            return false;
+        }
     }
     // If list has "audio"
     if (acceptableMessagesList.includes("audio")) {
@@ -1336,7 +1351,6 @@ const getNextCourse = async (userMobileNumber) => {
         return nextCourse;
     }
     return null;
-
 };
 
 const startCourseForUser = async (userMobileNumber, numbers_to_ignore) => {
@@ -1768,7 +1782,15 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                 // Upper and Lower case answers
                 const originalAnswer = messageContent;
-                const userAnswer = messageContent.toLowerCase();
+                let userAnswer = messageContent.toLowerCase();
+
+                if (userAnswer == "a") {
+                    userAnswer = "option a";
+                } else if (userAnswer == "b") {
+                    userAnswer = "option b";
+                } else if (userAnswer == "c") {
+                    userAnswer = "option c";
+                }
 
                 // Get all answers against the question
                 const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(currentMCQsQuestion.dataValues.Id);
@@ -2622,7 +2644,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         }
 
                         // ElevenLabs Text to Speech
-                        openaiFeedbackAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(openaiFeedbackTranscript);
+                        openaiFeedbackAudio = await azureAIServices.openaiTextToSpeechAndUpload(openaiFeedbackTranscript);
 
                         // Media message
                         await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
@@ -2750,7 +2772,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     for (const word of mispronouncedWords) {
                         modelResponse += word.Word + (word === mispronouncedWords[mispronouncedWords.length - 1] ? "" : "...");
                     }
-                    correctedAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(modelResponse);
+                    correctedAudio = await azureAIServices.openaiTextToSpeechAndUpload(modelResponse);
                     await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
                     await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
                     await sleep(5000);
@@ -2815,7 +2837,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 if (firstConversationalAgencyBotQuestion.dataValues.mediaFile != null && firstConversationalAgencyBotQuestion.dataValues.mediaFile.includes("http")) {
                     questionAudio = firstConversationalAgencyBotQuestion.dataValues.mediaFile;
                 } else {
-                    questionAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(questionText);
+                    questionAudio = await azureAIServices.openaiTextToSpeechAndUpload(questionText);
                 }
 
                 // Update question number
@@ -2862,7 +2884,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         let openaiFeedbackTranscript = await azureAIServices.openaiFeedback(messagesArray);
                         let initialFeedbackResponse = openaiFeedbackTranscript;
 
-                        let openaiFeedbackAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(initialFeedbackResponse);
+                        let openaiFeedbackAudio = await azureAIServices.openaiTextToSpeechAndUpload(initialFeedbackResponse);
                         await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
                         await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
 
@@ -2934,7 +2956,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         let openaiFeedbackTranscript = await azureAIServices.openaiFeedback(messagesArray);
                         let initialFeedbackResponse = openaiFeedbackTranscript;
 
-                        let openaiFeedbackAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(initialFeedbackResponse);
+                        let openaiFeedbackAudio = await azureAIServices.openaiTextToSpeechAndUpload(initialFeedbackResponse);
                         await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
                         await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
 
@@ -3073,7 +3095,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         for (const word of mispronouncedWords) {
                             modelResponse += word.Word + (word === mispronouncedWords[mispronouncedWords.length - 1] ? "" : "...");
                         }
-                        correctedAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(modelResponse);
+                        correctedAudio = await azureAIServices.openaiTextToSpeechAndUpload(modelResponse);
                         await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
                         await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
                         await sleep(5000);

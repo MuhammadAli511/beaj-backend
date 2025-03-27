@@ -32,16 +32,16 @@ const getSuccessRate = async (course_id, grp,cohort) => {
                 (SELECT 
             CASE 
                 WHEN (CURRENT_TIMESTAMP - INTERVAL '1 month') > (SELECT "courseStartDate" FROM "Courses" WHERE "CourseId" = ${course_id}) 
-                THEN (SELECT COUNT("LessonId") FROM "Lesson" WHERE "courseId" = ${course_id})
+                THEN (SELECT COUNT("LessonId") FROM "Lesson" WHERE "courseId" = ${course_id} and "status" = 'Active')
                 ELSE (
                     SELECT COUNT("LessonId") 
                     FROM "Lesson" 
-                    WHERE "courseId" = ${course_id} 
+                    WHERE "courseId" = ${course_id}  and "status" = 'Active'
                     AND (
         -- Include all lessons from previous weeks
         "weekNumber" < (
             SELECT CEIL(
-                ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 6.0
+                ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 7.0
             ) 
             FROM "Courses" WHERE "CourseId" = ${course_id}
         )
@@ -49,14 +49,14 @@ const getSuccessRate = async (course_id, grp,cohort) => {
         OR (
             "weekNumber" = (
                 SELECT CEIL(
-                    ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 6.0
+                    ((CURRENT_TIMESTAMP)::DATE - DATE("courseStartDate")) / 7.0
                 ) 
                 FROM "Courses" WHERE "CourseId" = ${course_id}
             )
             AND "dayNumber" <= (
                 SELECT 
                     CASE 
-                        WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP)) = 0 THEN 6
+                        WHEN EXTRACT(DOW FROM (CURRENT_TIMESTAMP)) = 0 THEN 7
                         ELSE EXTRACT(DOW FROM (CURRENT_TIMESTAMP))
                     END
             )
@@ -147,7 +147,7 @@ const getCompletedActivity = async (course_id1, course_id2, grp, activity_name_l
       GROUP BY 
         m."phoneNumber"
       ORDER BY 
-        m."phoneNumber" ASC;`;
+        m."name" ASC;`;
 
     // const qry = `SELECT 
     // m."phoneNumber",
@@ -206,7 +206,7 @@ const getLessonCompletions = async (course_id1,course_id2,course_id3,grp,cohort)
     FROM
         "Lesson"
     WHERE
-        "courseId" IN (${course_id1},${course_id2},${course_id3}) 
+        "courseId" IN (${course_id1},${course_id2},${course_id3}) and "status" = 'Active'
     GROUP BY
         "courseId", "weekNumber", "dayNumber"
 ),
@@ -512,7 +512,7 @@ const getLessonCompletion = async (course_id,grp,cohort) => {
       FROM
           PivotedProgress pp
       ORDER BY
-      pp."phoneNumber";`;
+      pp."name";`;
   
   
       const res = await sequelize.query(qry);
@@ -562,7 +562,7 @@ get_lessonIds AS (
     FROM 
         "Lesson" 
     WHERE 
-        "courseId" = ${course_id1}
+        "courseId" = ${course_id1} and "status" = 'Active'
 ),
 LessonWithMaxTimestamp AS (
     SELECT 
@@ -1025,13 +1025,13 @@ wa_lessons_completed AS (
         COALESCE(SUM(CASE WHEN s."weekNumber" = 1 THEN 1 ELSE 0 END), 0) AS completed_activities_week1,
         (SELECT COALESCE(COUNT(s1."LessonId"), 0) 
          FROM "Lesson" s1 
-         WHERE s1."weekNumber" = 1 AND s1."courseId" = ${course_id}) AS total_activities_week1,
+         WHERE s1."weekNumber" = 1 AND s1."courseId" = ${course_id} and s1."status" = 'Active') AS total_activities_week1,
        
                 CASE 
                     WHEN COALESCE(SUM(CASE WHEN s."weekNumber" = 1 THEN 1 ELSE 0 END), 0) = 
                          (SELECT COALESCE(COUNT(s1."LessonId"), 0) 
                           FROM "Lesson" s1 
-                          WHERE s1."weekNumber" = 1 AND s1."courseId" = ${course_id})
+                          WHERE s1."weekNumber" = 1 AND s1."courseId" = ${course_id} and s1."status" = 'Active')
                     THEN 1
                     ELSE NULL
         END AS completion_activity_week1,
@@ -1039,13 +1039,13 @@ wa_lessons_completed AS (
         COALESCE(SUM(CASE WHEN s."weekNumber" = 2 THEN 1 ELSE 0 END), 0) AS completed_activities_week2,
         (SELECT COALESCE(COUNT(s1."LessonId"), 0) 
          FROM "Lesson" s1 
-         WHERE s1."weekNumber" = 2 AND s1."courseId" = ${course_id}) AS total_activities_week2,
+         WHERE s1."weekNumber" = 2 AND s1."courseId" = ${course_id} and s1."status" = 'Active') AS total_activities_week2,
        
                 CASE 
                     WHEN COALESCE(SUM(CASE WHEN s."weekNumber" = 2 THEN 1 ELSE 0 END), 0) = 
                          (SELECT COALESCE(COUNT(s1."LessonId"), 0) 
                           FROM "Lesson" s1 
-                          WHERE s1."weekNumber" = 2 AND s1."courseId" = ${course_id})
+                          WHERE s1."weekNumber" = 2 AND s1."courseId" = ${course_id} and s1."status" = 'Active')
                     THEN 1
                     ELSE NULL
               
@@ -1054,13 +1054,13 @@ wa_lessons_completed AS (
         COALESCE(SUM(CASE WHEN s."weekNumber" = 3 THEN 1 ELSE 0 END), 0) AS completed_activities_week3,
         (SELECT COALESCE(COUNT(s1."LessonId"), 0) 
          FROM "Lesson" s1 
-         WHERE s1."weekNumber" = 3 AND s1."courseId" = ${course_id}) AS total_activities_week3,
+         WHERE s1."weekNumber" = 3 AND s1."courseId" = ${course_id} and s1."status" = 'Active') AS total_activities_week3,
        
                 CASE 
                     WHEN COALESCE(SUM(CASE WHEN s."weekNumber" = 3 THEN 1 ELSE 0 END), 0) = 
                          (SELECT COALESCE(COUNT(s1."LessonId"), 0) 
                           FROM "Lesson" s1 
-                          WHERE s1."weekNumber" = 3 AND s1."courseId" = ${course_id})
+                          WHERE s1."weekNumber" = 3 AND s1."courseId" = ${course_id} and s1."status" = 'Active')
                     THEN 1
                     ELSE NULL
                 
@@ -1069,13 +1069,13 @@ wa_lessons_completed AS (
         COALESCE(SUM(CASE WHEN s."weekNumber" = 4 THEN 1 ELSE 0 END), 0) AS completed_activities_week4,
         (SELECT COALESCE(COUNT(s1."LessonId"), 0) 
          FROM "Lesson" s1 
-         WHERE s1."weekNumber" = 4 AND s1."courseId" = ${course_id}) AS total_activities_week4,
+         WHERE s1."weekNumber" = 4 AND s1."courseId" = ${course_id} and s1."status" = 'Active') AS total_activities_week4,
         
                 CASE 
                     WHEN COALESCE(SUM(CASE WHEN s."weekNumber" = 4 THEN 1 ELSE 0 END), 0) = 
                          (SELECT COALESCE(COUNT(s1."LessonId"), 0) 
                           FROM "Lesson" s1 
-                          WHERE s1."weekNumber" = 4 AND s1."courseId" = ${course_id})
+                          WHERE s1."weekNumber" = 4 AND s1."courseId" = ${course_id} and s1."status" = 'Active')
                     THEN 1
                     ELSE NULL
                 
@@ -1150,10 +1150,10 @@ SELECT
                      COALESCE(rd.read_week4_total, 0) + COALESCE(cm.conversationalMonologue_week4_total, 0) + COALESCE(sp.Speaking_practice_week4_total, 0) = 0
                 THEN null
                 ELSE 
-                     ROUND((COALESCE(ls.listenAndSpeak_week4_correct_count, 0) + COALESCE(mc.mcqs_week4_correct_count, 0) + COALESCE(ws.watchAndSpeak_week4_score, 0) + 
-                     COALESCE(rd.read_week4_score, 0) + COALESCE(cm.conversationalMonologue_week4_score, 0) + COALESCE(sp.Speaking_practice_week4_score, 0)) /
-                    (COALESCE(ls.listenAndSpeak_week4_total, 0) + COALESCE(mc.mcqs_week4_total, 0) + COALESCE(ws.watchAndSpeak_week4_total, 0) + 
-                     COALESCE(rd.read_week4_total, 0) + COALESCE(cm.conversationalMonologue_week4_total, 0) + COALESCE(sp.Speaking_practice_week4_total, 0)) * 100, 0)
+                    ROUND((ROUND(COALESCE(ls.listenAndSpeak_week4_correct_count, 0),2) + ROUND(COALESCE(mc.mcqs_week4_correct_count, 0),2) + ROUND(COALESCE(ws.watchAndSpeak_week4_score, 0),2) + 
+                     ROUND(COALESCE(rd.read_week4_score, 0),2) + ROUND(COALESCE(cm.conversationalMonologue_week4_score, 0),2) + ROUND(COALESCE(sp.Speaking_practice_week4_score, 0),2)) /
+                    (ROUND(COALESCE(ls.listenAndSpeak_week4_total, 0),2) + ROUND(COALESCE(mc.mcqs_week4_total, 0),2) + ROUND(COALESCE(ws.watchAndSpeak_week4_total, 0),2) + 
+                     ROUND(COALESCE(rd.read_week4_total, 0),2) + ROUND(COALESCE(cm.conversationalMonologue_week4_total, 0),2) + ROUND(COALESCE(sp.Speaking_practice_week4_total, 0),2)) * 100, 0)
             END || '%'
         ELSE null
     END AS final_percentage_week4
@@ -1452,7 +1452,7 @@ const getActivity_Completions = async (course1_id, course2_id, course3_id, grp, 
 
 const getActivityNameCount = async (course_id1, course_id2,course_id3,grp,cohort) => {
     try {
-      const qry1 = `select "activity", count("activity") from "Lesson" where "courseId" = ${course_id1} or "courseId" = ${course_id2} or "courseId" = ${course_id3}  group by "activity" order by "activity";`;
+      const qry1 = `select "activity", count("activity") from "Lesson" where ("courseId" = ${course_id1} or "courseId" = ${course_id2} or "courseId" = ${course_id3})  group by "activity" order by "activity";`;
       const res1 = await sequelize.query(qry1);
       let cohort1 = cohort;
       let activities = res1[0].map(item => item.activity);
@@ -1542,4 +1542,27 @@ const getActivityNameCount = async (course_id1, course_id2,course_id3,grp,cohort
     }
 };
 
-export default { getDataFromPostgres, getSuccessRate, getActivityTotalCount,getCompletedActivity, getLessonCompletion,getLastActivityCompleted,getWeeklyScore,getWeeklyScore_pilot,getCount_NotStartedActivity,getLessonCompletions,getActivity_Completions,getActivityNameCount };
+const getPhoneNumber_userNudges = async (course_id,grp,cohort,date) => {
+    try {
+        // console.log("Parameters:", { date, course_id, grp, cohort });
+        const qry = `
+           SELECT distinct m."phoneNumber"
+FROM "wa_users_metadata" m 
+ left JOIN "wa_lessons_completed" l
+  ON m."phoneNumber" = l."phoneNumber" 
+  AND l."completionStatus" = 'Completed'  
+  AND l."endTime" >= '${date}' and l."courseId" = ${course_id}
+WHERE m."targetGroup" = '${grp}' 
+  AND m."cohort" = '${cohort}'  AND l."phoneNumber" IS NOT NULL;
+        `;
+  
+        const res = await sequelize.query(qry);
+        // console.log(res[0]);
+        return res[0];
+    } catch (error) {
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
+};
+
+export default { getDataFromPostgres, getSuccessRate, getActivityTotalCount,getCompletedActivity, getLessonCompletion,getLastActivityCompleted,getWeeklyScore,getPhoneNumber_userNudges,getWeeklyScore_pilot,getCount_NotStartedActivity,getLessonCompletions,getActivity_Completions,getActivityNameCount };

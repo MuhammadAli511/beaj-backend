@@ -694,13 +694,15 @@ const webhookService = async (body, res) => {
                             (currentUserState.dataValues.currentWeek - 1) * 6 +
                             currentUserState.dataValues.currentDay;
                         if (lessonNumberCheck >= 24) {
+                            if (currentUserState.dataValues.currentCourseId == 110 || currentUserState.dataValues.currentCourseId == 111) {
+                                await sendButtonMessage(userMobileNumber, 'Well Done on completing Level 2! 🥳\n\nPlease note that we are taking a break.\n\n🗓️ Level 3 will begin on Monday, April 7th', [{ id: 'start_my_course', title: 'Start my course' }], 0, 'https://beajbloblive.blob.core.windows.net/beajdocuments/welldoneapril7.jpeg');
+                                await createActivityLog(userMobileNumber, "template", "outbound", "Well Done on completing Level 2! 🥳\n\nPlease note that we are taking a break.\n\n🗓️ Level 3 will begin on Monday, April 7th", null);
+                                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start my course"]);
+                                return;
+                            }
                             await sendButtonMessage(userMobileNumber, 'You have completed all the lessons in this course. Click the button below to proceed', [{ id: 'start_my_course', title: 'Start my course' }]);
                             await createActivityLog(userMobileNumber, "template", "outbound", "You have completed all the lessons in this course. Click the button below to proceed", null);
-                            // update acceptable messages list for the user
-                            await waUserProgressRepository.updateAcceptableMessagesList(
-                                userMobileNumber,
-                                ["start my course"]
-                            );
+                            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start my course"]);
                             return;
                         }
                         await sendMessage(

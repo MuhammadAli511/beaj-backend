@@ -13,11 +13,11 @@ const createSpeakActivityQuestionService = async (question, mediaFile, answer, l
                 if (question.includes("<question>")) {
                     const questionText = question.match(/<question>(.*?)<\/question>/s)[1].trim();
                     if (questionText != "") {
-                        mediaUrl = await azureAIServices.elevenLabsTextToSpeechAndUpload(questionText);
+                        mediaUrl = await azureAIServices.openaiTextToSpeechAndUpload(questionText);
                     }
                 }
             } else {
-                mediaUrl = await azureAIServices.elevenLabsTextToSpeechAndUpload(question);
+                mediaUrl = await azureAIServices.openaiTextToSpeechAndUpload(question);
             }
         }
 
@@ -51,12 +51,12 @@ const updateSpeakActivityQuestionService = async (id, question, mediaFile, answe
             mediaUrl = mediaFile;
         } else {
             if (activityType != 'conversationalAgencyBot') {
-                mediaUrl = await azureAIServices.elevenLabsTextToSpeechAndUpload(question);
+                mediaUrl = await azureAIServices.openaiTextToSpeechAndUpload(question);
             } else {
                 if (question.includes("<question>")) {
                     const questionText = question.match(/<question>(.*?)<\/question>/s)[1].trim();
                     if (questionText != "") {
-                        mediaUrl = await azureAIServices.elevenLabsTextToSpeechAndUpload(questionText);
+                        mediaUrl = await azureAIServices.openaiTextToSpeechAndUpload(questionText);
                     }
                 }
             }

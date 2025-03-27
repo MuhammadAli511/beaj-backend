@@ -26,7 +26,7 @@ const createAudioChatService = async (prompt, userAudioFile) => {
 
         // Text to Speech
         startTime = performance.now();
-        const audioFileUrl = await azureAIServices.elevenLabsTextToSpeechAndUpload(model_response);
+        const audioFileUrl = await azureAIServices.openaiTextToSpeechAndUpload(model_response);
         endTime = performance.now();
         modelTextToSpeechTime = (endTime - startTime).toFixed(2) / 1000;
 
