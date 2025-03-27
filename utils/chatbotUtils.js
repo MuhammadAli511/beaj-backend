@@ -967,7 +967,7 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, ret
     }
 };
 
-const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, imageUrl = null) => {
+const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, imageUrl = null, videoUrl = null) => {
     const MAX_RETRIES = 15;
 
     try {
@@ -1008,7 +1008,45 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
                     },
                 }
             );
-        } else {
+        } else if (videoUrl) {
+            const response = await axios.post(
+                `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
+                {
+                    messaging_product: 'whatsapp',
+                    recipient_type: 'individual',
+                    to: to,
+                    type: 'interactive',
+                    interactive: {
+                        type: 'button',
+                        header: {
+                            type: 'video',
+                            video: {
+                                link: videoUrl
+                            }
+                        },
+                        body: {
+                            text: bodyText
+                        },
+                        action: {
+                            buttons: buttonOptions.map(option => ({
+                                type: 'reply',
+                                reply: {
+                                    id: option.id,
+                                    title: option.title
+                                }
+                            }))
+                        }
+                    }
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${whatsappToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+        }
+        else {
             const response = await axios.post(
                 `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
                 {
@@ -1052,6 +1090,8 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
                 await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
                 if (imageUrl) {
                     return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, imageUrl);
+                } else if (videoUrl) {
+                    return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, null, videoUrl);
                 } else {
                     return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1);
                 }
@@ -1698,10 +1738,26 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
                 }
 
+                const mcqImage = firstMCQsQuestion.dataValues.QuestionImageUrl;
+                const mcqVideo = firstMCQsQuestion.dataValues.QuestionVideoUrl;
+                const mcqType = firstMCQsQuestion.dataValues.QuestionType;
 
-                // Reply buttons to answer
-                await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })));
-                await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
+                if (mcqType == 'Text') {
+                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })));
+                    await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
+                }
+                else if (mcqType == 'Text+Image') {
+                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, mcqImage);
+                    await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
+                }
+                else if (mcqType == 'Text+Video') {
+                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, null, mcqVideo);
+                    await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
+                }
+                else if (mcqType == 'Image') {
+                    await sendButtonMessage(userMobileNumber, "", mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, mcqImage);
+                    await createActivityLog(userMobileNumber, "template", "outbound", "", null);
+                }
 
                 // Update acceptable messages list for the user
                 await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["option a", "option b", "option c"]);
@@ -1762,14 +1818,14 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         await createActivityLog(userMobileNumber, "text", "outbound", customFeedbackText, null);
                     }
                     if (customFeedbackImage) {
-                        await sleep(2000);
                         await sendMediaMessage(userMobileNumber, customFeedbackImage, 'image');
                         await createActivityLog(userMobileNumber, "image", "outbound", customFeedbackImage, null);
+                        await sleep(2000);
                     }
                     if (customFeedbackAudio) {
-                        await sleep(2000);
                         await sendMediaMessage(userMobileNumber, customFeedbackAudio, 'audio');
                         await createActivityLog(userMobileNumber, "audio", "outbound", customFeedbackAudio, null);
+                        await sleep(5000);
                     }
 
                     if (!customFeedbackText && !customFeedbackImage && !customFeedbackAudio) {
@@ -1817,8 +1873,26 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     }
 
                     // Reply buttons to answer
-                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })));
-                    await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
+                    const mcqImage = nextMCQsQuestion.dataValues.QuestionImageUrl;
+                    const mcqVideo = nextMCQsQuestion.dataValues.QuestionVideoUrl;
+                    const mcqType = nextMCQsQuestion.dataValues.QuestionType;
+
+                    if (mcqType == 'Text') {
+                        await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })));
+                        await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
+                    }
+                    else if (mcqType == 'Text+Image') {
+                        await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, mcqImage);
+                        await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
+                    }
+                    else if (mcqType == 'Text+Video') {
+                        await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, null, mcqVideo);
+                        await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
+                    }
+                    else if (mcqType == 'Image') {
+                        await sendButtonMessage(userMobileNumber, "", mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, mcqImage);
+                        await createActivityLog(userMobileNumber, "template", "outbound", "", null);
+                    }
 
                     // Update acceptable messages list for the user
                     await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["option a", "option b", "option c"]);
