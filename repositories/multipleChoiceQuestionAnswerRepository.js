@@ -1,14 +1,17 @@
 import MultipleChoiceQuestionAnswer from "../models/MultipleChoiceQuestionAnswer.js";
 import Sequelize from 'sequelize';
 
-const create = async (answerText, answerImageUrl, answerAudioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber) => {
+const create = async (answerText, answerImageUrl, answerAudioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber, customAnswerFeedbackText, customAnswerFeedbackImage, customAnswerFeedbackAudio) => {
     const multipleChoiceQuestionAnswer = new MultipleChoiceQuestionAnswer({
         AnswerText: answerText,
         AnswerImageUrl: answerImageUrl,
         AnswerAudioUrl: answerAudioUrl,
         IsCorrect: isCorrect,
         MultipleChoiceQuestionId: multipleChoiceQuestionId,
-        SequenceNumber: sequenceNumber
+        SequenceNumber: sequenceNumber,
+        CustomAnswerFeedbackText: customAnswerFeedbackText,
+        CustomAnswerFeedbackImage: customAnswerFeedbackImage,
+        CustomAnswerFeedbackAudio: customAnswerFeedbackAudio
     });
     await multipleChoiceQuestionAnswer.save();
     return multipleChoiceQuestionAnswer;
@@ -24,14 +27,17 @@ const getById = async (id) => {
     return multipleChoiceQuestionAnswer;
 };
 
-const update = async (id, answerText, answerImageUrl, answerAudioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber) => {
+const update = async (id, answerText, answerImageUrl, answerAudioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber, customAnswerFeedbackText, customAnswerFeedbackImage, customAnswerFeedbackAudio) => {
     return await MultipleChoiceQuestionAnswer.update({
         AnswerText: answerText,
         AnswerImageUrl: answerImageUrl,
         AnswerAudioUrl: answerAudioUrl,
         IsCorrect: isCorrect,
         MultipleChoiceQuestionId: multipleChoiceQuestionId,
-        SequenceNumber: sequenceNumber
+        SequenceNumber: sequenceNumber,
+        CustomAnswerFeedbackText: customAnswerFeedbackText,
+        CustomAnswerFeedbackImage: customAnswerFeedbackImage,
+        CustomAnswerFeedbackAudio: customAnswerFeedbackAudio
     }, {
         where: {
             Id: id

@@ -5,7 +5,8 @@ const createMultipleChoiceQuestionController = async (req, res, next) => {
         const { questionType, questionText, questionNumber, lessonId, optionsType } = req.body;
         const file = req.files['file'] ? req.files['file'][0] : null;
         const image = req.files['image'] ? req.files['image'][0] : null;
-        const multipleChoiceQuestion = await service.createMultipleChoiceQuestionService(file, image, questionType, questionText, questionNumber, lessonId, optionsType);
+        const video = req.files['video'] ? req.files['video'][0] : null;
+        const multipleChoiceQuestion = await service.createMultipleChoiceQuestionService(file, image, video, questionType, questionText, questionNumber, lessonId, optionsType);
         res.status(200).send({ message: "Multiple Choice Question created successfully", mcq: multipleChoiceQuestion });
     } catch (error) {
         error.fileName = 'multipleChoiceQuestionController.js';
@@ -40,7 +41,8 @@ const updateMultipleChoiceQuestionController = async (req, res, next) => {
         const { questionType, questionText, questionNumber, lessonId, optionsType } = req.body;
         const file = req.files['file'] ? req.files['file'][0] : null;
         const image = req.files['image'] ? req.files['image'][0] : null;
-        await service.updateMultipleChoiceQuestionService(id, file, image, questionType, questionText, questionNumber, lessonId, optionsType);
+        const video = req.files['video'] ? req.files['video'][0] : null;
+        await service.updateMultipleChoiceQuestionService(id, file, image, video, questionType, questionText, questionNumber, lessonId, optionsType);
         res.status(200).send({ message: "Multiple Choice Question updated successfully" });
     } catch (error) {
         error.fileName = 'multipleChoiceQuestionController.js';

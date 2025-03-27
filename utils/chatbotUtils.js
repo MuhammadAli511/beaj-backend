@@ -967,7 +967,11 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, ret
     }
 };
 
+<<<<<<< HEAD
+const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, imageUrl = null, videoUrl = null) => {
+=======
 const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, imageUrl = null) => {
+>>>>>>> master
     const MAX_RETRIES = 15;
 
     try {
@@ -1008,7 +1012,49 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
                     },
                 }
             );
+<<<<<<< HEAD
+        } else if (videoUrl) {
+            const response = await axios.post(
+                `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
+                {
+                    messaging_product: 'whatsapp',
+                    recipient_type: 'individual',
+                    to: to,
+                    type: 'interactive',
+                    interactive: {
+                        type: 'button',
+                        header: {
+                            type: 'video',
+                            video: {
+                                link: videoUrl
+                            }
+                        },
+                        body: {
+                            text: bodyText
+                        },
+                        action: {
+                            buttons: buttonOptions.map(option => ({
+                                type: 'reply',
+                                reply: {
+                                    id: option.id,
+                                    title: option.title
+                                }
+                            }))
+                        }
+                    }
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${whatsappToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+        }
+        else {
+=======
         } else {
+>>>>>>> master
             const response = await axios.post(
                 `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
                 {
@@ -1052,6 +1098,11 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
                 await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
                 if (imageUrl) {
                     return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, imageUrl);
+<<<<<<< HEAD
+                } else if (videoUrl) {
+                    return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, null, videoUrl);
+=======
+>>>>>>> master
                 } else {
                     return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1);
                 }
@@ -1556,9 +1607,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
 
         // Feedback Message
         const randomNumber = Math.floor(Math.random() * 100) + 1;
-        const messagesInLast60Seconds = await waUserActivityLogsRepository.countMessagesInLastnSeconds(userMobileNumber, 60);
-        console.log("Messages in last 60 seconds: ", messagesInLast60Seconds);
-        if (randomNumber >= 75 && messagesInLast60Seconds < 5) {
+        if (randomNumber >= 75) {
             let cleanedAlias = startingLesson.dataValues.activityAlias.replace(/\?/g, '');
             let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + cleanedAlias + " activity?";
             await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
@@ -1584,9 +1633,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
     } else {
         // Feedback Message
         const randomNumber = Math.floor(Math.random() * 100) + 1;
-        const messagesInLast60Seconds = await waUserActivityLogsRepository.countMessagesInLastnSeconds(userMobileNumber, 60);
-        console.log("Messages in last 60 seconds: ", messagesInLast60Seconds);
-        if (randomNumber >= 75 && messagesInLast60Seconds < 5) {
+        if (randomNumber >= 75) {
             let cleanedAlias = startingLesson.dataValues.activityAlias.replace(/\?/g, '');
             let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + cleanedAlias + " activity?";
             await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
@@ -1705,10 +1752,26 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
                 }
 
+                const mcqImage = firstMCQsQuestion.dataValues.QuestionImageUrl;
+                const mcqVideo = firstMCQsQuestion.dataValues.QuestionVideoUrl;
+                const mcqType = firstMCQsQuestion.dataValues.QuestionType;
 
-                // Reply buttons to answer
-                await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })));
-                await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
+                if (mcqType == 'Text') {
+                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })));
+                    await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
+                }
+                else if (mcqType == 'Text+Image') {
+                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, mcqImage);
+                    await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
+                }
+                else if (mcqType == 'Text+Video') {
+                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, null, mcqVideo);
+                    await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
+                }
+                else if (mcqType == 'Image') {
+                    await sendButtonMessage(userMobileNumber, "", mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, mcqImage);
+                    await createActivityLog(userMobileNumber, "template", "outbound", "", null);
+                }
 
                 // Update acceptable messages list for the user
                 await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["option a", "option b", "option c"]);
@@ -1734,10 +1797,14 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                 // Check if the user answer is correct
                 let isCorrectAnswer = false;
+                let selectedAnswerIndex = -1;
                 for (let i = 0; i < mcqAnswers.length; i++) {
                     let matchWith = `option ${String.fromCharCode(65 + i)}`.toLowerCase();
-                    if (mcqAnswers[i].dataValues.IsCorrect === true && userAnswer == matchWith) {
-                        isCorrectAnswer = true;
+                    if (userAnswer == matchWith) {
+                        selectedAnswerIndex = i;
+                        if (mcqAnswers[i].dataValues.IsCorrect === true) {
+                            isCorrectAnswer = true;
+                        }
                         break;
                     }
                 }
@@ -1760,23 +1827,54 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     submissionDate
                 );
 
-                // Correct Answer Feedback
-                if (isCorrectAnswer) {
-                    // Text message
-                    await sendMessage(userMobileNumber, "✅ Great!");
-                    await createActivityLog(userMobileNumber, "text", "outbound", "✅ Great!", null);
-                }
-                // Incorrect Answer Feedback
-                else {
-                    let correctAnswer = "❌ The correct answer is ";
-                    for (let i = 0; i < mcqAnswers.length; i++) {
-                        if (mcqAnswers[i].dataValues.IsCorrect === true) {
-                            correctAnswer += "Option " + String.fromCharCode(65 + i) + ": " + mcqAnswers[i].dataValues.AnswerText;
+                // Check if custom feedback exists for the selected answer
+                if (selectedAnswerIndex !== -1) {
+                    const selectedAnswer = mcqAnswers[selectedAnswerIndex];
+                    const customFeedbackText = selectedAnswer.dataValues.CustomAnswerFeedbackText;
+                    const customFeedbackImage = selectedAnswer.dataValues.CustomAnswerFeedbackImage;
+                    const customFeedbackAudio = selectedAnswer.dataValues.CustomAnswerFeedbackAudio;
+
+                    // If not null based on the user selection send all the custom feedback which is not null
+                    if (customFeedbackText) {
+                        await sendMessage(userMobileNumber, customFeedbackText);
+                        await createActivityLog(userMobileNumber, "text", "outbound", customFeedbackText, null);
+                    }
+                    if (customFeedbackImage) {
+                        await sendMediaMessage(userMobileNumber, customFeedbackImage, 'image');
+                        await createActivityLog(userMobileNumber, "image", "outbound", customFeedbackImage, null);
+                        await sleep(2000);
+                    }
+                    if (customFeedbackAudio) {
+                        await sendMediaMessage(userMobileNumber, customFeedbackAudio, 'audio');
+                        await createActivityLog(userMobileNumber, "audio", "outbound", customFeedbackAudio, null);
+                        await sleep(5000);
+                    }
+
+                    if (!customFeedbackText && !customFeedbackImage && !customFeedbackAudio) {
+                        // Correct Answer Feedback
+                        if (isCorrectAnswer) {
+                            // Text message
+                            await sendMessage(userMobileNumber, "✅ Great!");
+                            await createActivityLog(userMobileNumber, "text", "outbound", "✅ Great!", null);
+                        }
+                        // Incorrect Answer Feedback
+                        else {
+                            let correctAnswer = "❌ The correct answer is ";
+                            for (let i = 0; i < mcqAnswers.length; i++) {
+                                if (mcqAnswers[i].dataValues.IsCorrect === true) {
+                                    correctAnswer += "Option " + String.fromCharCode(65 + i) + ": " + mcqAnswers[i].dataValues.AnswerText;
+                                }
+                            }
+                            // Text message
+                            await sendMessage(userMobileNumber, correctAnswer);
+                            await createActivityLog(userMobileNumber, "text", "outbound", correctAnswer, null);
                         }
                     }
-                    // Text message
-                    await sendMessage(userMobileNumber, correctAnswer);
-                    await createActivityLog(userMobileNumber, "text", "outbound", correctAnswer, null);
+                } else {
+                    // Fallback for invalid selection
+                    await sendMessage(userMobileNumber, "Invalid option selected. Please try again.");
+                    await createActivityLog(userMobileNumber, "text", "outbound", "Invalid option selected. Please try again.", null);
+                    return;
                 }
 
                 // Get next MCQ question
@@ -1797,8 +1895,26 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     }
 
                     // Reply buttons to answer
-                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })));
-                    await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
+                    const mcqImage = nextMCQsQuestion.dataValues.QuestionImageUrl;
+                    const mcqVideo = nextMCQsQuestion.dataValues.QuestionVideoUrl;
+                    const mcqType = nextMCQsQuestion.dataValues.QuestionType;
+
+                    if (mcqType == 'Text') {
+                        await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })));
+                        await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
+                    }
+                    else if (mcqType == 'Text+Image') {
+                        await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, mcqImage);
+                        await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
+                    }
+                    else if (mcqType == 'Text+Video') {
+                        await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, null, mcqVideo);
+                        await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
+                    }
+                    else if (mcqType == 'Image') {
+                        await sendButtonMessage(userMobileNumber, "", mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, mcqImage);
+                        await createActivityLog(userMobileNumber, "template", "outbound", "", null);
+                    }
 
                     // Update acceptable messages list for the user
                     await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["option a", "option b", "option c"]);
@@ -2213,8 +2329,9 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstListenAndSpeakQuestion.dataValues.questionNumber);
 
                 // Send question media file
-                await sendMediaMessage(userMobileNumber, firstListenAndSpeakQuestion.dataValues.mediaFile, 'audio');
-                await createActivityLog(userMobileNumber, "audio", "outbound", firstListenAndSpeakQuestion.dataValues.mediaFile, null);
+                const mediaType = firstListenAndSpeakQuestion.dataValues.mediaFile.endsWith('.mp4') ? 'video' : 'audio';
+                await sendMediaMessage(userMobileNumber, firstListenAndSpeakQuestion.dataValues.mediaFile, mediaType);
+                await createActivityLog(userMobileNumber, mediaType, "outbound", firstListenAndSpeakQuestion.dataValues.mediaFile, null);
 
                 // Update acceptable messages list for the user
                 await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
@@ -2330,9 +2447,18 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         // Update question number
                         await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextListenAndSpeakQuestion.dataValues.questionNumber);
 
+                        const mediaType = nextListenAndSpeakQuestion.dataValues.mediaFile.endsWith('.mp4') ? 'video' : 'audio';
+                        if (mediaType == 'video') {
+                            await sendMediaMessage(userMobileNumber, nextListenAndSpeakQuestion.dataValues.mediaFile, 'video');
+                            await createActivityLog(userMobileNumber, "video", "outbound", nextListenAndSpeakQuestion.dataValues.mediaFile, null);
+                        }
+
                         // Update acceptable messages list for the user
                         await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
-                        // await sleep(5000);
+                        if (mediaType == 'video') {
+                            await sleep(5000);
+                        }
+
 
                         // Text message
                         const questionText = nextListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
