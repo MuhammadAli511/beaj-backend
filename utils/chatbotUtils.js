@@ -967,11 +967,7 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, ret
     }
 };
 
-<<<<<<< HEAD
 const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, imageUrl = null, videoUrl = null) => {
-=======
-const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, imageUrl = null) => {
->>>>>>> master
     const MAX_RETRIES = 15;
 
     try {
@@ -1012,7 +1008,6 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
                     },
                 }
             );
-<<<<<<< HEAD
         } else if (videoUrl) {
             const response = await axios.post(
                 `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
@@ -1052,9 +1047,6 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
             );
         }
         else {
-=======
-        } else {
->>>>>>> master
             const response = await axios.post(
                 `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
                 {
@@ -1098,11 +1090,8 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
                 await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
                 if (imageUrl) {
                     return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, imageUrl);
-<<<<<<< HEAD
                 } else if (videoUrl) {
                     return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, null, videoUrl);
-=======
->>>>>>> master
                 } else {
                     return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1);
                 }
