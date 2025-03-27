@@ -1108,97 +1108,16 @@ const removeHTMLTags = (text) => {
     return text.replace(/<[^>]*>?/gm, '');
 };
 
-const outlineMessage = async (userMobileNumber) => {
+const greetingMessage = async (userMobileNumber) => {
     await waUserProgressRepository.create({
         phoneNumber: userMobileNumber,
-        persona: "Teacher",
-        engagement_type: "Outline Message",
+        engagement_type: "Greeting Message",
         lastUpdated: new Date(),
     });
-    // Introduction message
-    let firstMessage = "Assalam o Alaikum 👋\n\nWelcome to Beaj Self Development Course for Teachers!";
-    await sendMessage(userMobileNumber, firstMessage);
-    await createActivityLog(userMobileNumber, "text", "outbound", firstMessage, null);
-
-    let secondMessage = "Meet your instructors👇🏽";
-    await sendMessage(userMobileNumber, secondMessage);
-    await createActivityLog(userMobileNumber, "text", "outbound", secondMessage, null);
-
-    // Introduction Video picked from DB
-    const introVideoLink = await extractConstantMessage("intro_video");
-    await sendMediaMessage(userMobileNumber, introVideoLink, 'video');
-    await createActivityLog(userMobileNumber, "video", "outbound", introVideoLink, null);
-
-    // Sleep
-    await sleep(12000);
-
-    // Text Message
-    let outlineMessage = "Here is the course outline: ";
-    await sendMessage(userMobileNumber, outlineMessage);
-    await createActivityLog(userMobileNumber, "text", "outbound", outlineMessage, null);
-
-    // Outline Image picked from DB
-    const outlineImageLink = await extractConstantMessage("level_one_course_outline");
-    await sendMediaMessage(userMobileNumber, outlineImageLink, 'image');
-    await createActivityLog(userMobileNumber, "image", "outbound", outlineImageLink, null);
-
-    // Sleep
-    await sleep(5000);
-
-    // Apply for Course or Start Free Demo
-    await sendButtonMessage(userMobileNumber, 'Apply for a scholarship to the course or take a free demo:', [{ id: 'apply_for_scholarship', title: 'Apply Scholarship' }, { id: 'try_free_demo', title: 'Try Free Demo' }]);
-    await createActivityLog(userMobileNumber, "template", "outbound", "Apply for a scholarship to the course or take a free demo", null);
-
-    // Update acceptable messages list for the user
-    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["apply scholarship", "try free demo"]);
-    return;
-};
-
-const nameInputMessage = async (userMobileNumber) => {
-    await waUserProgressRepository.update(
-        userMobileNumber,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-    )
-    await waUserProgressRepository.updateEngagementType(userMobileNumber, "Name Input");
-    let nameMessage = "Your Full Name\n(e.g. Saima Khan)\n\nآپ کا پورا نام\n(مثلن: صایمہ خان)"
-    await sendMessage(userMobileNumber, nameMessage);
-    await createActivityLog(userMobileNumber, "text", "outbound", nameMessage, null);
-    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["text"]);
-    return;
-};
-
-const districtInputMessage = async (userMobileNumber) => {
-    await waUserProgressRepository.updateEngagementType(userMobileNumber, "District Input");
-    let districtMessage = "Your District\n(e.g. Faisalabad, Punjab)\n\nآپ کے ضلع کا نام\n(مثلن: فیصل آباد، پنجاب)"
-    await sendMessage(userMobileNumber, districtMessage);
-    await createActivityLog(userMobileNumber, "text", "outbound", districtMessage, null);
-    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["text"]);
-    return;
-};
-
-const teacherInputMessage = async (userMobileNumber) => {
-    await waUserProgressRepository.updateEngagementType(userMobileNumber, "Teacher Input");
-    let teacherMessage = "Are you a teacher?\n\nکیا آپ ٹیچر ہیں؟";
-    await sendButtonMessage(userMobileNumber, teacherMessage, [{ id: "yes_message", title: "Yes/ہاں" }, { id: "no_message", title: "No/نہیں" }]);
-    await createActivityLog(userMobileNumber, "template", "outbound", teacherMessage, null);
-    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["yes/ہاں", "no/نہیں", "yes", "no"]);
-    return;
-};
-
-const schoolNameInputMessage = async (userMobileNumber) => {
-    await waUserProgressRepository.updateEngagementType(userMobileNumber, "School Input");
-    // let schoolNameMessage = "If Yes, type the name of the school you teach at.\nIf No, type 'NO'.\n\nاگر ہاں, تو اپنے سکول کا نام لکھیں۔\nاگر نہیں، تو لکھیں 'NO'."
-    let schoolNameMessage = "If Yes, type the name of the school you teach at.\nاگر ہاں, تو اپنے سکول کا نام لکھیں۔\n\nIf No, type 'NO'.\n.اگر نہیں، تو لکھیں 'NO'."
-    await sendMessage(userMobileNumber, schoolNameMessage);
-    await createActivityLog(userMobileNumber, "text", "outbound", schoolNameMessage, null);
-    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["text"]);
+    const greetingMessage = "Welcome to Beaj Education! I'm Ms. Beaj - here to guide you!\n\nPlease choose your course:\n\nA - Beaj Teacher Course\nB - Beaj Kids Course";
+    await sendButtonMessage(userMobileNumber, greetingMessage, [{ id: 'teacher_course', title: 'Option A' }, { id: 'kids_course', title: 'Option B' }]);
+    await createActivityLog(userMobileNumber, "template", "outbound", greetingMessage, null);
+    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["option a", "option b", "a", "b"]);
     return;
 };
 
@@ -1222,12 +1141,12 @@ const thankYouMessage = async (userMobileNumber) => {
     return;
 };
 
-const demoCourseStart = async (userMobileNumber, startingLesson) => {
+const demoCourseStart = async (userMobileNumber, startingLesson, courseName) => {
     // Update user progress
     await waUserProgressRepository.update(
         userMobileNumber,
         await courseRepository.getCourseIdByName(
-            "Free Trial"
+            courseName
         ),
         startingLesson.dataValues.weekNumber,
         startingLesson.dataValues.dayNumber,
@@ -1237,7 +1156,7 @@ const demoCourseStart = async (userMobileNumber, startingLesson) => {
         null,
         null,
     );
-    await waUserProgressRepository.updateEngagementType(userMobileNumber, "Free Demo");
+    await waUserProgressRepository.updateEngagementType(userMobileNumber, courseName);
 
     // Text Message
     await sendMessage(userMobileNumber, "Great! Let's start your free demo! 🤩 Here is your first lesson.");
@@ -1279,13 +1198,9 @@ const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUs
 
     // If list has "option a", "option b", "option c" then "option a", "option b", "option c" type kerain.
     if (acceptableMessagesList.includes("option a") && acceptableMessagesList.includes("option b") && acceptableMessagesList.includes("option c")) {
-        if (messageContent.toLowerCase() == "a" || messageContent.toLowerCase() == "b" || messageContent.toLowerCase() == "c") {
-            return true;
-        } else {
-            await sendMessage(userMobileNumber, "option a, option b, ya option c mein se koi aik option type kerain.");
-            await createActivityLog(userMobileNumber, "text", "outbound", "option a, option b, ya option c mein se koi aik option type kerain.", null);
-            return false;
-        }
+        await sendMessage(userMobileNumber, "option a, option b, ya option c mein se koi aik button press kerain.");
+        await createActivityLog(userMobileNumber, "text", "outbound", "option a, option b, ya option c mein se koi aik button press kerain.", null);
+        return false;
     }
     // If list has "audio"
     if (acceptableMessagesList.includes("audio")) {
@@ -1340,6 +1255,7 @@ const getNextCourse = async (userMobileNumber) => {
         return nextCourse;
     }
     return null;
+
 };
 
 const startCourseForUser = async (userMobileNumber, numbers_to_ignore) => {
@@ -1477,7 +1393,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
     await sleep(3000);
 
 
-    if (currentUserState.dataValues.engagement_type == "Free Demo") {
+    if (currentUserState.dataValues.engagement_type == "Free Trial - Teacher" || currentUserState.dataValues.engagement_type == "Free Trial - Kids") {
         let user = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
         let checkRegistrationComplete = user.dataValues.userRegistrationComplete !== null;
         if (checkRegistrationComplete == false && lessonLast == true) {
@@ -1771,15 +1687,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 
                 // Upper and Lower case answers
                 const originalAnswer = messageContent;
-                let userAnswer = messageContent.toLowerCase();
-
-                if (userAnswer == "a") {
-                    userAnswer = "option a";
-                } else if (userAnswer == "b") {
-                    userAnswer = "option b";
-                } else if (userAnswer == "c") {
-                    userAnswer = "option c";
-                }
+                const userAnswer = messageContent.toLowerCase();
 
                 // Get all answers against the question
                 const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(currentMCQsQuestion.dataValues.Id);
@@ -2633,7 +2541,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         }
 
                         // ElevenLabs Text to Speech
-                        openaiFeedbackAudio = await azureAIServices.openaiTextToSpeechAndUpload(openaiFeedbackTranscript);
+                        openaiFeedbackAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(openaiFeedbackTranscript);
 
                         // Media message
                         await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
@@ -2761,7 +2669,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                     for (const word of mispronouncedWords) {
                         modelResponse += word.Word + (word === mispronouncedWords[mispronouncedWords.length - 1] ? "" : "...");
                     }
-                    correctedAudio = await azureAIServices.openaiTextToSpeechAndUpload(modelResponse);
+                    correctedAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(modelResponse);
                     await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
                     await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
                     await sleep(5000);
@@ -2826,7 +2734,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                 if (firstConversationalAgencyBotQuestion.dataValues.mediaFile != null && firstConversationalAgencyBotQuestion.dataValues.mediaFile.includes("http")) {
                     questionAudio = firstConversationalAgencyBotQuestion.dataValues.mediaFile;
                 } else {
-                    questionAudio = await azureAIServices.openaiTextToSpeechAndUpload(questionText);
+                    questionAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(questionText);
                 }
 
                 // Update question number
@@ -2873,7 +2781,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         let openaiFeedbackTranscript = await azureAIServices.openaiFeedback(messagesArray);
                         let initialFeedbackResponse = openaiFeedbackTranscript;
 
-                        let openaiFeedbackAudio = await azureAIServices.openaiTextToSpeechAndUpload(initialFeedbackResponse);
+                        let openaiFeedbackAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(initialFeedbackResponse);
                         await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
                         await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
 
@@ -2945,7 +2853,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         let openaiFeedbackTranscript = await azureAIServices.openaiFeedback(messagesArray);
                         let initialFeedbackResponse = openaiFeedbackTranscript;
 
-                        let openaiFeedbackAudio = await azureAIServices.openaiTextToSpeechAndUpload(initialFeedbackResponse);
+                        let openaiFeedbackAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(initialFeedbackResponse);
                         await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
                         await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
 
@@ -3084,7 +2992,7 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
                         for (const word of mispronouncedWords) {
                             modelResponse += word.Word + (word === mispronouncedWords[mispronouncedWords.length - 1] ? "" : "...");
                         }
-                        correctedAudio = await azureAIServices.openaiTextToSpeechAndUpload(modelResponse);
+                        correctedAudio = await azureAIServices.elevenLabsTextToSpeechAndUpload(modelResponse);
                         await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
                         await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
                         await sleep(5000);
@@ -3109,12 +3017,10 @@ const sendCourseLessonToUser = async (userMobileNumber, currentUserState, starti
 export {
     sendMessage,
     retrieveMediaURL,
-    outlineMessage,
+    greetingMessage,
     createActivityLog,
     extractConstantMessage,
     getAcceptableMessagesList,
-    nameInputMessage,
-    districtInputMessage,
     thankYouMessage,
     demoCourseStart,
     removeUser,
@@ -3125,8 +3031,6 @@ export {
     sendCourseLessonToUser,
     removeUserTillCourse,
     weekEndScoreCalculation,
-    teacherInputMessage,
-    schoolNameInputMessage,
     createFeedback,
     sendButtonMessage
 };
