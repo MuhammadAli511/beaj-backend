@@ -125,6 +125,14 @@ const getOpenaiThreadId = async (phoneNumber) => {
     });
 };
 
+const updatePersona = async (phoneNumber, persona) => {
+    return await WA_UserProgress.update({
+        persona: persona
+    }, {
+        where: { phoneNumber: phoneNumber }
+    });
+};
+
 export default {
     create,
     getAll,
@@ -138,5 +146,6 @@ export default {
     updateEngagementType,
     getCountByEngagementType,
     getOpenaiThreadId,
-    updateOpenaiThreadId
+    updateOpenaiThreadId,
+    updatePersona
 };
