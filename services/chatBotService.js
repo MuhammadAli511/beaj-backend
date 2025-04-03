@@ -221,7 +221,7 @@ const webhookService = async (body, res) => {
 
             if (
                 text_message_types.includes(message.type) &&
-                ((messageContent.toLowerCase() == "grade 1 or 2") || (messageContent.toLowerCase() == "grade 3 or 4")) &&
+                ((messageContent.toLowerCase() == "grade 1 or 2") || (messageContent.toLowerCase() == "grade 5 or 6")) &&
                 (currentUserState.dataValues.engagement_type == "Choose Class")
             ) {
                 await kidsConfirmClass(userMobileNumber, messageContent);
