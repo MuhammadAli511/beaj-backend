@@ -119,7 +119,148 @@ const runCumulativeSheets = async() =>{
   let ActivityCompletedCount1 = await etlRepository.getActivityNameCount(courseId_l1, courseId_l2, courseId_l3, 'T1', '');
   let ActivityCompletedCount2 = await etlRepository.getActivityNameCount(courseId_l10, courseId_l20, courseId_l30, 'T2', '');
 
-  // console.log(array_Lesson_List1);
+  let individual_weekly_score_l1_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l1,'T1');
+  let individual_weekly_score_l2_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l2,'T1');
+  let individual_weekly_score_l3_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l3,'T1');
+
+  let individual_weekly_score_l1_list_total= [], individual_weekly_score_l2_list_total=[];
+  let arrayT1_List01 = [];
+
+  for (let i = 0; i < individual_weekly_score_l1_list.length; i++) {
+  
+    let l1_entry = individual_weekly_score_l1_list[i];
+    let l2_entry = individual_weekly_score_l2_list[i];
+    let l3_entry = individual_weekly_score_l3_list[i];
+
+    if(i == 0){
+      individual_weekly_score_l1_list_total.push([
+        l1_entry.listenAndSpeak_total,
+        l1_entry.mcqs_total,
+        l1_entry.watchAndSpeak_total,
+        l1_entry.read_total,
+        l1_entry.conversationalMonologue_total,
+        l1_entry.Speaking_practice_total,
+        null,
+        l2_entry.listenAndSpeak_total,
+        l2_entry.mcqs_total,
+        l2_entry.watchAndSpeak_total,
+        l2_entry.read_total,
+        l2_entry.conversationalMonologue_total,
+        l2_entry.Speaking_practice_total,
+        null,
+        l3_entry.listenAndSpeak_total,
+        l3_entry.mcqs_total,
+        l3_entry.watchAndSpeak_total,
+        l3_entry.read_total,
+        l3_entry.conversationalMonologue_total,
+        l3_entry.Speaking_practice_total
+      ])
+    }
+
+    arrayT1_List01.push([
+      i+1,
+      l1_entry.phoneNumber,
+      l1_entry.name,
+      l1_entry.listenAndSpeak,
+      l1_entry.mcqs,
+      l1_entry.watchAndSpeak,
+      l1_entry.read,
+      l1_entry.conversationalMonologue,
+      l1_entry.Speaking_practice,
+      null,
+      l2_entry.listenAndSpeak,
+      l2_entry.mcqs,
+      l2_entry.watchAndSpeak,
+      l2_entry.read,
+      l2_entry.conversationalMonologue,
+      l2_entry.Speaking_practice,
+      null,
+      l3_entry.listenAndSpeak,
+      l3_entry.mcqs,
+      l3_entry.watchAndSpeak,
+      l3_entry.read,
+      l3_entry.conversationalMonologue,
+      l3_entry.Speaking_practice,
+      null,
+      l1_entry.cohort
+    ])
+  }
+
+  individual_weekly_score_l1_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l10,'T2');
+  individual_weekly_score_l2_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l20,'T2');
+  individual_weekly_score_l3_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l30,'T2');
+  
+  
+
+
+  let arrayT1_List02 = [];
+
+  for (let i = 0; i < individual_weekly_score_l1_list.length; i++) {
+  
+    let l1_entry = individual_weekly_score_l1_list[i];
+    let l2_entry = individual_weekly_score_l2_list[i];
+    let l3_entry = individual_weekly_score_l3_list[i];
+
+    if(i == 0){
+      individual_weekly_score_l2_list_total.push([
+        l1_entry.listenAndSpeak_total,
+        l1_entry.mcqs_total,
+        l1_entry.watchAndSpeak_total,
+        l1_entry.read_total,
+        l1_entry.conversationalMonologue_total,
+        l1_entry.Speaking_practice_total,
+        null,
+        l2_entry.listenAndSpeak_total,
+        l2_entry.mcqs_total,
+        l2_entry.watchAndSpeak_total,
+        l2_entry.read_total,
+        l2_entry.conversationalMonologue_total,
+        l2_entry.Speaking_practice_total,
+        null,
+        l3_entry.listenAndSpeak_total,
+        l3_entry.mcqs_total,
+        l3_entry.watchAndSpeak_total,
+        l3_entry.read_total,
+        l3_entry.conversationalMonologue_total,
+        l3_entry.Speaking_practice_total
+      ])
+    }
+
+    arrayT1_List02.push([
+      i+1,
+      l1_entry.phoneNumber,
+      l1_entry.name,
+      l1_entry.listenAndSpeak,
+      l1_entry.mcqs,
+      l1_entry.watchAndSpeak,
+      l1_entry.read,
+      l1_entry.conversationalMonologue,
+      l1_entry.Speaking_practice,
+      null,
+      l2_entry.listenAndSpeak,
+      l2_entry.mcqs,
+      l2_entry.watchAndSpeak,
+      l2_entry.read,
+      l2_entry.conversationalMonologue,
+      l2_entry.Speaking_practice,
+      null,
+      l3_entry.listenAndSpeak,
+      l3_entry.mcqs,
+      l3_entry.watchAndSpeak,
+      l3_entry.read,
+      l3_entry.conversationalMonologue,
+      l3_entry.Speaking_practice,
+      null,
+      l1_entry.cohort
+    ])
+  }
+  
+  arrayT1_List01 = arrayT1_List01.map(obj => Object.values(obj).map(value => value));
+  arrayT1_List02 = arrayT1_List02.map(obj => Object.values(obj).map(value => value));
+
+  individual_weekly_score_l1_list_total = individual_weekly_score_l1_list_total.map(obj => Object.values(obj).map(value => value));
+  individual_weekly_score_l2_list_total = individual_weekly_score_l2_list_total.map(obj => Object.values(obj).map(value => value));
+  console.log(individual_weekly_score_l1_list_total);
   
   await CumulativeUtils_load(
     array_Lesson_List,
@@ -127,6 +268,10 @@ const runCumulativeSheets = async() =>{
     arrayT1_List2,
     ActivityCompletedCount1,
     ActivityCompletedCount2,
+    arrayT1_List01,
+    arrayT1_List02,
+    [], //individual_weekly_score_l1_list_total,
+    [], //individual_weekly_score_l2_list_total
   );
 }
 

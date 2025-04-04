@@ -1532,7 +1532,7 @@ const getActivityNameCount = async (course_id1, course_id2,course_id3,grp,cohort
 
         activityTotal = activityTotal.concat(activityCompleted);
 
-        console.log(activityTotal);
+        // console.log(activityTotal);
 
   
       return activityTotal;
@@ -1541,6 +1541,8 @@ const getActivityNameCount = async (course_id1, course_id2,course_id3,grp,cohort
       throw error;
     }
 };
+
+
 
 const getPhoneNumber_userNudges = async (course_id,grp,cohort,date) => {
     try {
@@ -1565,4 +1567,6 @@ WHERE m."targetGroup" = '${grp}'
     }
 };
 
-export default { getDataFromPostgres, getSuccessRate, getActivityTotalCount,getCompletedActivity, getLessonCompletion,getLastActivityCompleted,getWeeklyScore,getPhoneNumber_userNudges,getWeeklyScore_pilot,getCount_NotStartedActivity,getLessonCompletions,getActivity_Completions,getActivityNameCount };
+export default { getDataFromPostgres, getSuccessRate, getActivityTotalCount,getCompletedActivity, getLessonCompletion,getLastActivityCompleted,getWeeklyScore,getPhoneNumber_userNudges,getWeeklyScore_pilot,getCount_NotStartedActivity,getLessonCompletions,getActivity_Completions,getActivityNameCount,
+   
+ };

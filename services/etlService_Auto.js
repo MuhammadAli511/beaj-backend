@@ -4,10 +4,8 @@ import { or } from "sequelize";
 
 const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
   try {
-    const targetDate = new Date(2025, 2, 24);
-    const targetDate1 = new Date(2025, 4, 6);
+    const comparisonDate = new Date('2025-04-07');
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
 
     let courseId_l1 = null;
     let courseId_l2 = null;
@@ -39,7 +37,7 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
       flag_valid = 1;
     }
 
-    if(facilitator == 9 || facilitator == 10){
+    if((facilitator == 9 || facilitator == 10 ) || today >= comparisonDate){
       if (flag_valid == 1 && module && facilitator) {
         let arrayT1_List = [], ActivityCompletedCount = [];
         let last_activityCompleted_l1 = [], last_activityCompleted_l2 = [], last_activityCompleted_l3 = [];
@@ -109,6 +107,8 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
           }
           
           arrayT1_List = arrayT1_List.map(obj => Object.values(obj).map(value => value));
+
+          
   
           // console.log(arrayT1_List);
         }
@@ -156,6 +156,19 @@ if (module == "Lesson") {
     
     arrayT1_List = [...arrayT1_List, ...temp_list];
 
+    const uniqueList = [];
+    const phoneNumbersSeen = new Set();
+
+    arrayT1_List.forEach(record => {
+        if (!phoneNumbersSeen.has(record.phoneNumber)) {
+            uniqueList.push(record);
+            phoneNumbersSeen.add(record.phoneNumber);
+        }
+    });
+    arrayT1_List = uniqueList;
+
+    console.log(arrayT1_List);
+
     arrayT1_List = arrayT1_List.map(obj => Object.values(obj));
     arrayT1_List.forEach((record, index) => { record[0] = index + 1; });
 }
@@ -173,6 +186,16 @@ if (module == "Activity") {
 
     arrayT1_List = arrayT1_List.filter(record => record.course1_week1_activities !== null);
     arrayT1_List = [...arrayT1_List, ...temp_list];
+    const uniqueList = [];
+    const phoneNumbersSeen = new Set();
+
+    arrayT1_List.forEach(record => {
+        if (!phoneNumbersSeen.has(record.phoneNumber)) {
+            uniqueList.push(record);
+            phoneNumbersSeen.add(record.phoneNumber);
+        }
+    });
+    arrayT1_List = uniqueList;
 
     arrayT1_List = arrayT1_List.map(obj => Object.values(obj));
     arrayT1_List.forEach((record, index) => { record[0] = index + 1; });
@@ -224,6 +247,16 @@ if (module == "Week") {
         let temp_list = arrayT1_List.filter(user => phoneSet.has(user[1]));
         arrayT1_List = arrayT1_List.filter(record => record[11] === null && record[3] !== null);
         arrayT1_List = [...arrayT1_List, ...temp_list];
+        const uniqueList = [];
+    const phoneNumbersSeen = new Set();
+
+    arrayT1_List.forEach(record => {
+        if (!phoneNumbersSeen.has(record.phoneNumber)) {
+            uniqueList.push(record);
+            phoneNumbersSeen.add(record.phoneNumber);
+        }
+    });
+    arrayT1_List = uniqueList;
 
         arrayT1_List = arrayT1_List.map(obj => Object.values(obj));
         arrayT1_List.forEach((record, index) => { record[0] = index + 1; });
