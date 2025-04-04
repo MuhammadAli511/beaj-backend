@@ -22,11 +22,11 @@ const runCumulativeSheets = async() =>{
 
   let courseId_l1 = 106;
   let courseId_l2 = 111;
-  let courseId_l3 = null;
+  let courseId_l3 = 114;
 
   let courseId_l10 = 105;
   let courseId_l20 = 110;
-  let courseId_l30 = null;
+  let courseId_l30 = 112;
 
 
   let array_Lesson_List1 = await getWeeklyActivityCompleted1.getLessonCompletions(courseId_l1,courseId_l2,courseId_l3,'T1');
@@ -664,9 +664,9 @@ const runETL_Dashboard = async () => {
       return Number(value) || null;
     });
 
-    let dailyAvgAct_t1 = await getWeeklyActivityCompleted1.getDaily_AvgActivity_Rollout(111,'T1');
+    let dailyAvgAct_t1 = await getWeeklyActivityCompleted1.getDaily_AvgActivity_Rollout(114,'T1');
     dailyAvgAct_t1 = dailyAvgAct_t1.map(obj => Object.values(obj).map(value => Number(value)));
-    let dailyAvgAct_t2 = await getWeeklyActivityCompleted1.getDaily_AvgActivity_Rollout(110,'T2');
+    let dailyAvgAct_t2 = await getWeeklyActivityCompleted1.getDaily_AvgActivity_Rollout(112,'T2');
     dailyAvgAct_t2 = dailyAvgAct_t2.map(obj => Object.values(obj).map(value => Number(value)));
 
     let last_activity_t1_l1 = await etlRepository.getLastActivityCompleted(106,'T1','Rollout');
