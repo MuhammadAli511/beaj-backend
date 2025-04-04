@@ -113,14 +113,14 @@ const duplicateCourseService = async (id) => {
                 // Create new multiple choice questions
                 for (let j = 0; j < multipleChoiceQuestions.length; j++) {
                     const multipleChoiceQuestion = multipleChoiceQuestions[j].dataValues;
-                    const newMultipleChoiceQuestion = await multipleChoiceQuestionRepository.create(multipleChoiceQuestion.QuestionAudioUrl, multipleChoiceQuestion.QuestionImageUrl, multipleChoiceQuestion.QuestionType, multipleChoiceQuestion.QuestionText, multipleChoiceQuestion.QuestionNumber, newLesson.LessonId, multipleChoiceQuestion.OptionsType);
+                    const newMultipleChoiceQuestion = await multipleChoiceQuestionRepository.create(multipleChoiceQuestion.QuestionAudioUrl, multipleChoiceQuestion.QuestionImageUrl, multipleChoiceQuestion.QuestionVideoUrl, multipleChoiceQuestion.QuestionType, multipleChoiceQuestion.QuestionText, multipleChoiceQuestion.QuestionNumber, newLesson.LessonId, multipleChoiceQuestion.OptionsType);
                     // MULTIPLE CHOICE QUESTION ANSWERS
                     // Get original multiple choice question answers
                     const multipleChoiceQuestionAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(multipleChoiceQuestion.Id);
                     // Create new multiple choice question answers
                     for (let k = 0; k < multipleChoiceQuestionAnswers.length; k++) {
                         const multipleChoiceQuestionAnswer = multipleChoiceQuestionAnswers[k];
-                        await multipleChoiceQuestionAnswerRepository.create(multipleChoiceQuestionAnswer.AnswerText, multipleChoiceQuestionAnswer.AnswerImageUrl, multipleChoiceQuestionAnswer.AnswerAudioUrl, multipleChoiceQuestionAnswer.IsCorrect, newMultipleChoiceQuestion.Id, multipleChoiceQuestionAnswer.SequenceNumber);
+                        await multipleChoiceQuestionAnswerRepository.create(multipleChoiceQuestionAnswer.AnswerText, multipleChoiceQuestionAnswer.AnswerImageUrl, multipleChoiceQuestionAnswer.AnswerAudioUrl, multipleChoiceQuestionAnswer.IsCorrect, newMultipleChoiceQuestion.Id, multipleChoiceQuestionAnswer.SequenceNumber, multipleChoiceQuestionAnswer.CustomAnswerFeedbackText, multipleChoiceQuestionAnswer.CustomAnswerFeedbackImage, multipleChoiceQuestionAnswer.CustomAnswerFeedbackAudio);
                     }
                 }
             } else {

@@ -189,9 +189,9 @@ const migrateLessonService = async (lessonId, courseId) => {
                 await Promise.all(multipleChoiceQuestions.map(async question => {
                     const [newQuestion] = await prodSequelize.query(
                         `INSERT INTO "MultipleChoiceQuesions" 
-                            ("QuestionType", "QuestionText", "QuestionImageUrl", "QuestionAudioUrl", 
+                            ("QuestionType", "QuestionText", "QuestionImageUrl", "QuestionAudioUrl", "QuestionVideoUrl",
                             "QuestionNumber", "LessonId", "OptionsType")
-                            VALUES (:QuestionType, :QuestionText, :QuestionImageUrl, :QuestionAudioUrl, 
+                            VALUES (:QuestionType, :QuestionText, :QuestionImageUrl, :QuestionAudioUrl, :QuestionVideoUrl,
                             :QuestionNumber, :LessonId, :OptionsType)
                             RETURNING *`,
                         {
@@ -200,6 +200,7 @@ const migrateLessonService = async (lessonId, courseId) => {
                                 QuestionText: question.QuestionText || null,
                                 QuestionImageUrl: question.QuestionImageUrl || null,
                                 QuestionAudioUrl: question.QuestionAudioUrl || null,
+                                QuestionVideoUrl: question.QuestionVideoUrl || null,
                                 QuestionNumber: question.QuestionNumber,
                                 LessonId: newLesson[0].LessonId,
                                 OptionsType: question.OptionsType
@@ -215,9 +216,9 @@ const migrateLessonService = async (lessonId, courseId) => {
                         prodSequelize.query(
                             `INSERT INTO "MultipleChoiceQuestionAnswers" 
                                 ("AnswerText", "AnswerImageUrl", "AnswerAudioUrl", "IsCorrect", 
-                                "MultipleChoiceQuestionId", "SequenceNumber") 
+                                "MultipleChoiceQuestionId", "SequenceNumber", "CustomAnswerFeedbackText", "CustomAnswerFeedbackImage", "CustomAnswerFeedbackAudio") 
                                 VALUES (:AnswerText, :AnswerImageUrl, :AnswerAudioUrl, :IsCorrect,
-                                :MultipleChoiceQuestionId, :SequenceNumber)`,
+                                :MultipleChoiceQuestionId, :SequenceNumber, :CustomAnswerFeedbackText, :CustomAnswerFeedbackImage, :CustomAnswerFeedbackAudio)`,
                             {
                                 replacements: {
                                     AnswerText: answer.AnswerText || null,
@@ -225,7 +226,10 @@ const migrateLessonService = async (lessonId, courseId) => {
                                     AnswerAudioUrl: answer.AnswerAudioUrl || null,
                                     IsCorrect: answer.IsCorrect,
                                     MultipleChoiceQuestionId: newQuestion[0].Id,
-                                    SequenceNumber: answer.SequenceNumber
+                                    SequenceNumber: answer.SequenceNumber,
+                                    CustomAnswerFeedbackText: answer.CustomAnswerFeedbackText || null,
+                                    CustomAnswerFeedbackImage: answer.CustomAnswerFeedbackImage || null,
+                                    CustomAnswerFeedbackAudio: answer.CustomAnswerFeedbackAudio || null
                                 },
                                 type: prodSequelize.QueryTypes.INSERT,
                                 transaction
