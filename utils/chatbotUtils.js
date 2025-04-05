@@ -1495,7 +1495,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
     }
     if (!lessonLast && currentUserState.dataValues.persona == "kid") {
         if (!(currentUserState.dataValues.currentWeek == 1 && currentUserState.dataValues.currentDay == 1 && currentUserState.dataValues.currentLesson_sequence == 1)) {
-            const challengeCompleteSticker = "https://beajbloblive.blob.core.windows.net/beajdocuments/challenge_complete_no_text.webp"
+            const challengeCompleteSticker = "https://beajbloblive.blob.core.windows.net/beajdocuments/challenge_complete_with_text.webp"
             await sendMediaMessage(userMobileNumber, challengeCompleteSticker, 'sticker');
             await createActivityLog(userMobileNumber, "sticker", "outbound", challengeCompleteSticker, null);
         }
@@ -3266,17 +3266,25 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                 const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(firstMCQsQuestion.dataValues.Id);
                 const questionText = firstMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
 
-                let mcqMessage = "*Q" + firstMCQsQuestion.dataValues.QuestionNumber + " of " + totalQuestions + "*\n\n" + questionText + "\n\n";
+                const mcqType = firstMCQsQuestion.dataValues.QuestionType;
+
+                let mcqMessage = "";
+                if (mcqType == 'Text') {
+                    mcqMessage = "*Q" + firstMCQsQuestion.dataValues.QuestionNumber + " of " + totalQuestions + "*\n\n" + questionText + "\n\n";
+                } else {
+                    mcqMessage = "*Q" + firstMCQsQuestion.dataValues.QuestionNumber + " of " + totalQuestions + "*\n\n";
+                }
                 if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
                     mcqMessage += "Choose the correct answer:\n";
                 }
-                for (let i = 0; i < mcqAnswers.length; i++) {
-                    mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
+                if (mcqType == 'Text') {
+                    for (let i = 0; i < mcqAnswers.length; i++) {
+                        mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
+                    }
                 }
 
                 const mcqImage = firstMCQsQuestion.dataValues.QuestionImageUrl;
                 const mcqVideo = firstMCQsQuestion.dataValues.QuestionVideoUrl;
-                const mcqType = firstMCQsQuestion.dataValues.QuestionType;
 
                 if (mcqType == 'Text') {
                     await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })));
@@ -3407,21 +3415,29 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                     await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextMCQsQuestion.dataValues.QuestionNumber);
                     const totalQuestions = await multipleChoiceQuestionRepository.getTotalQuestions(currentUserState.dataValues.currentLessonId);
 
+                    const mcqType = nextMCQsQuestion.dataValues.QuestionType;
+
                     // Send question
                     const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(nextMCQsQuestion.dataValues.Id);
                     const questionText = nextMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
-                    let mcqMessage = "*Q" + nextMCQsQuestion.dataValues.QuestionNumber + " of " + totalQuestions + "*\n\n" + questionText + "\n\n";
+                    let mcqMessage = "";
+                    if (mcqType == 'Text') {
+                        mcqMessage = "*Q" + nextMCQsQuestion.dataValues.QuestionNumber + " of " + totalQuestions + "*\n\n" + questionText + "\n\n";
+                    } else {
+                        mcqMessage = "*Q" + nextMCQsQuestion.dataValues.QuestionNumber + " of " + totalQuestions + "*\n\n";
+                    }
                     if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
                         mcqMessage += "Choose the correct answer:\n";
                     }
-                    for (let i = 0; i < mcqAnswers.length; i++) {
-                        mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
+                    if (mcqType == 'Text') {
+                        for (let i = 0; i < mcqAnswers.length; i++) {
+                            mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
+                        }
                     }
 
                     // Reply buttons to answer
                     const mcqImage = nextMCQsQuestion.dataValues.QuestionImageUrl;
                     const mcqVideo = nextMCQsQuestion.dataValues.QuestionVideoUrl;
-                    const mcqType = nextMCQsQuestion.dataValues.QuestionType;
 
                     if (mcqType == 'Text') {
                         await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })));
