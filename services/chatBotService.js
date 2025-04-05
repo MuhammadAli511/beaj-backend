@@ -254,7 +254,7 @@ const webhookService = async (body, res) => {
             if (
                 text_message_types.includes(message.type) &&
                 (messageContent.toLowerCase() == "get another trial") &&
-                (currentUserState.dataValues.engagement_type == "End Trial")
+                (currentUserState.dataValues.engagement_type == "End Trial" || currentUserState.dataValues.engagement_type == "Free Trial - Teachers" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")
             ) {
                 await greetingMessageLoop(userMobileNumber);
                 return;
@@ -263,7 +263,7 @@ const webhookService = async (body, res) => {
             if (
                 text_message_types.includes(message.type) &&
                 (messageContent.toLowerCase() == "register") &&
-                (currentUserState.dataValues.engagement_type == "End Trial")
+                (currentUserState.dataValues.engagement_type == "End Trial" || currentUserState.dataValues.engagement_type == "Free Trial - Teachers" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")
             ) {
                 await getSchoolName(userMobileNumber);
                 return;
@@ -387,7 +387,7 @@ const webhookService = async (body, res) => {
 
             // If user completes an activity and wants to try the next activity
             if (text_message_types.includes(message.type)) {
-                if (messageContent.toLowerCase().includes("start next activity") || messageContent.toLowerCase().includes("start next challenge") || messageContent.toLowerCase().includes("start challenge")) {
+                if (messageContent.toLowerCase().includes("start next activity") || messageContent.toLowerCase().includes("start next challenge") || messageContent.toLowerCase().includes("start challenge") || messageContent.toLowerCase().includes("next")) {
                     if (currentUserState.dataValues.engagement_type == "Free Trial - Teachers" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                         // Get next lesson to send user
                         const nextLesson = await lessonRepository.getNextLesson(
@@ -730,10 +730,7 @@ const webhookService = async (body, res) => {
                 }
             }
             if (
-                currentUserState.dataValues.activityType &&
-                activity_types_to_repeat.includes(
-                    currentUserState.dataValues.activityType
-                )
+                currentUserState.dataValues.activityType && activity_types_to_repeat.includes(currentUserState.dataValues.activityType)
             ) {
                 // Get the current lesson for next question
                 const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);

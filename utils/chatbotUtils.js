@@ -1242,6 +1242,8 @@ const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUs
     if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "read" || activityType === "speakingPractice") {
         if (acceptableMessagesList.includes("audio") && messageType === "audio") {
             return true;
+        } else if (messageContent.toLowerCase() == "next" && currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
+            return true;
         }
     }
     if (activityType === "watchAndImage" && messageType === "image") {
@@ -1489,7 +1491,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
             await sleep(2000);
 
             // Reply Buttons
-            await sendButtonMessage(userMobileNumber, '👏🏽Trial Complete! 🤓', [{ id: 'get_another_trial', title: 'get another trial' }, { id: 'end_trial', title: 'end trial' }]);
+            await sendButtonMessage(userMobileNumber, '👏🏽Trial Complete! 🤓', [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'end_trial', title: 'End Trial' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "get another trial or end trial", null);
 
             return;
@@ -1501,7 +1503,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
             await sleep(2000);
 
             // Reply Buttons
-            await sendButtonMessage(userMobileNumber, '👏🏽Trial Complete! 🤓', [{ id: 'get_another_trial', title: 'get another trial' }]);
+            await sendButtonMessage(userMobileNumber, '👏🏽Trial Complete! 🤓', [{ id: 'get_another_trial', title: 'Get Another Trial' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "get another trial", null);
 
             return;
@@ -1559,7 +1561,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
             await sleep(2000);
 
             // Reply Buttons
-            await sendButtonMessage(userMobileNumber, '👏🏽Trial Complete! 🤓', [{ id: 'get_another_trial', title: 'get another trial' }, { id: 'end_trial', title: 'end trial' }]);
+            await sendButtonMessage(userMobileNumber, '👏🏽Trial Complete! 🤓', [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'end_trial', title: 'End Trial' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "get another trial or end trial", null);
 
             return;
@@ -1571,7 +1573,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
             await sleep(2000);
 
             // Reply Buttons
-            await sendButtonMessage(userMobileNumber, '👏🏽Trial Complete! 🤓', [{ id: 'get_another_trial', title: 'get another trial' }]);
+            await sendButtonMessage(userMobileNumber, '👏🏽Trial Complete! 🤓', [{ id: 'get_another_trial', title: 'Get Another Trial' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "get another trial", null);
 
             return;
@@ -4058,7 +4060,7 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                 await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date());
 
                 // Send lesson message
-                let lessonMessage = startingLesson.dataValues.activityAlias + "\n\n" + startingLesson.dataValues.text;
+                let lessonMessage = startingLesson.dataValues.activityAlias + "\n\n" + "🧏 Listen first, then practice reading.";
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
