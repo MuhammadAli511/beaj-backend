@@ -1177,7 +1177,7 @@ const demoCourseStart = async (userMobileNumber, startingLesson, courseName) => 
     await waUserProgressRepository.updateEngagementType(userMobileNumber, courseName);
 
     let persona = "";
-    if (courseName == "Free Trial - Teacher") {
+    if (courseName == "Free Trial - Teachers") {
         persona = "teacher";
     } else if (courseName == "Free Trial - Kids") {
         persona = "kid";
@@ -1185,8 +1185,8 @@ const demoCourseStart = async (userMobileNumber, startingLesson, courseName) => 
     await waUserProgressRepository.updatePersona(userMobileNumber, persona);
 
     // Text Message
-    await sendMessage(userMobileNumber, "Great! Let's start your free demo! 🤩 Here is your first lesson.");
-    await createActivityLog(userMobileNumber, "text", "outbound", "Great! Let's start your free demo! 🤩 Here is your first lesson.", null);
+    await sendMessage(userMobileNumber, "Great! Let's start your free trial! 🤩 Here is your first lesson.");
+    await createActivityLog(userMobileNumber, "text", "outbound", "Great! Let's start your free trial! 🤩 Here is your first lesson.", null);
     return;
 };
 
@@ -1455,7 +1455,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
     await sleep(3000);
 
 
-    if (currentUserState.dataValues.engagement_type == "Free Trial - Teacher") {
+    if (currentUserState.dataValues.engagement_type == "Free Trial - Teachers") {
         let user = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
         let checkRegistrationComplete = user.dataValues.userRegistrationComplete !== null;
         if (checkRegistrationComplete == false && lessonLast == true) {

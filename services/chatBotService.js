@@ -238,7 +238,7 @@ const webhookService = async (body, res) => {
             if (
                 text_message_types.includes(message.type) &&
                 (messageContent.toLowerCase() == "end trial") &&
-                (currentUserState.dataValues.engagement_type == "Free Trial - Teacher" || currentUserState.dataValues.engagement_type == "Free Trial - Kids")
+                (currentUserState.dataValues.engagement_type == "Free Trial - Teachers" || currentUserState.dataValues.engagement_type == "Free Trial - Kids")
             ) {
                 await endTrial(userMobileNumber);
             }
@@ -300,13 +300,13 @@ const webhookService = async (body, res) => {
                 let courseName = "";
                 if (currentUserState.dataValues.engagement_type == "Free Trial - Kids") {
                     courseName = "Free Trial - Kids";
-                } else if (currentUserState.dataValues.engagement_type == "Free Trial - Teacher") {
-                    courseName = "Free Trial - Teacher";
+                } else {
+                    courseName = "Free Trial - Teachers";
                 }
 
 
-
-                // if (courseName == "Free Trial - Teacher") {
+                console.log(courseName);
+                // if (courseName == "Free Trial - Teachers") {
                 //     // TODO: Teacher Training Promo video here
                 // }
                 // Delete all question responses for the user
@@ -361,7 +361,7 @@ const webhookService = async (body, res) => {
             // If user completes an activity and wants to try the next activity
             if (text_message_types.includes(message.type)) {
                 if (messageContent.toLowerCase().includes("start next activity") || messageContent.toLowerCase().includes("start next challenge")) {
-                    if (currentUserState.dataValues.engagement_type == "Free Trial - Teacher" || currentUserState.dataValues.engagement_type == "Free Trial - Kids") {
+                    if (currentUserState.dataValues.engagement_type == "Free Trial - Teachers" || currentUserState.dataValues.engagement_type == "Free Trial - Kids") {
                         // Get next lesson to send user
                         const nextLesson = await lessonRepository.getNextLesson(
                             currentUserState.dataValues.currentCourseId,
@@ -434,7 +434,7 @@ const webhookService = async (body, res) => {
             if (
                 currentUserState.dataValues.activityType && activity_types_to_repeat.includes(currentUserState.dataValues.activityType)
             ) {
-                if (currentUserState.dataValues.engagement_type == "Free Trial - Teacher" || currentUserState.dataValues.engagement_type == "Free Trial - Kids") {
+                if (currentUserState.dataValues.engagement_type == "Free Trial - Teachers" || currentUserState.dataValues.engagement_type == "Free Trial - Kids") {
                     // Get the current lesson for next question
                     const currentLesson = await lessonRepository.getCurrentLesson(
                         currentUserState.dataValues.currentLessonId
