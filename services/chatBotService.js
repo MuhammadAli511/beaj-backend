@@ -18,7 +18,8 @@ import {
     sendMessage,
     startCourseForUser,
     levelCourseStart,
-    sendCourseLessonToUser,
+    sendCourseLessonToTeacher,
+    sendCourseLessonToKid,
     removeUserTillCourse,
     createFeedback,
     sendButtonMessage,
@@ -26,7 +27,10 @@ import {
     endTrial,
     getSchoolName,
     confirmSchoolName,
-    thankyouMessage
+    thankyouMessage,
+    kidsChooseClass,
+    kidsConfirmClass,
+    kidsChooseClassLoop
 } from "../utils/chatbotUtils.js";
 
 dotenv.config();
@@ -321,7 +325,6 @@ const webhookService = async (body, res) => {
                 }
 
 
-                console.log(courseName);
                 // if (courseName == "Free Trial - Teachers") {
                 //     // TODO: Teacher Training Promo video here
                 // }
@@ -336,7 +339,11 @@ const webhookService = async (body, res) => {
                 await demoCourseStart(userMobileNumber, startingLesson, courseName);
                 // Send first lesson to user
                 currentUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
-                await sendCourseLessonToUser(userMobileNumber, currentUserState, startingLesson, messageType, messageContent);
+                if (courseName == "Free Trial - Teachers") {
+                    await sendCourseLessonToTeacher(userMobileNumber, currentUserState, startingLesson, messageType, messageContent);
+                } else {
+                    await sendCourseLessonToKid(userMobileNumber, currentUserState, startingLesson, messageType, messageContent);
+                }
                 if (startingLesson.dataValues.activity == "video") {
                     const nextLesson = await lessonRepository.getNextLesson(
                         currentUserState.dataValues.currentCourseId,
@@ -368,7 +375,11 @@ const webhookService = async (body, res) => {
                     const latestUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
 
                     // Send next lesson to user
-                    await sendCourseLessonToUser(userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
+                    if (courseName == "Free Trial - Teachers") {
+                        await sendCourseLessonToTeacher(userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
+                    } else {
+                        await sendCourseLessonToKid(userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
+                    }
                 }
                 return;
 
@@ -376,7 +387,7 @@ const webhookService = async (body, res) => {
 
             // If user completes an activity and wants to try the next activity
             if (text_message_types.includes(message.type)) {
-                if (messageContent.toLowerCase().includes("start next activity") || messageContent.toLowerCase().includes("start next challenge")) {
+                if (messageContent.toLowerCase().includes("start next activity") || messageContent.toLowerCase().includes("start next challenge") || messageContent.toLowerCase().includes("start challenge")) {
                     if (currentUserState.dataValues.engagement_type == "Free Trial - Teachers" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                         // Get next lesson to send user
                         const nextLesson = await lessonRepository.getNextLesson(
@@ -405,7 +416,11 @@ const webhookService = async (body, res) => {
                         let latestUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
 
                         // Send next lesson to user
-                        await sendCourseLessonToUser(userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
+                        if (currentUserState.dataValues.engagement_type == "Free Trial - Teachers") {
+                            await sendCourseLessonToTeacher(userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
+                        } else {
+                            await sendCourseLessonToKid(userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
+                        }
 
                         if (nextLesson.dataValues.activity == "video") {
                             const nextLesson = await lessonRepository.getNextLesson(
@@ -438,7 +453,11 @@ const webhookService = async (body, res) => {
                             latestUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
 
                             // Send next lesson to user
-                            await sendCourseLessonToUser(userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
+                            if (currentUserState.dataValues.engagement_type == "Free Trial - Teachers") {
+                                await sendCourseLessonToTeacher(userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
+                            } else {
+                                await sendCourseLessonToKid(userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
+                            }
                         }
                         return;
                     }
@@ -468,13 +487,11 @@ const webhookService = async (body, res) => {
                     );
 
                     // Update user progress to next question
-                    await sendCourseLessonToUser(
-                        userMobileNumber,
-                        currentUserState,
-                        currentLesson,
-                        messageType,
-                        messageContent
-                    );
+                    if (currentUserState.dataValues.engagement_type == "Free Trial - Teachers") {
+                        await sendCourseLessonToTeacher(userMobileNumber, currentUserState, currentLesson, messageType, messageContent);
+                    } else {
+                        await sendCourseLessonToKid(userMobileNumber, currentUserState, currentLesson, messageType, messageContent);
+                    }
                     return;
                 }
             }
@@ -516,7 +533,7 @@ const webhookService = async (body, res) => {
                     await levelCourseStart(userMobileNumber, startingLesson, currentUserState.dataValues.currentCourseId);
                     // Send first lesson to user
                     currentUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
-                    await sendCourseLessonToUser(userMobileNumber, currentUserState, startingLesson, messageType, messageContent);
+                    await sendCourseLessonToTeacher(userMobileNumber, currentUserState, startingLesson, messageType, messageContent);
                     if (startingLesson.dataValues.activity == "video") {
                         const nextLesson = await lessonRepository.getNextLesson(
                             currentUserState.dataValues.currentCourseId,
@@ -548,13 +565,7 @@ const webhookService = async (body, res) => {
                         const latestUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
 
                         // Send next lesson to user
-                        await sendCourseLessonToUser(
-                            userMobileNumber,
-                            latestUserState,
-                            nextLesson,
-                            messageType,
-                            messageContent
-                        );
+                        await sendCourseLessonToTeacher(userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
                     }
                     return;
                 }
@@ -563,7 +574,7 @@ const webhookService = async (body, res) => {
             if (text_message_types.includes(message.type) && currentUserState.dataValues.activityType == "watchAndSpeak") {
                 const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
                 if (messageContent.toLowerCase().includes("yes") || messageContent.toLowerCase().includes("no")) {
-                    await sendCourseLessonToUser(userMobileNumber, currentUserState, currentLesson, messageType, messageContent);
+                    await sendCourseLessonToTeacher(userMobileNumber, currentUserState, currentLesson, messageType, messageContent);
                     return;
                 }
             }
@@ -680,7 +691,7 @@ const webhookService = async (body, res) => {
                     let latestUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
 
                     // Send next lesson to user
-                    await sendCourseLessonToUser(userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
+                    await sendCourseLessonToTeacher(userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
 
                     if (nextLesson.dataValues.activity == "video") {
                         const nextLesson = await lessonRepository.getNextLesson(
@@ -713,7 +724,7 @@ const webhookService = async (body, res) => {
                         latestUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
 
                         // Send next lesson to user
-                        await sendCourseLessonToUser(userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
+                        await sendCourseLessonToTeacher(userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
                     }
                     return;
                 }
@@ -734,7 +745,7 @@ const webhookService = async (body, res) => {
                 await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, acceptableMessagesList);
 
                 // Update user progress to next question
-                await sendCourseLessonToUser(userMobileNumber, currentUserState, currentLesson, messageType, messageContent);
+                await sendCourseLessonToTeacher(userMobileNumber, currentUserState, currentLesson, messageType, messageContent);
                 return;
             }
         }
