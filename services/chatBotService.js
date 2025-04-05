@@ -296,8 +296,13 @@ const webhookService = async (body, res) => {
             }
 
             if (currentUserState.dataValues.engagement_type == "Thankyou Message") {
-                await sendMessage(userMobileNumber, "Your free trial is complete. We will get back to you soon.");
-                return;
+                if (messageContent.toLowerCase() == "get another trial") {
+                    await greetingMessageLoop(userMobileNumber);
+                    return;
+                } else {
+                    await sendMessage(userMobileNumber, "Your free trial is complete. We will get back to you soon.");
+                    return;
+                }
             }
 
 

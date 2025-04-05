@@ -1203,9 +1203,18 @@ const demoCourseStart = async (userMobileNumber, startingLesson, courseName) => 
 const endTrial = async (userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(userMobileNumber, "End Trial");
     let endTrialMessage = "You have chosen to end your free trial. Would you like to:";
-    await sendButtonMessage(userMobileNumber, endTrialMessage, [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'register', title: 'Register' }]);
+    const user = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
+    if (user.dataValues.userRegistrationComplete) {
+        await sendButtonMessage(userMobileNumber, endTrialMessage, [{ id: 'get_another_trial', title: 'Get Another Trial' }]);
+    } else {
+        await sendButtonMessage(userMobileNumber, endTrialMessage, [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'register', title: 'Register' }]);
+    }
     await createActivityLog(userMobileNumber, "template", "outbound", endTrialMessage, null);
-    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["get another trial", "register"]);
+    if (user.dataValues.userRegistrationComplete) {
+        await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["get another trial"]);
+    } else {
+        await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["get another trial", "register"]);
+    }
     return;
 };
 
@@ -1230,9 +1239,24 @@ const confirmSchoolName = async (userMobileNumber, messageContent) => {
 
 const thankyouMessage = async (userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(userMobileNumber, "Thankyou Message");
+    await waUserProgressRepository.update(
+        userMobileNumber,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        ["get another trial"]
+    );
     const freeTrialCompleteImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/free_trial_complete.jpeg"
-    await sendMediaMessage(userMobileNumber, freeTrialCompleteImage, 'image');
+    await sendButtonMessage(userMobileNumber, '👏🏽Trial Complete! 🤓', [{ id: 'get_another_trial', title: 'Get Another Trial' }], 0, freeTrialCompleteImage);
     await createActivityLog(userMobileNumber, "image", "outbound", freeTrialCompleteImage, null);
+    await waUsersMetadataRepository.update(userMobileNumber, {
+        userRegistrationComplete: new Date()
+    });
     return;
 };
 
@@ -1521,14 +1545,14 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
             return;
         } else if (checkRegistrationComplete == true && lessonLast == false) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next activity"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next activity", "end trial"]);
 
             // Sleep
             await sleep(2000);
 
             // Reply Buttons
-            await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'start_next_activity', title: 'Start Next Activity' }]);
-            await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity", null);
+            await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'start_next_activity', title: 'Start Next Activity' }, { id: 'end_trial', title: 'End Trial' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity or End Trial", null);
 
             return;
         }
@@ -1537,20 +1561,18 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
         let user = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
         let checkRegistrationComplete = user.dataValues.userRegistrationComplete !== null;
         if (currentUserState.dataValues.currentWeek == 1 && currentUserState.dataValues.currentDay == 1 && currentUserState.dataValues.currentLesson_sequence == 1) {
-            if (checkRegistrationComplete == false) {
-                // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start challenge", "end trial"]);
+            // Update acceptable messages list for the user
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start challenge", "end trial"]);
 
-                // Sleep
-                await sleep(2000);
+            // Sleep
+            await sleep(2000);
 
-                // Reply Buttons
-                const readyImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/ready_for_your_first_challenge.jpeg"
-                await sendButtonMessage(userMobileNumber, 'Ready for your first challenge? 💪', [{ id: 'start_challenge', title: 'Start Challenge' }, { id: 'end_trial', title: 'End Trial' }], 0, readyImage);
-                await createActivityLog(userMobileNumber, "template", "outbound", "Start Challenge or End Trial", null);
+            // Reply Buttons
+            const readyImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/ready_for_your_first_challenge.jpeg"
+            await sendButtonMessage(userMobileNumber, 'Ready for your first challenge? 💪', [{ id: 'start_challenge', title: 'Start Challenge' }, { id: 'end_trial', title: 'End Trial' }], 0, readyImage);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Start Challenge or End Trial", null);
 
-                return;
-            }
+            return;
         }
 
         if (checkRegistrationComplete == false && lessonLast == true) {
@@ -1591,14 +1613,14 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
             return;
         } else if (checkRegistrationComplete == true && lessonLast == false) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next challenge", "start my course"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next challenge", "end trial"]);
 
             // Sleep
             await sleep(2000);
 
             // Reply Buttons
-            await sendButtonMessage(userMobileNumber, 'Challenge Complete! 💪🏽', [{ id: 'start_next_challenge', title: 'Start Next Challenge' }]);
-            await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Challenge", null);
+            await sendButtonMessage(userMobileNumber, 'Challenge Complete! 💪🏽', [{ id: 'start_next_challenge', title: 'Start Next Challenge' }, { id: 'end_trial', title: 'End Trial' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Challenge or End Trial", null);
 
             return;
         }
