@@ -247,16 +247,7 @@ if (module == "Week") {
         let temp_list = arrayT1_List.filter(user => phoneSet.has(user[1]));
         arrayT1_List = arrayT1_List.filter(record => record[11] === null && record[3] !== null);
         arrayT1_List = [...arrayT1_List, ...temp_list];
-        const uniqueList = [];
-    const phoneNumbersSeen = new Set();
-
-    arrayT1_List.forEach(record => {
-        if (!phoneNumbersSeen.has(record.phoneNumber)) {
-            uniqueList.push(record);
-            phoneNumbersSeen.add(record.phoneNumber);
-        }
-    });
-    arrayT1_List = uniqueList;
+       
 
         arrayT1_List = arrayT1_List.map(obj => Object.values(obj));
         arrayT1_List.forEach((record, index) => { record[0] = index + 1; });
