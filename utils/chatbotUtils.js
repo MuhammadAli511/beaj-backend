@@ -1266,7 +1266,7 @@ const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUs
     if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "read" || activityType === "speakingPractice") {
         if (acceptableMessagesList.includes("audio") && messageType === "audio") {
             return true;
-        } else if (messageContent.toLowerCase() == "next" && currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
+        } else if (messageContent.toLowerCase() == "next" && (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")) {
             return true;
         }
     }
@@ -4118,8 +4118,9 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                 const lessonText = startingLesson.dataValues.text;
 
                 // Text message
-                await sendMessage(userMobileNumber, "Send us a voice message of you reading this passage:\n\n" + lessonText);
-                await createActivityLog(userMobileNumber, "text", "outbound", "Send us a voice message of you reading this passage:\n\n" + lessonText, null);
+                let instructionMessage = "Send us a voice message of you reading this passage:\n\n" + lessonText + "\n\nOR type “next” to skip challenge:";
+                await sendMessage(userMobileNumber, instructionMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", instructionMessage, null);
             } else if (messageType == 'audio') {
                 // Get the current Read question text
                 const lessonText = startingLesson.dataValues.text;
