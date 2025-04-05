@@ -117,6 +117,14 @@ const deleteByLessonId = async (lessonId) => {
     });
 };
 
+const getTotalQuestions = async (lessonId) => {
+    return await MultipleChoiceQuestion.count({
+        where: {
+            LessonId: lessonId
+        }
+    });
+};
+
 export default {
     create,
     getAll,
@@ -127,5 +135,6 @@ export default {
     getCurrentMultipleChoiceQuestion,
     getByLessonIds,
     getByLessonId,
-    deleteByLessonId
+    deleteByLessonId,
+    getTotalQuestions
 };
