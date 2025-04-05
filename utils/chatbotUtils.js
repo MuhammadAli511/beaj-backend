@@ -1141,7 +1141,11 @@ const kidsChooseClass = async (userMobileNumber) => {
 };
 
 const kidsConfirmClass = async (userMobileNumber, messageContent) => {
-    await waUserProgressRepository.updateEngagementType(userMobileNumber, "Confirm Class");
+    if (messageContent.toLowerCase() == "grade 1 or 2") {
+        await waUserProgressRepository.updateEngagementType(userMobileNumber, "Confirm Class - Level 1");
+    } else if (messageContent.toLowerCase() == "grade 5 or 6") {
+        await waUserProgressRepository.updateEngagementType(userMobileNumber, "Confirm Class - Level 3");
+    }
     const confirmClassMessage = "Let's begin your Free Trial for " + messageContent.charAt(0).toUpperCase() + messageContent.slice(1) + "!";
     await sendButtonMessage(userMobileNumber, confirmClassMessage, [{ id: 'start_challenge', title: 'Start Challenge' }, { id: 'no_choose_again', title: 'No, Choose Again' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", confirmClassMessage, null);
@@ -1179,7 +1183,7 @@ const demoCourseStart = async (userMobileNumber, startingLesson, courseName) => 
     let persona = "";
     if (courseName == "Free Trial - Teachers") {
         persona = "teacher";
-    } else if (courseName == "Free Trial - Kids") {
+    } else if (courseName == "Free Trial - Kids - Level 1" || courseName == "Free Trial - Kids - Level 3") {
         persona = "kid";
     }
     await waUserProgressRepository.updatePersona(userMobileNumber, persona);
@@ -1220,9 +1224,9 @@ const confirmSchoolName = async (userMobileNumber, messageContent) => {
 
 const thankyouMessage = async (userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(userMobileNumber, "Thankyou Message");
-    const thankyouMessage = await extractConstantMessage("thankyou_message");
-    await sendMediaMessage(userMobileNumber, thankyouMessage, 'image');
-    await createActivityLog(userMobileNumber, "image", "outbound", thankyouMessage, null);
+    const freeTrialCompleteImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/free_trial_complete.jpeg"
+    await sendMediaMessage(userMobileNumber, freeTrialCompleteImage, 'image');
+    await createActivityLog(userMobileNumber, "image", "outbound", freeTrialCompleteImage, null);
     return;
 };
 
@@ -1508,7 +1512,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson)
             return;
         }
     }
-    else if (currentUserState.dataValues.engagement_type == "Free Trial - Kids") {
+    else if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
         let user = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
         let checkRegistrationComplete = user.dataValues.userRegistrationComplete !== null;
         if (checkRegistrationComplete == false && lessonLast == true) {
