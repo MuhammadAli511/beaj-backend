@@ -313,7 +313,7 @@ const webhookService = async (body, res) => {
             // Teacher Training Trial
             if (
                 text_message_types.includes(message.type) &&
-                (messageContent.toLowerCase() == "teacher training" || messageContent.toLowerCase() == "start challenge") &&
+                (messageContent.toLowerCase() == "teacher training" || messageContent.toLowerCase() == "start free trial") &&
                 (currentUserState.dataValues.engagement_type == "Greeting Message" || currentUserState.dataValues.engagement_type == "Confirm Class - Level 1" || currentUserState.dataValues.engagement_type == "Confirm Class - Level 3")
             ) {
                 if (user.dataValues.freeDemoStarted == null) {
