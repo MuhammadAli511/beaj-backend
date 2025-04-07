@@ -1511,14 +1511,14 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson,
         let checkRegistrationComplete = user.dataValues.userRegistrationComplete !== null;
         if (checkRegistrationComplete == false && lessonLast == true) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["get another trial", "end trial"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["get another trial", "register"]);
 
             // Sleep
             await sleep(2000);
 
             // Reply Buttons
-            await sendButtonMessage(userMobileNumber, '👏🏽Trial Complete! 🤓', [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'end_trial', title: 'End Trial' }]);
-            await createActivityLog(userMobileNumber, "template", "outbound", "get another trial or end trial", null);
+            await sendButtonMessage(userMobileNumber, '👏🏽Trial Complete! 🤓', [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'register', title: 'Register' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "get another trial or register", null);
 
             return;
         } else if (checkRegistrationComplete == true && lessonLast == true) {
@@ -1579,19 +1579,19 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson,
 
         if (checkRegistrationComplete == false && lessonLast == true) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["get another trial", "end trial"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["get another trial", "register"]);
 
             // Sleep
             await sleep(2000);
 
             // Reply Buttons
-            await sendButtonMessage(userMobileNumber, '👏🏽Trial Complete! 🤓', [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'end_trial', title: 'End Trial' }]);
-            await createActivityLog(userMobileNumber, "template", "outbound", "get another trial or end trial", null);
+            await sendButtonMessage(userMobileNumber, '👏🏽Trial Complete! 🤓', [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'register', title: 'Register' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "get another trial or register", null);
 
             return;
         } else if (checkRegistrationComplete == true && lessonLast == true) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["get another trial", "start my course"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["get another trial"]);
 
             // Sleep
             await sleep(2000);
@@ -3531,6 +3531,7 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
 
                 // Update acceptable messages list for the user
                 await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
+                await sleep(5000);
 
                 // Instructions
                 let instructions = "*Q" + firstWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
@@ -3632,7 +3633,7 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                         // Send question media file
                         await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
                         await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
-
+                        await sleep(5000);
                         // Instructions
                         let instructions = "*Q" + nextWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
                         instructions += "Record your answer as a voice message 🎙";
@@ -3707,6 +3708,7 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                     // Send question media file
                     await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
                     await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
+                    await sleep(5000);
 
                     // Instructions
                     let instructions = "*Q" + nextWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
