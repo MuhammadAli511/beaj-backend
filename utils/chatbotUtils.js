@@ -1195,7 +1195,7 @@ const demoCourseStart = async (userMobileNumber, startingLesson, courseName) => 
     if (courseName == "Free Trial - Teachers") {
         message = "Great! Let's start your free trial! 🤩 Here is your first lesson.";
     } else if (courseName == "Free Trial - Kids - Level 1" || courseName == "Free Trial - Kids - Level 3") {
-        message = "GREAT! 💥\n\nLet's Start Our Aventure! 🤩";
+        message = "GREAT! 💥\n\nLet's Start Our Adventure! 🤩";
     }
     await sendMessage(userMobileNumber, message);
     await createActivityLog(userMobileNumber, "text", "outbound", message, null);
