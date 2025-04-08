@@ -3554,7 +3554,7 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                 let instructions = "👉 *Q" + firstWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
                 instructions += "Record your answer as a voice message";
                 if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
-                    instructions += "\nOR\n Type “next” to skip challenge";
+                    instructions += "\nOR\n" + "Type “next” to skip challenge";
                 }
                 await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, 'video', instructions);
                 await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
@@ -3654,7 +3654,7 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                         let instructions = "👉 *Q" + nextWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
                         instructions += "Record your answer as a voice message";
                         if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
-                            instructions += "\nOR\n Type “next” to skip challenge";
+                            instructions += "\nOR\n" + "Type “next” to skip challenge";
                         }
                         await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video', instructions);
                         await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
@@ -3725,7 +3725,7 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                     let instructions = "👉 *Q" + nextWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
                     instructions += "Record your answer as a voice message";
                     if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
-                        instructions += "\nOR\n Type “next” to skip challenge";
+                        instructions += "\nOR\n" + "Type “next” to skip challenge";
                     }
                     await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video', instructions);
                     await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
@@ -3936,7 +3936,7 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                 let instructions = "👉 *Q" + firstListenAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
                 instructions += "Record your answer as a voice message";
                 if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
-                    instructions += "\nOR\n Type “next” to skip challenge";
+                    instructions += "\nOR\n" + "Type “next” to skip challenge";
                 }
                 await sendMessage(userMobileNumber, instructions);
                 await createActivityLog(userMobileNumber, "text", "outbound", instructions, null);
@@ -4073,7 +4073,7 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                         let instructions = "👉 *Q" + nextListenAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
                         instructions += "Record your answer as a voice message";
                         if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
-                            instructions += "\nOR\n Type “next” to skip challenge";
+                            instructions += "\nOR\n" + "Type “next” to skip challenge";
                         }
                         await sendMessage(userMobileNumber, instructions);
                         await createActivityLog(userMobileNumber, "text", "outbound", instructions, null);
@@ -4135,7 +4135,7 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                 const lessonText = startingLesson.dataValues.text;
                 let instructionMessage = "Send us a voice message of you reading this passage:\n\n" + lessonText;
                 if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
-                    instructionMessage += "\n\nOR\n\n Type “next” to skip challenge";
+                    instructionMessage += "\n\nOR\n\n" + "Type “next” to skip challenge";
                 }
                 await sendMediaMessage(userMobileNumber, videoURL, 'video', instructionMessage);
                 await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
