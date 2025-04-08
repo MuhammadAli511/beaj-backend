@@ -1585,8 +1585,13 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson,
             await sleep(2000);
 
             // Reply Buttons
-            await sendButtonMessage(userMobileNumber, '👏🏽Trial Complete! 🤓', [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'register', title: 'Register' }]);
-            await createActivityLog(userMobileNumber, "template", "outbound", "get another trial or register", null);
+            if (message == null) {
+                await sendButtonMessage(userMobileNumber, '👏🏽Trial Complete! 🤓', [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'register', title: 'Register' }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", "get another trial or register", null);
+            } else {
+                await sendButtonMessage(userMobileNumber, message, [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'register', title: 'Register' }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", message, null);
+            }
 
             return;
         } else if (checkRegistrationComplete == true && lessonLast == true) {
@@ -1597,8 +1602,13 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson,
             await sleep(2000);
 
             // Reply Buttons
-            await sendButtonMessage(userMobileNumber, '👏🏽Trial Complete! 🤓', [{ id: 'get_another_trial', title: 'Get Another Trial' }]);
-            await createActivityLog(userMobileNumber, "template", "outbound", "get another trial", null);
+            if (message == null) {
+                await sendButtonMessage(userMobileNumber, '👏🏽Trial Complete! 🤓', [{ id: 'get_another_trial', title: 'Get Another Trial' }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", "get another trial", null);
+            } else {
+                await sendButtonMessage(userMobileNumber, message, [{ id: 'get_another_trial', title: 'Get Another Trial' }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", message, null);
+            }
 
             return;
         } else if (checkRegistrationComplete == false && lessonLast == false) {
@@ -3526,21 +3536,16 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                 const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
 
                 // Send question media file
-                await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
-                await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
-
-                // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
-                await sleep(5000);
-
-                // Instructions
-                let instructions = "*Q" + firstWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
+                let instructions = "👉 *Q" + firstWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
                 instructions += "Record your answer as a voice message 🎙";
                 if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                     instructions += "\nOR type “next” to skip challenge:";
                 }
-                await sendMessage(userMobileNumber, instructions);
-                await createActivityLog(userMobileNumber, "text", "outbound", instructions, null);
+                await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, 'video', instructions);
+                await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
+
+                // Update acceptable messages list for the user
+                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
                 return;
             }
             else if (messageType === 'audio') {
@@ -3631,17 +3636,13 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                         const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
 
                         // Send question media file
-                        await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
-                        await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
-                        await sleep(5000);
-                        // Instructions
-                        let instructions = "*Q" + nextWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
+                        let instructions = "👉 *Q" + nextWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
                         instructions += "Record your answer as a voice message 🎙";
                         if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                             instructions += "\nOR type “next” to skip challenge:";
                         }
-                        await sendMessage(userMobileNumber, instructions);
-                        await createActivityLog(userMobileNumber, "text", "outbound", instructions, null);
+                        await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video', instructions);
+                        await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
                     } else {
                         // Reset Question Number, Retry Counter, and Activity Type
                         await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
@@ -3706,18 +3707,13 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                     const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
 
                     // Send question media file
-                    await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
-                    await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
-                    await sleep(5000);
-
-                    // Instructions
-                    let instructions = "*Q" + nextWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
+                    let instructions = "👉 *Q" + nextWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
                     instructions += "Record your answer as a voice message 🎙";
                     if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                         instructions += "\nOR type “next” to skip challenge:";
                     }
-                    await sendMessage(userMobileNumber, instructions);
-                    await createActivityLog(userMobileNumber, "text", "outbound", instructions, null);
+                    await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video', instructions);
+                    await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
                     return;
                 } else {
                     // Reset Question Number, Retry Counter, and Activity Type
@@ -3922,7 +3918,7 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                 const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
 
                 // Instructions
-                let instructions = "*Q" + firstListenAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
+                let instructions = "👉 *Q" + firstListenAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
                 instructions += "Record your answer as a voice message 🎙";
                 if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                     instructions += "\nOR type “next” to skip challenge:";
@@ -4059,7 +4055,7 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
 
                         // Instructions
                         const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
-                        let instructions = "*Q" + nextListenAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
+                        let instructions = "👉 *Q" + nextListenAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
                         instructions += "Record your answer as a voice message 🎙";
                         if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                             instructions += "\nOR type “next” to skip challenge:";
@@ -4076,7 +4072,7 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                         const totalScore = await waQuestionResponsesRepository.getTotalScore(userMobileNumber, currentUserState.dataValues.currentLessonId);
                         const totalQuestions = await waQuestionResponsesRepository.getTotalQuestions(userMobileNumber, currentUserState.dataValues.currentLessonId);
                         const scorePercentage = (totalScore / totalQuestions) * 100;
-                        let message = "*Your score: " + totalScore + "/" + totalQuestions + ".*";
+                        let message = "Your score: " + totalScore + "/" + totalQuestions + ".";
                         if (scorePercentage >= 0 && scorePercentage <= 60) {
                             message += "\n\nGood Effort! 👍🏽";
                             // Text message
@@ -4121,20 +4117,13 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                 let videoURL = documentFile[0].dataValues.video;
 
                 // Media message
-                await sendMediaMessage(userMobileNumber, videoURL, 'video');
+                const lessonText = startingLesson.dataValues.text;
+                let instructionMessage = "Send us a voice message of you reading this passage:\n\n" + lessonText + "\n\nOR type “next” to skip challenge:";
+                await sendMediaMessage(userMobileNumber, videoURL, 'video', instructionMessage);
                 await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
 
                 // Update acceptable messages list for the user
                 await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
-                await sleep(12000);
-
-                // Remove html tags from the text
-                const lessonText = startingLesson.dataValues.text;
-
-                // Text message
-                let instructionMessage = "Send us a voice message of you reading this passage:\n\n" + lessonText + "\n\nOR type “next” to skip challenge:";
-                await sendMessage(userMobileNumber, instructionMessage);
-                await createActivityLog(userMobileNumber, "text", "outbound", instructionMessage, null);
             } else if (messageType == 'audio') {
                 // Get the current Read question text
                 const lessonText = startingLesson.dataValues.text;
