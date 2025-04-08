@@ -22,7 +22,7 @@ const runCumulativeSheets = async() =>{
 
   let courseId_l1 = 106;
   let courseId_l2 = 111;
-  let courseId_l3 = 114;
+  let courseId_l3 = 118;
 
   let courseId_l10 = 105;
   let courseId_l20 = 110;
@@ -126,39 +126,65 @@ const runCumulativeSheets = async() =>{
   let individual_weekly_score_l1_list_total= [], individual_weekly_score_l2_list_total=[];
   let arrayT1_List01 = [];
 
-  for (let i = 0; i < individual_weekly_score_l1_list.length; i++) {
+  let maxL1 = {
+    listenAndSpeak_total: 0,
+    mcqs_total: 0,
+    watchAndSpeak_total: 0,
+    read_total: 0,
+    conversationalMonologue_total: 0,
+    Speaking_practice_total: 0
+  };
   
+  let maxL2 = {
+    listenAndSpeak_total: 0,
+    mcqs_total: 0,
+    watchAndSpeak_total: 0,
+    read_total: 0,
+    conversationalMonologue_total: 0,
+    Speaking_practice_total: 0
+  };
+  
+  let maxL3 = {
+    listenAndSpeak_total: 0,
+    mcqs_total: 0,
+    watchAndSpeak_total: 0,
+    read_total: 0,
+    conversationalMonologue_total: 0,
+    Speaking_practice_total: 0
+  };
+
+  for (let i = 0; i < individual_weekly_score_l1_list.length; i++) {
     let l1_entry = individual_weekly_score_l1_list[i];
     let l2_entry = individual_weekly_score_l2_list[i];
     let l3_entry = individual_weekly_score_l3_list[i];
-
-    if(i == 0){
-      individual_weekly_score_l1_list_total.push([
-        l1_entry.listenAndSpeak_total,
-        l1_entry.mcqs_total,
-        l1_entry.watchAndSpeak_total,
-        l1_entry.read_total,
-        l1_entry.conversationalMonologue_total,
-        l1_entry.Speaking_practice_total,
-        null,
-        l2_entry.listenAndSpeak_total,
-        l2_entry.mcqs_total,
-        l2_entry.watchAndSpeak_total,
-        l2_entry.read_total,
-        l2_entry.conversationalMonologue_total,
-        l2_entry.Speaking_practice_total,
-        null,
-        l3_entry.listenAndSpeak_total,
-        l3_entry.mcqs_total,
-        l3_entry.watchAndSpeak_total,
-        l3_entry.read_total,
-        l3_entry.conversationalMonologue_total,
-        l3_entry.Speaking_practice_total
-      ])
-    }
-
+  
+    // Update max totals for L1
+    maxL1.listenAndSpeak_total = Math.max(maxL1.listenAndSpeak_total, l1_entry.listenAndSpeak_total);
+    maxL1.mcqs_total = Math.max(maxL1.mcqs_total, l1_entry.mcqs_total);
+    maxL1.watchAndSpeak_total = Math.max(maxL1.watchAndSpeak_total, l1_entry.watchAndSpeak_total);
+    maxL1.read_total = Math.max(maxL1.read_total, l1_entry.read_total);
+    maxL1.conversationalMonologue_total = Math.max(maxL1.conversationalMonologue_total, l1_entry.conversationalMonologue_total);
+    maxL1.Speaking_practice_total = Math.max(maxL1.Speaking_practice_total, l1_entry.Speaking_practice_total);
+  
+    // Update max totals for L2
+    maxL2.listenAndSpeak_total = Math.max(maxL2.listenAndSpeak_total, l2_entry.listenAndSpeak_total);
+    maxL2.mcqs_total = Math.max(maxL2.mcqs_total, l2_entry.mcqs_total);
+    maxL2.watchAndSpeak_total = Math.max(maxL2.watchAndSpeak_total, l2_entry.watchAndSpeak_total);
+    maxL2.read_total = Math.max(maxL2.read_total, l2_entry.read_total);
+    maxL2.conversationalMonologue_total = Math.max(maxL2.conversationalMonologue_total, l2_entry.conversationalMonologue_total);
+    maxL2.Speaking_practice_total = Math.max(maxL2.Speaking_practice_total, l2_entry.Speaking_practice_total);
+  
+    // Update max totals for L3
+    maxL3.listenAndSpeak_total = Math.max(maxL3.listenAndSpeak_total, l3_entry.listenAndSpeak_total);
+    maxL3.mcqs_total = Math.max(maxL3.mcqs_total, l3_entry.mcqs_total);
+    maxL3.watchAndSpeak_total = Math.max(maxL3.watchAndSpeak_total, l3_entry.watchAndSpeak_total);
+    maxL3.read_total = Math.max(maxL3.read_total, l3_entry.read_total);
+    maxL3.conversationalMonologue_total = Math.max(maxL3.conversationalMonologue_total, l3_entry.conversationalMonologue_total);
+    maxL3.Speaking_practice_total = Math.max(maxL3.Speaking_practice_total, l3_entry.Speaking_practice_total);
+  
+    // Your existing array push
     arrayT1_List01.push([
-      i+1,
+      i + 1,
       l1_entry.phoneNumber,
       l1_entry.name,
       l1_entry.listenAndSpeak,
@@ -183,51 +209,100 @@ const runCumulativeSheets = async() =>{
       l3_entry.Speaking_practice,
       null,
       l1_entry.cohort
-    ])
+    ]);
   }
+  
+  // Push final max row to individual_weekly_score_l1_list_total
+  individual_weekly_score_l1_list_total.push([
+    maxL1.listenAndSpeak_total,
+    maxL1.mcqs_total,
+    maxL1.watchAndSpeak_total,
+    maxL1.read_total,
+    maxL1.conversationalMonologue_total,
+    maxL1.Speaking_practice_total,
+    null,
+    maxL2.listenAndSpeak_total,
+    maxL2.mcqs_total,
+    maxL2.watchAndSpeak_total,
+    maxL2.read_total,
+    maxL2.conversationalMonologue_total,
+    maxL2.Speaking_practice_total,
+    null,
+    maxL3.listenAndSpeak_total,
+    maxL3.mcqs_total,
+    maxL3.watchAndSpeak_total,
+    maxL3.read_total,
+    maxL3.conversationalMonologue_total,
+    maxL3.Speaking_practice_total
+  ]);
 
   individual_weekly_score_l1_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l10,'T2');
   individual_weekly_score_l2_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l20,'T2');
   individual_weekly_score_l3_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l30,'T2');
   
   
+   maxL1 = {
+    listenAndSpeak_total: 0,
+    mcqs_total: 0,
+    watchAndSpeak_total: 0,
+    read_total: 0,
+    conversationalMonologue_total: 0,
+    Speaking_practice_total: 0
+  };
+  
+  maxL2 = {
+    listenAndSpeak_total: 0,
+    mcqs_total: 0,
+    watchAndSpeak_total: 0,
+    read_total: 0,
+    conversationalMonologue_total: 0,
+    Speaking_practice_total: 0
+  };
+  
+  maxL3 = {
+    listenAndSpeak_total: 0,
+    mcqs_total: 0,
+    watchAndSpeak_total: 0,
+    read_total: 0,
+    conversationalMonologue_total: 0,
+    Speaking_practice_total: 0
+  };
 
 
   let arrayT1_List02 = [];
 
   for (let i = 0; i < individual_weekly_score_l1_list.length; i++) {
-  
     let l1_entry = individual_weekly_score_l1_list[i];
     let l2_entry = individual_weekly_score_l2_list[i];
     let l3_entry = individual_weekly_score_l3_list[i];
-
-    if(i == 0){
-      individual_weekly_score_l2_list_total.push([
-        l1_entry.listenAndSpeak_total,
-        l1_entry.mcqs_total,
-        l1_entry.watchAndSpeak_total,
-        l1_entry.read_total,
-        l1_entry.conversationalMonologue_total,
-        l1_entry.Speaking_practice_total,
-        null,
-        l2_entry.listenAndSpeak_total,
-        l2_entry.mcqs_total,
-        l2_entry.watchAndSpeak_total,
-        l2_entry.read_total,
-        l2_entry.conversationalMonologue_total,
-        l2_entry.Speaking_practice_total,
-        null,
-        l3_entry.listenAndSpeak_total,
-        l3_entry.mcqs_total,
-        l3_entry.watchAndSpeak_total,
-        l3_entry.read_total,
-        l3_entry.conversationalMonologue_total,
-        l3_entry.Speaking_practice_total
-      ])
-    }
-
+  
+    // Update max totals for L1
+    maxL1.listenAndSpeak_total = Math.max(maxL1.listenAndSpeak_total, l1_entry.listenAndSpeak_total);
+    maxL1.mcqs_total = Math.max(maxL1.mcqs_total, l1_entry.mcqs_total);
+    maxL1.watchAndSpeak_total = Math.max(maxL1.watchAndSpeak_total, l1_entry.watchAndSpeak_total);
+    maxL1.read_total = Math.max(maxL1.read_total, l1_entry.read_total);
+    maxL1.conversationalMonologue_total = Math.max(maxL1.conversationalMonologue_total, l1_entry.conversationalMonologue_total);
+    maxL1.Speaking_practice_total = Math.max(maxL1.Speaking_practice_total, l1_entry.Speaking_practice_total);
+  
+    // Update max totals for L2
+    maxL2.listenAndSpeak_total = Math.max(maxL2.listenAndSpeak_total, l2_entry.listenAndSpeak_total);
+    maxL2.mcqs_total = Math.max(maxL2.mcqs_total, l2_entry.mcqs_total);
+    maxL2.watchAndSpeak_total = Math.max(maxL2.watchAndSpeak_total, l2_entry.watchAndSpeak_total);
+    maxL2.read_total = Math.max(maxL2.read_total, l2_entry.read_total);
+    maxL2.conversationalMonologue_total = Math.max(maxL2.conversationalMonologue_total, l2_entry.conversationalMonologue_total);
+    maxL2.Speaking_practice_total = Math.max(maxL2.Speaking_practice_total, l2_entry.Speaking_practice_total);
+  
+    // Update max totals for L3
+    maxL3.listenAndSpeak_total = Math.max(maxL3.listenAndSpeak_total, l3_entry.listenAndSpeak_total);
+    maxL3.mcqs_total = Math.max(maxL3.mcqs_total, l3_entry.mcqs_total);
+    maxL3.watchAndSpeak_total = Math.max(maxL3.watchAndSpeak_total, l3_entry.watchAndSpeak_total);
+    maxL3.read_total = Math.max(maxL3.read_total, l3_entry.read_total);
+    maxL3.conversationalMonologue_total = Math.max(maxL3.conversationalMonologue_total, l3_entry.conversationalMonologue_total);
+    maxL3.Speaking_practice_total = Math.max(maxL3.Speaking_practice_total, l3_entry.Speaking_practice_total);
+  
+    // Your existing array push
     arrayT1_List02.push([
-      i+1,
+      i + 1,
       l1_entry.phoneNumber,
       l1_entry.name,
       l1_entry.listenAndSpeak,
@@ -252,9 +327,33 @@ const runCumulativeSheets = async() =>{
       l3_entry.Speaking_practice,
       null,
       l1_entry.cohort
-    ])
+    ]);
   }
   
+  // Push final max row to individual_weekly_score_l1_list_total
+  individual_weekly_score_l2_list_total.push([
+    maxL1.listenAndSpeak_total,
+    maxL1.mcqs_total,
+    maxL1.watchAndSpeak_total,
+    maxL1.read_total,
+    maxL1.conversationalMonologue_total,
+    maxL1.Speaking_practice_total,
+    null,
+    maxL2.listenAndSpeak_total,
+    maxL2.mcqs_total,
+    maxL2.watchAndSpeak_total,
+    maxL2.read_total,
+    maxL2.conversationalMonologue_total,
+    maxL2.Speaking_practice_total,
+    null,
+    maxL3.listenAndSpeak_total,
+    maxL3.mcqs_total,
+    maxL3.watchAndSpeak_total,
+    maxL3.read_total,
+    maxL3.conversationalMonologue_total,
+    maxL3.Speaking_practice_total
+  ]);
+
   arrayT1_List01 = arrayT1_List01.map(obj => Object.values(obj).map(value => value));
   arrayT1_List02 = arrayT1_List02.map(obj => Object.values(obj).map(value => value));
 
@@ -270,8 +369,8 @@ const runCumulativeSheets = async() =>{
     ActivityCompletedCount2,
     arrayT1_List01,
     arrayT1_List02,
-    [], //individual_weekly_score_l1_list_total,
-    [], //individual_weekly_score_l2_list_total
+    individual_weekly_score_l1_list_total,
+    individual_weekly_score_l2_list_total
   );
 }
 
@@ -664,7 +763,7 @@ const runETL_Dashboard = async () => {
       return Number(value) || null;
     });
 
-    let dailyAvgAct_t1 = await getWeeklyActivityCompleted1.getDaily_AvgActivity_Rollout(114,'T1');
+    let dailyAvgAct_t1 = await getWeeklyActivityCompleted1.getDaily_AvgActivity_Rollout(118,'T1');
     dailyAvgAct_t1 = dailyAvgAct_t1.map(obj => Object.values(obj).map(value => Number(value)));
     let dailyAvgAct_t2 = await getWeeklyActivityCompleted1.getDaily_AvgActivity_Rollout(112,'T2');
     dailyAvgAct_t2 = dailyAvgAct_t2.map(obj => Object.values(obj).map(value => Number(value)));
