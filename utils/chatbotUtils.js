@@ -185,9 +185,14 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
         };
 
         const fluencyScoreNumber = Math.round(pronunciationAssessment.scoreNumber.fluencyScore);
-        const accuracyScoreNumber = Math.round(pronunciationAssessment.scoreNumber.accuracyScore);
+        let accuracyScoreNumber = Math.round(pronunciationAssessment.scoreNumber.accuracyScore);
         const completenessScoreNumber = Math.round(pronunciationAssessment.scoreNumber.compScore);
         const words = pronunciationAssessment.words;
+
+        const mispronouncedWordsList = pronunciationAssessment.words.filter(word => word.PronunciationAssessment.ErrorType == "Mispronunciation" || word.PronunciationAssessment.AccuracyScore < 70);
+        if (mispronouncedWordsList.length == 0) {
+            accuracyScoreNumber = 100;
+        }
 
         // Set up canvas dimensions
         const width = 900;
@@ -361,8 +366,13 @@ const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
         };
 
         const fluencyScoreNumber = Math.round(pronunciationAssessment.scoreNumber.fluencyScore);
-        const accuracyScoreNumber = Math.round(pronunciationAssessment.scoreNumber.accuracyScore);
+        let accuracyScoreNumber = Math.round(pronunciationAssessment.scoreNumber.accuracyScore);
         const words = pronunciationAssessment.words;
+
+        const mispronouncedWordsList = pronunciationAssessment.words.filter(word => word.PronunciationAssessment.ErrorType == "Mispronunciation" || word.PronunciationAssessment.AccuracyScore < 70);
+        if (mispronouncedWordsList.length == 0) {
+            accuracyScoreNumber = 100;
+        }
 
         // Set up canvas dimensions
         const width = 900;
