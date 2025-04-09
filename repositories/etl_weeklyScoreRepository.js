@@ -1448,7 +1448,6 @@ const getCount_UpdateLagCohortWise = async (course_id,grp) => {
 
 const getActivtyWiseWeeklyScore = async (course_id,grp) => {
     try {
-        // console.log("Parameters:", { date, course_id, grp, cohort });
         const qry = `
            WITH target_group_users AS (
     SELECT "phoneNumber"
@@ -1483,7 +1482,7 @@ listen_and_speak AS (
 ),
 mcqs AS (
     SELECT 
-		q."phoneNumber",
+        q."phoneNumber",
         COUNT(CASE WHEN l."weekNumber" = 1 AND element = TRUE THEN 1 ELSE NULL END) AS mcqs_week1_correct_count,
         COUNT(CASE WHEN l."weekNumber" = 1 THEN 1 ELSE NULL END) AS mcqs_week1_total,
         COUNT(CASE WHEN l."weekNumber" = 2 AND element = TRUE THEN 1 ELSE NULL END) AS mcqs_week2_correct_count,
@@ -1621,14 +1620,10 @@ conversational_monologue AS (
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'contentAssessment'->>'CompScore')::DECIMAL, 0)
-                               --                      ELSEIF (l."courseId" = 107)
-       --                          COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
-       --                          COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
-       --                          COALESCE(("submittedFeedbackJson"[1]->'contentAssessment'->>'GrammarScore')::DECIMAL, 0)
                             ELSE
-							    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
-			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
-			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
                         END
                     ELSE NULL
                 END
@@ -1645,14 +1640,10 @@ conversational_monologue AS (
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'contentAssessment'->>'CompScore')::DECIMAL, 0)
-                               --                      ELSEIF (l."courseId" = 107)
-       --                          COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
-       --                          COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
-       --                          COALESCE(("submittedFeedbackJson"[1]->'contentAssessment'->>'GrammarScore')::DECIMAL, 0)
                             ELSE
-							    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
-			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
-			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
                         END
                     ELSE NULL
                 END
@@ -1669,14 +1660,10 @@ conversational_monologue AS (
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'contentAssessment'->>'CompScore')::DECIMAL, 0)
-                               --                      ELSEIF (l."courseId" = 107)
-       --                          COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
-       --                          COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
-       --                          COALESCE(("submittedFeedbackJson"[1]->'contentAssessment'->>'GrammarScore')::DECIMAL, 0)
                             ELSE
-							    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
-			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
-			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
                         END
                     ELSE NULL
                 END
@@ -1693,14 +1680,10 @@ conversational_monologue AS (
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
                                 COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'contentAssessment'->>'CompScore')::DECIMAL, 0)
-                               --                      ELSEIF (l."courseId" = 107)
-       --                          COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
-       --                          COALESCE(("submittedFeedbackJson"[1]->'pronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
-       --                          COALESCE(("submittedFeedbackJson"[1]->'contentAssessment'->>'GrammarScore')::DECIMAL, 0)
                             ELSE
-							    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
-			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
-			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
                         END
                     ELSE NULL
                 END
@@ -1724,10 +1707,9 @@ Speaking_practice AS (
             SUM(
                 CASE 
                     WHEN l."weekNumber" = 1 THEN 
-							    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
-			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
-			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
-                       
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
                     ELSE NULL
                 END
             ) / 300 * 5, 0
@@ -1738,10 +1720,9 @@ Speaking_practice AS (
             SUM(
                 CASE 
                     WHEN l."weekNumber" = 2 THEN 
-							    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
-			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
-			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
-                
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
                     ELSE NULL
                 END
             ) / 300 * 5, 0
@@ -1752,10 +1733,9 @@ Speaking_practice AS (
             SUM(
                 CASE 
                     WHEN l."weekNumber" = 3 THEN 
-							    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
-			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
-			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
-                  
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
                     ELSE NULL
                 END
             ) / 300 * 5, 0
@@ -1766,10 +1746,9 @@ Speaking_practice AS (
             SUM(
                 CASE 
                     WHEN l."weekNumber" = 4 THEN 
-							    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
-			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
-			                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
-                  
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
+                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
                     ELSE NULL
                 END
             ) / 300 * 5, 0
@@ -1789,95 +1768,71 @@ SELECT
      ROW_NUMBER() OVER (ORDER BY m."name") AS sr_no,
      m."phoneNumber", 
      m."name",
-	 CASE 
-	     WHEN round(COALESCE(ls.listenAndSpeak_week1_correct_count, 0), 2) + round(COALESCE(ls.listenAndSpeak_week2_correct_count, 0), 2)
-		 	+ round(COALESCE(ls.listenAndSpeak_week3_correct_count, 0), 2) + round(COALESCE(ls.listenAndSpeak_week4_correct_count, 0), 2) = 0 THEN NULL
-	     ELSE round(COALESCE(ls.listenAndSpeak_week1_correct_count, 0), 2) + round(COALESCE(ls.listenAndSpeak_week2_correct_count, 0), 2)
-		 	+ round(COALESCE(ls.listenAndSpeak_week3_correct_count, 0), 2) + round(COALESCE(ls.listenAndSpeak_week4_correct_count, 0), 2)
-	 END as "listenAndSpeak",
-
-	 CASE 
-	     WHEN round(COALESCE(ls.listenAndSpeak_week1_total, 0), 2) + round(COALESCE(ls.listenAndSpeak_week2_total, 0), 2)
-		 	+ round(COALESCE(ls.listenAndSpeak_week3_total, 0), 2) + round(COALESCE(ls.listenAndSpeak_week4_total, 0), 2) = 0 THEN NULL
-	     ELSE round(COALESCE(ls.listenAndSpeak_week1_total, 0), 2) + round(COALESCE(ls.listenAndSpeak_week2_total, 0), 2)
-		 	+ round(COALESCE(ls.listenAndSpeak_week3_total, 0), 2) + round(COALESCE(ls.listenAndSpeak_week4_total, 0), 2)
-	 END as "listenAndSpeak_total",
-	 
-	 CASE 
-	     WHEN round(COALESCE(mc.mcqs_week1_correct_count, 0), 2) + round(COALESCE(mc.mcqs_week2_correct_count, 0), 2) 
-		 	+ round(COALESCE(mc.mcqs_week3_correct_count, 0), 2) + round(COALESCE(mc.mcqs_week4_correct_count, 0), 2) = 0 THEN NULL
-	     ELSE round(COALESCE(mc.mcqs_week1_correct_count, 0), 2) + round(COALESCE(mc.mcqs_week2_correct_count, 0), 2) 
-		 	+ round(COALESCE(mc.mcqs_week3_correct_count, 0), 2) + round(COALESCE(mc.mcqs_week4_correct_count, 0), 2)
-	 END as "mcqs",
-
      CASE 
-	     WHEN round(COALESCE(mc.mcqs_week1_total, 0), 2) + round(COALESCE(mc.mcqs_week2_total, 0), 2)
-		 	+ round(COALESCE(mc.mcqs_week3_total, 0), 2) + round(COALESCE(mc.mcqs_week4_total, 0), 2) = 0 THEN NULL
-	     ELSE round(COALESCE(mc.mcqs_week1_total, 0), 2) + round(COALESCE(mc.mcqs_week2_total, 0), 2)
-		 	+ round(COALESCE(mc.mcqs_week3_total, 0), 2) + round(COALESCE(mc.mcqs_week4_total, 0), 2)
-	 END as "mcqs_total",
+         WHEN round(COALESCE(ls.listenAndSpeak_week1_correct_count, 0), 2) + round(COALESCE(ls.listenAndSpeak_week2_correct_count, 0), 2)
+             + round(COALESCE(ls.listenAndSpeak_week3_correct_count, 0), 2) + round(COALESCE(ls.listenAndSpeak_week4_correct_count, 0), 2) = 0 THEN NULL
+         ELSE round(COALESCE(ls.listenAndSpeak_week1_correct_count, 0), 2) + round(COALESCE(ls.listenAndSpeak_week2_correct_count, 0), 2)
+             + round(COALESCE(ls.listenAndSpeak_week3_correct_count, 0), 2) + round(COALESCE(ls.listenAndSpeak_week4_correct_count, 0), 2)
+     END as "listenAndSpeak",
 
-	 CASE 
-	     WHEN round(COALESCE(ws.watchAndSpeak_week1_score, 0), 2) + round(COALESCE(ws.watchAndSpeak_week2_score, 0), 2)
-		 	+ round(COALESCE(ws.watchAndSpeak_week3_score, 0), 2) + round(COALESCE(ws.watchAndSpeak_week4_score, 0), 2) = 0 THEN NULL
-	     ELSE round(COALESCE(ws.watchAndSpeak_week1_score, 0), 2) + round(COALESCE(ws.watchAndSpeak_week2_score, 0), 2)
-		 	+ round(COALESCE(ws.watchAndSpeak_week3_score, 0), 2) + round(COALESCE(ws.watchAndSpeak_week4_score, 0), 2)
-	 END as "watchAndSpeak",
+      round(COALESCE(ls.listenAndSpeak_week1_total, 0), 2) + round(COALESCE(ls.listenAndSpeak_week2_total, 0), 2)
+             + round(COALESCE(ls.listenAndSpeak_week3_total, 0), 2) + round(COALESCE(ls.listenAndSpeak_week4_total, 0), 2)
+      as "listenAndSpeak_total",
      
+     CASE 
+         WHEN round(COALESCE(mc.mcqs_week1_correct_count, 0), 2) + round(COALESCE(mc.mcqs_week2_correct_count, 0), 2) 
+             + round(COALESCE(mc.mcqs_week3_correct_count, 0), 2) + round(COALESCE(mc.mcqs_week4_correct_count, 0), 2) = 0 THEN NULL
+         ELSE round(COALESCE(mc.mcqs_week1_correct_count, 0), 2) + round(COALESCE(mc.mcqs_week2_correct_count, 0), 2) 
+             + round(COALESCE(mc.mcqs_week3_correct_count, 0), 2) + round(COALESCE(mc.mcqs_week4_correct_count, 0), 2)
+     END as "mcqs",
 
+      round(COALESCE(mc.mcqs_week1_total, 0), 2) + round(COALESCE(mc.mcqs_week2_total, 0), 2)
+             + round(COALESCE(mc.mcqs_week3_total, 0), 2) + round(COALESCE(mc.mcqs_week4_total, 0), 2)
+      as "mcqs_total",
 
      CASE 
-	     WHEN round(COALESCE(ws.watchAndSpeak_week1_total, 0), 2) + round(COALESCE(ws.watchAndSpeak_week2_total, 0), 2)
-		 	+ round(COALESCE(ws.watchAndSpeak_week3_total, 0), 2) + round(COALESCE(ws.watchAndSpeak_week4_total, 0), 2) = 0 THEN NULL
-	     ELSE round(COALESCE(ws.watchAndSpeak_week1_total, 0), 2) + round(COALESCE(ws.watchAndSpeak_week2_total, 0), 2)
-		 	+ round(COALESCE(ws.watchAndSpeak_week3_total, 0), 2) + round(COALESCE(ws.watchAndSpeak_week4_total, 0), 2)
-	 END as "watchAndSpeak_total",
+         WHEN round(COALESCE(ws.watchAndSpeak_week1_score, 0), 2) + round(COALESCE(ws.watchAndSpeak_week2_score, 0), 2)
+             + round(COALESCE(ws.watchAndSpeak_week3_score, 0), 2) + round(COALESCE(ws.watchAndSpeak_week4_score, 0), 2) = 0 THEN NULL
+         ELSE round(COALESCE(ws.watchAndSpeak_week1_score, 0), 2) + round(COALESCE(ws.watchAndSpeak_week2_score, 0), 2)
+             + round(COALESCE(ws.watchAndSpeak_week3_score, 0), 2) + round(COALESCE(ws.watchAndSpeak_week4_score, 0), 2)
+     END as "watchAndSpeak",
      
+      round(COALESCE(ws.watchAndSpeak_week1_total, 0), 2) + round(COALESCE(ws.watchAndSpeak_week2_total, 0), 2)
+             + round(COALESCE(ws.watchAndSpeak_week3_total, 0), 2) + round(COALESCE(ws.watchAndSpeak_week4_total, 0), 2)
+      as "watchAndSpeak_total",
+     
+     CASE 
+         WHEN round(COALESCE(rd.read_week1_score, 0), 2) + round(COALESCE(rd.read_week2_score, 0), 2) + round(COALESCE(rd.read_week3_score, 0), 2)
+             + round(COALESCE(rd.read_week4_score, 0), 2) = 0 THEN NULL
+         ELSE round(COALESCE(rd.read_week1_score, 0), 2) + round(COALESCE(rd.read_week2_score, 0), 2) + round(COALESCE(rd.read_week3_score, 0), 2)
+             + round(COALESCE(rd.read_week4_score, 0), 2)
+     END as "read",
 
-
-	 CASE 
-	     WHEN round(COALESCE(rd.read_week1_score, 0), 2) + round(COALESCE(rd.read_week2_score, 0), 2) + round(COALESCE(rd.read_week3_score, 0), 2)
-		 	+ round(COALESCE(rd.read_week4_score, 0), 2) = 0 THEN NULL
-	     ELSE round(COALESCE(rd.read_week1_score, 0), 2) + round(COALESCE(rd.read_week2_score, 0), 2) + round(COALESCE(rd.read_week3_score, 0), 2)
-		 	+ round(COALESCE(rd.read_week4_score, 0), 2)
-	 END as "read",
+      round(COALESCE(rd.read_week1_total, 0), 2) + round(COALESCE(rd.read_week2_total, 0), 2) + round(COALESCE(rd.read_week3_total, 0), 2)
+             + round(COALESCE(rd.read_week4_total, 0), 2)
+      as "read_total",
 
      CASE 
-	     WHEN round(COALESCE(rd.read_week2_total, 0), 2) + round(COALESCE(rd.read_week2_total, 0), 2) + round(COALESCE(rd.read_week2_total, 0), 2)
-		 	+ round(COALESCE(rd.read_week2_total, 0), 2) = 0 THEN NULL
-	     ELSE round(COALESCE(rd.read_week2_total, 0), 2) + round(COALESCE(rd.read_week2_total, 0), 2) + round(COALESCE(rd.read_week2_total, 0), 2)
-		 	+ round(COALESCE(rd.read_week2_total, 0), 2)
-	 END as "read_total",
+         WHEN round(COALESCE(cm.conversationalMonologue_week1_score, 0), 2) + round(COALESCE(cm.conversationalMonologue_week2_score, 0), 2) +
+             round(COALESCE(cm.conversationalMonologue_week3_score, 0), 2) + round(COALESCE(cm.conversationalMonologue_week4_score, 0), 2) = 0 THEN NULL
+         ELSE round(COALESCE(cm.conversationalMonologue_week1_score, 0), 2) + round(COALESCE(cm.conversationalMonologue_week2_score, 0), 2) +
+             round(COALESCE(cm.conversationalMonologue_week3_score, 0), 2) + round(COALESCE(cm.conversationalMonologue_week4_score, 0), 2)
+     END as "conversationalMonologue",
 
-
-	 CASE 
-	     WHEN round(COALESCE(cm.conversationalMonologue_week1_score, 0), 2) + round(COALESCE(cm.conversationalMonologue_week2_score, 0), 2) +
-		 	round(COALESCE(cm.conversationalMonologue_week3_score, 0), 2) + round(COALESCE(cm.conversationalMonologue_week4_score, 0), 2) = 0 THEN NULL
-	     ELSE round(COALESCE(cm.conversationalMonologue_week1_score, 0), 2) + round(COALESCE(cm.conversationalMonologue_week2_score, 0), 2) +
-		 	round(COALESCE(cm.conversationalMonologue_week3_score, 0), 2) + round(COALESCE(cm.conversationalMonologue_week4_score, 0), 2)
-	 END as "conversationalMonologue",
+      round(COALESCE(cm.conversationalMonologue_week1_total, 0), 2) + round(COALESCE(cm.conversationalMonologue_week2_total, 0), 2) +
+             round(COALESCE(cm.conversationalMonologue_week3_total, 0), 2) + round(COALESCE(cm.conversationalMonologue_week4_total, 0), 2)
+      as "conversationalMonologue_total",
 
      CASE 
-	     WHEN round(COALESCE(cm.conversationalMonologue_week2_total, 0), 2) + round(COALESCE(cm.conversationalMonologue_week2_total, 0), 2) +
-		 	round(COALESCE(cm.conversationalMonologue_week2_total, 0), 2) + round(COALESCE(cm.conversationalMonologue_week2_total, 0), 2) = 0 THEN NULL
-	     ELSE round(COALESCE(cm.conversationalMonologue_week2_total, 0), 2) + round(COALESCE(cm.conversationalMonologue_week2_total, 0), 2) +
-		 	round(COALESCE(cm.conversationalMonologue_week2_total, 0), 2) + round(COALESCE(cm.conversationalMonologue_week2_total, 0), 2)
-	 END as "conversationalMonologue_total",
+         WHEN round(COALESCE(sp.Speaking_practice_week1_score, 0), 2) + round(COALESCE(sp.Speaking_practice_week2_score, 0), 2) + 
+             round(COALESCE(sp.Speaking_practice_week3_score, 0), 2) + round(COALESCE(sp.Speaking_practice_week4_score, 0), 2) = 0 THEN NULL
+         ELSE round(COALESCE(sp.Speaking_practice_week1_score, 0), 2) + round(COALESCE(sp.Speaking_practice_week2_score, 0), 2) + 
+             round(COALESCE(sp.Speaking_practice_week3_score, 0), 2) + round(COALESCE(sp.Speaking_practice_week4_score, 0), 2)
+     END as "Speaking_practice",
 
-
-	 CASE 
-	     WHEN round(COALESCE(sp.Speaking_practice_week1_score, 0), 2) + round(COALESCE(sp.Speaking_practice_week2_score, 0), 2) + 
-		 	round(COALESCE(sp.Speaking_practice_week3_score, 0), 2) + round(COALESCE(sp.Speaking_practice_week4_score, 0), 2) = 0 THEN NULL
-	     ELSE round(COALESCE(sp.Speaking_practice_week1_score, 0), 2) + round(COALESCE(sp.Speaking_practice_week2_score, 0), 2) + 
-		 	round(COALESCE(sp.Speaking_practice_week3_score, 0), 2) + round(COALESCE(sp.Speaking_practice_week4_score, 0), 2)
-	 END as "Speaking_practice",
-
-     CASE 
-	     WHEN round(COALESCE(sp.Speaking_practice_week2_total, 0), 2) + round(COALESCE(sp.Speaking_practice_week2_total, 0), 2) + 
-		 	round(COALESCE(sp.Speaking_practice_week2_total, 0), 2) + round(COALESCE(sp.Speaking_practice_week2_total, 0), 2) = 0 THEN NULL
-	     ELSE round(COALESCE(sp.Speaking_practice_week2_total, 0), 2) + round(COALESCE(sp.Speaking_practice_week2_total, 0), 2) + 
-		 	round(COALESCE(sp.Speaking_practice_week2_total, 0), 2) + round(COALESCE(sp.Speaking_practice_week2_total, 0), 2)
-	 END as "Speaking_practice_total",
+     round(COALESCE(sp.Speaking_practice_week1_total, 0), 2) + round(COALESCE(sp.Speaking_practice_week2_total, 0), 2) + 
+             round(COALESCE(sp.Speaking_practice_week3_total, 0), 2) + round(COALESCE(sp.Speaking_practice_week4_total, 0), 2)
+      as "Speaking_practice_total",
 
      m."cohort"
 FROM 
@@ -1895,11 +1850,11 @@ LEFT JOIN
 LEFT JOIN 
     Speaking_practice sp ON m."phoneNumber" = sp."phoneNumber"
 WHERE 
-    m."targetGroup" = '${grp}' and "cohort" != 'Pilot' order by m."targetGroup",m."cohort", m."name" asc;
+    m."targetGroup" = '${grp}' and "cohort" != 'Pilot' 
+ORDER BY m."targetGroup", m."cohort", m."name" ASC;
         `;
   
         const res = await sequelize.query(qry);
-        // console.log(res[0]);
         return res[0];
     } catch (error) {
         error.fileName = "etlRepository.js";
