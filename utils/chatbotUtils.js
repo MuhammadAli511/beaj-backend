@@ -1976,7 +1976,8 @@ const sendCourseLessonToTeacher = async (userMobileNumber, currentUserState, sta
                 // Check if custom feedback exists for the selected answer
                 if (selectedAnswerIndex !== -1) {
                     const selectedAnswer = mcqAnswers[selectedAnswerIndex];
-                    const customFeedbackText = selectedAnswer.dataValues.CustomAnswerFeedbackText;
+                    let customFeedbackText = selectedAnswer.dataValues.CustomAnswerFeedbackText;
+                    customFeedbackText = customFeedbackText.replace(/\\n/g, '\n');
                     const customFeedbackImage = selectedAnswer.dataValues.CustomAnswerFeedbackImage;
                     const customFeedbackAudio = selectedAnswer.dataValues.CustomAnswerFeedbackAudio;
 
@@ -3423,7 +3424,8 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                 // Check if custom feedback exists for the selected answer
                 if (selectedAnswerIndex !== -1) {
                     const selectedAnswer = mcqAnswers[selectedAnswerIndex];
-                    const customFeedbackText = selectedAnswer.dataValues.CustomAnswerFeedbackText;
+                    let customFeedbackText = selectedAnswer.dataValues.CustomAnswerFeedbackText;
+                    customFeedbackText = customFeedbackText.replace(/\\n/g, '\n');
                     const customFeedbackImage = selectedAnswer.dataValues.CustomAnswerFeedbackImage;
                     const customFeedbackAudio = selectedAnswer.dataValues.CustomAnswerFeedbackAudio;
 
