@@ -26,7 +26,23 @@ import lessonRepository from "../repositories/lessonRepository.js";
 
 dotenv.config();
 
-const openai = new OpenAI(process.env.OPENAI_API_KEY);
+async function convertNumberToEmoji(number) {
+    const emojiMap = {
+        '0': '0️⃣',
+        '1': '1️⃣',
+        '2': '2️⃣',
+        '3': '3️⃣',
+        '4': '4️⃣',
+        '5': '5️⃣',
+        '6': '6️⃣',
+        '7': '7️⃣',
+        '8': '8️⃣',
+        '9': '9️⃣'
+    };
+
+    return number.toString().split('').map(digit => emojiMap[digit]).join('');
+}
+
 
 const whatsappToken = process.env.WHATSAPP_TOKEN;
 const whatsappPhoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
@@ -1213,7 +1229,7 @@ const demoCourseStart = async (userMobileNumber, startingLesson, courseName) => 
 };
 
 const endTrial = async (userMobileNumber) => {
-    await waUserProgressRepository.updateEngagementType(userMobileNumber, "End Trial");
+    await waUserProgressRepository.updateEngagementType(userMobileNumber, "End Now");
     let endTrialMessage = "You have chosen to end your free trial. Would you like to:";
     const user = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
     if (user.dataValues.userRegistrationComplete) {
@@ -1547,26 +1563,26 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson,
             return;
         } else if (checkRegistrationComplete == false && lessonLast == false) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next activity", "end trial"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next activity", "end now"]);
 
             // Sleep
             await sleep(2000);
 
             // Reply Buttons
-            await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'start_next_activity', title: 'Start Next Activity' }, { id: 'end_trial', title: 'End Trial' }]);
-            await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity or End Trial", null);
+            await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'start_next_activity', title: 'Start Next Activity' }, { id: 'end_now', title: 'End Now' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity or End Now", null);
 
             return;
         } else if (checkRegistrationComplete == true && lessonLast == false) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next activity", "end trial"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next activity", "end now"]);
 
             // Sleep
             await sleep(2000);
 
             // Reply Buttons
-            await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'start_next_activity', title: 'Start Next Activity' }, { id: 'end_trial', title: 'End Trial' }]);
-            await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity or End Trial", null);
+            await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'start_next_activity', title: 'Start Next Activity' }, { id: 'end_now', title: 'End Now' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity or End Now", null);
 
             return;
         }
@@ -1574,17 +1590,35 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson,
     else if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
         let user = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
         let checkRegistrationComplete = user.dataValues.userRegistrationComplete !== null;
+        if (startingLesson.dataValues.activityAlias == "🧠 *Let's Think!*") {
+            // Update acceptable messages list for the user
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start challenge", "end now"]);
+
+            // Sleep
+            await sleep(2000);
+
+            // Reply Buttons
+            if (message == null) {
+                await sendButtonMessage(userMobileNumber, 'Start Challenge!', [{ id: 'start_challenge', title: 'Start Challenge' }, { id: 'end_now', title: 'End Now' }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Start Challenge or End Now", null);
+            } else {
+                await sendButtonMessage(userMobileNumber, message, [{ id: 'start_challenge', title: 'Start Challenge' }, { id: 'end_now', title: 'End Now' }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", message, null);
+            }
+
+            return;
+        }
         if (currentUserState.dataValues.currentWeek == 1 && currentUserState.dataValues.currentDay == 1 && currentUserState.dataValues.currentLesson_sequence == 1) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start challenge", "end trial"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start challenge", "end now"]);
 
             // Sleep
             await sleep(2000);
 
             // Reply Buttons
             const readyImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/ready_for_your_first_challenge.jpeg"
-            await sendButtonMessage(userMobileNumber, 'Ready for your first challenge? 💪', [{ id: 'start_challenge', title: 'Start Challenge' }, { id: 'end_trial', title: 'End Trial' }], 0, readyImage);
-            await createActivityLog(userMobileNumber, "template", "outbound", "Start Challenge or End Trial", null);
+            await sendButtonMessage(userMobileNumber, 'Ready for your first challenge? 💪', [{ id: 'start_challenge', title: 'Start Challenge' }, { id: 'end_now', title: 'End Now' }], 0, readyImage);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Start Challenge or End Now", null);
 
             return;
         }
@@ -1627,34 +1661,34 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson,
             return;
         } else if (checkRegistrationComplete == false && lessonLast == false) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next challenge", "end trial"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["next challenge", "end now"]);
 
             // Sleep
             await sleep(2000);
 
             // Reply Buttons
             if (message == null) {
-                await sendButtonMessage(userMobileNumber, 'Challenge Complete! 💪🏽', [{ id: 'start_next_challenge', title: 'Start Next Challenge' }, { id: 'end_trial', title: 'End Trial' }]);
-                await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Challenge or End Trial", null);
+                await sendButtonMessage(userMobileNumber, 'Challenge Complete! 💪🏽', [{ id: 'next_challenge', title: 'Next Challenge' }, { id: 'end_now', title: 'End Now' }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Next Challenge or End Now", null);
             } else {
-                await sendButtonMessage(userMobileNumber, message, [{ id: 'start_next_challenge', title: 'Start Next Challenge' }, { id: 'end_trial', title: 'End Trial' }]);
+                await sendButtonMessage(userMobileNumber, message, [{ id: 'next_challenge', title: 'Next Challenge' }, { id: 'end_now', title: 'End Now' }]);
                 await createActivityLog(userMobileNumber, "template", "outbound", message, null);
             }
 
             return;
         } else if (checkRegistrationComplete == true && lessonLast == false) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next challenge", "end trial"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["next challenge", "end now"]);
 
             // Sleep
             await sleep(2000);
 
             // Reply Buttons
             if (message == null) {
-                await sendButtonMessage(userMobileNumber, 'Challenge Complete! 💪🏽', [{ id: 'start_next_challenge', title: 'Start Next Challenge' }, { id: 'end_trial', title: 'End Trial' }]);
-                await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Challenge or End Trial", null);
+                await sendButtonMessage(userMobileNumber, 'Challenge Complete! 💪🏽', [{ id: 'next_challenge', title: 'Next Challenge' }, { id: 'end_now', title: 'End Now' }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Next Challenge or End Now", null);
             } else {
-                await sendButtonMessage(userMobileNumber, message, [{ id: 'start_next_challenge', title: 'Start Next Challenge' }, { id: 'end_trial', title: 'End Trial' }]);
+                await sendButtonMessage(userMobileNumber, message, [{ id: 'next_challenge', title: 'Next Challenge' }, { id: 'end_now', title: 'End Now' }]);
                 await createActivityLog(userMobileNumber, "template", "outbound", message, null);
             }
 
@@ -3307,9 +3341,9 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
 
                 let mcqMessage = "";
                 if (mcqType == 'Text') {
-                    mcqMessage = "👉 *Q" + firstMCQsQuestion.dataValues.QuestionNumber + " of " + totalQuestions + "*\n\n" + questionText + "\n\n";
+                    mcqMessage = "👉 *Question " + await convertNumberToEmoji(firstMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n" + questionText + "\n\n";
                 } else {
-                    mcqMessage = "👉 *Q" + firstMCQsQuestion.dataValues.QuestionNumber + " of " + totalQuestions + "*\n\n";
+                    mcqMessage = "👉 *Question " + await convertNumberToEmoji(firstMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n";
                 }
                 if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
                     mcqMessage += "Choose the correct answer:\n";
@@ -3459,9 +3493,9 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                     const questionText = nextMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
                     let mcqMessage = "";
                     if (mcqType == 'Text') {
-                        mcqMessage = "👉 *Q" + nextMCQsQuestion.dataValues.QuestionNumber + " of " + totalQuestions + "*\n\n" + questionText + "\n\n";
+                        mcqMessage = "👉 *Question " + await convertNumberToEmoji(nextMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n" + questionText + "\n\n";
                     } else {
-                        mcqMessage = "👉 *Q" + nextMCQsQuestion.dataValues.QuestionNumber + " of " + totalQuestions + "*\n\n";
+                        mcqMessage = "👉 *Question " + await convertNumberToEmoji(nextMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n";
                     }
                     if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
                         mcqMessage += "Choose the correct answer:\n";
@@ -3551,7 +3585,7 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                 const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
 
                 // Send question media file
-                let instructions = "👉 *Q" + firstWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
+                let instructions = "👉 *Question " + await convertNumberToEmoji(firstWatchAndSpeakQuestion.dataValues.questionNumber) + " of " + totalQuestions + "*\n\n";
                 instructions += "Record your answer as a voice message";
                 if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                     instructions += "\nOR\n" + "Type “next” to skip challenge";
@@ -3651,7 +3685,7 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                         const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
 
                         // Send question media file
-                        let instructions = "👉 *Q" + nextWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
+                        let instructions = "👉 *Question " + await convertNumberToEmoji(nextWatchAndSpeakQuestion.dataValues.questionNumber) + " of " + totalQuestions + "*\n\n";
                         instructions += "Record your answer as a voice message";
                         if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                             instructions += "\nOR\n" + "Type “next” to skip challenge";
@@ -3722,7 +3756,7 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                     const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
 
                     // Send question media file
-                    let instructions = "👉 *Q" + nextWatchAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
+                    let instructions = "👉 *Question " + await convertNumberToEmoji(nextWatchAndSpeakQuestion.dataValues.questionNumber) + " of " + totalQuestions + "*\n\n";
                     instructions += "Record your answer as a voice message";
                     if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                         instructions += "\nOR\n" + "Type “next” to skip challenge";
@@ -3933,7 +3967,7 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                 const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
 
                 // Instructions
-                let instructions = "👉 *Q" + firstListenAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
+                let instructions = "👉 *Question " + await convertNumberToEmoji(firstListenAndSpeakQuestion.dataValues.questionNumber) + " of " + totalQuestions + "*\n\n";
                 instructions += "Record your answer as a voice message";
                 if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                     instructions += "\nOR\n" + "Type “next” to skip challenge";
@@ -4070,7 +4104,7 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
 
                         // Instructions
                         const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
-                        let instructions = "👉 *Q" + nextListenAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
+                        let instructions = "👉 *Question " + await convertNumberToEmoji(nextListenAndSpeakQuestion.dataValues.questionNumber) + " of " + totalQuestions + "*\n\n";
                         instructions += "Record your answer as a voice message";
                         if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                             instructions += "\nOR\n" + "Type “next” to skip challenge";
