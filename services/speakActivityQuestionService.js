@@ -3,9 +3,10 @@ import AIServices from '../utils/AIServices.js';
 import parseAnswers from '../utils/parseAnswers.js';
 import speakActivityQuestionRepository from '../repositories/speakActivityQuestionRepository.js';
 
-const createSpeakActivityQuestionService = async (question, mediaFile, answer, lessonId, questionNumber, activityType) => {
+const createSpeakActivityQuestionService = async (question, mediaFile, mediaFileSecond, answer, lessonId, questionNumber, activityType) => {
     try {
         let mediaUrl = null;
+        let mediaUrlSecond = null;
         if (mediaFile && typeof mediaFile === 'object') {
             mediaUrl = await azure_blob.uploadToBlobStorage(mediaFile);
         } else {
@@ -21,6 +22,10 @@ const createSpeakActivityQuestionService = async (question, mediaFile, answer, l
             }
         }
 
+        if (mediaFileSecond && typeof mediaFileSecond === 'object') {
+            mediaUrlSecond = await azure_blob.uploadToBlobStorage(mediaFileSecond);
+        }
+
         // Use a regex to correctly handle double-quoted answers with commas inside
         let answerArray = [];
         if (answer) {
@@ -30,6 +35,7 @@ const createSpeakActivityQuestionService = async (question, mediaFile, answer, l
         const speakActivityQuestion = await speakActivityQuestionRepository.create(
             question,
             mediaUrl,
+            mediaUrlSecond,
             answerArray,
             lessonId,
             questionNumber
@@ -42,9 +48,10 @@ const createSpeakActivityQuestionService = async (question, mediaFile, answer, l
     }
 };
 
-const updateSpeakActivityQuestionService = async (id, question, mediaFile, answer, lessonId, questionNumber, activityType) => {
+const updateSpeakActivityQuestionService = async (id, question, mediaFile, mediaFileSecond, answer, lessonId, questionNumber, activityType) => {
     try {
         let mediaUrl = null;
+        let mediaUrlSecond = null;
         if (mediaFile && typeof mediaFile === 'object') {
             mediaUrl = await azure_blob.uploadToBlobStorage(mediaFile);
         } else if (typeof mediaFile === 'string' && mediaFile.trim() != "" && activityType != 'conversationalAgencyBot' && activityType != 'conversationalQuestionsBot') {
@@ -62,12 +69,19 @@ const updateSpeakActivityQuestionService = async (id, question, mediaFile, answe
             }
         }
 
+        if (mediaFileSecond && typeof mediaFileSecond === 'object') {
+            mediaUrlSecond = await azure_blob.uploadToBlobStorage(mediaFileSecond);
+        } else if (typeof mediaFileSecond === 'string' && mediaFileSecond.trim() != "" && activityType != 'conversationalAgencyBot' && activityType != 'conversationalQuestionsBot') {
+            mediaUrlSecond = mediaFileSecond;
+        }
+
         const answerArray = parseAnswers(answer);
 
         const speakActivityQuestion = await speakActivityQuestionRepository.update(
             id,
             question,
             mediaUrl,
+            mediaUrlSecond,
             answerArray,
             lessonId,
             questionNumber

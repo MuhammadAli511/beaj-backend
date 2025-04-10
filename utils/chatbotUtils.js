@@ -2121,6 +2121,11 @@ const sendCourseLessonToTeacher = async (userMobileNumber, currentUserState, sta
                 await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, 'video', videoCaptionText);
                 await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null, videoCaptionText);
 
+                if (firstWatchAndSpeakQuestion.dataValues.mediaFileSecond) {
+                    await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFileSecond, 'image');
+                    await createActivityLog(userMobileNumber, "image", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFileSecond, null);
+                }
+
                 // Update acceptable messages list for the user
                 await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
             }
@@ -2216,6 +2221,11 @@ const sendCourseLessonToTeacher = async (userMobileNumber, currentUserState, sta
                         await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video', videoCaptionText);
                         await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null, videoCaptionText);
 
+                        if (nextWatchAndSpeakQuestion.dataValues.mediaFileSecond) {
+                            await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, 'image');
+                            await createActivityLog(userMobileNumber, "image", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, null);
+                        }
+
                     } else {
                         // Reset Question Number, Retry Counter, and Activity Type
                         await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
@@ -2283,6 +2293,11 @@ const sendCourseLessonToTeacher = async (userMobileNumber, currentUserState, sta
                     // Send question media file
                     await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video', videoCaptionText);
                     await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null, videoCaptionText);
+
+                    if (nextWatchAndSpeakQuestion.dataValues.mediaFileSecond) {
+                        await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, 'image');
+                        await createActivityLog(userMobileNumber, "image", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, null);
+                    }
 
                     return;
                 } else {
@@ -3595,6 +3610,11 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                 await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, 'video', instructions);
                 await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
 
+                if (firstWatchAndSpeakQuestion.dataValues.mediaFileSecond) {
+                    await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFileSecond, 'image');
+                    await createActivityLog(userMobileNumber, "image", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFileSecond, null);
+                }
+
                 // Update acceptable messages list for the user
                 await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
                 return;
@@ -3694,6 +3714,11 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                         }
                         await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video', instructions);
                         await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
+
+                        if (nextWatchAndSpeakQuestion.dataValues.mediaFileSecond) {
+                            await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, 'image');
+                            await createActivityLog(userMobileNumber, "image", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, null);
+                        }
                     } else {
                         // Reset Question Number, Retry Counter, and Activity Type
                         await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
@@ -3765,6 +3790,11 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                     }
                     await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video', instructions);
                     await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
+
+                    if (nextWatchAndSpeakQuestion.dataValues.mediaFileSecond) {
+                        await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, 'image');
+                        await createActivityLog(userMobileNumber, "image", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, null);
+                    }
                     return;
                 } else {
                     // Reset Question Number, Retry Counter, and Activity Type
