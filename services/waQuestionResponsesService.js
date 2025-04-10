@@ -51,6 +51,7 @@ const getWaQuestionResponsesByActivityTypeService = async (activityType) => {
             question: speakActivityQuestion?.question?.match(/<question>(.*?)<\/question>/s)?.[1]?.trim() || speakActivityQuestion?.question,
             answer: speakActivityQuestion?.answer,
             mediaFile: activityType == 'conversationalMonologueBot' ? null : speakActivityQuestion?.mediaFile,
+            mediaFileSecond: speakActivityQuestion?.mediaFileSecond,
             questionNumber: speakActivityQuestion?.questionNumber,
             name: user?.name
         };

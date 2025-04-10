@@ -167,12 +167,13 @@ const migrateLessonService = async (lessonId, courseId) => {
                     const formattedAnswer = `{${answerArray.map(answer => `"${answer}"`).join(',')}}`;
                     return prodSequelize.query(
                         `INSERT INTO "speakActivityQuestions" 
-                                ("question", "mediaFile", "answer", "lessonId", "questionNumber") 
-                                VALUES (:question, :mediaFile, :answer, :lessonId, :questionNumber)`,
+                                ("question", "mediaFile", "mediaFileSecond", "answer", "lessonId", "questionNumber") 
+                                VALUES (:question, :mediaFile, :mediaFileSecond, :answer, :lessonId, :questionNumber)`,
                         {
                             replacements: {
                                 question: file.question,
                                 mediaFile: file.mediaFile,
+                                mediaFileSecond: file.mediaFileSecond,
                                 answer: formattedAnswer,
                                 lessonId: newLesson[0].LessonId,
                                 questionNumber: file.questionNumber

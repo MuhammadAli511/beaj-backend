@@ -1,7 +1,7 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../config/sequelize.js';
 
-class SpeakActivityQuestion extends Model {}
+class SpeakActivityQuestion extends Model { }
 
 SpeakActivityQuestion.init({
   id: {
@@ -22,6 +22,10 @@ SpeakActivityQuestion.init({
     allowNull: true
   },
   mediaFile: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  mediaFileSecond: {
     type: DataTypes.STRING,
     allowNull: true
   },
