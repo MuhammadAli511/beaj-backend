@@ -191,16 +191,16 @@ const kidsChooseClass = async (userMobileNumber) => {
     // TODO: Send kids promo video here
     const chooseClassMessage = "🆓 Get a Free Trial!\n\n👇Choose your class:";
     const chooseClassImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/choose_class.jpeg";
-    await sendButtonMessage(userMobileNumber, chooseClassMessage, [{ id: 'kids_summer_camp_class_1_or_2', title: 'Grade 1 or 2' }, { id: 'kids_summer_camp_class_5_or_6', title: 'Grade 5 or 6' }], 0, chooseClassImage);
+    await sendButtonMessage(userMobileNumber, chooseClassMessage, [{ id: 'kids_summer_camp_class_1_or_2', title: 'Grade 1 or 2' }, { id: 'kids_summer_camp_class_5_or_6', title: 'Grade 3 to 6' }], 0, chooseClassImage);
     await createActivityLog(userMobileNumber, "template", "outbound", chooseClassMessage, null);
-    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["grade 1 or 2", "grade 5 or 6"]);
+    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["grade 1 or 2", "grade 3 to 6"]);
     return;
 };
 
 const kidsConfirmClass = async (userMobileNumber, messageContent) => {
     if (messageContent.toLowerCase() == "grade 1 or 2") {
         await waUserProgressRepository.updateEngagementType(userMobileNumber, "Confirm Class - Level 1");
-    } else if (messageContent.toLowerCase() == "grade 5 or 6") {
+    } else if (messageContent.toLowerCase() == "grade 3 to 6") {
         await waUserProgressRepository.updateEngagementType(userMobileNumber, "Confirm Class - Level 3");
     }
     const confirmClassMessage = "🚀 Let's begin your *Free Trial* for " + messageContent.charAt(0).toUpperCase() + messageContent.slice(1) + "!";
@@ -213,9 +213,9 @@ const kidsConfirmClass = async (userMobileNumber, messageContent) => {
 const kidsChooseClassLoop = async (userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(userMobileNumber, "Choose Class");
     const chooseClassMessage = "👇Choose your class:";
-    await sendButtonMessage(userMobileNumber, chooseClassMessage, [{ id: 'kids_summer_camp_class_1_or_2', title: 'Grade 1 or 2' }, { id: 'kids_summer_camp_class_5_or_6', title: 'Grade 5 or 6' }]);
+    await sendButtonMessage(userMobileNumber, chooseClassMessage, [{ id: 'kids_summer_camp_class_1_or_2', title: 'Grade 1 or 2' }, { id: 'kids_summer_camp_class_5_or_6', title: 'Grade 3 to 6' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", chooseClassMessage, null);
-    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["grade 1 or 2", "grade 5 or 6"]);
+    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["grade 1 or 2", "grade 3 to 6"]);
     return;
 };
 
