@@ -8,7 +8,6 @@ import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRe
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import waPurchasedCoursesRepository from "../repositories/waPurchasedCoursesRepository.js";
 import {
-    getAcceptableMessagesList,
     removeUser,
     startCourseForUser,
     levelCourseStart,
@@ -31,7 +30,7 @@ import {
 import { sendMessage, sendButtonMessage, retrieveMediaURL } from "../utils/whatsappUtils.js";
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
 import { createFeedback } from "../utils/createFeedbackUtils.js";
-import { checkUserMessageAndAcceptableMessages } from "../utils/utils.js";
+import { checkUserMessageAndAcceptableMessages, getAcceptableMessagesList } from "../utils/utils.js";
 
 dotenv.config();
 const whatsappVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN;

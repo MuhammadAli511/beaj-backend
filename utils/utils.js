@@ -147,6 +147,15 @@ const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUs
     return false;
 };
 
+const getAcceptableMessagesList = async (activityType) => {
+    if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "speakingPractice") {
+        return ["audio"];
+    } else if (activityType === "watchAndImage") {
+        return ["image"];
+    }
+};
+
+
 export {
     sleep,
     removeHTMLTags,
@@ -154,5 +163,6 @@ export {
     extractMispronouncedWords,
     getAudioBufferFromAudioFileUrl,
     convertNumberToEmoji,
-    checkUserMessageAndAcceptableMessages
+    checkUserMessageAndAcceptableMessages,
+    getAcceptableMessagesList
 };
