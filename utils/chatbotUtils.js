@@ -1977,12 +1977,12 @@ const sendCourseLessonToTeacher = async (userMobileNumber, currentUserState, sta
                 if (selectedAnswerIndex !== -1) {
                     const selectedAnswer = mcqAnswers[selectedAnswerIndex];
                     let customFeedbackText = selectedAnswer.dataValues.CustomAnswerFeedbackText;
-                    customFeedbackText = customFeedbackText.replace(/\\n/g, '\n');
                     const customFeedbackImage = selectedAnswer.dataValues.CustomAnswerFeedbackImage;
                     const customFeedbackAudio = selectedAnswer.dataValues.CustomAnswerFeedbackAudio;
 
                     // If not null based on the user selection send all the custom feedback which is not null
                     if (customFeedbackText) {
+                        customFeedbackText = customFeedbackText.replace(/\\n/g, '\n');
                         await sendMessage(userMobileNumber, customFeedbackText);
                         await createActivityLog(userMobileNumber, "text", "outbound", customFeedbackText, null);
                     }
@@ -3440,18 +3440,19 @@ const sendCourseLessonToKid = async (userMobileNumber, currentUserState, startin
                 if (selectedAnswerIndex !== -1) {
                     const selectedAnswer = mcqAnswers[selectedAnswerIndex];
                     let customFeedbackText = selectedAnswer.dataValues.CustomAnswerFeedbackText;
-                    customFeedbackText = customFeedbackText.replace(/\\n/g, '\n');
                     const customFeedbackImage = selectedAnswer.dataValues.CustomAnswerFeedbackImage;
                     const customFeedbackAudio = selectedAnswer.dataValues.CustomAnswerFeedbackAudio;
 
                     // If both image and text are available, send image with caption
                     if (customFeedbackImage && customFeedbackText) {
+                        customFeedbackText = customFeedbackText.replace(/\\n/g, '\n');
                         await sendMediaMessage(userMobileNumber, customFeedbackImage, 'image', customFeedbackText);
                         await createActivityLog(userMobileNumber, "image", "outbound", customFeedbackImage, customFeedbackText);
                         await sleep(2000);
                     } else {
                         // Otherwise send them separately if they exist
                         if (customFeedbackText) {
+                            customFeedbackText = customFeedbackText.replace(/\\n/g, '\n');
                             await sendMessage(userMobileNumber, customFeedbackText);
                             await createActivityLog(userMobileNumber, "text", "outbound", customFeedbackText, null);
                         }
