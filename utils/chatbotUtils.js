@@ -1170,8 +1170,9 @@ const greetingMessageLoop = async (userMobileNumber) => {
 
 const kidsChooseClass = async (userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(userMobileNumber, "Choose Class");
-    await sendMediaMessage(userMobileNumber, "https://beajbloblive.blob.core.windows.net/beajdocuments/kids_promo_1.mp4", "video");
-    await createActivityLog(userMobileNumber, "video", "outbound", "https://beajbloblive.blob.core.windows.net/beajdocuments/kids_promo_1.mp4", null);
+    let promoVideo = "https://beajbloblive.blob.core.windows.net/beajdocuments/kids_promo.mp4"
+    await sendMediaMessage(userMobileNumber, promoVideo, "video");
+    await createActivityLog(userMobileNumber, "video", "outbound", promoVideo, null);
     await sleep(10000);
     const chooseClassMessage = "🆓 Get a Free Trial!\n\n👇Choose your class:";
     const chooseClassImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/choose_class.jpeg";
