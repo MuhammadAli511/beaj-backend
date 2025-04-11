@@ -9,9 +9,10 @@ import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRe
 import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
+import { sleep } from "../utils/utils.js";
 
 
-const watchAndImageView = async (userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
+const watchAndAudioView = async (userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
         if (persona == 'teacher') {
             if (currentUserState.dataValues.questionNumber === null) {
@@ -20,7 +21,7 @@ const watchAndImageView = async (userMobileNumber, currentUserState, startingLes
 
                 // Send lesson message
                 let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\n\nWatch the videos. Then send an image response.";
+                lessonMessage += "\n\nWatch the video 👇🏽 and send your response as a voice message.";
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
@@ -34,18 +35,27 @@ const watchAndImageView = async (userMobileNumber, currentUserState, startingLes
                 await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
                 await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
 
+                await sleep(12000);
+
+                // Lesson Text
+                let lessonText = startingLesson.dataValues.text;
+                lessonText = removeHTMLTags(lessonText);
+                lessonText = lessonText.replace(/\\n/g, '\n');
+                await sendMessage(userMobileNumber, lessonText);
+                await createActivityLog(userMobileNumber, "text", "outbound", lessonText, null);
+
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["image"]);
+                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
             }
-            else if (messageType === 'image') {
+            else if (messageType === 'audio') {
                 // Get the current Watch And Speak question
                 const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
                 // Save user response to the database
                 const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
                 const uniqueID = uuidv4();
-                const userImage = `${timestamp}-${uniqueID}-` + "imageFile.jpg";
-                const userImageFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userImage);
+                const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
+                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
                 const submissionDate = new Date();
                 await waQuestionResponsesRepository.create(
                     userMobileNumber,
@@ -54,7 +64,7 @@ const watchAndImageView = async (userMobileNumber, currentUserState, startingLes
                     activity,
                     startingLesson.dataValues.activityAlias,
                     null,
-                    [userImageFileUrl],
+                    [userAudioFileUrl],
                     null,
                     null,
                     null,
@@ -87,7 +97,7 @@ const watchAndImageView = async (userMobileNumber, currentUserState, startingLes
 
                 // Send lesson message
                 let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\n\nWatch the videos. Then send an image response.";
+                lessonMessage += "\n\nWatch the video 👇🏽 and send your response as a voice message.";
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
@@ -101,18 +111,27 @@ const watchAndImageView = async (userMobileNumber, currentUserState, startingLes
                 await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
                 await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
 
+                await sleep(12000);
+
+                // Lesson Text
+                let lessonText = startingLesson.dataValues.text;
+                lessonText = removeHTMLTags(lessonText);
+                lessonText = lessonText.replace(/\\n/g, '\n');
+                await sendMessage(userMobileNumber, lessonText);
+                await createActivityLog(userMobileNumber, "text", "outbound", lessonText, null);
+
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["image"]);
+                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
             }
-            else if (messageType === 'image') {
+            else if (messageType === 'audio') {
                 // Get the current Watch And Speak question
                 const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
                 // Save user response to the database
                 const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
                 const uniqueID = uuidv4();
-                const userImage = `${timestamp}-${uniqueID}-` + "imageFile.jpg";
-                const userImageFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userImage);
+                const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
+                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
                 const submissionDate = new Date();
                 await waQuestionResponsesRepository.create(
                     userMobileNumber,
@@ -121,7 +140,7 @@ const watchAndImageView = async (userMobileNumber, currentUserState, startingLes
                     activity,
                     startingLesson.dataValues.activityAlias,
                     null,
-                    [userImageFileUrl],
+                    [userAudioFileUrl],
                     null,
                     null,
                     null,
@@ -150,10 +169,9 @@ const watchAndImageView = async (userMobileNumber, currentUserState, startingLes
         return;
     } catch (error) {
         console.log('Error sending lesson to user:', error);
-        error.fileName = 'watchAndImageView.js';
+        error.fileName = 'watchAndAudioView.js';
         throw error;
     }
 };
 
-
-export { watchAndImageView };
+export { watchAndAudioView };

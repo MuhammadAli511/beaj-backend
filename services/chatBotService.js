@@ -10,7 +10,6 @@ import waPurchasedCoursesRepository from "../repositories/waPurchasedCoursesRepo
 import {
     getAcceptableMessagesList,
     removeUser,
-    checkUserMessageAndAcceptableMessages,
     startCourseForUser,
     levelCourseStart,
     sendCourseLessonToTeacher,
@@ -32,7 +31,7 @@ import {
 import { sendMessage, sendButtonMessage, retrieveMediaURL } from "../utils/whatsappUtils.js";
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
 import { createFeedback } from "../utils/createFeedbackUtils.js";
-
+import { checkUserMessageAndAcceptableMessages } from "../utils/utils.js";
 
 dotenv.config();
 const whatsappVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN;
