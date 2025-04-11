@@ -16,6 +16,7 @@ import { removeHTMLTags } from "../utils/utils.js";
 
 const readView = async (userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
+        const activity = startingLesson.dataValues.activity;
         if (persona == 'teacher') {
             if (messageType != 'audio') {
                 // Lesson Started Record

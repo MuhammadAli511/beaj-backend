@@ -15,6 +15,7 @@ import { question_bot_prompt, wrapup_prompt } from "../utils/prompts.js";
 
 const conversationalQuestionsBotView = async (userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
+        const activity = startingLesson.dataValues.activity;
         if (persona == 'teacher') {
             if (currentUserState.dataValues.questionNumber === null) {
                 // Lesson Started Record

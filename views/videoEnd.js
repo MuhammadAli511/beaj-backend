@@ -11,6 +11,7 @@ import waUserProgressRepository from "../repositories/waUserProgressRepository.j
 
 const videoEndView = async (userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
+        const activity = startingLesson.dataValues.activity;
         if (persona == 'teacher') {
             // Lesson Started Record
             await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date());

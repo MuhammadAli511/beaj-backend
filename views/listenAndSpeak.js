@@ -15,6 +15,7 @@ import { removeHTMLTags } from "../utils/utils.js";
 
 const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
+        const activity = startingLesson.dataValues.activity;
         if (persona == 'teacher') {
             if (currentUserState.dataValues.questionNumber === null) {
                 // Lesson Started Record
