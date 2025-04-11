@@ -8,8 +8,6 @@ import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRe
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import waPurchasedCoursesRepository from "../repositories/waPurchasedCoursesRepository.js";
 import {
-    greetingMessage,
-    demoCourseStart,
     getAcceptableMessagesList,
     removeUser,
     checkUserMessageAndAcceptableMessages,
@@ -17,21 +15,23 @@ import {
     levelCourseStart,
     sendCourseLessonToTeacher,
     sendCourseLessonToKid,
-    removeUserTillCourse,
-    greetingMessageLoop,
-    endTrial,
-    getSchoolName,
-    confirmSchoolName,
-    thankyouMessage,
+    removeUserTillCourse
+} from "../utils/chatbotUtils.js";
+import {
+    demoCourseStart,
+    greetingMessage,
     kidsChooseClass,
     kidsConfirmClass,
-    kidsChooseClassLoop
-} from "../utils/chatbotUtils.js";
+    kidsChooseClassLoop,
+    endTrial,
+    greetingMessageLoop,
+    getSchoolName,
+    confirmSchoolName,
+    thankyouMessage
+} from "../utils/trialflowUtils.js";
 import { sendMessage, sendButtonMessage, retrieveMediaURL } from "../utils/whatsappUtils.js";
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
 import { createFeedback } from "../utils/createFeedbackUtils.js";
-
-
 
 
 dotenv.config();
