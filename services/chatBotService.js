@@ -7,14 +7,7 @@ import waUserProgressRepository from "../repositories/waUserProgressRepository.j
 import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRepository.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import waPurchasedCoursesRepository from "../repositories/waPurchasedCoursesRepository.js";
-import {
-    removeUser,
-    startCourseForUser,
-    levelCourseStart,
-    sendCourseLessonToTeacher,
-    sendCourseLessonToKid,
-    removeUserTillCourse
-} from "../utils/chatbotUtils.js";
+import { removeUser, startCourseForUser, levelCourseStart, sendCourseLessonToTeacher, sendCourseLessonToKid, removeUserTillCourse, } from "../utils/chatbotUtils.js";
 import {
     demoCourseStart,
     greetingMessage,
@@ -132,14 +125,8 @@ const webhookService = async (body, res) => {
             const userMobileNumber = "+" + message.from;
             let messageContent;
             let messageType = message.type;
-            let logger = `Inbound Message: User: ${userMobileNumber}, Message Type: ${message.type
-                }, Message Content: ${message.text?.body ||
-                message.image?.id ||
-                message.audio?.id ||
-                message.video?.id ||
-                message.interactive?.button_reply?.title
-                || message.button?.text
-                }`;
+            let logger = `Inbound Message: User: ${userMobileNumber}, Message Type: ${message.type}, Message Content: ${message.text?.body ||
+                message.image?.id || message.audio?.id || message.video?.id || message.interactive?.button_reply?.title || message.button?.text}`;
             console.log(logger);
             if (message.type === "image") {
                 createActivityLog(userMobileNumber, "image", "inbound", message, null);
@@ -165,17 +152,8 @@ const webhookService = async (body, res) => {
 
             const botStatus = await waConstantsRepository.getByKey("BOT_STATUS");
             if (!botStatus || botStatus.dataValues.constantValue != "Active") {
-                await sendMessage(
-                    userMobileNumber,
-                    "Sorry, We are currently not accepting any messages. Please try again later."
-                );
-                await createActivityLog(
-                    userMobileNumber,
-                    "text",
-                    "outbound",
-                    "Sorry, We are currently not accepting any messages. Please try again later.",
-                    null
-                );
+                await sendMessage(userMobileNumber, "Sorry, We are currently not accepting any messages. Please try again later.");
+                await createActivityLog(userMobileNumber, "text", "outbound", "Sorry, We are currently not accepting any messages. Please try again later.", null);
                 return;
             }
 
@@ -304,11 +282,6 @@ const webhookService = async (body, res) => {
                 }
             }
 
-
-
-
-
-
             // Teacher Training Trial
             if (
                 text_message_types.includes(message.type) &&
@@ -328,15 +301,9 @@ const webhookService = async (body, res) => {
                     courseName = "Free Trial - Teachers";
                 }
 
-
                 // Delete all question responses for the user
                 await waQuestionResponsesRepository.deleteByPhoneNumber(userMobileNumber);
-                const startingLesson = await lessonRepository.getNextLesson(
-                    await courseRepository.getCourseIdByName(courseName),
-                    1,
-                    null,
-                    null
-                );
+                const startingLesson = await lessonRepository.getNextLesson(await courseRepository.getCourseIdByName(courseName), 1, null, null);
                 await demoCourseStart(userMobileNumber, startingLesson, courseName);
                 // Send first lesson to user
                 currentUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
@@ -472,20 +439,13 @@ const webhookService = async (body, res) => {
             ) {
                 if (currentUserState.dataValues.engagement_type == "Free Trial - Teachers" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                     // Get the current lesson for next question
-                    const currentLesson = await lessonRepository.getCurrentLesson(
-                        currentUserState.dataValues.currentLessonId
-                    );
+                    const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
 
                     // Get acceptable messages for the next question
-                    const acceptableMessagesList = await getAcceptableMessagesList(
-                        currentLesson.dataValues.activity
-                    );
+                    const acceptableMessagesList = await getAcceptableMessagesList(currentLesson.dataValues.activity);
 
                     // Update acceptable messages list for the user
-                    await waUserProgressRepository.updateAcceptableMessagesList(
-                        userMobileNumber,
-                        acceptableMessagesList
-                    );
+                    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, acceptableMessagesList);
 
                     // Update user progress to next question
                     if (currentUserState.dataValues.engagement_type == "Free Trial - Teachers") {
@@ -526,8 +486,7 @@ const webhookService = async (body, res) => {
             );
             if (
                 text_message_types.includes(message.type) &&
-                (messageContent.toLowerCase() == "start" ||
-                    messageContent.toLowerCase() == "start!")
+                (messageContent.toLowerCase() == "start" || messageContent.toLowerCase() == "start!")
             ) {
                 if (currentUserState.dataValues.engagement_type == "Course Start") {
                     const startingLesson = await lessonRepository.getNextLesson(currentUserState.dataValues.currentCourseId, 1, null, null);

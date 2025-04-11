@@ -9,7 +9,7 @@ import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRe
 import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
-import { sleep } from "../utils/utils.js";
+import { sleep, removeHTMLTags } from "../utils/utils.js";
 
 
 const watchAndAudioView = async (userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
