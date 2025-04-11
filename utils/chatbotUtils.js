@@ -709,7 +709,7 @@ const getAcceptableMessagesList = async (activityType) => {
 };
 
 const sendMessage = async (to, body, retryAttempt = 0) => {
-    const MAX_RETRIES = 15;
+    const MAX_RETRIES = 17;
 
     try {
         await axios.post(
@@ -730,41 +730,59 @@ const sendMessage = async (to, body, retryAttempt = 0) => {
         console.log(logger);
     } catch (error) {
         const errData = error.response ? error.response.data : null;
-        if (errData && errData.error && errData.error.code === 131056) {
-            console.log(`Pair rate limit hit (131056). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
-            if (retryAttempt < MAX_RETRIES) {
-                const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
-                console.log(`Retrying after ${waitTimeSeconds} seconds...`);
-                await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
-                return sendMessage(to, body, retryAttempt + 1);
-            } else {
-                console.log(`Max retries reached. Giving up on message to ${to}.`);
-            }
+        console.log(`Error sending message. Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
+
+        if (retryAttempt < MAX_RETRIES) {
+            const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
+            console.log(`Retrying after ${waitTimeSeconds} seconds...`);
+            await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
+            return sendMessage(to, body, retryAttempt + 1);
         } else {
-            console.log("Error sending message:", errData ? errData : error.message);
+            console.log(`Max retries reached. Giving up on message to ${to}.`);
+            console.log("Final error:", errData ? errData : error.message);
         }
     }
 };
 
-const retrieveMediaURL = async (mediaId) => {
-    const mediaResponse = await axios.get(
-        `https://graph.facebook.com/v20.0/${mediaId}`,
-        {
+
+const retrieveMediaURL = async (mediaId, retryAttempt = 0) => {
+    const MAX_RETRIES = 17;
+
+    try {
+        const mediaResponse = await axios.get(
+            `https://graph.facebook.com/v20.0/${mediaId}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${whatsappToken}`,
+                },
+            }
+        );
+
+        const audioUrl = mediaResponse.data.url;
+
+        const audioResponse = await axios.get(audioUrl, {
+            responseType: "arraybuffer",
             headers: {
                 Authorization: `Bearer ${whatsappToken}`,
             },
+        });
+
+        return audioResponse;
+
+    } catch (error) {
+        const errData = error.response ? error.response.data : null;
+        console.log(`Error sending message. Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
+        if (retryAttempt < MAX_RETRIES) {
+            const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
+            console.log(`Retrying after ${waitTimeSeconds} seconds...`);
+            await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
+            return retrieveMediaURL(mediaId, retryAttempt + 1);
+        } else {
+            console.log(`Max retries reached. Giving up on media retrieval for ${mediaId}.`);
+            console.log("Final error:", errData ? errData : error.message);
         }
-    );
 
-    const audioUrl = mediaResponse.data.url;
-
-    const audioResponse = await axios.get(audioUrl, {
-        responseType: "arraybuffer",
-        headers: {
-            Authorization: `Bearer ${whatsappToken}`,
-        },
-    });
-    return audioResponse;
+    }
 };
 
 const createFeedback = async (
@@ -903,7 +921,7 @@ const extractConstantMessage = async (key) => {
 };
 
 const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, retryAttempt = 0) => {
-    const MAX_RETRIES = 15;
+    const MAX_RETRIES = 17;
     try {
         if (mediaType == 'video') {
             await axios.post(
@@ -977,24 +995,20 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, ret
         console.log(logger);
     } catch (error) {
         const errData = error.response ? error.response.data : null;
-        if (errData && errData.error && errData.error.code === 131056) {
-            console.log(`Pair rate limit hit (131056). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
-            if (retryAttempt < MAX_RETRIES) {
-                const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
-                console.log(`Retrying after ${waitTimeSeconds} seconds...`);
-                await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
-                return sendMediaMessage(to, mediaUrl, mediaType, captionText, retryAttempt + 1);
-            } else {
-                console.log(`Max retries reached. Giving up on message to ${to}.`);
-            }
+        if (retryAttempt < MAX_RETRIES) {
+            const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
+            console.log(`Retrying after ${waitTimeSeconds} seconds...`);
+            await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
+            return sendMediaMessage(to, mediaUrl, mediaType, captionText, retryAttempt + 1);
         } else {
-            console.log("Error sending message:", errData ? errData : error.message);
+            console.log(`Max retries reached. Giving up on media message to ${to}.`);
+            console.log("Final error:", errData ? errData : error.message);
         }
     }
 };
 
 const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, imageUrl = null, videoUrl = null) => {
-    const MAX_RETRIES = 15;
+    const MAX_RETRIES = 17;
 
     try {
         if (imageUrl) {
@@ -1108,24 +1122,21 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
         console.log(logger);
     } catch (error) {
         const errData = error.response ? error.response.data : null;
-        if (errData && errData.error && errData.error.code === 131056) {
-            console.log(`Pair rate limit hit (131056). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
-            if (retryAttempt < MAX_RETRIES) {
-                const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
-                console.log(`Retrying after ${waitTimeSeconds} seconds...`);
-                await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
-                if (imageUrl) {
-                    return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, imageUrl);
-                } else if (videoUrl) {
-                    return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, null, videoUrl);
-                } else {
-                    return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1);
-                }
+        console.log(`Error sending button message. Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
+        if (retryAttempt < MAX_RETRIES) {
+            const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
+            console.log(`Retrying after ${waitTimeSeconds} seconds...`);
+            await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
+            if (imageUrl) {
+                return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, imageUrl);
+            } else if (videoUrl) {
+                return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, null, videoUrl);
             } else {
-                console.log(`Max retries reached. Giving up on message to ${to}.`);
+                return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1);
             }
         } else {
-            console.log("Error sending message:", errData ? errData : error.message);
+            console.log(`Max retries reached. Giving up on button message to ${to}.`);
+            console.log("Final error:", errData ? errData : error.message);
         }
     }
 };
