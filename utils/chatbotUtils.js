@@ -152,7 +152,6 @@ const getAcceptableMessagesList = async (activityType) => {
     }
 };
 
-
 const extractConstantMessage = async (key) => {
     const constantMessageObj = await waConstantsRepository.getByKey(key);
     const constantMessage = constantMessageObj?.dataValues?.constantValue;
@@ -210,7 +209,6 @@ const kidsConfirmClass = async (userMobileNumber, messageContent) => {
     await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start free trial", "no, choose again"]);
     return;
 };
-
 
 const kidsChooseClassLoop = async (userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(userMobileNumber, "Choose Class");
@@ -745,15 +743,11 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson,
             lessonCompleteMessage = "You have completed *" + lessonNumber + " out of 24* lessons in " + strippedCourseName + "!⭐️";
         }
         goldBarCaption = lessonCompleteMessage;
-        // await sendMessage(userMobileNumber, lessonCompleteMessage);
-        // await createActivityLog(userMobileNumber, "text", "outbound", lessonCompleteMessage, null);
 
         // Day Ending Message
         if (startingLesson.dataValues.dayNumber >= 1 && startingLesson.dataValues.dayNumber <= 5) {
             const dayEndingMessage = getDayEndingMessage(startingLesson.dataValues.dayNumber);
             goldBarCaption += "\n\n" + dayEndingMessage;
-            // await sendMessage(userMobileNumber, dayEndingMessage);
-            // await createActivityLog(userMobileNumber, "text", "outbound", dayEndingMessage, null);
         }
 
         // Lesson Complete Image
@@ -784,9 +778,6 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson,
             await sendMediaMessage(userMobileNumber, weekEndScoreImage, 'image', weekMessage);
             await createActivityLog(userMobileNumber, "image", "outbound", weekEndScoreImage, null, weekMessage);
             await sleep(5000);
-
-            // await sendMessage(userMobileNumber, weekMessage);
-            // await createActivityLog(userMobileNumber, "text", "outbound", weekMessage, null);
         }
 
         // Feedback Message

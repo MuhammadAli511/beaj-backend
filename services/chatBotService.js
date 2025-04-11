@@ -331,9 +331,6 @@ const webhookService = async (body, res) => {
                 }
 
 
-                // if (courseName == "Free Trial - Teachers") {
-                //     // TODO: Teacher Training Promo video here
-                // }
                 // Delete all question responses for the user
                 await waQuestionResponsesRepository.deleteByPhoneNumber(userMobileNumber);
                 const startingLesson = await lessonRepository.getNextLesson(
@@ -621,7 +618,6 @@ const webhookService = async (body, res) => {
                         if (lessonNumberCheck >= 24) {
                             await sendButtonMessage(userMobileNumber, 'You have completed all the lessons in this course. Click the button below to proceed', [{ id: 'start_my_course', title: 'Start my course' }]);
                             await createActivityLog(userMobileNumber, "template", "outbound", "You have completed all the lessons in this course. Click the button below to proceed", null);
-                            // update acceptable messages list for the user
                             await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start my course"]);
                             return;
                         }
