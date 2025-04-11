@@ -10,19 +10,16 @@ import waPurchasedCoursesRepository from "../repositories/waPurchasedCoursesRepo
 import {
     greetingMessage,
     createActivityLog,
-    retrieveMediaURL,
     demoCourseStart,
     getAcceptableMessagesList,
     removeUser,
     checkUserMessageAndAcceptableMessages,
-    sendMessage,
     startCourseForUser,
     levelCourseStart,
     sendCourseLessonToTeacher,
     sendCourseLessonToKid,
     removeUserTillCourse,
     createFeedback,
-    sendButtonMessage,
     greetingMessageLoop,
     endTrial,
     getSchoolName,
@@ -32,6 +29,7 @@ import {
     kidsConfirmClass,
     kidsChooseClassLoop
 } from "../utils/chatbotUtils.js";
+import { sendMessage, sendButtonMessage, retrieveMediaURL } from "../utils/whatsappUtils.js";
 
 dotenv.config();
 const whatsappVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN;
