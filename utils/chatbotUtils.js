@@ -1173,7 +1173,7 @@ const kidsChooseClass = async (userMobileNumber) => {
     let promoVideo = "https://beajbloblive.blob.core.windows.net/beajdocuments/kids_promo_2.mp4"
     await sendMediaMessage(userMobileNumber, promoVideo, "video");
     await createActivityLog(userMobileNumber, "video", "outbound", promoVideo, null);
-    await sleep(10000);
+    await sleep(16000);
     const chooseClassMessage = "🆓 Get a Free Trial!\n\n👇Choose your class:";
     await sendButtonMessage(userMobileNumber, chooseClassMessage, [{ id: 'kids_summer_camp_class_1_or_2', title: 'Grade 1 or 2' }, { id: 'kids_summer_camp_class_5_or_6', title: 'Grades 3 to 6' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", chooseClassMessage, null);
