@@ -1,7 +1,7 @@
 import azure_blob from "../utils/azureBlobStorage.js";
 import { performance } from 'perf_hooks';
 import audioChatRepository from '../repositories/audioChatsRepository.js';
-import azureAIServices from "../utils/azureAIServices.js";
+import AIServices from "../utils/AIServices.js";
 
 const createAudioChatService = async (prompt, userAudioFile) => {
     try {
@@ -12,21 +12,21 @@ const createAudioChatService = async (prompt, userAudioFile) => {
         const userFileUrl = await azure_blob.uploadToBlobStorage(userAudioFile);
         startTime = performance.now();
         const audioBuffer = userAudioFile.buffer;
-        const transcription = await azureAIServices.openaiSpeechToText(audioBuffer);
+        const transcription = await AIServices.openaiSpeechToText(audioBuffer);
         endTime = performance.now();
         userSpeechToTextTime = (endTime - startTime).toFixed(2) / 1000;
 
 
         // OpenAI Feedback
         startTime = performance.now();
-        const model_response = await azureAIServices.openaiCustomFeedback(transcription, prompt);
+        const model_response = await AIServices.openaiCustomFeedback(transcription, prompt);
         endTime = performance.now();
         modelFeedbackTime = (endTime - startTime).toFixed(2) / 1000;
 
 
         // Text to Speech
         startTime = performance.now();
-        const audioFileUrl = await azureAIServices.elevenLabsTextToSpeechAndUpload(model_response);
+        const audioFileUrl = await AIServices.openaiTextToSpeechAndUpload(model_response);
         endTime = performance.now();
         modelTextToSpeechTime = (endTime - startTime).toFixed(2) / 1000;
 

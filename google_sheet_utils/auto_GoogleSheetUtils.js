@@ -599,8 +599,6 @@ const getColumnIndexWithPercentageValues = (arrayLevels_List, minValues, facilit
         const startDate = "2025-02-03";  // Course start date
         const currentDate = new Date();  // Current date (change for testing)
         const column = getColumnForDate(currentDate, startDate);
-
-        // console.log(`Found suitable column ${col}, returning ${col-1} for special facilitator`);
         return column; // Return previous column for special facilitators
       } else {
         // console.log(`Found suitable column ${col}, returning ${col} for regular facilitator`);

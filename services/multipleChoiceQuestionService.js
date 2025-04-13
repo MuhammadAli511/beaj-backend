@@ -1,17 +1,21 @@
 import azure_blob from "../utils/azureBlobStorage.js";
 import multipleChoiceQuestionRepository from "../repositories/multipleChoiceQuestionRepository.js";
 
-const createMultipleChoiceQuestionService = async (file, image, questionType, questionText, questionNumber, lessonId, optionsType) => {
+const createMultipleChoiceQuestionService = async (file, image, video, questionType, questionText, questionNumber, lessonId, optionsType) => {
     try {
         let fileUrl = null;
         let imageUrl = null;
+        let videoUrl = null;
         if (file) {
             fileUrl = await azure_blob.uploadToBlobStorage(file);
         }
         if (image) {
             imageUrl = await azure_blob.uploadToBlobStorage(image);
         }
-        const multipleChoiceQuestion = await multipleChoiceQuestionRepository.create(fileUrl, imageUrl, questionType, questionText, questionNumber, lessonId, optionsType);
+        if (video) {
+            videoUrl = await azure_blob.uploadToBlobStorage(video);
+        }
+        const multipleChoiceQuestion = await multipleChoiceQuestionRepository.create(fileUrl, imageUrl, videoUrl, questionType, questionText, questionNumber, lessonId, optionsType);
         return multipleChoiceQuestion;
     } catch (error) {
         error.fileName = 'multipleChoiceQuestionService.js';
@@ -39,17 +43,21 @@ const getMultipleChoiceQuestionByIdService = async (id) => {
     }
 };
 
-const updateMultipleChoiceQuestionService = async (id, file, image, questionType, questionText, questionNumber, lessonId, optionsType) => {
+const updateMultipleChoiceQuestionService = async (id, file, image, video, questionType, questionText, questionNumber, lessonId, optionsType) => {
     try {
         let fileUrl = null;
         let imageUrl = null;
+        let videoUrl = null;
         if (file) {
             fileUrl = await azure_blob.uploadToBlobStorage(file);
         }
         if (image) {
             imageUrl = await azure_blob.uploadToBlobStorage(image);
         }
-        const multipleChoiceQuestion = await multipleChoiceQuestionRepository.update(id, fileUrl, imageUrl, questionType, questionText, questionNumber, lessonId, optionsType);
+        if (video) {
+            videoUrl = await azure_blob.uploadToBlobStorage(video);
+        }
+        const multipleChoiceQuestion = await multipleChoiceQuestionRepository.update(id, fileUrl, imageUrl, videoUrl, questionType, questionText, questionNumber, lessonId, optionsType);
         return multipleChoiceQuestion;
     } catch (error) {
         error.fileName = 'multipleChoiceQuestionService.js';

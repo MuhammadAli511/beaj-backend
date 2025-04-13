@@ -15,6 +15,7 @@ import { promisify } from "util";
 import { tmpdir } from "os";
 import { join } from "path";
 import { ElevenLabsClient } from "elevenlabs";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 dotenv.config();
 ffmpeg.setFfmpegPath(ffmpegPath);
@@ -174,6 +175,28 @@ async function openaiSpeechToTextWithPrompt(audioBuffer, prompt) {
         return transcription.text;
     } finally {
         await unlink(tempFilePath);
+    }
+};
+
+async function openaiTextToSpeechAndUpload(text) {
+    try {
+        const openai = new OpenAI(process.env.OPENAI_API_KEY);
+
+        const mp3 = await openai.audio.speech.create({
+            model: "gpt-4o-mini-tts",
+            voice: "nova",
+            input: text,
+            instructions: "Use British pronunciation for English and speak in a slow speed, not too fast"
+        });
+
+        const buffer = Buffer.from(await mp3.arrayBuffer());
+        const tempFileName = `temp-${uuidv4()}.mp3`;
+        const tempFilePath = join(tmpdir(), tempFileName);
+        await writeFile(tempFilePath, buffer);
+        const audioUrl = await uploadAudioToAzure(buffer);
+        return audioUrl;
+    } catch (error) {
+        return await elevenLabsTextToSpeechAndUpload(text);
     }
 };
 
@@ -672,36 +695,87 @@ async function azureSpeakingAssessment(audioBuffer, topic) {
 }
 
 async function openaiFeedback(previousMessages) {
-    const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
-    const apiKey = process.env.AZURE_OPENAI_API_KEY;
-    const apiVersion = "2025-01-01-preview";
-    const deployment = "gpt-4o-mini";
+    try {
+        const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
+        const apiKey = process.env.AZURE_OPENAI_API_KEY;
+        const apiVersion = "2025-01-01-preview";
+        const deployment = "gpt-4o-mini";
 
-    const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
-    const result = await client.chat.completions.create({
-        messages: previousMessages,
-        model: "",
+        const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
+        const result = await client.chat.completions.create({
+            messages: previousMessages,
+            model: "",
+        });
+
+        return result.choices[0].message.content;
+    } catch {
+        return await geminiFeedback(previousMessages);
+    }
+}
+
+
+async function geminiFeedback(previousMessages) {
+    let userTranscript = previousMessages[previousMessages.length - 1].content;
+    previousMessages.pop();
+
+    let messagesArray = [];
+    previousMessages.forEach(message => {
+        messagesArray.push({
+            role: message.role == 'assistant' ? 'model' : message.role,
+            parts: [{ text: message.content }]
+        });
     });
 
-    return result.choices[0].message.content;
+    let systemInstruction = "";
+
+    if (messagesArray[0].role === 'system') {
+        systemInstruction = messagesArray[0].content;
+        messagesArray.shift();
+    }
+
+    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({
+        model: "gemini-2.0-flash",
+        systemInstruction: systemInstruction
+    });
+    const chat = model.startChat({
+        history: messagesArray
+    });
+
+    let result = await chat.sendMessage(userTranscript);
+    return result.response.text();
+}
+
+async function geminiCustomFeedback(userTranscript, modelPrompt) {
+    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({
+        model: "gemini-2.0-flash",
+        systemInstruction: modelPrompt
+    });
+    const result = await model.generateContent(userTranscript);
+    return result.response.text();
 }
 
 async function openaiCustomFeedback(userTranscript, modelPrompt) {
-    const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
-    const apiKey = process.env.AZURE_OPENAI_API_KEY;
-    const apiVersion = "2025-01-01-preview";
-    const deployment = "gpt-4o-mini";
+    try {
+        const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
+        const apiKey = process.env.AZURE_OPENAI_API_KEY;
+        const apiVersion = "2025-01-01-preview";
+        const deployment = "gpt-4o-mini";
 
-    const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
-    const result = await client.chat.completions.create({
-        messages: [
-            { role: "system", content: modelPrompt },
-            { role: "user", content: userTranscript },
-        ],
-        model: "",
-    });
+        const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
+        const result = await client.chat.completions.create({
+            messages: [
+                { role: "system", content: modelPrompt },
+                { role: "user", content: userTranscript },
+            ],
+            model: "",
+        });
 
-    return result.choices[0].message.content;
+        return result.choices[0].message.content;
+    } catch {
+        return await geminiCustomFeedback(userTranscript, modelPrompt);
+    }
 }
 
 export default {
@@ -714,6 +788,9 @@ export default {
     azureSpeakingAssessment,
     azureSpeechToTextAnyLanguage,
     openaiSpeechToTextWithPrompt,
-    elevenLabsSpeechToText
+    elevenLabsSpeechToText,
+    geminiFeedback,
+    geminiCustomFeedback,
+    openaiTextToSpeechAndUpload
 };
 

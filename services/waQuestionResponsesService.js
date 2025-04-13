@@ -31,7 +31,16 @@ const getWaQuestionResponsesByActivityTypeService = async (activityType) => {
         const responseData = response.dataValues || response;
 
         return {
-            ...responseData,
+            id: responseData.id,
+            phoneNumber: responseData.phoneNumber,
+            lessonId: responseData.lessonId,
+            questionId: responseData.questionId,
+            activityType: responseData.activityType,
+            alias: responseData.alias,
+            submittedAnswerText: responseData.submittedAnswerText,
+            submittedUserAudio: responseData.submittedUserAudio,
+            submittedFeedbackText: responseData.submittedFeedbackText,
+            submittedFeedbackAudio: responseData.submittedFeedbackAudio,
             dayNumber: lesson?.dayNumber,
             activityAlias: lesson?.activityAlias,
             weekNumber: lesson?.weekNumber,
@@ -41,7 +50,8 @@ const getWaQuestionResponsesByActivityTypeService = async (activityType) => {
             SequenceNumber: lesson?.SequenceNumber,
             question: speakActivityQuestion?.question?.match(/<question>(.*?)<\/question>/s)?.[1]?.trim() || speakActivityQuestion?.question,
             answer: speakActivityQuestion?.answer,
-            mediaFile: speakActivityQuestion?.mediaFile,
+            mediaFile: activityType == 'conversationalMonologueBot' ? null : speakActivityQuestion?.mediaFile,
+            mediaFileSecond: speakActivityQuestion?.mediaFileSecond,
             questionNumber: speakActivityQuestion?.questionNumber,
             name: user?.name
         };

@@ -1,10 +1,11 @@
 import MultipleChoiceQuestion from '../models/multipleChoiceQuestion.js';
 import Sequelize from 'sequelize';
 
-const create = async (file, image, questionType, questionText, questionNumber, lessonId, optionsType) => {
+const create = async (file, image, video, questionType, questionText, questionNumber, lessonId, optionsType) => {
     const multipleChoiceQuestion = new MultipleChoiceQuestion({
         QuestionAudioUrl: file,
         QuestionImageUrl: image,
+        QuestionVideoUrl: video,
         QuestionType: questionType,
         QuestionText: questionText,
         QuestionNumber: questionNumber,
@@ -25,10 +26,11 @@ const getById = async (id) => {
     return multipleChoiceQuestion;
 };
 
-const update = async (id, file, image, questionType, questionText, questionNumber, lessonId, optionsType) => {
+const update = async (id, file, image, video, questionType, questionText, questionNumber, lessonId, optionsType) => {
     return await MultipleChoiceQuestion.update({
         QuestionAudioUrl: file,
         QuestionImageUrl: image,
+        QuestionVideoUrl: video,
         QuestionType: questionType,
         QuestionText: questionText,
         QuestionNumber: questionNumber,
@@ -115,6 +117,14 @@ const deleteByLessonId = async (lessonId) => {
     });
 };
 
+const getTotalQuestions = async (lessonId) => {
+    return await MultipleChoiceQuestion.count({
+        where: {
+            LessonId: lessonId
+        }
+    });
+};
+
 export default {
     create,
     getAll,
@@ -125,5 +135,6 @@ export default {
     getCurrentMultipleChoiceQuestion,
     getByLessonIds,
     getByLessonId,
-    deleteByLessonId
+    deleteByLessonId,
+    getTotalQuestions
 };

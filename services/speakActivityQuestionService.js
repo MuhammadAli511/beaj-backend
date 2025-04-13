@@ -1,24 +1,29 @@
 import azure_blob from '../utils/azureBlobStorage.js';
-import azureAIServices from '../utils/azureAIServices.js';
+import AIServices from '../utils/AIServices.js';
 import parseAnswers from '../utils/parseAnswers.js';
 import speakActivityQuestionRepository from '../repositories/speakActivityQuestionRepository.js';
 
-const createSpeakActivityQuestionService = async (question, mediaFile, answer, lessonId, questionNumber, activityType) => {
+const createSpeakActivityQuestionService = async (question, mediaFile, mediaFileSecond, answer, lessonId, questionNumber, activityType) => {
     try {
         let mediaUrl = null;
+        let mediaUrlSecond = null;
         if (mediaFile && typeof mediaFile === 'object') {
             mediaUrl = await azure_blob.uploadToBlobStorage(mediaFile);
         } else {
-            if (activityType != 'conversationalAgencyBot' || mediaFile == null || mediaFile == undefined || mediaFile == "") {
-                mediaUrl = await azureAIServices.elevenLabsTextToSpeechAndUpload(question);
-            } else {
+            if (activityType == 'conversationalAgencyBot') {
                 if (question.includes("<question>")) {
                     const questionText = question.match(/<question>(.*?)<\/question>/s)[1].trim();
                     if (questionText != "") {
-                        mediaUrl = await azureAIServices.elevenLabsTextToSpeechAndUpload(questionText);
+                        mediaUrl = await AIServices.openaiTextToSpeechAndUpload(questionText);
                     }
                 }
+            } else {
+                mediaUrl = await AIServices.openaiTextToSpeechAndUpload(question);
             }
+        }
+
+        if (mediaFileSecond && typeof mediaFileSecond === 'object') {
+            mediaUrlSecond = await azure_blob.uploadToBlobStorage(mediaFileSecond);
         }
 
         // Use a regex to correctly handle double-quoted answers with commas inside
@@ -30,6 +35,7 @@ const createSpeakActivityQuestionService = async (question, mediaFile, answer, l
         const speakActivityQuestion = await speakActivityQuestionRepository.create(
             question,
             mediaUrl,
+            mediaUrlSecond,
             answerArray,
             lessonId,
             questionNumber
@@ -42,24 +48,31 @@ const createSpeakActivityQuestionService = async (question, mediaFile, answer, l
     }
 };
 
-const updateSpeakActivityQuestionService = async (id, question, mediaFile, answer, lessonId, questionNumber, activityType) => {
+const updateSpeakActivityQuestionService = async (id, question, mediaFile, mediaFileSecond, answer, lessonId, questionNumber, activityType) => {
     try {
         let mediaUrl = null;
+        let mediaUrlSecond = null;
         if (mediaFile && typeof mediaFile === 'object') {
             mediaUrl = await azure_blob.uploadToBlobStorage(mediaFile);
-        } else if (typeof mediaFile === 'string' && mediaFile.trim() != "") {
+        } else if (typeof mediaFile === 'string' && mediaFile.trim() != "" && activityType != 'conversationalAgencyBot' && activityType != 'conversationalQuestionsBot') {
             mediaUrl = mediaFile;
         } else {
             if (activityType != 'conversationalAgencyBot') {
-                mediaUrl = await azureAIServices.elevenLabsTextToSpeechAndUpload(question);
+                mediaUrl = await AIServices.openaiTextToSpeechAndUpload(question);
             } else {
                 if (question.includes("<question>")) {
                     const questionText = question.match(/<question>(.*?)<\/question>/s)[1].trim();
                     if (questionText != "") {
-                        mediaUrl = await azureAIServices.elevenLabsTextToSpeechAndUpload(questionText);
+                        mediaUrl = await AIServices.openaiTextToSpeechAndUpload(questionText);
                     }
                 }
             }
+        }
+
+        if (mediaFileSecond && typeof mediaFileSecond === 'object') {
+            mediaUrlSecond = await azure_blob.uploadToBlobStorage(mediaFileSecond);
+        } else if (typeof mediaFileSecond === 'string' && mediaFileSecond.trim() != "" && activityType != 'conversationalAgencyBot' && activityType != 'conversationalQuestionsBot') {
+            mediaUrlSecond = mediaFileSecond;
         }
 
         const answerArray = parseAnswers(answer);
@@ -68,6 +81,7 @@ const updateSpeakActivityQuestionService = async (id, question, mediaFile, answe
             id,
             question,
             mediaUrl,
+            mediaUrlSecond,
             answerArray,
             lessonId,
             questionNumber

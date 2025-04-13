@@ -1,10 +1,11 @@
 import SpeakActivityQuestion from "../models/SpeakActivityQuestion.js";
 import Sequelize from 'sequelize';
 
-const create = async (question, audioUrl, answer, lessonId, questionNumber) => {
+const create = async (question, mediaUrl, mediaUrlSecond, answer, lessonId, questionNumber) => {
     const speakActivityQuestion = new SpeakActivityQuestion({
         question: question,
-        mediaFile: audioUrl,
+        mediaFile: mediaUrl,
+        mediaFileSecond: mediaUrlSecond,
         answer: answer,
         lessonId: lessonId,
         questionNumber: questionNumber
@@ -20,10 +21,11 @@ const getById = async (id) => {
     return await SpeakActivityQuestion.findByPk(id);
 };
 
-const update = async (id, question, audioUrl, answer, lessonId, questionNumber) => {
+const update = async (id, question, mediaUrl, mediaUrlSecond, answer, lessonId, questionNumber) => {
     return await SpeakActivityQuestion.update({
         question: question,
-        mediaFile: audioUrl,
+        mediaFile: mediaUrl,
+        mediaFileSecond: mediaUrlSecond,
         answer: answer,
         lessonId: lessonId,
         questionNumber: questionNumber

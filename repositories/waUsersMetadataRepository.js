@@ -124,6 +124,14 @@ const getByPhoneNumbers = async (phoneNumbers) => {
     });
 };
 
+const updateSchoolName = async (phoneNumber, schoolName) => {
+    return await WA_UsersMetadata.update({
+        schoolName: schoolName
+    }, {
+        where: { phoneNumber: phoneNumber }
+    });
+};
+
 export default {
     create,
     getAll,
@@ -137,5 +145,6 @@ export default {
     getFreeDemoStartedUsersCount,
     getFreeDemoEndedUsersCount,
     getFilteredUsersWithControlGroupAndCohort,
-    getByPhoneNumbers
+    getByPhoneNumbers,
+    updateSchoolName
 };

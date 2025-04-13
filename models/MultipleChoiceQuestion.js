@@ -25,6 +25,10 @@ MultipleChoiceQuestion.init({
     type: DataTypes.STRING,
     allowNull: true
   },
+  QuestionVideoUrl: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   QuestionNumber: {
     type: DataTypes.INTEGER,
     allowNull: false
