@@ -3,7 +3,7 @@ import waUserProgressRepository from "../repositories/waUserProgressRepository.j
 import courseRepository from "../repositories/courseRepository.js";
 import { sendButtonMessage, sendMessage, sendMediaMessage } from "./whatsappUtils.js";
 import { createActivityLog } from "./createActivityLogUtils.js";
-import { sleep } from "./sleepUtils.js";
+import { sleep } from "./utils.js";
 
 const greetingMessage = async (userMobileNumber) => {
     await waUserProgressRepository.create({
