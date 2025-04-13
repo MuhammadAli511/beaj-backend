@@ -565,7 +565,7 @@ const getColumnIndexWithPercentageValues = (arrayLevels_List, minValues, facilit
   // Predefined list of column indexes to check
   const columnIndexes = [3, 4, 5, 6, 8, 9, 10, 11, 13, 14, 15, 16];
   const week_no = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4];
-  const fac_arr = [9,10];
+  const fac_arr = [];
   
   // Convert facilitator to number to ensure proper comparison
   const numericFacilitator = parseInt(facilitator, 10);
