@@ -42,6 +42,7 @@ const watchAndSpeakView = async (userMobileNumber, currentUserState, startingLes
                 await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null, videoCaptionText);
 
                 if (firstWatchAndSpeakQuestion.dataValues.mediaFileSecond) {
+                    await sleep(10000);
                     await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFileSecond, 'image');
                     await createActivityLog(userMobileNumber, "image", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFileSecond, null);
                 }
@@ -142,6 +143,7 @@ const watchAndSpeakView = async (userMobileNumber, currentUserState, startingLes
                         await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null, videoCaptionText);
 
                         if (nextWatchAndSpeakQuestion.dataValues.mediaFileSecond) {
+                            await sleep(10000);
                             await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, 'image');
                             await createActivityLog(userMobileNumber, "image", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, null);
                         }
@@ -215,6 +217,7 @@ const watchAndSpeakView = async (userMobileNumber, currentUserState, startingLes
                     await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null, videoCaptionText);
 
                     if (nextWatchAndSpeakQuestion.dataValues.mediaFileSecond) {
+                        await sleep(10000);
                         await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, 'image');
                         await createActivityLog(userMobileNumber, "image", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, null);
                     }
@@ -270,6 +273,7 @@ const watchAndSpeakView = async (userMobileNumber, currentUserState, startingLes
                 await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
 
                 if (firstWatchAndSpeakQuestion.dataValues.mediaFileSecond) {
+                    await sleep(10000);
                     await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFileSecond, 'image');
                     await createActivityLog(userMobileNumber, "image", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFileSecond, null);
                 }
@@ -375,6 +379,7 @@ const watchAndSpeakView = async (userMobileNumber, currentUserState, startingLes
                         await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
 
                         if (nextWatchAndSpeakQuestion.dataValues.mediaFileSecond) {
+                            await sleep(10000);
                             await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, 'image');
                             await createActivityLog(userMobileNumber, "image", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, null);
                         }
@@ -451,6 +456,7 @@ const watchAndSpeakView = async (userMobileNumber, currentUserState, startingLes
                     await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
 
                     if (nextWatchAndSpeakQuestion.dataValues.mediaFileSecond) {
+                        await sleep(10000);
                         await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, 'image');
                         await createActivityLog(userMobileNumber, "image", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, null);
                     }
