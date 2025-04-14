@@ -76,7 +76,7 @@ const conversationalQuestionsBotView = async (userMobileNumber, currentUserState
                         }
 
                         // ElevenLabs Text to Speech
-                        openaiFeedbackAudio = await AIServices.elevenLabsTextToSpeechAndUpload(openaiFeedbackTranscript);
+                        openaiFeedbackAudio = await AIServices.openaiTextToSpeechAndUpload(openaiFeedbackTranscript);
 
                         // Media message
                         await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
@@ -205,7 +205,7 @@ const conversationalQuestionsBotView = async (userMobileNumber, currentUserState
                         }
 
                         // ElevenLabs Text to Speech
-                        openaiFeedbackAudio = await AIServices.elevenLabsTextToSpeechAndUpload(openaiFeedbackTranscript);
+                        openaiFeedbackAudio = await AIServices.openaiTextToSpeechAndUpload(openaiFeedbackTranscript);
 
                         // Media message
                         await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');

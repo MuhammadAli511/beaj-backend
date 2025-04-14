@@ -779,7 +779,6 @@ async function openaiCustomFeedback(userTranscript, modelPrompt) {
 }
 
 export default {
-    elevenLabsTextToSpeechAndUpload,
     azureSpeechToText,
     azurePronunciationAssessment,
     openaiFeedback,

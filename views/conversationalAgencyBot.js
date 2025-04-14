@@ -35,7 +35,7 @@ const conversationalAgencyBotView = async (userMobileNumber, currentUserState, s
                 if (firstConversationalAgencyBotQuestion.dataValues.mediaFile != null && firstConversationalAgencyBotQuestion.dataValues.mediaFile.includes("http")) {
                     questionAudio = firstConversationalAgencyBotQuestion.dataValues.mediaFile;
                 } else {
-                    questionAudio = await AIServices.elevenLabsTextToSpeechAndUpload(questionText);
+                    questionAudio = await AIServices.openaiTextToSpeechAndUpload(questionText);
                 }
 
                 // Update question number
@@ -82,7 +82,7 @@ const conversationalAgencyBotView = async (userMobileNumber, currentUserState, s
                         let openaiFeedbackTranscript = await AIServices.openaiFeedback(messagesArray);
                         let initialFeedbackResponse = openaiFeedbackTranscript;
 
-                        let openaiFeedbackAudio = await AIServices.elevenLabsTextToSpeechAndUpload(initialFeedbackResponse);
+                        let openaiFeedbackAudio = await AIServices.openaiTextToSpeechAndUpload(initialFeedbackResponse);
                         await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
                         await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
 
@@ -154,7 +154,7 @@ const conversationalAgencyBotView = async (userMobileNumber, currentUserState, s
                         let openaiFeedbackTranscript = await AIServices.openaiFeedback(messagesArray);
                         let initialFeedbackResponse = openaiFeedbackTranscript;
 
-                        let openaiFeedbackAudio = await AIServices.elevenLabsTextToSpeechAndUpload(initialFeedbackResponse);
+                        let openaiFeedbackAudio = await AIServices.openaiTextToSpeechAndUpload(initialFeedbackResponse);
                         await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
                         await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
 
@@ -217,7 +217,7 @@ const conversationalAgencyBotView = async (userMobileNumber, currentUserState, s
                 if (firstConversationalAgencyBotQuestion.dataValues.mediaFile != null && firstConversationalAgencyBotQuestion.dataValues.mediaFile.includes("http")) {
                     questionAudio = firstConversationalAgencyBotQuestion.dataValues.mediaFile;
                 } else {
-                    questionAudio = await AIServices.elevenLabsTextToSpeechAndUpload(questionText);
+                    questionAudio = await AIServices.openaiTextToSpeechAndUpload(questionText);
                 }
 
                 // Update question number
@@ -264,7 +264,7 @@ const conversationalAgencyBotView = async (userMobileNumber, currentUserState, s
                         let openaiFeedbackTranscript = await AIServices.openaiFeedback(messagesArray);
                         let initialFeedbackResponse = openaiFeedbackTranscript;
 
-                        let openaiFeedbackAudio = await AIServices.elevenLabsTextToSpeechAndUpload(initialFeedbackResponse);
+                        let openaiFeedbackAudio = await AIServices.openaiTextToSpeechAndUpload(initialFeedbackResponse);
                         await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
                         await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
 
@@ -336,7 +336,7 @@ const conversationalAgencyBotView = async (userMobileNumber, currentUserState, s
                         let openaiFeedbackTranscript = await AIServices.openaiFeedback(messagesArray);
                         let initialFeedbackResponse = openaiFeedbackTranscript;
 
-                        let openaiFeedbackAudio = await AIServices.elevenLabsTextToSpeechAndUpload(initialFeedbackResponse);
+                        let openaiFeedbackAudio = await AIServices.openaiTextToSpeechAndUpload(initialFeedbackResponse);
                         await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
                         await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
 

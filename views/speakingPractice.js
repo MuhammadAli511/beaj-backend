@@ -114,7 +114,7 @@ const speakingPracticeView = async (userMobileNumber, currentUserState, starting
                         for (const word of mispronouncedWords) {
                             modelResponse += word.Word + (word === mispronouncedWords[mispronouncedWords.length - 1] ? "" : "...");
                         }
-                        correctedAudio = await AIServices.elevenLabsTextToSpeechAndUpload(modelResponse);
+                        correctedAudio = await AIServices.openaiTextToSpeechAndUpload(modelResponse);
                         await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
                         await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
                         await sleep(5000);
@@ -226,7 +226,7 @@ const speakingPracticeView = async (userMobileNumber, currentUserState, starting
                         for (const word of mispronouncedWords) {
                             modelResponse += word.Word + (word === mispronouncedWords[mispronouncedWords.length - 1] ? "" : "...");
                         }
-                        correctedAudio = await AIServices.elevenLabsTextToSpeechAndUpload(modelResponse);
+                        correctedAudio = await AIServices.openaiTextToSpeechAndUpload(modelResponse);
                         await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
                         await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
                         await sleep(5000);
