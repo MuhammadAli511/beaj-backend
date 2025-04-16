@@ -38,11 +38,14 @@ const getMultipleChoiceQuestionByIdController = async (req, res, next) => {
 const updateMultipleChoiceQuestionController = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { questionType, questionText, questionNumber, lessonId, optionsType } = req.body;
+        const { questionType, questionText, questionNumber, lessonId, optionsType, existingFileUrl, existingImageUrl, existingVideoUrl } = req.body;
+
         const file = req.files['file'] ? req.files['file'][0] : null;
         const image = req.files['image'] ? req.files['image'][0] : null;
         const video = req.files['video'] ? req.files['video'][0] : null;
-        await service.updateMultipleChoiceQuestionService(id, file, image, video, questionType, questionText, questionNumber, lessonId, optionsType);
+
+        await service.updateMultipleChoiceQuestionService(id, file, image, video, questionType, questionText, questionNumber, lessonId, optionsType, existingFileUrl, existingImageUrl, existingVideoUrl);
+
         res.status(200).send({ message: "Multiple Choice Question updated successfully" });
     } catch (error) {
         error.fileName = 'multipleChoiceQuestionController.js';

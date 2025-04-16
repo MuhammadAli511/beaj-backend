@@ -43,11 +43,12 @@ const getMultipleChoiceQuestionByIdService = async (id) => {
     }
 };
 
-const updateMultipleChoiceQuestionService = async (id, file, image, video, questionType, questionText, questionNumber, lessonId, optionsType) => {
+const updateMultipleChoiceQuestionService = async (id, file, image, video, questionType, questionText, questionNumber, lessonId, optionsType, existingFileUrl, existingImageUrl, existingVideoUrl) => {
     try {
-        let fileUrl = null;
-        let imageUrl = null;
-        let videoUrl = null;
+        let fileUrl = existingFileUrl;
+        let imageUrl = existingImageUrl;
+        let videoUrl = existingVideoUrl;
+
         if (file) {
             fileUrl = await azure_blob.uploadToBlobStorage(file);
         }
@@ -57,7 +58,10 @@ const updateMultipleChoiceQuestionService = async (id, file, image, video, quest
         if (video) {
             videoUrl = await azure_blob.uploadToBlobStorage(video);
         }
-        const multipleChoiceQuestion = await multipleChoiceQuestionRepository.update(id, fileUrl, imageUrl, videoUrl, questionType, questionText, questionNumber, lessonId, optionsType);
+
+        const multipleChoiceQuestion = await multipleChoiceQuestionRepository.update(
+            id, fileUrl, imageUrl, videoUrl, questionType, questionText, questionNumber, lessonId, optionsType
+        );
         return multipleChoiceQuestion;
     } catch (error) {
         error.fileName = 'multipleChoiceQuestionService.js';
