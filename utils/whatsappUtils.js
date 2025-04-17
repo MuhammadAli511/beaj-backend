@@ -1,15 +1,18 @@
 import axios from "axios";
-
+import { getPhoneNumberIdForRequest } from './requestContext.js';
 
 const whatsappToken = process.env.WHATSAPP_TOKEN;
-const whatsappPhoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+// Removing the hardcoded phone number IDs as they will be obtained from context
+// const whatsappPhoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+// const secondWhatsappPhoneNumberId = process.env.SECOND_WHATSAPP_PHONE_NUMBER_ID;
 
 const sendMessage = async (to, body, retryAttempt = 0) => {
+    const phoneNumberId = getPhoneNumberIdForRequest(); // Get ID from context
     const MAX_RETRIES = 17;
 
     try {
         await axios.post(
-            `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
+            `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
             {
                 messaging_product: "whatsapp",
                 to: to,
@@ -22,11 +25,11 @@ const sendMessage = async (to, body, retryAttempt = 0) => {
                 },
             }
         );
-        let logger = `Outbound Message: User: ${to}, Message Type: text, Message Content: ${body}`;
+        let logger = `Outbound Message: User: ${to}, From ID: ${phoneNumberId}, Message Type: text, Message Content: ${body}`;
         console.log(logger);
     } catch (error) {
         const errData = error.response ? error.response.data : null;
-        console.log(`Error sending message. Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
+        console.log(`Error sending message (from ${phoneNumberId}). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
 
         if (retryAttempt < MAX_RETRIES) {
             const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
@@ -34,7 +37,7 @@ const sendMessage = async (to, body, retryAttempt = 0) => {
             await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
             return sendMessage(to, body, retryAttempt + 1);
         } else {
-            console.log(`Max retries reached. Giving up on message to ${to}.`);
+            console.log(`Max retries reached. Giving up on message to ${to} from ${phoneNumberId}.`);
             console.log("Final error:", errData ? errData : error.message);
         }
     }
@@ -67,7 +70,7 @@ const retrieveMediaURL = async (mediaId, retryAttempt = 0) => {
 
     } catch (error) {
         const errData = error.response ? error.response.data : null;
-        console.log(`Error sending message. Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
+        console.log(`Error retrieving media. Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
         if (retryAttempt < MAX_RETRIES) {
             const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
             console.log(`Retrying after ${waitTimeSeconds} seconds...`);
@@ -83,208 +86,120 @@ const retrieveMediaURL = async (mediaId, retryAttempt = 0) => {
 
 
 const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, retryAttempt = 0) => {
+    const phoneNumberId = getPhoneNumberIdForRequest(); // Get ID from context
     const MAX_RETRIES = 17;
     try {
+        let requestBody;
         if (mediaType == 'video') {
-            await axios.post(
-                `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
-                {
-                    messaging_product: 'whatsapp',
-                    to: to,
-                    type: 'video',
-                    video: { link: mediaUrl, caption: captionText },
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${whatsappToken}`,
-                        'Content-Type': 'application/json',
-                    },
-                }
-            );
+            requestBody = {
+                messaging_product: 'whatsapp',
+                to: to,
+                type: 'video',
+                video: { link: mediaUrl, caption: captionText },
+            };
         } else if (mediaType == 'audio') {
-            await axios.post(
-                `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
-                {
-                    messaging_product: 'whatsapp',
-                    to: to,
-                    type: 'audio',
-                    audio: { link: mediaUrl },
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${whatsappToken}`,
-                        'Content-Type': 'application/json',
-                    },
-                }
-            );
+            requestBody = {
+                messaging_product: 'whatsapp',
+                to: to,
+                type: 'audio',
+                audio: { link: mediaUrl },
+            };
         } else if (mediaType == 'image') {
-            await axios.post(
-                `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
-                {
-                    messaging_product: 'whatsapp',
-                    to: to,
-                    type: 'image',
-                    image: { link: mediaUrl, caption: captionText },
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${whatsappToken}`,
-                        'Content-Type': 'application/json',
-                    },
-                }
-            );
+            requestBody = {
+                messaging_product: 'whatsapp',
+                to: to,
+                type: 'image',
+                image: { link: mediaUrl, caption: captionText },
+            };
         } else if (mediaType == 'sticker') {
-            await axios.post(
-                `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
-                {
-                    messaging_product: 'whatsapp',
-                    to: to,
-                    type: 'sticker',
-                    sticker: { link: mediaUrl },
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${whatsappToken}`,
-                        'Content-Type': 'application/json',
-                    },
-                }
-            );
-        }
-        else {
+            requestBody = {
+                messaging_product: 'whatsapp',
+                to: to,
+                type: 'sticker',
+                sticker: { link: mediaUrl },
+            };
+        } else {
             console.log('Invalid media type:', mediaType);
+            return; // Avoid sending request if type is invalid
         }
-        let logger = `Outbound Message: User: ${to}, Message Type: ${mediaType}, Message Content: ${mediaUrl}`;
+
+        await axios.post(
+            `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
+            requestBody,
+            {
+                headers: {
+                    Authorization: `Bearer ${whatsappToken}`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+
+        let logger = `Outbound Message: User: ${to}, From ID: ${phoneNumberId}, Message Type: ${mediaType}, Message Content: ${mediaUrl}`;
         console.log(logger);
     } catch (error) {
         const errData = error.response ? error.response.data : null;
+        console.log(`Error sending media message (from ${phoneNumberId}). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
         if (retryAttempt < MAX_RETRIES) {
             const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
             console.log(`Retrying after ${waitTimeSeconds} seconds...`);
             await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
             return sendMediaMessage(to, mediaUrl, mediaType, captionText, retryAttempt + 1);
         } else {
-            console.log(`Max retries reached. Giving up on media message to ${to}.`);
+            console.log(`Max retries reached. Giving up on media message to ${to} from ${phoneNumberId}.`);
             console.log("Final error:", errData ? errData : error.message);
         }
     }
 };
 
 const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, imageUrl = null, videoUrl = null) => {
+    const phoneNumberId = getPhoneNumberIdForRequest(); // Get ID from context
     const MAX_RETRIES = 17;
 
     try {
+        let interactivePayload = {
+            type: 'button',
+            body: {
+                text: bodyText
+            },
+            action: {
+                buttons: buttonOptions.map(option => ({
+                    type: 'reply',
+                    reply: {
+                        id: option.id,
+                        title: option.title
+                    }
+                }))
+            }
+        };
+
         if (imageUrl) {
-            const response = await axios.post(
-                `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
-                {
-                    messaging_product: 'whatsapp',
-                    recipient_type: 'individual',
-                    to: to,
-                    type: 'interactive',
-                    interactive: {
-                        type: 'button',
-                        header: {
-                            type: 'image',
-                            image: {
-                                link: imageUrl
-                            }
-                        },
-                        body: {
-                            text: bodyText
-                        },
-                        action: {
-                            buttons: buttonOptions.map(option => ({
-                                type: 'reply',
-                                reply: {
-                                    id: option.id,
-                                    title: option.title
-                                }
-                            }))
-                        }
-                    }
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${whatsappToken}`,
-                        'Content-Type': 'application/json',
-                    },
-                }
-            );
+            interactivePayload.header = { type: 'image', image: { link: imageUrl } };
         } else if (videoUrl) {
-            const response = await axios.post(
-                `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
-                {
-                    messaging_product: 'whatsapp',
-                    recipient_type: 'individual',
-                    to: to,
-                    type: 'interactive',
-                    interactive: {
-                        type: 'button',
-                        header: {
-                            type: 'video',
-                            video: {
-                                link: videoUrl
-                            }
-                        },
-                        body: {
-                            text: bodyText
-                        },
-                        action: {
-                            buttons: buttonOptions.map(option => ({
-                                type: 'reply',
-                                reply: {
-                                    id: option.id,
-                                    title: option.title
-                                }
-                            }))
-                        }
-                    }
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${whatsappToken}`,
-                        'Content-Type': 'application/json',
-                    },
-                }
-            );
+            interactivePayload.header = { type: 'video', video: { link: videoUrl } };
         }
-        else {
-            const response = await axios.post(
-                `https://graph.facebook.com/v20.0/${whatsappPhoneNumberId}/messages`,
-                {
-                    messaging_product: 'whatsapp',
-                    recipient_type: 'individual',
-                    to: to,
-                    type: 'interactive',
-                    interactive: {
-                        type: 'button',
-                        body: {
-                            text: bodyText
-                        },
-                        action: {
-                            buttons: buttonOptions.map(option => ({
-                                type: 'reply',
-                                reply: {
-                                    id: option.id,
-                                    title: option.title
-                                }
-                            }))
-                        }
-                    }
+
+        await axios.post(
+            `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
+            {
+                messaging_product: 'whatsapp',
+                recipient_type: 'individual',
+                to: to,
+                type: 'interactive',
+                interactive: interactivePayload
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${whatsappToken}`,
+                    'Content-Type': 'application/json',
                 },
-                {
-                    headers: {
-                        Authorization: `Bearer ${whatsappToken}`,
-                        'Content-Type': 'application/json',
-                    },
-                }
-            );
-        }
-        let logger = `Outbound Message: User: ${to}, Message Type: button, Message Content: ${bodyText}`;
+            }
+        );
+
+        let logger = `Outbound Message: User: ${to}, From ID: ${phoneNumberId}, Message Type: button, Message Content: ${bodyText}`;
         console.log(logger);
     } catch (error) {
         const errData = error.response ? error.response.data : null;
-        console.log(`Error sending button message. Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
+        console.log(`Error sending button message (from ${phoneNumberId}). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
         if (retryAttempt < MAX_RETRIES) {
             const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
             console.log(`Retrying after ${waitTimeSeconds} seconds...`);
@@ -297,7 +212,7 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
                 return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1);
             }
         } else {
-            console.log(`Max retries reached. Giving up on button message to ${to}.`);
+            console.log(`Max retries reached. Giving up on button message to ${to} from ${phoneNumberId}.`);
             console.log("Final error:", errData ? errData : error.message);
         }
     }
