@@ -2,12 +2,9 @@ import axios from "axios";
 import { getPhoneNumberIdForRequest } from './requestContext.js';
 
 const whatsappToken = process.env.WHATSAPP_TOKEN;
-// Removing the hardcoded phone number IDs as they will be obtained from context
-// const whatsappPhoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-// const secondWhatsappPhoneNumberId = process.env.SECOND_WHATSAPP_PHONE_NUMBER_ID;
 
 const sendMessage = async (to, body, retryAttempt = 0) => {
-    const phoneNumberId = getPhoneNumberIdForRequest(); // Get ID from context
+    const phoneNumberId = getPhoneNumberIdForRequest();
     const MAX_RETRIES = 17;
 
     try {
@@ -86,7 +83,7 @@ const retrieveMediaURL = async (mediaId, retryAttempt = 0) => {
 
 
 const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, retryAttempt = 0) => {
-    const phoneNumberId = getPhoneNumberIdForRequest(); // Get ID from context
+    const phoneNumberId = getPhoneNumberIdForRequest();
     const MAX_RETRIES = 17;
     try {
         let requestBody;
@@ -120,7 +117,7 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, ret
             };
         } else {
             console.log('Invalid media type:', mediaType);
-            return; // Avoid sending request if type is invalid
+            return;
         }
 
         await axios.post(
@@ -152,7 +149,7 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, ret
 };
 
 const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, imageUrl = null, videoUrl = null) => {
-    const phoneNumberId = getPhoneNumberIdForRequest(); // Get ID from context
+    const phoneNumberId = getPhoneNumberIdForRequest();
     const MAX_RETRIES = 17;
 
     try {
