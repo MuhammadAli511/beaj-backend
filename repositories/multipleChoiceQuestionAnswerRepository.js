@@ -28,57 +28,17 @@ const getById = async (id) => {
 };
 
 const update = async (id, answerText, answerImageUrl, answerAudioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber, customAnswerFeedbackText, customAnswerFeedbackImage, customAnswerFeedbackAudio) => {
-    // return await MultipleChoiceQuestionAnswer.update({
-    //     AnswerText: answerText,
-    //     AnswerImageUrl: answerImageUrl,
-    //     AnswerAudioUrl: answerAudioUrl,
-    //     IsCorrect: isCorrect,
-    //     MultipleChoiceQuestionId: multipleChoiceQuestionId,
-    //     SequenceNumber: sequenceNumber,
-    //     CustomAnswerFeedbackText: customAnswerFeedbackText,
-    //     CustomAnswerFeedbackImage: customAnswerFeedbackImage,
-    //     CustomAnswerFeedbackAudio: customAnswerFeedbackAudio
-    // }, {
-    //     where: {
-    //         Id: id
-    //     }
-    // });
-
-
-    let updateQuestionAnswer = {
+    return await MultipleChoiceQuestionAnswer.update({
         AnswerText: answerText,
+        AnswerImageUrl: answerImageUrl,
+        AnswerAudioUrl: answerAudioUrl,
         IsCorrect: isCorrect,
         MultipleChoiceQuestionId: multipleChoiceQuestionId,
         SequenceNumber: sequenceNumber,
-        CustomAnswerFeedbackText: customAnswerFeedbackText, 
-    };
-
-    if(answerImageUrl){
-        updateQuestionAnswer.AnswerImageUrl = answerImageUrl;
-        updateQuestionAnswer.AnswerAudioUrl = null;
-        updateQuestionAnswer.CustomAnswerFeedbackImage = null;
-        updateQuestionAnswer.CustomAnswerFeedbackAudio = null;
-    }
-    if(answerAudioUrl){
-        updateQuestionAnswer.AnswerAudioUrl = answerAudioUrl;
-        updateQuestionAnswer.AnswerImageUrl = null;
-        updateQuestionAnswer.CustomAnswerFeedbackImage = null;
-        updateQuestionAnswer.CustomAnswerFeedbackAudio = null;
-    }
-    if(customAnswerFeedbackImage){
-        updateQuestionAnswer.AnswerAudioUrl = null;
-        updateQuestionAnswer.AnswerImageUrl = null;
-        updateQuestionAnswer.CustomAnswerFeedbackImage = customAnswerFeedbackImage;
-        updateQuestionAnswer.CustomAnswerFeedbackAudio = null;
-    }
-    if(customAnswerFeedbackAudio){
-        updateQuestionAnswer.AnswerAudioUrl = null;
-        updateQuestionAnswer.AnswerImageUrl = null;
-        updateQuestionAnswer.CustomAnswerFeedbackImage = null;
-        updateQuestionAnswer.CustomAnswerFeedbackAudio = customAnswerFeedbackAudio;
-    }
-
-    return await MultipleChoiceQuestionAnswer.update(updateQuestionAnswer, {
+        CustomAnswerFeedbackText: customAnswerFeedbackText,
+        CustomAnswerFeedbackImage: customAnswerFeedbackImage,
+        CustomAnswerFeedbackAudio: customAnswerFeedbackAudio
+    }, {
         where: {
             Id: id
         }

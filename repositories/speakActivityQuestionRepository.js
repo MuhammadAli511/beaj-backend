@@ -34,8 +34,6 @@ const update = async (id, question, mediaUrl, mediaUrlSecond, answer, lessonId, 
             id: id
         }
     });
-
-    
 };
 
 const deleteSpeakActivityQuestion = async (id) => {
