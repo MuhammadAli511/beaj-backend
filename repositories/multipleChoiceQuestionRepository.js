@@ -27,7 +27,22 @@ const getById = async (id) => {
 };
 
 const update = async (id, file, image, video, questionType, questionText, questionNumber, lessonId, optionsType) => {
-    return await MultipleChoiceQuestion.update({
+    // return await MultipleChoiceQuestion.update({
+    //     QuestionAudioUrl: file,
+    //     QuestionImageUrl: image,
+    //     QuestionVideoUrl: video,
+    //     QuestionType: questionType,
+    //     QuestionText: questionText,
+    //     QuestionNumber: questionNumber,
+    //     LessonId: lessonId,
+    //     OptionsType: optionsType
+    // }, {
+    //     where: {
+    //         Id: id
+    //     }
+    // });
+
+    let updateData = {
         QuestionAudioUrl: file,
         QuestionImageUrl: image,
         QuestionVideoUrl: video,
@@ -36,7 +51,27 @@ const update = async (id, file, image, video, questionType, questionText, questi
         QuestionNumber: questionNumber,
         LessonId: lessonId,
         OptionsType: optionsType
-    }, {
+    };
+
+    // Only include video, image, and audio if not null
+    // if (video) {
+    //     updateData.QuestionVideoUrl = video;
+    //     updateData.QuestionAudioUrl = null;
+    //     updateData.QuestionImageUrl = null;
+
+    // }
+    // if (file) {
+    //     updateData.QuestionAudioUrl = file;
+    //     updateData.QuestionVideoUrl = null;
+    //     updateData.QuestionImageUrl = null;
+    // }
+    // if (image) {
+    //     updateData.QuestionImageUrl = image;
+    //     updateData.QuestionVideoUrl = null;
+    //     updateData.QuestionAudioUrl = null;
+    // }
+
+    return await MultipleChoiceQuestion.update(updateData, {
         where: {
             Id: id
         }
