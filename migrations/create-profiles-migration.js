@@ -9,7 +9,7 @@ const teacherBotPhoneNumberId = process.env.TEACHER_BOT_PHONE_NUMBER_ID;
 const studentBotPhoneNumberId = process.env.STUDENT_BOT_PHONE_NUMBER_ID;
 
 // Set this to true when ready to execute Phase 2 (changing primary keys)
-const EXECUTE_PHASE_2 = false;
+const EXECUTE_PHASE_2 = true;
 
 async function migrateUsers() {
     const transaction = await sequelize.transaction();
@@ -87,7 +87,7 @@ async function migrateUsers() {
                 await sequelize.query(`
           UPDATE ${table} 
           SET profile_id = :profileId 
-          WHERE phone_number = :phoneNumber;
+          WHERE "phoneNumber" = :phoneNumber;
         `, {
                     replacements: { profileId, phoneNumber },
                     transaction
@@ -128,7 +128,6 @@ async function updatePrimaryKeys() {
     try {
         console.log('Starting Phase 2: Updating primary keys...');
 
-        // Add foreign key references to profile_id
         const tables = [
             'wa_users_metadata',
             'wa_user_progress',
@@ -140,9 +139,7 @@ async function updatePrimaryKeys() {
         ];
 
         for (const table of tables) {
-            console.log(`Adding foreign key constraint to ${table}...`);
-
-            // First make profile_id NOT NULL
+            console.log(`Making profile_id NOT NULL in ${table}...`);
             await sequelize.query(`
                 ALTER TABLE ${table}
                 ALTER COLUMN profile_id SET NOT NULL;
