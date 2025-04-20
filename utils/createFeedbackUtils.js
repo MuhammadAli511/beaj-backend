@@ -7,8 +7,8 @@ const createFeedback = async (
     profileId,
     feedbackContent
 ) => {
-    const userCurrentProgress = await waUserProgressRepository.getByPhoneNumber(
-        phoneNumber
+    const userCurrentProgress = await waUserProgressRepository.getByProfileId(
+        profileId
     );
 
     const userAcceptableList = userCurrentProgress.acceptableMessages || [];

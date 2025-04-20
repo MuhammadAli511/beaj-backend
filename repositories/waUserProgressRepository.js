@@ -5,10 +5,6 @@ const create = async (data) => {
     return await userProgress.save();
 };
 
-const getAll = async () => {
-    return await WA_UserProgress.findAll();
-};
-
 const getByPhoneNumber = async (phoneNumber) => {
     return await WA_UserProgress.findOne({
         where: {
@@ -21,14 +17,6 @@ const getByProfileId = async (profileId) => {
     return await WA_UserProgress.findOne({
         where: {
             profile_id: profileId
-        }
-    });
-};
-
-const getCountByEngagementType = async (engagementType) => {
-    return await WA_UserProgress.count({
-        where: {
-            engagement_type: engagementType
         }
     });
 };
@@ -131,28 +119,6 @@ const updateQuestionNumberRetryCounterActivityType = async (profileId, phoneNumb
     });
 }
 
-const updateOpenaiThreadId = async (profileId, phoneNumber, openaiThreadId) => {
-    return await WA_UserProgress.update({
-        openaiThreadId: openaiThreadId,
-        lastUpdated: new Date()
-    }, {
-        where: {
-            phoneNumber: phoneNumber,
-            profile_id: profileId
-        }
-    });
-};
-
-const getOpenaiThreadId = async (profileId, phoneNumber) => {
-    return await WA_UserProgress.findOne({
-        where: {
-            phoneNumber: phoneNumber,
-            profile_id: profileId
-        },
-        attributes: ['openaiThreadId']
-    });
-};
-
 const updatePersona = async (profileId, phoneNumber, persona) => {
     return await WA_UserProgress.update({
         persona: persona
@@ -166,18 +132,15 @@ const updatePersona = async (profileId, phoneNumber, persona) => {
 
 export default {
     create,
-    getAll,
     getByPhoneNumber,
     getByProfileId,
     update,
     deleteByPhoneNumber,
+    deleteByProfileId,
     updateAcceptableMessagesList,
     updateQuestionNumber,
     updateRetryCounter,
     updateQuestionNumberRetryCounterActivityType,
     updateEngagementType,
-    getCountByEngagementType,
-    getOpenaiThreadId,
-    updateOpenaiThreadId,
     updatePersona
 };
