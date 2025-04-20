@@ -1,9 +1,9 @@
 import waPurchasedCoursesRepository from '../repositories/waPurchasedCoursesRepository.js';
 import courseRepository from '../repositories/courseRepository.js';
 
-const getAllCoursesByPhoneNumberService = async (phoneNumber) => {
+const getAllCoursesByProfileIdService = async (profileId) => {
     const allCourses = await courseRepository.getAll();
-    const purchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByPhoneNumber(phoneNumber);
+    const purchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByProfileId(profileId);
     const courses = allCourses.map(course => {
         const purchasedCourse = purchasedCourses.find(purchasedCourse => purchasedCourse.courseId === course.CourseId);
         let userStatus;
@@ -24,8 +24,8 @@ const getAllCoursesByPhoneNumberService = async (phoneNumber) => {
     return courses;
 };
 
-const getPurchasedCoursesByPhoneNumberService = async (phoneNumber) => {
-    const purchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByPhoneNumber(phoneNumber);
+const getPurchasedCoursesByProfileIdService = async (profileId) => {
+    const purchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByProfileId(profileId);
     const allCourses = await courseRepository.getAll();
     const courses = allCourses.map(course => {
         const purchasedCourse = purchasedCourses.find(purchasedCourse => purchasedCourse.courseId === course.CourseId);
@@ -47,8 +47,8 @@ const getPurchasedCoursesByPhoneNumberService = async (phoneNumber) => {
     return courses.filter(course => course.user_status !== "unpurchased");
 };
 
-const getUnpurchasedCoursesByPhoneNumberService = async (phoneNumber) => {
-    const purchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByPhoneNumber(phoneNumber);
+const getUnpurchasedCoursesByProfileIdService = async (profileId) => {
+    const purchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByProfileId(profileId);
     const allCourses = await courseRepository.getAll();
     const courses = allCourses.map(course => {
         const purchasedCourse = purchasedCourses.find(purchasedCourse => purchasedCourse.courseId === course.CourseId);
@@ -61,18 +61,19 @@ const getUnpurchasedCoursesByPhoneNumberService = async (phoneNumber) => {
     return courses.filter(course => course.user_status === "unpurchased");
 };
 
-const purchaseCourseService = async (phoneNumber, courseId) => {
+const purchaseCourseService = async (phoneNumber, courseId, profileId) => {
     const allCourses = await courseRepository.getAll();
     const course = allCourses.find(course => course.CourseId == courseId);
     if (!course) {
         throw new Error("Course not found");
     }
-    const purchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByPhoneNumber(phoneNumber);
+    const purchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByProfileId(profileId);
     if (purchasedCourses.some(purchasedCourse => purchasedCourse.courseId == courseId)) {
         throw new Error("Course already purchased");
     }
     return await waPurchasedCoursesRepository.create({
         phoneNumber: phoneNumber,
+        profile_id: profileId,
         courseId: courseId,
         courseCategoryId: course.CourseCategoryId,
         courseStartDate: new Date(),
@@ -80,8 +81,8 @@ const purchaseCourseService = async (phoneNumber, courseId) => {
     });
 };
 
-const getCompletedCourseService = async (phoneNumber) => {
-    const purchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByPhoneNumber(phoneNumber);
+const getCompletedCourseService = async (profileId) => {
+    const purchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByProfileId(profileId);
     const allCourses = await courseRepository.getAll();
     const courses = allCourses.map(course => {
         const purchasedCourse = purchasedCourses.find(purchasedCourse => purchasedCourse.courseId === course.CourseId);
@@ -96,9 +97,9 @@ const getCompletedCourseService = async (phoneNumber) => {
 
 
 export default {
-    getPurchasedCoursesByPhoneNumberService,
-    getUnpurchasedCoursesByPhoneNumberService,
+    getPurchasedCoursesByProfileIdService,
+    getUnpurchasedCoursesByProfileIdService,
     purchaseCourseService,
     getCompletedCourseService,
-    getAllCoursesByPhoneNumberService
+    getAllCoursesByProfileIdService
 };

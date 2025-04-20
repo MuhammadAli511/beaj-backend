@@ -20,9 +20,18 @@ const getByPhoneNumber = async (phoneNumber) => {
     });
 };
 
+const getByProfileId = async (profileId) => {
+    return await WA_Feedback.findAll({
+        where: {
+            profile_id: profileId
+        }
+    });
+};
+
 
 export default {
     create,
     getAll,
     getByPhoneNumber,
+    getByProfileId
 };

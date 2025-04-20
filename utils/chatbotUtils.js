@@ -79,13 +79,12 @@ const weekEndScoreCalculation = async (phoneNumber, weekNumber, courseId) => {
     return percentage;
 };
 
-const getNextCourse = async (userMobileNumber) => {
-    const purchaseCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByPhoneNumber(userMobileNumber);
+const getNextCourse = async (userProfileId) => {
+    const purchaseCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByProfileId(userProfileId);
     const courses = await courseRepository.getAll();
-    const startedCourses = await waLessonsCompletedRepository.getUniqueStartedCoursesByPhoneNumber(userMobileNumber);
+    const startedCourses = await waLessonsCompletedRepository.getUniqueStartedCoursesByProfileId(userProfileId);
     const notCompletedPurchasedCourse = purchaseCourses.filter(course => !startedCourses.includes(course.dataValues.courseId));
     if (notCompletedPurchasedCourse.length > 0) {
-        // Add sequence number to the courses
         for (let i = 0; i < notCompletedPurchasedCourse.length; i++) {
             for (let j = 0; j < courses.length; j++) {
                 if (notCompletedPurchasedCourse[i].dataValues.courseId === courses[j].dataValues.CourseId) {
@@ -101,7 +100,6 @@ const getNextCourse = async (userMobileNumber) => {
         return nextCourse;
     }
     return null;
-
 };
 
 const startCourseForUser = async (userMobileNumber, numbers_to_ignore) => {
