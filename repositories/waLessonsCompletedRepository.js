@@ -1,13 +1,14 @@
 import WA_LessonsCompleted from '../models/WA_LessonsCompleted.js';
 import Sequelize from 'sequelize';
 
-const create = async (phoneNumber, lessonId, courseId, completionStatus, startTime) => {
+const create = async (phoneNumber, lessonId, courseId, completionStatus, startTime, profileId) => {
     const existingLesson = await WA_LessonsCompleted.findOne({
         where: {
             phoneNumber: phoneNumber,
             lessonId: lessonId,
             courseId: courseId,
-            completionStatus: completionStatus
+            completionStatus: completionStatus,
+            profile_id: profileId
         }
     });
 
@@ -20,23 +21,19 @@ const create = async (phoneNumber, lessonId, courseId, completionStatus, startTi
         lessonId: lessonId,
         courseId: courseId,
         completionStatus: completionStatus,
-        startTime: startTime
+        startTime: startTime,
+        profile_id: profileId
     });
     return await lessonCompleted.save();
 };
 
-
-const getById = async (id) => {
-    return await WA_LessonsCompleted.findByPk(id);
-};
-
-
-const endLessonByPhoneNumberAndLessonId = async (phoneNumber, lessonId) => {
+const endLessonByPhoneNumberLessonIdAndProfileId = async (phoneNumber, lessonId, profileId) => {
     const lesson = await WA_LessonsCompleted.findOne({
         where: {
             phoneNumber: phoneNumber,
             lessonId: lessonId,
             completionStatus: "Completed",
+            profile_id: profileId,
             endTime: {
                 [Sequelize.Op.ne]: null
             }
@@ -52,8 +49,16 @@ const endLessonByPhoneNumberAndLessonId = async (phoneNumber, lessonId) => {
         endTime: new Date()
     }, {
         where: {
-            phoneNumber: phoneNumber,
+            profile_id: profileId,
             lessonId: lessonId
+        }
+    });
+};
+
+const deleteByProfileId = async (profileId) => {
+    return await WA_LessonsCompleted.destroy({
+        where: {
+            profile_id: profileId
         }
     });
 };
@@ -64,15 +69,6 @@ const deleteByPhoneNumber = async (phoneNumber) => {
             phoneNumber: phoneNumber
         }
     });
-};
-
-const getUniqueStartedCoursesByPhoneNumber = async (phoneNumber) => {
-    const waLessonsCompleted = await WA_LessonsCompleted.findAll({
-        where: {
-            phoneNumber: phoneNumber
-        }
-    });
-    return waLessonsCompleted.map(lesson => lesson.courseId).filter((value, index, self) => self.indexOf(value) === index);
 };
 
 const getUniqueStartedCoursesByProfileId = async (profileId) => {
@@ -86,9 +82,8 @@ const getUniqueStartedCoursesByProfileId = async (profileId) => {
 
 export default {
     create,
-    getById,
-    endLessonByPhoneNumberAndLessonId,
+    endLessonByPhoneNumberLessonIdAndProfileId,
+    deleteByProfileId,
     deleteByPhoneNumber,
-    getUniqueStartedCoursesByPhoneNumber,
     getUniqueStartedCoursesByProfileId
 };

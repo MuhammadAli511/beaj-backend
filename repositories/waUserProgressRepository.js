@@ -13,6 +13,10 @@ const getByPhoneNumber = async (phoneNumber) => {
     return await WA_UserProgress.findByPk(phoneNumber);
 };
 
+const getByProfileId = async (profileId) => {
+    return await WA_UserProgress.findByPk(profileId);
+};
+
 const getCountByEngagementType = async (engagementType) => {
     return await WA_UserProgress.count({
         where: {
@@ -137,6 +141,7 @@ export default {
     create,
     getAll,
     getByPhoneNumber,
+    getByProfileId,
     update,
     deleteByPhoneNumber,
     updateAcceptableMessagesList,

@@ -174,7 +174,7 @@ const webhookService = async (body, res) => {
 
                 // Check if user exists in the database
                 let user = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
-                let currentUserState = await waUserProgressRepository.getByPhoneNumber(userMobileNumber);
+                let currentUserState = await waUserProgressRepository.getByProfileId(profileId);
 
                 // If message is reset, delete user from database
                 if (text_message_types.includes(message.type) && messageContent.toLowerCase() == "reset course") {
@@ -340,7 +340,7 @@ const webhookService = async (body, res) => {
 
                         // Mark previous lesson as completed
                         const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
-                        await waLessonsCompletedRepository.endLessonByPhoneNumberAndLessonId(userMobileNumber, currentLesson.dataValues.LessonId);
+                        await waLessonsCompletedRepository.endLessonByPhoneNumberLessonIdAndProfileId(userMobileNumber, currentLesson.dataValues.LessonId, profileId);
 
                         // Get acceptable messages for the next question/lesson
                         const acceptableMessagesList = await getAcceptableMessagesList(nextLesson.dataValues.activity);
@@ -418,7 +418,7 @@ const webhookService = async (body, res) => {
 
                                 // Mark previous lesson as completed
                                 const currentLesson = await lessonRepository.getCurrentLesson(latestUserState.dataValues.currentLessonId);
-                                await waLessonsCompletedRepository.endLessonByPhoneNumberAndLessonId(userMobileNumber, currentLesson.dataValues.LessonId);
+                                await waLessonsCompletedRepository.endLessonByPhoneNumberLessonIdAndProfileId(userMobileNumber, currentLesson.dataValues.LessonId, profileId);
 
                                 // Get acceptable messages for the next question/lesson
                                 const acceptableMessagesList = await getAcceptableMessagesList(nextLesson.dataValues.activity);
@@ -522,7 +522,7 @@ const webhookService = async (body, res) => {
 
                             // Mark previous lesson as completed
                             const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
-                            await waLessonsCompletedRepository.endLessonByPhoneNumberAndLessonId(userMobileNumber, currentLesson.dataValues.LessonId);
+                            await waLessonsCompletedRepository.endLessonByPhoneNumberLessonIdAndProfileId(userMobileNumber, currentLesson.dataValues.LessonId, profileId);
 
                             // Get acceptable messages for the next question/lesson
                             const acceptableMessagesList = await getAcceptableMessagesList(nextLesson.dataValues.activity);
@@ -680,7 +680,7 @@ const webhookService = async (body, res) => {
 
                             // Mark previous lesson as completed
                             const currentLesson = await lessonRepository.getCurrentLesson(latestUserState.dataValues.currentLessonId);
-                            await waLessonsCompletedRepository.endLessonByPhoneNumberAndLessonId(userMobileNumber, currentLesson.dataValues.LessonId);
+                            await waLessonsCompletedRepository.endLessonByPhoneNumberLessonIdAndProfileId(userMobileNumber, currentLesson.dataValues.LessonId, profileId);
 
                             // Get acceptable messages for the next question/lesson
                             const acceptableMessagesList = await getAcceptableMessagesList(nextLesson.dataValues.activity);

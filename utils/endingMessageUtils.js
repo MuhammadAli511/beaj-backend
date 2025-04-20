@@ -28,7 +28,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson,
         return;
     }
 
-    await waLessonsCompletedRepository.endLessonByPhoneNumberAndLessonId(userMobileNumber, startingLesson.dataValues.LessonId);
+    await waLessonsCompletedRepository.endLessonByPhoneNumberLessonIdAndProfileId(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.dataValues.profile_id);
 
     // Check if the lesson is the last lesson of the day
     const lessonLast = await lessonRepository.isLastLessonOfDay(startingLesson.dataValues.LessonId);
