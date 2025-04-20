@@ -28,6 +28,8 @@ import { runWithContext } from "../utils/requestContext.js";
 
 dotenv.config();
 const whatsappVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN;
+const studentBotPhoneNumberId = process.env.STUDENT_BOT_PHONE_NUMBER_ID;
+const teacherBotPhoneNumberId = process.env.TEACHER_BOT_PHONE_NUMBER_ID;
 
 let activity_types_to_repeat = [
     "mcqs",
@@ -202,7 +204,8 @@ const webhookService = async (body, res) => {
                 // Kids Summer Camp Trial
                 if (
                     text_message_types.includes(message.type) &&
-                    (messageContent.toLowerCase() == "kids summer camp") &&
+                    (messageContent.toLowerCase() == "start") &&
+                    botPhoneNumberId == studentBotPhoneNumberId &&
                     (currentUserState.dataValues.engagement_type == "Greeting Message")
                 ) {
                     await kidsChooseClass(userMobileNumber);
@@ -241,7 +244,11 @@ const webhookService = async (body, res) => {
                     (messageContent.toLowerCase() == "get another trial") &&
                     (currentUserState.dataValues.engagement_type == "End Now" || currentUserState.dataValues.engagement_type == "Free Trial - Teachers" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")
                 ) {
-                    await greetingMessageLoop(userMobileNumber);
+                    if (botPhoneNumberId == studentBotPhoneNumberId) {
+                        await kidsChooseClassLoop(userMobileNumber);
+                    } else {
+                        await greetingMessageLoop(userMobileNumber);
+                    }
                     return;
                 }
 
@@ -293,7 +300,7 @@ const webhookService = async (body, res) => {
                 // Teacher Training Trial
                 if (
                     text_message_types.includes(message.type) &&
-                    (messageContent.toLowerCase() == "teacher training" || messageContent.toLowerCase() == "start free trial") &&
+                    (messageContent.toLowerCase() == "start" || messageContent.toLowerCase() == "start free trial") &&
                     (currentUserState.dataValues.engagement_type == "Greeting Message" || currentUserState.dataValues.engagement_type == "Confirm Class - Level 1" || currentUserState.dataValues.engagement_type == "Confirm Class - Level 3")
                 ) {
                     if (user.dataValues.freeDemoStarted == null) {

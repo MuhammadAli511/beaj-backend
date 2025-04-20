@@ -11,20 +11,20 @@ const greetingMessage = async (userMobileNumber) => {
         engagement_type: "Greeting Message",
         lastUpdated: new Date(),
     });
-    const greetingMessage = "Welcome to Beaj Education! 👋\n\nI'm Ms. Beaj - here to guide you!\n\n👇Please choose your course:";
+    const greetingMessage = "Welcome to Beaj Education! 👋\n\nI'm Ms. Beaj - here to guide you!\n\n👇Click on the button below to start:";
     const greetingImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/greeting_beaj_face.jpeg";
-    await sendButtonMessage(userMobileNumber, greetingMessage, [{ id: 'teacher_course', title: 'Teacher Training' }, { id: 'kids_course', title: 'Kids Summer Camp' }], 0, greetingImage);
+    await sendButtonMessage(userMobileNumber, greetingMessage, [{ id: 'start', title: 'Start' }], 0, greetingImage);
     await createActivityLog(userMobileNumber, "template", "outbound", greetingMessage, null);
-    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["teacher training", "kids summer camp"]);
+    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start"]);
     return;
 };
 
 const greetingMessageLoop = async (userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(userMobileNumber, "Greeting Message");
-    const greetingMessage = "👇Please choose your course:";
-    await sendButtonMessage(userMobileNumber, greetingMessage, [{ id: 'teacher_course', title: 'Teacher Training' }, { id: 'kids_course', title: 'Kids Summer Camp' }]);
+    const greetingMessage = "👇Click on the button below to start:";
+    await sendButtonMessage(userMobileNumber, greetingMessage, [{ id: 'start', title: 'Start' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", greetingMessage, null);
-    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["teacher training", "kids summer camp"]);
+    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start"]);
     return;
 };
 
