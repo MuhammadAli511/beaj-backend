@@ -2,7 +2,7 @@ import waUserProgressRepository from "../repositories/waUserProgressRepository.j
 import waUserActivityLogsRepository from "../repositories/waUserActivityLogsRepository.js";
 import azureBlobStorage from "./azureBlobStorage.js";
 import { retrieveMediaURL } from "./whatsappUtils.js";
-
+import { getProfileIdForRequest, getBotPhoneNumberIdForRequest } from "./requestContext.js";
 
 const createActivityLog = async (
     phoneNumber,
@@ -12,8 +12,10 @@ const createActivityLog = async (
     metadata,
     caption = null
 ) => {
-    const userCurrentProgress = await waUserProgressRepository.getByPhoneNumber(
-        phoneNumber
+    const profileId = getProfileIdForRequest();
+    const botPhoneNumberId = getBotPhoneNumberIdForRequest();
+    const userCurrentProgress = await waUserProgressRepository.getByProfileId(
+        profileId
     );
     let courseId = null,
         lessonId = null,
@@ -74,6 +76,8 @@ const createActivityLog = async (
 
 
     await waUserActivityLogsRepository.create({
+        botPhoneNumber: botPhoneNumberId,
+        profileId: profileId,
         phoneNumber: phoneNumber,
         actionType: actionType,
         messageDirection: messageDirection,

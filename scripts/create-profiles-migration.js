@@ -53,6 +53,10 @@ async function migrateUsers() {
             'wa_feedback'
         ];
 
+        await sequelize.query(`
+            ALTER TABLE "wa_user_activity_logs" ADD COLUMN "botPhoneNumber" text;
+        `, { transaction });
+
         for (const table of tables) {
             console.log(`Adding profile_id to ${table}...`);
             await sequelize.query(`

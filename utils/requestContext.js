@@ -8,6 +8,14 @@ export const runWithContext = (context, fn) => {
             console.error('No botPhoneNumberId in context');
             return null;
         }
+        if (!context.profileId) {
+            console.error('No profileId in context');
+            return null;
+        }
+        if (!context.userMobileNumber) {
+            console.error('No userMobileNumber in context');
+            return null;
+        }
         const validIds = ["316915674839342", "410117285518514", "608292759037444"]
         if (!validIds.includes(context.botPhoneNumberId)) {
             console.error('Invalid botPhoneNumberId in context');
@@ -21,7 +29,7 @@ export const runWithContext = (context, fn) => {
     }
 };
 
-export const getPhoneNumberIdForRequest = () => {
+export const getBotPhoneNumberIdForRequest = () => {
     try {
         const store = requestStorage.getStore();
         if (store?.botPhoneNumberId) {
@@ -34,4 +42,34 @@ export const getPhoneNumberIdForRequest = () => {
         console.error('Error retrieving phone number ID from context:', error);
         return null;
     }
-}; 
+};
+
+export const getProfileIdForRequest = () => {
+    try {
+        const store = requestStorage.getStore();
+        if (store?.profileId) {
+            return store.profileId;
+        } else {
+            console.error('No profileId in context');
+            return null;
+        }
+    } catch (error) {
+        console.error('Error retrieving profile ID from context:', error);
+        return null;
+    }
+};
+
+export const getUserMobileNumberForRequest = () => {
+    try {
+        const store = requestStorage.getStore();
+        if (store?.userMobileNumber) {
+            return store.userMobileNumber;
+        } else {
+            console.error('No userMobileNumber in context');
+            return null;
+        }
+    } catch (error) {
+        console.error('Error retrieving user mobile number from context:', error);
+        return null;
+    }
+};

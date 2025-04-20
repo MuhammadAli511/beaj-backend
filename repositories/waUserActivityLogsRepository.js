@@ -10,34 +10,6 @@ const getAll = async () => {
     return await WA_UserActivityLogs.findAll();
 };
 
-const getById = async (id) => {
-    return await WA_UserActivityLogs.findByPk(id);
-};
-
-const update = async (id, data) => {
-    return await WA_UserActivityLogs.update(data, {
-        where: {
-            id: id
-        }
-    });
-};
-
-const deleteById = async (id) => {
-    return await WA_UserActivityLogs.destroy({
-        where: {
-            id: id
-        }
-    });
-};
-
-const getCountBySpeciifcMessage = async (message) => {
-    return await WA_UserActivityLogs.count({
-        where: {
-            messageContent: [message]
-        }
-    });
-};
-
 const getByPhoneNumber = async (phoneNumber, limit = 15, offset = 0) => {
     return await WA_UserActivityLogs.findAll({
         where: {
@@ -48,6 +20,23 @@ const getByPhoneNumber = async (phoneNumber, limit = 15, offset = 0) => {
         ],
         limit: limit,
         offset: offset
+    });
+};
+
+const getByProfileId = async (profileId, limit = 15, offset = 0) => {
+    return await WA_UserActivityLogs.findAll({
+        where: {
+            profileId: profileId
+        }
+    });
+};
+
+const getByPhoneNumberAndBotNumberId = async (phoneNumber, botNumberId, limit = 15, offset = 0) => {
+    return await WA_UserActivityLogs.findAll({
+        where: {
+            phoneNumber: phoneNumber,
+            botNumberId: botNumberId
+        }
     });
 };
 
@@ -75,21 +64,6 @@ const getLastActiveUsers = async (days, filteredUsers) => {
 };
 
 
-const countMessagesInLastnSeconds = async (phoneNumber, seconds) => {
-    const messages = await WA_UserActivityLogs.findAll({
-        where: {
-            phoneNumber: phoneNumber
-        },
-        order: [
-            ['timestamp', 'DESC']
-        ]
-    });
-    const now = new Date();
-    const lastnSeconds = new Date(now.getTime() - seconds * 1000);
-    const messagesInLastnSeconds = messages.filter(message => message.dataValues.timestamp > lastnSeconds);
-    return messagesInLastnSeconds.length;
-};
-
 const getLastMessageTime = async () => {
     const lastMessages = await WA_UserActivityLogs.findAll({
         attributes: [
@@ -103,17 +77,13 @@ const getLastMessageTime = async () => {
 };
 
 
-
 export default {
     create,
     getAll,
-    getById,
-    update,
-    deleteById,
     getByPhoneNumber,
+    getByProfileId,
+    getByPhoneNumberAndBotNumberId,
     deleteByPhoneNumber,
-    getCountBySpeciifcMessage,
     getLastActiveUsers,
-    countMessagesInLastnSeconds,
     getLastMessageTime
 };

@@ -1,10 +1,10 @@
 import axios from "axios";
-import { getPhoneNumberIdForRequest } from './requestContext.js';
+import { getBotPhoneNumberIdForRequest } from './requestContext.js';
 
 const whatsappToken = process.env.WHATSAPP_TOKEN;
 
 const sendMessage = async (to, body, retryAttempt = 0) => {
-    const phoneNumberId = getPhoneNumberIdForRequest();
+    const phoneNumberId = getBotPhoneNumberIdForRequest();
     const MAX_RETRIES = 17;
 
     try {
@@ -83,7 +83,7 @@ const retrieveMediaURL = async (mediaId, retryAttempt = 0) => {
 
 
 const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, retryAttempt = 0) => {
-    const phoneNumberId = getPhoneNumberIdForRequest();
+    const phoneNumberId = getBotPhoneNumberIdForRequest();
     const MAX_RETRIES = 17;
     try {
         let requestBody;
@@ -149,7 +149,7 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, ret
 };
 
 const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, imageUrl = null, videoUrl = null) => {
-    const phoneNumberId = getPhoneNumberIdForRequest();
+    const phoneNumberId = getBotPhoneNumberIdForRequest();
     const MAX_RETRIES = 17;
 
     try {

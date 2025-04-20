@@ -131,12 +131,13 @@ const webhookService = async (body, res) => {
                 return;
             }
 
+            const message = body.entry[0].changes[0].value.messages[0];
+            const userMobileNumber = "+" + message.from;
+            const activeSession = await waActiveSessionRepository.getByPhoneNumberAndBotPhoneNumberId(userMobileNumber, botPhoneNumberId);
+            const profileId = activeSession.dataValues.profile_id;
+
             // Wrap the webhook handling logic with the context containing the bot phone number ID
-            await runWithContext({ botPhoneNumberId }, async () => {
-                const message = body.entry[0].changes[0].value.messages[0];
-                const userMobileNumber = "+" + message.from;
-                const activeSession = await waActiveSessionRepository.getByPhoneNumberAndBotPhoneNumberId(userMobileNumber, botPhoneNumberId);
-                const profileId = activeSession.dataValues.profile_id;
+            await runWithContext({ botPhoneNumberId, profileId, userMobileNumber }, async () => {
                 let messageContent;
                 let messageType = message.type;
                 let logger = `Inbound Message: User: ${userMobileNumber}, Bot ID: ${botPhoneNumberId}, Message Type: ${message.type}, Message Content: ${message.text?.body ||
