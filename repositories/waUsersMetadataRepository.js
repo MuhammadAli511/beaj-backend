@@ -16,9 +16,10 @@ const getByPhoneNumber = async (phoneNumber) => {
     return await WA_UsersMetadata.findByPk(phoneNumber);
 };
 
-const update = async (phoneNumber, data) => {
+const update = async (profileId, phoneNumber, data) => {
     return await WA_UsersMetadata.update(data, {
         where: {
+            profile_id: profileId,
             phoneNumber: phoneNumber
         }
     });
@@ -32,7 +33,7 @@ const deleteByPhoneNumber = async (phoneNumber) => {
     });
 };
 
-const assignTargetGroup = async (phoneNumber, targetGroup) => {
+const assignTargetGroup = async (profileId, phoneNumber, targetGroup) => {
     if (targetGroup == "None") {
         targetGroup = null;
     }
@@ -40,7 +41,8 @@ const assignTargetGroup = async (phoneNumber, targetGroup) => {
         targetGroup: targetGroup
     }, {
         where: {
-            phoneNumber: phoneNumber
+            phoneNumber: phoneNumber,
+            profile_id: profileId
         }
     });
 };
@@ -124,11 +126,14 @@ const getByPhoneNumbers = async (phoneNumbers) => {
     });
 };
 
-const updateSchoolName = async (phoneNumber, schoolName) => {
+const updateSchoolName = async (profileId, phoneNumber, schoolName) => {
     return await WA_UsersMetadata.update({
         schoolName: schoolName
     }, {
-        where: { phoneNumber: phoneNumber }
+        where: {
+            profile_id: profileId,
+            phoneNumber: phoneNumber
+        }
     });
 };
 

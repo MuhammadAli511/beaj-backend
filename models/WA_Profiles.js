@@ -19,10 +19,7 @@ WA_Profile.init({
     },
     profile_type: {
         type: DataTypes.TEXT,
-        allowNull: false,
-        validate: {
-            isIn: [['teacher', 'student']]
-        }
+        allowNull: true,
     },
     created_at: {
         type: DataTypes.DATE,

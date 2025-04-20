@@ -10,11 +10,19 @@ const getAll = async () => {
 };
 
 const getByPhoneNumber = async (phoneNumber) => {
-    return await WA_UserProgress.findByPk(phoneNumber);
+    return await WA_UserProgress.findOne({
+        where: {
+            phoneNumber: phoneNumber
+        }
+    });
 };
 
 const getByProfileId = async (profileId) => {
-    return await WA_UserProgress.findByPk(profileId);
+    return await WA_UserProgress.findOne({
+        where: {
+            profile_id: profileId
+        }
+    });
 };
 
 const getCountByEngagementType = async (engagementType) => {
@@ -25,7 +33,7 @@ const getCountByEngagementType = async (engagementType) => {
     });
 };
 
-const update = async (phoneNumber, currentCourseId, currentWeek, currentDay, currentLessonId, currentLesson_sequence, activityType, questionNumber, retryCounter, acceptableMessages) => {
+const update = async (profileId, phoneNumber, currentCourseId, currentWeek, currentDay, currentLessonId, currentLesson_sequence, activityType, questionNumber, retryCounter, acceptableMessages) => {
     return await WA_UserProgress.update({
         currentCourseId: currentCourseId,
         currentWeek: currentWeek,
@@ -39,7 +47,8 @@ const update = async (phoneNumber, currentCourseId, currentWeek, currentDay, cur
         lastUpdated: new Date()
     }, {
         where: {
-            phoneNumber: phoneNumber
+            phoneNumber: phoneNumber,
+            profile_id: profileId
         }
     });
 };
@@ -52,51 +61,63 @@ const deleteByPhoneNumber = async (phoneNumber) => {
     });
 };
 
-const updateAcceptableMessagesList = async (phoneNumber, acceptableMessages) => {
+const deleteByProfileId = async (profileId) => {
+    return await WA_UserProgress.destroy({
+        where: {
+            profile_id: profileId
+        }
+    });
+};
+
+const updateAcceptableMessagesList = async (profileId, phoneNumber, acceptableMessages) => {
     return await WA_UserProgress.update({
         acceptableMessages: acceptableMessages,
         lastUpdated: new Date()
     }, {
         where: {
-            phoneNumber: phoneNumber
+            phoneNumber: phoneNumber,
+            profile_id: profileId
         }
     });
 };
 
-const updateEngagementType = async (phoneNumber, engagementType) => {
+const updateEngagementType = async (profileId, phoneNumber, engagementType) => {
     return await WA_UserProgress.update({
         engagement_type: engagementType,
         lastUpdated: new Date()
     }, {
         where: {
-            phoneNumber: phoneNumber
+            phoneNumber: phoneNumber,
+            profile_id: profileId
         }
     });
 };
 
-const updateQuestionNumber = async (phoneNumber, questionNumber) => {
+const updateQuestionNumber = async (profileId, phoneNumber, questionNumber) => {
     return await WA_UserProgress.update({
         questionNumber: questionNumber,
         lastUpdated: new Date()
     }, {
         where: {
-            phoneNumber: phoneNumber
+            phoneNumber: phoneNumber,
+            profile_id: profileId
         }
     });
 };
 
-const updateRetryCounter = async (phoneNumber, retryCounter) => {
+const updateRetryCounter = async (profileId, phoneNumber, retryCounter) => {
     return await WA_UserProgress.update({
         retryCounter: retryCounter,
         lastUpdated: new Date()
     }, {
         where: {
-            phoneNumber: phoneNumber
+            phoneNumber: phoneNumber,
+            profile_id: profileId
         }
     });
 };
 
-const updateQuestionNumberRetryCounterActivityType = async (phoneNumber, questionNumber, retryCounter, activityType) => {
+const updateQuestionNumberRetryCounterActivityType = async (profileId, phoneNumber, questionNumber, retryCounter, activityType) => {
     return await WA_UserProgress.update({
         questionNumber: questionNumber,
         retryCounter: retryCounter,
@@ -104,36 +125,42 @@ const updateQuestionNumberRetryCounterActivityType = async (phoneNumber, questio
         lastUpdated: new Date()
     }, {
         where: {
-            phoneNumber: phoneNumber
+            phoneNumber: phoneNumber,
+            profile_id: profileId
         }
     });
 }
 
-const updateOpenaiThreadId = async (phoneNumber, openaiThreadId) => {
+const updateOpenaiThreadId = async (profileId, phoneNumber, openaiThreadId) => {
     return await WA_UserProgress.update({
         openaiThreadId: openaiThreadId,
         lastUpdated: new Date()
     }, {
         where: {
-            phoneNumber: phoneNumber
+            phoneNumber: phoneNumber,
+            profile_id: profileId
         }
     });
 };
 
-const getOpenaiThreadId = async (phoneNumber) => {
+const getOpenaiThreadId = async (profileId, phoneNumber) => {
     return await WA_UserProgress.findOne({
         where: {
-            phoneNumber: phoneNumber
+            phoneNumber: phoneNumber,
+            profile_id: profileId
         },
         attributes: ['openaiThreadId']
     });
 };
 
-const updatePersona = async (phoneNumber, persona) => {
+const updatePersona = async (profileId, phoneNumber, persona) => {
     return await WA_UserProgress.update({
         persona: persona
     }, {
-        where: { phoneNumber: phoneNumber }
+        where: {
+            phoneNumber: phoneNumber,
+            profile_id: profileId
+        }
     });
 };
 

@@ -71,49 +71,7 @@ const verifyWebhookService = async (req, res) => {
 };
 
 const uploadUserDataService = async (users) => {
-    let count = 0;
-    const t1Course = await courseRepository.getCourseByCourseName("Level 1 - T1 - January 27, 2025");
-    const t2Course = await courseRepository.getCourseByCourseName("Level 1 - T2 - January 27, 2025");
-    if (!t1Course || !t2Course) {
-        throw new Error("Course not found");
-    }
-    for (const user of users) {
-        const newPhoneNumber = user.phone_number;
-        const userExists = await waUsersMetadataRepository.getByPhoneNumber(newPhoneNumber);
-        if (userExists) {
-            console.log(`${newPhoneNumber}`);
-            continue;
-        }
-        await waUsersMetadataRepository.create({
-            phoneNumber: newPhoneNumber,
-            userClickedLink: new Date(),
-            userRegistrationComplete: new Date(),
-            name: user.s0_name,
-            targetGroup: user["Target.Group"],
-            cohort: user.cohort_assignment,
-            isTeacher: user.school_role == "Teacher" || user.school_role == "Both" ? "Yes" : "No",
-            schoolName: user.schoolname,
-        });
-        await waUserProgressRepository.create({
-            phoneNumber: newPhoneNumber,
-            persona: user.school_role,
-            engagement_type: "",
-            acceptableMessages: ["start my course"],
-            lastUpdated: new Date(),
-        });
-        if (user["Target.Group"] == "T1" || user["Target.Group"] == "T2") {
-            await waPurchasedCoursesRepository.create({
-                phoneNumber: newPhoneNumber,
-                courseId: user["Target.Group"] == "T1" ? t1Course.dataValues.CourseId : t2Course.dataValues.CourseId,
-                courseCategoryId: user["Target.Group"] == "T1" ? t1Course.dataValues.CourseCategoryId : t2Course.dataValues.CourseCategoryId,
-                courseStartDate: new Date(),
-                purchaseDate: new Date(),
-            });
-        }
-        count++;
-        // console.log(`${count}`);
-    }
-    return count;
+    return;
 };
 
 const webhookService = async (body, res) => {
@@ -134,47 +92,61 @@ const webhookService = async (body, res) => {
             const message = body.entry[0].changes[0].value.messages[0];
             const userMobileNumber = "+" + message.from;
             const activeSession = await waActiveSessionRepository.getByPhoneNumberAndBotPhoneNumberId(userMobileNumber, botPhoneNumberId);
-            const profileId = activeSession.dataValues.profile_id;
+            let profileId = null;
+            let userExists = false;
+            if (activeSession) {
+                profileId = activeSession.dataValues.profile_id;
+                userExists = true;
+            } else {
+                const profile_type = botPhoneNumberId == teacherBotPhoneNumberId ? "teacher" :
+                    botPhoneNumberId == studentBotPhoneNumberId ? "student" : "";
+                let profile = await waProfileRepository.create({
+                    phone_number: userMobileNumber,
+                    bot_phone_number_id: botPhoneNumberId,
+                    profile_type: profile_type
+                });
+                profileId = profile.dataValues.profile_id;
+                await waUsersMetadataRepository.create({ profile_id: profileId, phoneNumber: userMobileNumber, userClickedLink: new Date() });
+                userExists = false;
+            }
+
+            let messageContent;
+            let messageType = message.type;
+            let logger = `Inbound Message: User: ${userMobileNumber}, Bot ID: ${botPhoneNumberId}, Message Type: ${message.type}, Message Content: ${message.text?.body ||
+                message.image?.id || message.audio?.id || message.video?.id || message.interactive?.button_reply?.title || message.button?.text}`;
+            console.log(logger);
+
+            if (message.type === "image") {
+                createActivityLog(userMobileNumber, "image", "inbound", message, null);
+                messageContent = await retrieveMediaURL(message.image.id);
+            } else if (message.type === "audio") {
+                createActivityLog(userMobileNumber, "audio", "inbound", message, null);
+                messageContent = await retrieveMediaURL(message.audio.id);
+            } else if (message.type === "video") {
+                createActivityLog(userMobileNumber, "video", "inbound", message, null);
+                messageContent = await retrieveMediaURL(message.video.id);
+            } else if (message.type === "text") {
+                messageContent = message.text?.body.toLowerCase().trim() || "";
+                createActivityLog(userMobileNumber, "text", "inbound", message.text?.body, null);
+            } else if (message.type === "interactive") {
+                messageContent = message.interactive.button_reply.title.toLowerCase().trim();
+                createActivityLog(userMobileNumber, "template", "inbound", messageContent, null);
+            } else if (message.type == "button") {
+                messageContent = message.button.text.toLowerCase().trim();
+                createActivityLog(userMobileNumber, "template", "inbound", messageContent, null);
+            } else {
+                return;
+            }
+
+            const botStatus = await waConstantsRepository.getByKey("BOT_STATUS");
+            if (!botStatus || botStatus.dataValues.constantValue != "Active") {
+                await sendMessage(userMobileNumber, "Sorry, We are currently not accepting any messages. Please try again later.");
+                await createActivityLog(userMobileNumber, "text", "outbound", "Sorry, We are currently not accepting any messages. Please try again later.", null);
+                return;
+            }
 
             // Wrap the webhook handling logic with the context containing the bot phone number ID
             await runWithContext({ botPhoneNumberId, profileId, userMobileNumber }, async () => {
-                let messageContent;
-                let messageType = message.type;
-                let logger = `Inbound Message: User: ${userMobileNumber}, Bot ID: ${botPhoneNumberId}, Message Type: ${message.type}, Message Content: ${message.text?.body ||
-                    message.image?.id || message.audio?.id || message.video?.id || message.interactive?.button_reply?.title || message.button?.text}`;
-                console.log(logger);
-
-                if (message.type === "image") {
-                    createActivityLog(userMobileNumber, "image", "inbound", message, null);
-                    messageContent = await retrieveMediaURL(message.image.id);
-                } else if (message.type === "audio") {
-                    createActivityLog(userMobileNumber, "audio", "inbound", message, null);
-                    messageContent = await retrieveMediaURL(message.audio.id);
-                } else if (message.type === "video") {
-                    createActivityLog(userMobileNumber, "video", "inbound", message, null);
-                    messageContent = await retrieveMediaURL(message.video.id);
-                } else if (message.type === "text") {
-                    messageContent = message.text?.body.toLowerCase().trim() || "";
-                    createActivityLog(userMobileNumber, "text", "inbound", message.text?.body, null);
-                } else if (message.type === "interactive") {
-                    messageContent = message.interactive.button_reply.title.toLowerCase().trim();
-                    createActivityLog(userMobileNumber, "template", "inbound", messageContent, null);
-                } else if (message.type == "button") {
-                    messageContent = message.button.text.toLowerCase().trim();
-                    createActivityLog(userMobileNumber, "template", "inbound", messageContent, null);
-                } else {
-                    return;
-                }
-
-                const botStatus = await waConstantsRepository.getByKey("BOT_STATUS");
-                if (!botStatus || botStatus.dataValues.constantValue != "Active") {
-                    await sendMessage(userMobileNumber, "Sorry, We are currently not accepting any messages. Please try again later.");
-                    await createActivityLog(userMobileNumber, "text", "outbound", "Sorry, We are currently not accepting any messages. Please try again later.", null);
-                    return;
-                }
-
-                // Check if user exists in the database
-                let user = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
                 let currentUserState = await waUserProgressRepository.getByProfileId(profileId);
 
                 // If message is reset, delete user from database
@@ -191,13 +163,12 @@ const webhookService = async (body, res) => {
 
                 // DEMO COURSE
                 // Step 1: If user does not exist
-                if (!user) {
-                    await waUsersMetadataRepository.create({ phoneNumber: userMobileNumber, userClickedLink: new Date(), });
+                if (userExists == false) {
                     await greetingMessage(userMobileNumber);
                     return;
                 }
 
-                if (user && currentUserState) {
+                if (currentUserState) {
                     const messageAuth = await checkUserMessageAndAcceptableMessages(userMobileNumber, currentUserState, messageType, messageContent);
                     if (messageAuth === false) {
                         return;
@@ -307,8 +278,8 @@ const webhookService = async (body, res) => {
                     (messageContent.toLowerCase() == "start" || messageContent.toLowerCase() == "start free trial") &&
                     (currentUserState.dataValues.engagement_type == "Greeting Message" || currentUserState.dataValues.engagement_type == "Confirm Class - Level 1" || currentUserState.dataValues.engagement_type == "Confirm Class - Level 3")
                 ) {
-                    if (user.dataValues.freeDemoStarted == null) {
-                        await waUsersMetadataRepository.update(userMobileNumber, { freeDemoStarted: new Date() });
+                    if (userExists == false) {
+                        await waUsersMetadataRepository.update(profileId, userMobileNumber, { freeDemoStarted: new Date() });
                     }
 
                     let courseName = "";

@@ -3,10 +3,14 @@ import waUserProgressRepository from "../repositories/waUserProgressRepository.j
 import courseRepository from "../repositories/courseRepository.js";
 import { sendButtonMessage, sendMessage, sendMediaMessage } from "./whatsappUtils.js";
 import { createActivityLog } from "./createActivityLogUtils.js";
+import { getProfileIdForRequest } from "./requestContext.js";
 import { sleep } from "./utils.js";
 
+
 const greetingMessage = async (userMobileNumber) => {
+    const profileId = getProfileIdForRequest();
     await waUserProgressRepository.create({
+        profile_id: profileId,
         phoneNumber: userMobileNumber,
         engagement_type: "Greeting Message",
         lastUpdated: new Date(),

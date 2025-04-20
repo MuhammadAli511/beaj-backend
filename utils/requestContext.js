@@ -29,6 +29,13 @@ export const runWithContext = (context, fn) => {
     }
 };
 
+export const updateProfileIdForRequest = (profileId) => {
+    const store = requestStorage.getStore();
+    if (store) {
+        store.profileId = profileId;
+    }
+};
+
 export const getBotPhoneNumberIdForRequest = () => {
     try {
         const store = requestStorage.getStore();

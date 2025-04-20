@@ -35,7 +35,7 @@ async function migrateUsers() {
                 profile_id serial PRIMARY KEY,
                 phone_number text NOT NULL,
                 bot_phone_number_id text NOT NULL,
-                profile_type text CHECK (profile_type IN ('teacher', 'student')),
+                profile_type text,
                 created_at timestamp DEFAULT CURRENT_TIMESTAMP
             );
         `, { transaction });
