@@ -4,6 +4,7 @@ import lessonRepository from "../repositories/lessonRepository.js";
 
 const createFeedback = async (
     phoneNumber,
+    profileId,
     feedbackContent
 ) => {
     const userCurrentProgress = await waUserProgressRepository.getByPhoneNumber(
@@ -33,6 +34,7 @@ const createFeedback = async (
 
     await waFeedbackRepository.create({
         phoneNumber: phoneNumber,
+        profile_id: profileId,
         feedbackContent: feedbackContent,
         courseId: courseId,
         lessonId: lessonId,

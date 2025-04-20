@@ -7,6 +7,7 @@ import waUserProgressRepository from "../repositories/waUserProgressRepository.j
 import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRepository.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import waPurchasedCoursesRepository from "../repositories/waPurchasedCoursesRepository.js";
+import waActiveSessionRepository from "../repositories/waActiveSessionRepository.js";
 import { removeUser, startCourseForUser, levelCourseStart, sendCourseLessonToTeacher, sendCourseLessonToKid, removeUserTillCourse, } from "../utils/chatbotUtils.js";
 import {
     demoCourseStart,
@@ -134,6 +135,8 @@ const webhookService = async (body, res) => {
             await runWithContext({ botPhoneNumberId }, async () => {
                 const message = body.entry[0].changes[0].value.messages[0];
                 const userMobileNumber = "+" + message.from;
+                const activeSession = await waActiveSessionRepository.getByPhoneNumberAndBotPhoneNumberId(userMobileNumber, botPhoneNumberId);
+                const profileId = activeSession.dataValues.profile_id;
                 let messageContent;
                 let messageType = message.type;
                 let logger = `Inbound Message: User: ${userMobileNumber}, Bot ID: ${botPhoneNumberId}, Message Type: ${message.type}, Message Content: ${message.text?.body ||
@@ -573,7 +576,7 @@ const webhookService = async (body, res) => {
                             messageContent.toLowerCase().includes("it can be improved") ||
                             messageContent.toLowerCase().includes("it can be improved 🤔")
                         ) {
-                            await createFeedback(userMobileNumber, messageContent);
+                            await createFeedback(userMobileNumber, profileId, messageContent);
                             return;
                         }
                         // Get next lesson to send user

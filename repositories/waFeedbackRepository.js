@@ -9,29 +9,8 @@ const getAll = async () => {
     return await WA_Feedback.findAll();
 };
 
-const getByPhoneNumber = async (phoneNumber) => {
-    return await WA_Feedback.findAll({
-        where: {
-            phoneNumber: phoneNumber
-        },
-        order: [
-            ['timestamp', 'DESC']
-        ]
-    });
-};
-
-const getByProfileId = async (profileId) => {
-    return await WA_Feedback.findAll({
-        where: {
-            profile_id: profileId
-        }
-    });
-};
-
 
 export default {
     create,
-    getAll,
-    getByPhoneNumber,
-    getByProfileId
+    getAll
 };
