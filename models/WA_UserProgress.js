@@ -8,6 +8,10 @@ WA_UserProgress.init({
         type: DataTypes.TEXT,
         primaryKey: true,
     },
+    profile_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+    },
     persona: {
         type: DataTypes.TEXT,
         allowNull: true,

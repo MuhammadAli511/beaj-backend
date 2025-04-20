@@ -13,6 +13,10 @@ WA_LessonsCompleted.init({
         type: DataTypes.TEXT,
         allowNull: true,
     },
+    profile_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+    },
     lessonId: {
         type: DataTypes.INTEGER,
         allowNull: false,

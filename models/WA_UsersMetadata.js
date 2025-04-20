@@ -8,6 +8,10 @@ WA_UsersMetadata.init({
         type: DataTypes.TEXT,
         primaryKey: true,
     },
+    profile_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+    },
     userId: {
         type: DataTypes.INTEGER,
         autoIncrement: true,

@@ -13,6 +13,10 @@ WA_UserActivityLogs.init({
         type: DataTypes.TEXT,
         allowNull: true,
     },
+    profile_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+    },
     actionType: {
         type: DataTypes.TEXT,
         allowNull: false,

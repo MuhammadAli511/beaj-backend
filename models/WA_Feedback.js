@@ -13,6 +13,10 @@ WA_Feedback.init({
         type: DataTypes.TEXT,
         allowNull: true,
     },
+    profile_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+    },
     feedbackContent: {
         type: DataTypes.TEXT,
         allowNull: true,

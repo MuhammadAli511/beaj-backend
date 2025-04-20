@@ -13,6 +13,10 @@ WA_PurchasedCourses.init({
         type: DataTypes.TEXT,
         allowNull: true,
     },
+    profile_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+    },
     courseCategoryId: {
         type: DataTypes.INTEGER,
         allowNull: false,
