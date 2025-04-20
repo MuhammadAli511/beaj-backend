@@ -14,7 +14,7 @@ import speakActivityQuestionRepository from "../repositories/speakActivityQuesti
 import { createAndUploadSpeakingPracticeScoreImage } from "../utils/imageGenerationUtils.js";
 import { extractMispronouncedWords } from "../utils/utils.js";
 
-const speakingPracticeView = async (userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
+const speakingPracticeView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
         const activity = startingLesson.dataValues.activity;
         if (persona == 'teacher') {
@@ -87,7 +87,7 @@ const speakingPracticeView = async (userMobileNumber, currentUserState, starting
                     await sendMediaMessage(userMobileNumber, nextSpeakingPracticeQuestion.dataValues.mediaFile, 'audio');
                     await createActivityLog(userMobileNumber, "audio", "outbound", nextSpeakingPracticeQuestion.dataValues.mediaFile, null);
                 } else {
-                    const pronunciationAssessments = await waQuestionResponsesRepository.getAllJsonFeedbacksForPhoneNumberAndLessonId(userMobileNumber, currentUserState.dataValues.currentLessonId);
+                    const pronunciationAssessments = await waQuestionResponsesRepository.getAllJsonFeedbacksForProfileIdAndLessonId(profileId, currentUserState.dataValues.currentLessonId);
                     const imageUrl = await createAndUploadSpeakingPracticeScoreImage(pronunciationAssessments);
 
                     // Media message
@@ -199,7 +199,7 @@ const speakingPracticeView = async (userMobileNumber, currentUserState, starting
                     await sendMediaMessage(userMobileNumber, nextSpeakingPracticeQuestion.dataValues.mediaFile, 'audio');
                     await createActivityLog(userMobileNumber, "audio", "outbound", nextSpeakingPracticeQuestion.dataValues.mediaFile, null);
                 } else {
-                    const pronunciationAssessments = await waQuestionResponsesRepository.getAllJsonFeedbacksForPhoneNumberAndLessonId(userMobileNumber, currentUserState.dataValues.currentLessonId);
+                    const pronunciationAssessments = await waQuestionResponsesRepository.getAllJsonFeedbacksForProfileIdAndLessonId(profileId, currentUserState.dataValues.currentLessonId);
                     const imageUrl = await createAndUploadSpeakingPracticeScoreImage(pronunciationAssessments);
 
                     // Media message

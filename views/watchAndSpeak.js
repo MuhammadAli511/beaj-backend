@@ -14,7 +14,7 @@ import speakActivityQuestionRepository from "../repositories/speakActivityQuesti
 import { createAndUploadScoreImage } from "../utils/imageGenerationUtils.js";
 
 
-const watchAndSpeakView = async (userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
+const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
         const activity = startingLesson.dataValues.activity;
         if (persona == 'teacher') {
@@ -162,7 +162,7 @@ const watchAndSpeakView = async (userMobileNumber, currentUserState, startingLes
                 // Get the current Watch And Speak question
                 const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
-                const audioUrl = await waQuestionResponsesRepository.getAudioUrlForPhoneNumberQuestionIdAndLessonId(userMobileNumber, currentWatchAndSpeakQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
+                const audioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(profileId, currentWatchAndSpeakQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
                 const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
 
                 // Azure Pronunciation Assessment
@@ -397,7 +397,7 @@ const watchAndSpeakView = async (userMobileNumber, currentUserState, startingLes
                 // Get the current Watch And Speak question
                 const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
-                const audioUrl = await waQuestionResponsesRepository.getAudioUrlForPhoneNumberQuestionIdAndLessonId(userMobileNumber, currentWatchAndSpeakQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
+                const audioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(profileId, currentWatchAndSpeakQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
                 const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
 
                 // Azure Pronunciation Assessment

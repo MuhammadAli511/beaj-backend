@@ -3,8 +3,9 @@ import sequelize from '../config/sequelize.js';
 import Sequelize from 'sequelize';
 import { question_bot_prompt } from "../utils/prompts.js";
 
-const create = async (phoneNumber, lessonId, questionId, activityType, alias, submittedAnswerText, submittedUserAudio, submittedFeedbackText, submittedFeedbackAudio, submittedFeedbackJson, correct, numberOfTries, submissionDate) => {
+const create = async (profile_id, phoneNumber, lessonId, questionId, activityType, alias, submittedAnswerText, submittedUserAudio, submittedFeedbackText, submittedFeedbackAudio, submittedFeedbackJson, correct, numberOfTries, submissionDate) => {
     const response = new WA_QuestionResponses({
+        profile_id: profile_id,
         phoneNumber: phoneNumber,
         lessonId: lessonId,
         questionId: questionId,
@@ -31,6 +32,7 @@ const getById = async (id) => {
 };
 
 const updateReplace = async (
+    profile_id,
     phoneNumber,
     lessonId,
     questionId,
@@ -67,6 +69,7 @@ const updateReplace = async (
     }
 
     // Other fields to update (non-array fields)
+    updateFields.profile_id = profile_id;
     updateFields.phoneNumber = phoneNumber;
     updateFields.lessonId = lessonId;
     updateFields.questionId = questionId;
@@ -78,6 +81,7 @@ const updateReplace = async (
     // Execute the update query based on phoneNumber, lessonId, and questionId
     return await WA_QuestionResponses.update(updateFields, {
         where: {
+            profile_id: profile_id,
             phoneNumber: phoneNumber,
             lessonId: lessonId,
             questionId: questionId,
@@ -85,8 +89,8 @@ const updateReplace = async (
     });
 };
 
-
 const update = async (
+    profile_id,
     phoneNumber,
     lessonId,
     questionId,
@@ -135,6 +139,7 @@ const update = async (
     }
 
     // Other fields to update (non-array fields)
+    updateFields.profile_id = profile_id;
     updateFields.phoneNumber = phoneNumber;
     updateFields.lessonId = lessonId;
     updateFields.questionId = questionId;
@@ -146,6 +151,7 @@ const update = async (
     // Execute the update query based on phoneNumber, lessonId, and questionId
     return await WA_QuestionResponses.update(updateFields, {
         where: {
+            profile_id: profile_id,
             phoneNumber: phoneNumber,
             lessonId: lessonId,
             questionId: questionId,
@@ -153,9 +159,10 @@ const update = async (
     });
 };
 
-const getTotalScore = async (phoneNumber, lessonId) => {
+const getTotalScore = async (profileId, phoneNumber, lessonId) => {
     const totalScore = await WA_QuestionResponses.count({
         where: {
+            profile_id: profileId,
             phoneNumber: phoneNumber,
             lessonId: lessonId,
             correct: {
@@ -166,9 +173,10 @@ const getTotalScore = async (phoneNumber, lessonId) => {
     return totalScore;
 };
 
-const getTotalScoreForList = async (phoneNumber, lessonIdList) => {
+const getTotalScoreForList = async (profileId, phoneNumber, lessonIdList) => {
     const totalScore = await WA_QuestionResponses.count({
         where: {
+            profile_id: profileId,
             phoneNumber: phoneNumber,
             lessonId: {
                 [Sequelize.Op.in]: lessonIdList
@@ -181,9 +189,10 @@ const getTotalScoreForList = async (phoneNumber, lessonIdList) => {
     return totalScore;
 };
 
-const getTotalQuestions = async (phoneNumber, lessonId) => {
+const getTotalQuestions = async (profileId, phoneNumber, lessonId) => {
     const totalQuestions = await WA_QuestionResponses.count({
         where: {
+            profile_id: profileId,
             phoneNumber: phoneNumber,
             lessonId: lessonId
         }
@@ -191,9 +200,10 @@ const getTotalQuestions = async (phoneNumber, lessonId) => {
     return totalQuestions;
 };
 
-const getTotalQuestionsForList = async (phoneNumber, lessonIdList) => {
+const getTotalQuestionsForList = async (profileId, phoneNumber, lessonIdList) => {
     const totalQuestions = await WA_QuestionResponses.count({
         where: {
+            profile_id: profileId,
             phoneNumber: phoneNumber,
             lessonId: {
                 [Sequelize.Op.in]: lessonIdList
@@ -211,6 +221,14 @@ const deleteById = async (id) => {
     });
 };
 
+const deleteByProfileId = async (profileId) => {
+    return await WA_QuestionResponses.destroy({
+        where: {
+            profile_id: profileId
+        }
+    });
+};
+
 const deleteByPhoneNumber = async (phoneNumber) => {
     return await WA_QuestionResponses.destroy({
         where: {
@@ -219,9 +237,10 @@ const deleteByPhoneNumber = async (phoneNumber) => {
     });
 };
 
-const watchAndSpeakScore = async (phoneNumber, lessonId) => {
+const watchAndSpeakScore = async (profileId, phoneNumber, lessonId) => {
     const submittedFeedbackJson = await WA_QuestionResponses.findAll({
         where: {
+            profile_id: profileId,
             phoneNumber: phoneNumber,
             lessonId: lessonId
         },
@@ -247,10 +266,10 @@ const watchAndSpeakScore = async (phoneNumber, lessonId) => {
     return formattedScores;
 };
 
-
-const watchAndSpeakScoreForList = async (phoneNumber, lessonIdList) => {
+const watchAndSpeakScoreForList = async (profileId, phoneNumber, lessonIdList) => {
     const submittedFeedbackJson = await WA_QuestionResponses.findAll({
         where: {
+            profile_id: profileId,
             phoneNumber: phoneNumber,
             lessonId: {
                 [Sequelize.Op.in]: lessonIdList
@@ -302,9 +321,10 @@ const watchAndSpeakScoreForList = async (phoneNumber, lessonIdList) => {
     };
 };
 
-const readScoreForList = async (phoneNumber, lessonIdList) => {
+const readScoreForList = async (profileId, phoneNumber, lessonIdList) => {
     const submittedFeedbackJson = await WA_QuestionResponses.findAll({
         where: {
+            profile_id: profileId,
             phoneNumber: phoneNumber,
             lessonId: {
                 [Sequelize.Op.in]: lessonIdList
@@ -356,9 +376,10 @@ const readScoreForList = async (phoneNumber, lessonIdList) => {
     };
 };
 
-const monologueScoreForList = async (phoneNumber, lessonIdList) => {
+const monologueScoreForList = async (profileId, phoneNumber, lessonIdList) => {
     const submittedFeedbackJson = await WA_QuestionResponses.findAll({
         where: {
+            profile_id: profileId,
             phoneNumber: phoneNumber,
             lessonId: {
                 [Sequelize.Op.in]: lessonIdList
@@ -410,7 +431,6 @@ const monologueScoreForList = async (phoneNumber, lessonIdList) => {
     };
 };
 
-
 const getByActivityType = async (activityType) => {
     return await WA_QuestionResponses.findAll({
         where: {
@@ -419,9 +439,10 @@ const getByActivityType = async (activityType) => {
     });
 };
 
-const getPreviousMessages = async (phoneNumber, lessonId) => {
+const getPreviousMessages = async (profileId, phoneNumber, lessonId) => {
     const responses = await WA_QuestionResponses.findAll({
         where: {
+            profile_id: profileId,
             phoneNumber: phoneNumber,
             lessonId: lessonId
         },
@@ -455,9 +476,10 @@ const getPreviousMessages = async (phoneNumber, lessonId) => {
     return finalMessages;
 };
 
-const getPreviousMessagesForAgencyBot = async (phoneNumber, lessonId, questionText) => {
+const getPreviousMessagesForAgencyBot = async (profileId, phoneNumber, lessonId, questionText) => {
     const responses = await WA_QuestionResponses.findAll({
         where: {
+            profile_id: profileId,
             phoneNumber: phoneNumber,
             lessonId: lessonId
         },
@@ -490,9 +512,10 @@ const getPreviousMessagesForAgencyBot = async (phoneNumber, lessonId, questionTe
     return finalMessages;
 };
 
-const getLatestBotResponse = async (phoneNumber, lessonId) => {
+const getLatestBotResponse = async (profileId, phoneNumber, lessonId) => {
     const response = await WA_QuestionResponses.findOne({
         where: {
+            profile_id: profileId,
             phoneNumber: phoneNumber,
             lessonId: lessonId
         }
@@ -501,10 +524,10 @@ const getLatestBotResponse = async (phoneNumber, lessonId) => {
     return response.dataValues.submittedFeedbackText[0];
 };
 
-const checkRecordExistsForPhoneNumberAndLessonId = async (phoneNumber, lessonId) => {
+const checkRecordExistsForProfileIdAndLessonId = async (profileId, lessonId) => {
     const response = await WA_QuestionResponses.findOne({
         where: {
-            phoneNumber: phoneNumber,
+            profile_id: profileId,
             lessonId: lessonId
         }
     });
@@ -512,26 +535,10 @@ const checkRecordExistsForPhoneNumberAndLessonId = async (phoneNumber, lessonId)
     return response ? false : true;
 };
 
-const getAllTranscriptsForPhoneNumberAndLessonId = async (phoneNumber, lessonId) => {
+const getAllJsonFeedbacksForProfileIdAndLessonId = async (profileId, lessonId) => {
     const response = await WA_QuestionResponses.findAll({
         where: {
-            phoneNumber: phoneNumber,
-            lessonId: lessonId
-        }
-    });
-
-    let finalTranscript = "";
-    response.forEach(response => {
-        finalTranscript += response.dataValues.submittedAnswerText[0] + " ";
-    });
-
-    return finalTranscript;
-};
-
-const getAllJsonFeedbacksForPhoneNumberAndLessonId = async (phoneNumber, lessonId) => {
-    const response = await WA_QuestionResponses.findAll({
-        where: {
-            phoneNumber: phoneNumber,
+            profile_id: profileId,
             lessonId: lessonId
         },
         order: [['submissionDate', 'ASC']]
@@ -545,10 +552,10 @@ const getAllJsonFeedbacksForPhoneNumberAndLessonId = async (phoneNumber, lessonI
     return finalJsonFeedbacks;
 };
 
-const getAudioUrlForPhoneNumberQuestionIdAndLessonId = async (phoneNumber, questionId, lessonId) => {
+const getAudioUrlForProfileIdAndQuestionIdAndLessonId = async (profileId, questionId, lessonId) => {
     const response = await WA_QuestionResponses.findOne({
         where: {
-            phoneNumber: phoneNumber,
+            profile_id: profileId,
             questionId: questionId,
             lessonId: lessonId
         }
@@ -567,6 +574,7 @@ export default {
     deleteById,
     getTotalScore,
     getTotalQuestions,
+    deleteByProfileId,
     deleteByPhoneNumber,
     getTotalScoreForList,
     getTotalQuestionsForList,
@@ -576,10 +584,9 @@ export default {
     monologueScoreForList,
     getByActivityType,
     getPreviousMessages,
-    checkRecordExistsForPhoneNumberAndLessonId,
+    checkRecordExistsForProfileIdAndLessonId,
     getLatestBotResponse,
-    getAllTranscriptsForPhoneNumberAndLessonId,
-    getAllJsonFeedbacksForPhoneNumberAndLessonId,
-    getAudioUrlForPhoneNumberQuestionIdAndLessonId,
+    getAllJsonFeedbacksForProfileIdAndLessonId,
+    getAudioUrlForProfileIdAndQuestionIdAndLessonId,
     getPreviousMessagesForAgencyBot
 };

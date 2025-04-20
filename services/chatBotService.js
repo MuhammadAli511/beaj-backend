@@ -320,7 +320,7 @@ const webhookService = async (body, res) => {
                     }
 
                     // Delete all question responses for the user
-                    await waQuestionResponsesRepository.deleteByPhoneNumber(userMobileNumber);
+                    await waQuestionResponsesRepository.deleteByProfileId(profileId);
                     const startingLesson = await lessonRepository.getNextLesson(await courseRepository.getCourseIdByName(courseName), 1, null, null);
                     await demoCourseStart(userMobileNumber, startingLesson, courseName);
                     // Send first lesson to user

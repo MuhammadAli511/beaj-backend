@@ -13,7 +13,7 @@ import AIServices from "../utils/AIServices.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import { question_bot_prompt, wrapup_prompt } from "../utils/prompts.js";
 
-const conversationalQuestionsBotView = async (userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
+const conversationalQuestionsBotView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
         const activity = startingLesson.dataValues.activity;
         if (persona == 'teacher') {
@@ -49,7 +49,7 @@ const conversationalQuestionsBotView = async (userMobileNumber, currentUserState
                 // OpenAI Speech to Text
                 const recognizedText = await AIServices.elevenLabsSpeechToText(messageContent.data);
                 if (recognizedText) {
-                    const recordExists = await waQuestionResponsesRepository.checkRecordExistsForPhoneNumberAndLessonId(userMobileNumber, currentUserState.dataValues.currentLessonId);
+                    const recordExists = await waQuestionResponsesRepository.checkRecordExistsForProfileIdAndLessonId(profileId, currentUserState.dataValues.currentLessonId);
                     let openaiFeedbackTranscript = null;
                     let openaiFeedbackAudio = null;
                     let initialFeedbackResponse = null;
@@ -178,7 +178,7 @@ const conversationalQuestionsBotView = async (userMobileNumber, currentUserState
                 // OpenAI Speech to Text
                 const recognizedText = await AIServices.elevenLabsSpeechToText(messageContent.data);
                 if (recognizedText) {
-                    const recordExists = await waQuestionResponsesRepository.checkRecordExistsForPhoneNumberAndLessonId(userMobileNumber, currentUserState.dataValues.currentLessonId);
+                    const recordExists = await waQuestionResponsesRepository.checkRecordExistsForProfileIdAndLessonId(profileId, currentUserState.dataValues.currentLessonId);
                     let openaiFeedbackTranscript = null;
                     let openaiFeedbackAudio = null;
                     let initialFeedbackResponse = null;

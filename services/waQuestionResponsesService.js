@@ -20,18 +20,19 @@ const getWaQuestionResponsesByActivityTypeService = async (activityType) => {
     const speakActivityLessonIds = lessons.map(lesson => lesson.LessonId);
     const speakActivityQuestions = await speakActivityQuestionRepository.getByLessonIds(speakActivityLessonIds);
     // User Details
-    const phoneNumbers = waQuestionResponses.map(response => response.phoneNumber);
-    const users = await waUsersMetadataRepository.getByPhoneNumbers(phoneNumbers);
+    const profileIds = waQuestionResponses.map(response => response.profile_id);
+    const users = await waUsersMetadataRepository.getByProfileIds(profileIds);
 
     const result = waQuestionResponses.map(response => {
         const lesson = lessons.find(lesson => lesson.LessonId == response.lessonId);
         const course = courses.find(course => course.CourseId == lesson?.courseId);
         const speakActivityQuestion = speakActivityQuestions.find(speakActivityQuestion => speakActivityQuestion.id == response.dataValues.questionId);
-        const user = users.find(user => user.phoneNumber == response.phoneNumber);
+        const user = users.find(user => user.profileId == response.profile_id);
         const responseData = response.dataValues || response;
 
         return {
             id: responseData.id,
+            profileId: responseData.profile_id,
             phoneNumber: responseData.phoneNumber,
             lessonId: responseData.lessonId,
             questionId: responseData.questionId,
