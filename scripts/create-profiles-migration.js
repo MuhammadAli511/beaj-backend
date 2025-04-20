@@ -17,6 +17,17 @@ async function migrateUsers() {
     try {
         console.log('Starting migration process...');
 
+        // 0. Create the active sessions table
+        console.log('Creating wa_active_sessions table...');
+        await sequelize.query(`
+            CREATE TABLE public.wa_active_sessions (
+                phone_number text NOT NULL,
+                bot_phone_number_id text NOT NULL,
+                profile_id integer,
+                last_updated timestamp DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (phone_number, bot_phone_number_id)
+            );`, { transaction });
+
         // 1. Create the new profile table
         console.log('Creating wa_user_profiles table...');
         await sequelize.query(`
