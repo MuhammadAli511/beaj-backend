@@ -11,13 +11,13 @@ import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
 
 
-const watchAndImageView = async (userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
+const watchAndImageView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
         const activity = startingLesson.dataValues.activity;
         if (persona == 'teacher') {
             if (currentUserState.dataValues.questionNumber === null) {
                 // Lesson Started Record
-                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
+                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
                 // Send lesson message
                 let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
@@ -29,14 +29,14 @@ const watchAndImageView = async (userMobileNumber, currentUserState, startingLes
                 const firstWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
 
                 // Update question number
-                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.questionNumber);
+                await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstWatchAndSpeakQuestion.dataValues.questionNumber);
 
                 // Send question media file
                 await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
                 await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
 
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["image"]);
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["image"]);
             }
             else if (messageType === 'image') {
                 // Get the current Watch And Speak question
@@ -49,6 +49,7 @@ const watchAndImageView = async (userMobileNumber, currentUserState, startingLes
                 const userImageFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userImage);
                 const submissionDate = new Date();
                 await waQuestionResponsesRepository.create(
+                    profileId,
                     userMobileNumber,
                     currentUserState.dataValues.currentLessonId,
                     currentWatchAndSpeakQuestion.dataValues.id,
@@ -67,24 +68,24 @@ const watchAndImageView = async (userMobileNumber, currentUserState, startingLes
                 const nextWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                 if (nextWatchAndSpeakQuestion) {
                     // Update question number
-                    await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.questionNumber);
+                    await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextWatchAndSpeakQuestion.dataValues.questionNumber);
 
                     // Send question media file
                     await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
                     await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
                 } else {
                     // Reset Question Number, Retry Counter, and Activity Type
-                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
 
                     // ENDING MESSAGE
-                    await endingMessage(userMobileNumber, currentUserState, startingLesson);
+                    await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
                 }
             }
         }
         else if (persona == 'kid') {
             if (currentUserState.dataValues.questionNumber === null) {
                 // Lesson Started Record
-                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
+                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
                 // Send lesson message
                 let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
@@ -96,14 +97,14 @@ const watchAndImageView = async (userMobileNumber, currentUserState, startingLes
                 const firstWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
 
                 // Update question number
-                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.questionNumber);
+                await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstWatchAndSpeakQuestion.dataValues.questionNumber);
 
                 // Send question media file
                 await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
                 await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
 
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["image"]);
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["image"]);
             }
             else if (messageType === 'image') {
                 // Get the current Watch And Speak question
@@ -116,6 +117,7 @@ const watchAndImageView = async (userMobileNumber, currentUserState, startingLes
                 const userImageFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userImage);
                 const submissionDate = new Date();
                 await waQuestionResponsesRepository.create(
+                    profileId,
                     userMobileNumber,
                     currentUserState.dataValues.currentLessonId,
                     currentWatchAndSpeakQuestion.dataValues.id,
@@ -134,17 +136,17 @@ const watchAndImageView = async (userMobileNumber, currentUserState, startingLes
                 const nextWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                 if (nextWatchAndSpeakQuestion) {
                     // Update question number
-                    await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.questionNumber);
+                    await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextWatchAndSpeakQuestion.dataValues.questionNumber);
 
                     // Send question media file
                     await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video');
                     await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
                 } else {
                     // Reset Question Number, Retry Counter, and Activity Type
-                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
 
                     // ENDING MESSAGE
-                    await endingMessage(userMobileNumber, currentUserState, startingLesson);
+                    await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
                 }
             }
         }
