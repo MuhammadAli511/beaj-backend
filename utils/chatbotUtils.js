@@ -45,32 +45,32 @@ const removeUserTillCourse = async (phoneNumber) => {
     await sendMessage(phoneNumber, "Your data has been removed. Please start again using the link provided.");
 };
 
-const weekEndScoreCalculation = async (phoneNumber, weekNumber, courseId) => {
+const weekEndScoreCalculation = async (profileId, phoneNumber, weekNumber, courseId) => {
     // Get lessonIds for mcqs of that week
     const mcqLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'mcqs');
-    const correctMcqs = await waQuestionResponsesRepository.getTotalScoreForList(phoneNumber, mcqLessonIds);
-    const totalMcqs = await waQuestionResponsesRepository.getTotalQuestionsForList(phoneNumber, mcqLessonIds);
+    const correctMcqs = await waQuestionResponsesRepository.getTotalScoreForList(profileId, phoneNumber, mcqLessonIds);
+    const totalMcqs = await waQuestionResponsesRepository.getTotalQuestionsForList(profileId, phoneNumber, mcqLessonIds);
 
     // Get lessonIds for listenAndSpeak of that week
     const listenAndSpeakLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'listenAndSpeak');
-    const correctListenAndSpeak = await waQuestionResponsesRepository.getTotalScoreForList(phoneNumber, listenAndSpeakLessonIds);
-    const totalListenAndSpeak = await waQuestionResponsesRepository.getTotalQuestionsForList(phoneNumber, listenAndSpeakLessonIds);
+    const correctListenAndSpeak = await waQuestionResponsesRepository.getTotalScoreForList(profileId, phoneNumber, listenAndSpeakLessonIds);
+    const totalListenAndSpeak = await waQuestionResponsesRepository.getTotalQuestionsForList(profileId, phoneNumber, listenAndSpeakLessonIds);
 
     // Get lessonIds for watchAndSpeak of that week
     const watchAndSpeakLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'watchAndSpeak');
-    const correctWatchAndSpeak = await waQuestionResponsesRepository.watchAndSpeakScoreForList(phoneNumber, watchAndSpeakLessonIds);
+    const correctWatchAndSpeak = await waQuestionResponsesRepository.watchAndSpeakScoreForList(profileId, phoneNumber, watchAndSpeakLessonIds);
 
     // Get lessonIds for read of that week
     const readLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'read');
-    const correctRead = await waQuestionResponsesRepository.readScoreForList(phoneNumber, readLessonIds);
+    const correctRead = await waQuestionResponsesRepository.readScoreForList(profileId, phoneNumber, readLessonIds);
 
     // Get lessonIds for conversationalMonologueBot of that week
     const monologueLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'conversationalMonologueBot');
-    const correctMonologue = await waQuestionResponsesRepository.monologueScoreForList(phoneNumber, monologueLessonIds);
+    const correctMonologue = await waQuestionResponsesRepository.monologueScoreForList(profileId, phoneNumber, monologueLessonIds);
 
     // Get lessonIds for speakingPractice of that week
     const speakingPracticeLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'speakingPractice');
-    const correctSpeakingPractice = await waQuestionResponsesRepository.monologueScoreForList(phoneNumber, speakingPracticeLessonIds);
+    const correctSpeakingPractice = await waQuestionResponsesRepository.monologueScoreForList(profileId, phoneNumber, speakingPracticeLessonIds);
 
     // Calculate sum of scores and sum of total scores and give percentage out of 100
     const totalScore = correctMcqs + correctListenAndSpeak + correctWatchAndSpeak.score + correctRead.score + correctMonologue.score + correctSpeakingPractice.score;
@@ -102,8 +102,8 @@ const getNextCourse = async (userProfileId) => {
     return null;
 };
 
-const startCourseForUser = async (userMobileNumber, numbers_to_ignore) => {
-    const nextCourse = await getNextCourse(userMobileNumber);
+const startCourseForUser = async (profileId, userMobileNumber, numbers_to_ignore) => {
+    const nextCourse = await getNextCourse(profileId);
     if (!nextCourse) {
         await sendMessage(userMobileNumber, "No available purchased courses. Kindly contact beaj support.");
         await createActivityLog(userMobileNumber, "text", "outbound", "No available purchased courses. Kindly contact beaj support.", null);
@@ -133,12 +133,14 @@ const startCourseForUser = async (userMobileNumber, numbers_to_ignore) => {
         }
     }
     // Update engagment type
-    await waUserProgressRepository.updateEngagementType(userMobileNumber, "Course Start");
+    await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Course Start");
 
     // Update user progress
     await waUserProgressRepository.update(
+        profileId,
         userMobileNumber,
         nextCourse.dataValues.courseId,
+        null,
         null,
         null,
         null,
@@ -175,13 +177,14 @@ const startCourseForUser = async (userMobileNumber, numbers_to_ignore) => {
     await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start " + level + "?", null);
 
     // Update acceptable messages list for the user
-    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start"]);
+    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start"]);
     return;
 };
 
-const levelCourseStart = async (userMobileNumber, startingLesson, courseId) => {
+const levelCourseStart = async (profileId, userMobileNumber, startingLesson, courseId) => {
     // Update user progress
     await waUserProgressRepository.update(
+        profileId,
         userMobileNumber,
         courseId,
         startingLesson.dataValues.weekNumber,

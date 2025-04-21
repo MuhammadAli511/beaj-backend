@@ -22,13 +22,13 @@ const getDayEndingMessage = (dayNumber) => {
     }
 };
 
-const endingMessage = async (userMobileNumber, currentUserState, startingLesson, message = null) => {
+const endingMessage = async (profileId, userMobileNumber, currentUserState, startingLesson, message = null) => {
     // If activity is video return
     if (startingLesson.dataValues.activity === 'video') {
         return;
     }
 
-    await waLessonsCompletedRepository.endLessonByPhoneNumberLessonIdAndProfileId(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.dataValues.profile_id);
+    await waLessonsCompletedRepository.endLessonByPhoneNumberLessonIdAndProfileId(userMobileNumber, startingLesson.dataValues.LessonId, profileId);
 
     // Check if the lesson is the last lesson of the day
     const lessonLast = await lessonRepository.isLastLessonOfDay(startingLesson.dataValues.LessonId);
@@ -53,11 +53,11 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson,
 
 
     if (currentUserState.dataValues.engagement_type == "Free Trial - Teachers") {
-        let user = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
+        let user = await waUsersMetadataRepository.getByProfileId(profileId);
         let checkRegistrationComplete = user.dataValues.userRegistrationComplete !== null;
         if (checkRegistrationComplete == false && lessonLast == true) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["get another trial", "register"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial", "register"]);
 
             // Sleep
             await sleep(2000);
@@ -69,7 +69,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson,
             return;
         } else if (checkRegistrationComplete == true && lessonLast == true) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["get another trial"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial"]);
 
             // Sleep
             await sleep(2000);
@@ -81,7 +81,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson,
             return;
         } else if (checkRegistrationComplete == false && lessonLast == false) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next activity", "end now"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next activity", "end now"]);
 
             // Sleep
             await sleep(2000);
@@ -93,7 +93,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson,
             return;
         } else if (checkRegistrationComplete == true && lessonLast == false) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next activity", "end now"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next activity", "end now"]);
 
             // Sleep
             await sleep(2000);
@@ -106,11 +106,11 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson,
         }
     }
     else if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
-        let user = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
+        let user = await waUsersMetadataRepository.getByProfileId(profileId);
         let checkRegistrationComplete = user.dataValues.userRegistrationComplete !== null;
         if (startingLesson.dataValues.activityAlias == "🧠 *Let's Think!*") {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start challenge", "end now"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start challenge", "end now"]);
 
             // Sleep
             await sleep(2000);
@@ -128,7 +128,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson,
         }
         if (currentUserState.dataValues.currentWeek == 1 && currentUserState.dataValues.currentDay == 1 && currentUserState.dataValues.currentLesson_sequence == 1) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start challenge", "end now"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start challenge", "end now"]);
 
             // Sleep
             await sleep(2000);
@@ -143,7 +143,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson,
 
         if (checkRegistrationComplete == false && lessonLast == true) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["get another trial", "register"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial", "register"]);
 
             // Sleep
             await sleep(2000);
@@ -161,7 +161,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson,
             return;
         } else if (checkRegistrationComplete == true && lessonLast == true) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["get another trial"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial"]);
 
             // Sleep
             await sleep(2000);
@@ -179,7 +179,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson,
             return;
         } else if (checkRegistrationComplete == false && lessonLast == false) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["next challenge", "end now"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next challenge", "end now"]);
 
             // Sleep
             await sleep(2000);
@@ -196,7 +196,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson,
             return;
         } else if (checkRegistrationComplete == true && lessonLast == false) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["next challenge", "end now"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next challenge", "end now"]);
 
             // Sleep
             await sleep(2000);
@@ -263,7 +263,7 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson,
                 weekMessage = "Thank You for staying with us till the end! 👍🏽";
             }
 
-            const weekEndScore = await weekEndScoreCalculation(userMobileNumber, startingLesson.dataValues.weekNumber, currentUserState.currentCourseId);
+            const weekEndScore = await weekEndScoreCalculation(profileId, userMobileNumber, startingLesson.dataValues.weekNumber, currentUserState.currentCourseId);
             const weekEndScoreImage = await weekEndImage(weekEndScore, startingLesson.dataValues.weekNumber);
             await sendMediaMessage(userMobileNumber, weekEndScoreImage, 'image', weekMessage);
             await createActivityLog(userMobileNumber, "image", "outbound", weekEndScoreImage, null, weekMessage);
@@ -277,9 +277,9 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson,
             let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + cleanedAlias + " activity?";
             await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", feedbackMessage, null);
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next lesson", "it was great 😁", "it can be improved 🤔"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next lesson", "it was great 😁", "it can be improved 🤔"]);
         } else {
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next lesson"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next lesson"]);
         }
 
 
@@ -303,9 +303,9 @@ const endingMessage = async (userMobileNumber, currentUserState, startingLesson,
             let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + cleanedAlias + " activity?";
             await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", feedbackMessage, null);
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next activity", "it was great 😁", "it can be improved 🤔"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next activity", "it was great 😁", "it can be improved 🤔"]);
         } else {
-            await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["start next activity"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next activity"]);
         }
 
         // Sleep

@@ -6,7 +6,6 @@ import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepo
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
 import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRepository.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
-import waPurchasedCoursesRepository from "../repositories/waPurchasedCoursesRepository.js";
 import waActiveSessionRepository from "../repositories/waActiveSessionRepository.js";
 import { removeUser, startCourseForUser, levelCourseStart, sendCourseLessonToTeacher, sendCourseLessonToKid, removeUserTillCourse, } from "../utils/chatbotUtils.js";
 import {
@@ -466,7 +465,7 @@ const webhookService = async (body, res) => {
                     text_message_types.includes(message.type) &&
                     messageContent.toLowerCase().includes("start my course")
                 ) {
-                    await startCourseForUser(userMobileNumber, numbers_to_ignore);
+                    await startCourseForUser(profileId, userMobileNumber, numbers_to_ignore);
                     return;
                 }
 
@@ -478,7 +477,7 @@ const webhookService = async (body, res) => {
                 ) {
                     if (currentUserState.dataValues.engagement_type == "Course Start") {
                         const startingLesson = await lessonRepository.getNextLesson(currentUserState.dataValues.currentCourseId, 1, null, null);
-                        await levelCourseStart(userMobileNumber, startingLesson, currentUserState.dataValues.currentCourseId);
+                        await levelCourseStart(profileId, userMobileNumber, startingLesson, currentUserState.dataValues.currentCourseId);
                         // Send first lesson to user
                         currentUserState = await waUserProgressRepository.getByProfileId(profileId);
                         await sendCourseLessonToTeacher(userMobileNumber, currentUserState, startingLesson, messageType, messageContent);

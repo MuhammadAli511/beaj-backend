@@ -3,9 +3,7 @@ import courseCategoryRepository from '../repositories/courseCategoryRepository.j
 import lessonRepository from '../repositories/lessonRepository.js';
 import waUsersMetadataRepository from '../repositories/waUsersMetadataRepository.js';
 import waUserActivityLogsRepository from '../repositories/waUserActivityLogsRepository.js';
-import waLessonsCompletedRepository from '../repositories/waLessonsCompletedRepository.js';
 import waPurchasedCoursesRepository from '../repositories/waPurchasedCoursesRepository.js';
-import waUserProgressRepository from '../repositories/waUserProgressRepository.js';
 
 const totalContentStatsService = async () => {
     try {

@@ -16,6 +16,18 @@ const getByPhoneNumber = async (phoneNumber) => {
     return await WA_UsersMetadata.findByPk(phoneNumber);
 };
 
+const getByProfileId = async (profileId) => {
+    return await WA_UsersMetadata.findAll({
+        where: { profile_id: profileId }
+    });
+};
+
+const getByProfileIds = async (profileIds) => {
+    return await WA_UsersMetadata.findAll({
+        where: { profile_id: { [Sequelize.Op.in]: profileIds } }
+    });
+};
+
 const update = async (profileId, phoneNumber, data) => {
     return await WA_UsersMetadata.update(data, {
         where: {
@@ -116,16 +128,6 @@ const getFilteredUsersWithControlGroupAndCohort = async (cohorts) => {
     });
 };
 
-const getByPhoneNumbers = async (phoneNumbers) => {
-    return await WA_UsersMetadata.findAll({
-        where: {
-            phoneNumber: {
-                [Sequelize.Op.in]: phoneNumbers
-            }
-        }
-    });
-};
-
 const updateSchoolName = async (profileId, phoneNumber, schoolName) => {
     return await WA_UsersMetadata.update({
         schoolName: schoolName
@@ -141,6 +143,8 @@ export default {
     create,
     getAll,
     getByPhoneNumber,
+    getByProfileId,
+    getByProfileIds,
     update,
     deleteByPhoneNumber,
     assignTargetGroup,
@@ -150,6 +154,5 @@ export default {
     getFreeDemoStartedUsersCount,
     getFreeDemoEndedUsersCount,
     getFilteredUsersWithControlGroupAndCohort,
-    getByPhoneNumbers,
     updateSchoolName
 };
