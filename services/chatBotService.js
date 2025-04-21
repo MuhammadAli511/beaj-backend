@@ -163,7 +163,7 @@ const webhookService = async (body, res) => {
                 // DEMO COURSE
                 // Step 1: If user does not exist
                 if (userExists == false) {
-                    await greetingMessage(userMobileNumber);
+                    await greetingMessage(profileId, userMobileNumber);
                     return;
                 }
 
@@ -182,7 +182,7 @@ const webhookService = async (body, res) => {
                     botPhoneNumberId == studentBotPhoneNumberId &&
                     (currentUserState.dataValues.engagement_type == "Greeting Message")
                 ) {
-                    await kidsChooseClass(userMobileNumber);
+                    await kidsChooseClass(profileId, userMobileNumber);
                     return;
                 }
 
@@ -191,7 +191,7 @@ const webhookService = async (body, res) => {
                     ((messageContent.toLowerCase() == "grade 1 or 2") || (messageContent.toLowerCase() == "grades 3 to 6")) &&
                     (currentUserState.dataValues.engagement_type == "Choose Class")
                 ) {
-                    await kidsConfirmClass(userMobileNumber, messageContent);
+                    await kidsConfirmClass(profileId, userMobileNumber, messageContent);
                     return;
                 }
 
@@ -200,7 +200,7 @@ const webhookService = async (body, res) => {
                     (messageContent.toLowerCase() == "no, choose again") &&
                     (currentUserState.dataValues.engagement_type == "Confirm Class - Level 1" || currentUserState.dataValues.engagement_type == "Confirm Class - Level 3")
                 ) {
-                    await kidsChooseClassLoop(userMobileNumber);
+                    await kidsChooseClassLoop(profileId, userMobileNumber);
                     return;
                 }
 
@@ -209,7 +209,7 @@ const webhookService = async (body, res) => {
                     (messageContent.toLowerCase() == "end now") &&
                     (currentUserState.dataValues.engagement_type == "Free Trial - Teachers" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")
                 ) {
-                    await endTrial(userMobileNumber);
+                    await endTrial(profileId, userMobileNumber);
                     return;
                 }
 
@@ -219,9 +219,9 @@ const webhookService = async (body, res) => {
                     (currentUserState.dataValues.engagement_type == "End Now" || currentUserState.dataValues.engagement_type == "Free Trial - Teachers" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")
                 ) {
                     if (botPhoneNumberId == studentBotPhoneNumberId) {
-                        await kidsChooseClassLoop(userMobileNumber);
+                        await kidsChooseClassLoop(profileId, userMobileNumber);
                     } else {
-                        await greetingMessageLoop(userMobileNumber);
+                        await greetingMessageLoop(profileId, userMobileNumber);
                     }
                     return;
                 }
@@ -231,7 +231,7 @@ const webhookService = async (body, res) => {
                     (messageContent.toLowerCase() == "register") &&
                     (currentUserState.dataValues.engagement_type == "End Now" || currentUserState.dataValues.engagement_type == "Free Trial - Teachers" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")
                 ) {
-                    await getSchoolName(userMobileNumber);
+                    await getSchoolName(profileId, userMobileNumber);
                     return;
                 }
 
@@ -239,7 +239,7 @@ const webhookService = async (body, res) => {
                     text_message_types.includes(message.type) &&
                     (currentUserState.dataValues.engagement_type == "School Name")
                 ) {
-                    await confirmSchoolName(userMobileNumber, messageContent);
+                    await confirmSchoolName(profileId, userMobileNumber, messageContent);
                     return;
                 }
 
@@ -248,7 +248,7 @@ const webhookService = async (body, res) => {
                     (messageContent.toLowerCase() == "yes") &&
                     (currentUserState.dataValues.engagement_type == "Confirm School Name")
                 ) {
-                    await thankyouMessage(userMobileNumber);
+                    await thankyouMessage(profileId, userMobileNumber);
                     return;
                 }
 
@@ -257,13 +257,13 @@ const webhookService = async (body, res) => {
                     (messageContent.toLowerCase() == "no") &&
                     (currentUserState.dataValues.engagement_type == "Confirm School Name")
                 ) {
-                    await getSchoolName(userMobileNumber);
+                    await getSchoolName(profileId, userMobileNumber);
                     return;
                 }
 
                 if (currentUserState.dataValues.engagement_type == "Thankyou Message") {
                     if (messageContent.toLowerCase() == "get another trial") {
-                        await greetingMessageLoop(userMobileNumber);
+                        await greetingMessageLoop(profileId, userMobileNumber);
                         return;
                     } else {
                         await sendMessage(userMobileNumber, "Your free trial is complete. We will get back to you soon.");
@@ -293,7 +293,7 @@ const webhookService = async (body, res) => {
                     // Delete all question responses for the user
                     await waQuestionResponsesRepository.deleteByProfileId(profileId);
                     const startingLesson = await lessonRepository.getNextLesson(await courseRepository.getCourseIdByName(courseName), 1, null, null);
-                    await demoCourseStart(userMobileNumber, startingLesson, courseName);
+                    await demoCourseStart(profileId, userMobileNumber, startingLesson, courseName);
                     // Send first lesson to user
                     currentUserState = await waUserProgressRepository.getByProfileId(profileId);
                     if (courseName == "Free Trial - Teachers") {
