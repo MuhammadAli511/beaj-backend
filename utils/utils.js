@@ -71,7 +71,7 @@ const convertNumberToEmoji = async (number) => {
     return number.toString().split('').map(digit => emojiMap[digit]).join('');
 };
 
-const checkUserMessageAndAcceptableMessages = async (userMobileNumber, currentUserState, messageType, messageContent) => {
+const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber, currentUserState, messageType, messageContent) => {
     const acceptableMessagesList = currentUserState.dataValues.acceptableMessages;
     const activityType = currentUserState.dataValues.activityType;
     if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "read" || activityType === "speakingPractice") {
