@@ -9,13 +9,13 @@ import { sleep, convertNumberToEmoji, removeHTMLTags } from "../utils/utils.js";
 import multipleChoiceQuestionRepository from "../repositories/multipleChoiceQuestionRepository.js";
 import multipleChoiceQuestionAnswerRepository from "../repositories/multipleChoiceQuestionAnswerRepository.js";
 
-const mcqsView = async (userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
+const mcqsView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
         const activity = startingLesson.dataValues.activity;
         if (persona == 'teacher') {
             if (currentUserState.dataValues.questionNumber === null) {
                 // Lesson Started Record
-                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
+                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
                 // Activity Alias
                 const activityAlias = startingLesson.dataValues.activityAlias;
@@ -52,7 +52,7 @@ const mcqsView = async (userMobileNumber, currentUserState, startingLesson, mess
                 const firstMCQsQuestion = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, null);
 
                 // Update question number
-                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstMCQsQuestion.dataValues.QuestionNumber);
+                await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstMCQsQuestion.dataValues.QuestionNumber);
 
                 // Send question
                 const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(firstMCQsQuestion.dataValues.Id);
@@ -87,7 +87,7 @@ const mcqsView = async (userMobileNumber, currentUserState, startingLesson, mess
                 }
 
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["option a", "option b", "option c"]);
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["option a", "option b", "option c"]);
             }
             else {
                 // Get current MCQ question
@@ -117,6 +117,7 @@ const mcqsView = async (userMobileNumber, currentUserState, startingLesson, mess
                 // Save user response to the database
                 const submissionDate = new Date();
                 await waQuestionResponsesRepository.create(
+                    profileId,
                     userMobileNumber,
                     currentUserState.dataValues.currentLessonId,
                     currentMCQsQuestion.dataValues.Id,
@@ -187,7 +188,7 @@ const mcqsView = async (userMobileNumber, currentUserState, startingLesson, mess
                 const nextMCQsQuestion = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                 if (nextMCQsQuestion) {
                     // Update question number
-                    await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextMCQsQuestion.dataValues.QuestionNumber);
+                    await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextMCQsQuestion.dataValues.QuestionNumber);
 
                     // Send question
                     const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(nextMCQsQuestion.dataValues.Id);
@@ -223,11 +224,11 @@ const mcqsView = async (userMobileNumber, currentUserState, startingLesson, mess
                     }
 
                     // Update acceptable messages list for the user
-                    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["option a", "option b", "option c"]);
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["option a", "option b", "option c"]);
                 } else {
                     // Calculate total score and send message
-                    const totalScore = await waQuestionResponsesRepository.getTotalScore(userMobileNumber, currentUserState.dataValues.currentLessonId);
-                    const totalQuestions = await waQuestionResponsesRepository.getTotalQuestions(userMobileNumber, currentUserState.dataValues.currentLessonId);
+                    const totalScore = await waQuestionResponsesRepository.getTotalScore(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
+                    const totalQuestions = await waQuestionResponsesRepository.getTotalQuestions(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
                     const scorePercentage = (totalScore / totalQuestions) * 100;
                     let message = "*Your score: " + totalScore + "/" + totalQuestions + ".*";
                     if (scorePercentage >= 0 && scorePercentage <= 60) {
@@ -249,17 +250,17 @@ const mcqsView = async (userMobileNumber, currentUserState, startingLesson, mess
 
 
                     // Reset Question Number, Retry Counter, and Activity Type
-                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
 
                     // ENDING MESSAGE
-                    await endingMessage(userMobileNumber, currentUserState, startingLesson);
+                    await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
                 }
             }
         }
         else if (persona == 'kid') {
             if (currentUserState.dataValues.questionNumber === null) {
                 // Lesson Started Record
-                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
+                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
                 // Activity Alias
                 const activityAlias = startingLesson.dataValues.activityAlias;
@@ -272,7 +273,7 @@ const mcqsView = async (userMobileNumber, currentUserState, startingLesson, mess
                 const firstMCQsQuestion = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, null);
 
                 // Update question number
-                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstMCQsQuestion.dataValues.QuestionNumber);
+                await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstMCQsQuestion.dataValues.QuestionNumber);
                 const totalQuestions = await multipleChoiceQuestionRepository.getTotalQuestions(currentUserState.dataValues.currentLessonId);
 
                 // Send question
@@ -317,7 +318,7 @@ const mcqsView = async (userMobileNumber, currentUserState, startingLesson, mess
                 }
 
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["a", "b", "c"]);
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["a", "b", "c"]);
             }
             else {
                 // Get current MCQ question
@@ -347,6 +348,7 @@ const mcqsView = async (userMobileNumber, currentUserState, startingLesson, mess
                 // Save user response to the database
                 const submissionDate = new Date();
                 await waQuestionResponsesRepository.create(
+                    profileId,
                     userMobileNumber,
                     currentUserState.dataValues.currentLessonId,
                     currentMCQsQuestion.dataValues.Id,
@@ -427,7 +429,7 @@ const mcqsView = async (userMobileNumber, currentUserState, startingLesson, mess
                 const nextMCQsQuestion = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                 if (nextMCQsQuestion) {
                     // Update question number
-                    await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextMCQsQuestion.dataValues.QuestionNumber);
+                    await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextMCQsQuestion.dataValues.QuestionNumber);
                     const totalQuestions = await multipleChoiceQuestionRepository.getTotalQuestions(currentUserState.dataValues.currentLessonId);
 
                     const mcqType = nextMCQsQuestion.dataValues.QuestionType;
@@ -472,41 +474,27 @@ const mcqsView = async (userMobileNumber, currentUserState, startingLesson, mess
                     }
 
                     // Update acceptable messages list for the user
-                    await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["a", "b", "c"]);
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["a", "b", "c"]);
                 } else {
-                    // const thumbs_up_sticker = "https://beajbloblive.blob.core.windows.net/beajdocuments/thumbs_up.webp"
-                    // await sendMediaMessage(userMobileNumber, thumbs_up_sticker, 'sticker');
-                    // await createActivityLog(userMobileNumber, "sticker", "outbound", thumbs_up_sticker, null);
-                    // await sleep(2000);
-
                     // Calculate total score and send message
-                    const totalScore = await waQuestionResponsesRepository.getTotalScore(userMobileNumber, currentUserState.dataValues.currentLessonId);
-                    const totalQuestions = await waQuestionResponsesRepository.getTotalQuestions(userMobileNumber, currentUserState.dataValues.currentLessonId);
+                    const totalScore = await waQuestionResponsesRepository.getTotalScore(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
+                    const totalQuestions = await waQuestionResponsesRepository.getTotalQuestions(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
                     const scorePercentage = (totalScore / totalQuestions) * 100;
                     let message = "*Your score: " + totalScore + "/" + totalQuestions + ".*";
                     if (scorePercentage >= 0 && scorePercentage <= 60) {
                         message += "\n\nGood Effort! 👍🏽";
-                        // Text message
-                        // await sendMessage(userMobileNumber, message);
-                        // await createActivityLog(userMobileNumber, "text", "outbound", message, null);
                     } else if (scorePercentage >= 61 && scorePercentage <= 79) {
                         message += "\n\nWell done! 🌟";
-                        // Text message
-                        // await sendMessage(userMobileNumber, message);
-                        // await createActivityLog(userMobileNumber, "text", "outbound", message, null);
                     } else if (scorePercentage >= 80) {
                         message += "\n\nExcellent 🎉";
-                        // Text message
-                        // await sendMessage(userMobileNumber, message);
-                        // await createActivityLog(userMobileNumber, "text", "outbound", message, null);
                     }
 
 
                     // Reset Question Number, Retry Counter, and Activity Type
-                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
 
                     // ENDING MESSAGE
-                    await endingMessage(userMobileNumber, currentUserState, startingLesson, message);
+                    await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson, message);
                 }
             }
         }

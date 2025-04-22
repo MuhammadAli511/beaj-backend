@@ -7,12 +7,12 @@ import { removeHTMLTags } from "../utils/utils.js";
 import documentFileRepository from "../repositories/documentFileRepository.js";
 
 
-const videoView = async (userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
+const videoView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
         const activity = startingLesson.dataValues.activity;
         if (persona == 'teacher') {
             // Lesson Started Record
-            await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date());
+            await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
             // Send lesson message
             let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
@@ -31,7 +31,7 @@ const videoView = async (userMobileNumber, currentUserState, startingLesson, mes
         }
         else if (persona == 'kid') {
             // Lesson Started Record
-            await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date());
+            await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
             // Send lesson message
             let lessonMessage = startingLesson.dataValues.activityAlias + "\n\n" + startingLesson.dataValues.text;

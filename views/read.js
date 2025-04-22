@@ -15,13 +15,13 @@ import { createAndUploadScoreImage } from "../utils/imageGenerationUtils.js";
 import { extractTranscript } from "../utils/utils.js";
 import { removeHTMLTags } from "../utils/utils.js";
 
-const readView = async (userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
+const readView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
         const activity = startingLesson.dataValues.activity;
         if (persona == 'teacher') {
             if (messageType != 'audio') {
                 // Lesson Started Record
-                await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date());
+                await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
                 // Send lesson message
                 let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
@@ -39,7 +39,7 @@ const readView = async (userMobileNumber, currentUserState, startingLesson, mess
                 await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
 
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
                 await sleep(12000);
 
                 // Remove html tags from the text
@@ -82,6 +82,7 @@ const readView = async (userMobileNumber, currentUserState, startingLesson, mess
                 const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
                 const submissionDate = new Date();
                 await waQuestionResponsesRepository.create(
+                    profileId,
                     userMobileNumber,
                     startingLesson.dataValues.LessonId,
                     null,
@@ -98,16 +99,16 @@ const readView = async (userMobileNumber, currentUserState, startingLesson, mess
                 );
 
                 // Reset Question Number, Retry Counter, and Activity Type
-                await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+                await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
 
                 // Ending Message
-                await endingMessage(userMobileNumber, currentUserState, startingLesson);
+                await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
             }
         }
         else if (persona == 'kid') {
             if (messageType != 'audio') {
                 // Lesson Started Record
-                await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date());
+                await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
                 // Send lesson message
                 let lessonMessage = startingLesson.dataValues.activityAlias + "\n\n" + "🧏 Listen first, then practice reading.";
@@ -128,7 +129,7 @@ const readView = async (userMobileNumber, currentUserState, startingLesson, mess
                 await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
 
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
             }
             else if (messageType == 'audio') {
                 // Get the current Read question text
@@ -162,6 +163,7 @@ const readView = async (userMobileNumber, currentUserState, startingLesson, mess
                 const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
                 const submissionDate = new Date();
                 await waQuestionResponsesRepository.create(
+                    profileId,
                     userMobileNumber,
                     startingLesson.dataValues.LessonId,
                     null,
@@ -178,10 +180,10 @@ const readView = async (userMobileNumber, currentUserState, startingLesson, mess
                 );
 
                 // Reset Question Number, Retry Counter, and Activity Type
-                await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+                await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
 
                 // Ending Message
-                await endingMessage(userMobileNumber, currentUserState, startingLesson);
+                await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
             }
         }
         return;
