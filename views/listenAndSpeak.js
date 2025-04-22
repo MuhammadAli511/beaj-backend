@@ -13,13 +13,13 @@ import AIServices from "../utils/AIServices.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import { removeHTMLTags } from "../utils/utils.js";
 
-const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
+const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
         const activity = startingLesson.dataValues.activity;
         if (persona == 'teacher') {
             if (currentUserState.dataValues.questionNumber === null) {
                 // Lesson Started Record
-                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
+                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
                 // Lesson Text
                 let lessonText = startingLesson.dataValues.text;
@@ -41,7 +41,7 @@ const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLe
                 const firstListenAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
 
                 // Update question number
-                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstListenAndSpeakQuestion.dataValues.questionNumber);
+                await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstListenAndSpeakQuestion.dataValues.questionNumber);
 
                 // Send question media file
                 const mediaType = firstListenAndSpeakQuestion.dataValues.mediaFile.endsWith('.mp4') ? 'video' : 'audio';
@@ -49,7 +49,7 @@ const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLe
                 await createActivityLog(userMobileNumber, mediaType, "outbound", firstListenAndSpeakQuestion.dataValues.mediaFile, null);
 
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
                 await sleep(5000);
 
                 // Send question text
@@ -92,8 +92,9 @@ const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLe
                     const retryCounter = currentUserState.dataValues.retryCounter;
                     // User first attempt
                     if (retryCounter == 0 || retryCounter == null) {
-                        await waUserProgressRepository.updateRetryCounter(userMobileNumber, 1);
+                        await waUserProgressRepository.updateRetryCounter(profileId, userMobileNumber, 1);
                         await waQuestionResponsesRepository.create(
+                            profileId,
                             userMobileNumber,
                             currentUserState.dataValues.currentLessonId,
                             currentListenAndSpeakQuestion.dataValues.id,
@@ -112,6 +113,7 @@ const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLe
                     // User other attempts
                     else {
                         await waQuestionResponsesRepository.update(
+                            profileId,
                             userMobileNumber,
                             currentUserState.dataValues.currentLessonId,
                             currentListenAndSpeakQuestion.dataValues.id,
@@ -130,7 +132,7 @@ const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLe
                     // If user response is correct
                     if (userAnswerIsCorrect) {
                         // Reset retry counter
-                        await waUserProgressRepository.updateRetryCounter(userMobileNumber, 0);
+                        await waUserProgressRepository.updateRetryCounter(profileId, userMobileNumber, 0);
 
                         // Text message
                         let correctMessage = "You said:\n\n" + recognizedText + "\n✅ Great!";
@@ -141,7 +143,7 @@ const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLe
                     else {
                         if (retryCounter !== 2) {
                             // Update retry counter
-                            await waUserProgressRepository.updateRetryCounter(userMobileNumber, currentUserState.dataValues.retryCounter + 1);
+                            await waUserProgressRepository.updateRetryCounter(profileId, userMobileNumber, currentUserState.dataValues.retryCounter + 1);
 
                             // Text message
                             let wrongMessage = "You said:\n\n" + recognizedText + "\n❌ Try Again!";
@@ -150,7 +152,7 @@ const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLe
                             return;
                         } else if (retryCounter == 2) {
                             // Reset retry counter
-                            await waUserProgressRepository.updateRetryCounter(userMobileNumber, 0);
+                            await waUserProgressRepository.updateRetryCounter(profileId, userMobileNumber, 0);
 
                             // Text message
                             let wrongMessage = "You said:\n\n" + recognizedText + "\n❌ The correct answer is: " + answersArray[0];
@@ -161,7 +163,7 @@ const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLe
                     const nextListenAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                     if (nextListenAndSpeakQuestion) {
                         // Update question number
-                        await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextListenAndSpeakQuestion.dataValues.questionNumber);
+                        await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextListenAndSpeakQuestion.dataValues.questionNumber);
 
                         const mediaType = nextListenAndSpeakQuestion.dataValues.mediaFile.endsWith('.mp4') ? 'video' : 'audio';
                         if (mediaType == 'video') {
@@ -170,7 +172,7 @@ const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLe
                         }
 
                         // Update acceptable messages list for the user
-                        await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
+                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
                         if (mediaType == 'video') {
                             await sleep(5000);
                         }
@@ -182,8 +184,8 @@ const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLe
                         await createActivityLog(userMobileNumber, "text", "outbound", questionText, null);
                     } else {
                         // Calculate total score and send message
-                        const totalScore = await waQuestionResponsesRepository.getTotalScore(userMobileNumber, currentUserState.dataValues.currentLessonId);
-                        const totalQuestions = await waQuestionResponsesRepository.getTotalQuestions(userMobileNumber, currentUserState.dataValues.currentLessonId);
+                        const totalScore = await waQuestionResponsesRepository.getTotalScore(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
+                        const totalQuestions = await waQuestionResponsesRepository.getTotalQuestions(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
                         const scorePercentage = (totalScore / totalQuestions) * 100;
                         let message = "*Your score: " + totalScore + "/" + totalQuestions + ".*";
                         if (scorePercentage >= 0 && scorePercentage <= 60) {
@@ -204,10 +206,10 @@ const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLe
                         }
 
                         // Reset Question Number, Retry Counter, and Activity Type
-                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
 
                         // ENDING MESSAGE
-                        await endingMessage(userMobileNumber, currentUserState, startingLesson);
+                        await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
                     }
                 } else {
                     let logger = `No speech recognized or an error occurred. User: ${userMobileNumber}, Message Type: ${messageType}, Message Content: ${messageContent}`;
@@ -218,7 +220,7 @@ const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLe
         else if (persona == 'kid') {
             if (currentUserState.dataValues.questionNumber === null) {
                 // Lesson Started Record
-                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
+                await waLessonsCompletedRepository.create(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
                 let lessonMessage = startingLesson.dataValues.activityAlias + "\n\n" + startingLesson.dataValues.text;
 
@@ -230,7 +232,7 @@ const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLe
                 const firstListenAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
 
                 // Update question number
-                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstListenAndSpeakQuestion.dataValues.questionNumber);
+                await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstListenAndSpeakQuestion.dataValues.questionNumber);
 
                 // Send question media file
                 const mediaType = firstListenAndSpeakQuestion.dataValues.mediaFile.endsWith('.mp4') ? 'video' : 'audio';
@@ -238,7 +240,7 @@ const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLe
                 await createActivityLog(userMobileNumber, mediaType, "outbound", firstListenAndSpeakQuestion.dataValues.mediaFile, null);
 
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
                 if (mediaType == 'video') {
                     await sleep(5000);
                 } else {
@@ -298,8 +300,9 @@ const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLe
                     const retryCounter = currentUserState.dataValues.retryCounter;
                     // User first attempt
                     if (retryCounter == 0 || retryCounter == null) {
-                        await waUserProgressRepository.updateRetryCounter(userMobileNumber, 1);
+                        await waUserProgressRepository.updateRetryCounter(profileId, userMobileNumber, 1);
                         await waQuestionResponsesRepository.create(
+                            profileId,
                             userMobileNumber,
                             currentUserState.dataValues.currentLessonId,
                             currentListenAndSpeakQuestion.dataValues.id,
@@ -318,6 +321,7 @@ const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLe
                     // User other attempts
                     else {
                         await waQuestionResponsesRepository.update(
+                            profileId,
                             userMobileNumber,
                             currentUserState.dataValues.currentLessonId,
                             currentListenAndSpeakQuestion.dataValues.id,
@@ -336,7 +340,7 @@ const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLe
                     // If user response is correct
                     if (userAnswerIsCorrect) {
                         // Reset retry counter
-                        await waUserProgressRepository.updateRetryCounter(userMobileNumber, 0);
+                        await waUserProgressRepository.updateRetryCounter(profileId, userMobileNumber, 0);
 
                         // Text message
                         let correctMessage = "You said:\n\n" + recognizedText + "\n✅ That's right!";
@@ -347,7 +351,7 @@ const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLe
                     else {
                         if (retryCounter !== 2) {
                             // Update retry counter
-                            await waUserProgressRepository.updateRetryCounter(userMobileNumber, currentUserState.dataValues.retryCounter + 1);
+                            await waUserProgressRepository.updateRetryCounter(profileId, userMobileNumber, currentUserState.dataValues.retryCounter + 1);
 
                             // Text message
                             let wrongMessage = "You said:\n\n" + recognizedText + "\n❌ Try Again!";
@@ -356,7 +360,7 @@ const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLe
                             return;
                         } else if (retryCounter == 2) {
                             // Reset retry counter
-                            await waUserProgressRepository.updateRetryCounter(userMobileNumber, 0);
+                            await waUserProgressRepository.updateRetryCounter(profileId, userMobileNumber, 0);
 
                             // Text message
                             let wrongMessage = "You said:\n\n" + recognizedText + "\n❌ The correct answer is: " + answersArray[0];
@@ -367,7 +371,7 @@ const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLe
                     const nextListenAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                     if (nextListenAndSpeakQuestion) {
                         // Update question number
-                        await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextListenAndSpeakQuestion.dataValues.questionNumber);
+                        await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextListenAndSpeakQuestion.dataValues.questionNumber);
 
                         const mediaType = nextListenAndSpeakQuestion.dataValues.mediaFile.endsWith('.mp4') ? 'video' : 'audio';
                         if (mediaType == 'video') {
@@ -376,7 +380,7 @@ const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLe
                         }
 
                         // Update acceptable messages list for the user
-                        await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
+                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
                         if (mediaType == 'video') {
                             await sleep(5000);
                         } else {
@@ -401,38 +405,24 @@ const listenAndSpeakView = async (userMobileNumber, currentUserState, startingLe
                         await sendMessage(userMobileNumber, instructions);
                         await createActivityLog(userMobileNumber, "text", "outbound", instructions, null);
                     } else {
-                        // const thumbs_up_sticker = "https://beajbloblive.blob.core.windows.net/beajdocuments/thumbs_up.webp"
-                        // await sendMediaMessage(userMobileNumber, thumbs_up_sticker, 'sticker');
-                        // await createActivityLog(userMobileNumber, "sticker", "outbound", thumbs_up_sticker, null);
-                        // await sleep(2000);
-
                         // Calculate total score and send message
-                        const totalScore = await waQuestionResponsesRepository.getTotalScore(userMobileNumber, currentUserState.dataValues.currentLessonId);
-                        const totalQuestions = await waQuestionResponsesRepository.getTotalQuestions(userMobileNumber, currentUserState.dataValues.currentLessonId);
+                        const totalScore = await waQuestionResponsesRepository.getTotalScore(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
+                        const totalQuestions = await waQuestionResponsesRepository.getTotalQuestions(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
                         const scorePercentage = (totalScore / totalQuestions) * 100;
                         let message = "Your score: " + totalScore + "/" + totalQuestions + ".";
                         if (scorePercentage >= 0 && scorePercentage <= 60) {
                             message += "\n\nGood Effort! 👍🏽";
-                            // Text message
-                            // await sendMessage(userMobileNumber, message);
-                            // await createActivityLog(userMobileNumber, "text", "outbound", message, null);
                         } else if (scorePercentage >= 61 && scorePercentage <= 79) {
                             message += "\n\nWell done! 🌟";
-                            // Text message
-                            // await sendMessage(userMobileNumber, message);
-                            // await createActivityLog(userMobileNumber, "text", "outbound", message, null);
                         } else if (scorePercentage >= 80) {
                             message += "\n\nExcellent 🎉";
-                            // Text message
-                            // await sendMessage(userMobileNumber, message);
-                            // await createActivityLog(userMobileNumber, "text", "outbound", message, null);
                         }
 
                         // Reset Question Number, Retry Counter, and Activity Type
-                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
 
                         // ENDING MESSAGE
-                        await endingMessage(userMobileNumber, currentUserState, startingLesson, message);
+                        await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson, message);
                     }
                 } else {
                     let logger = `No speech recognized or an error occurred. User: ${userMobileNumber}, Message Type: ${messageType}, Message Content: ${messageContent}`;

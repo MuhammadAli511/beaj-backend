@@ -3,9 +3,9 @@ import sequelize from '../config/sequelize.js';
 import Sequelize from 'sequelize';
 import { question_bot_prompt } from "../utils/prompts.js";
 
-const create = async (profile_id, phoneNumber, lessonId, questionId, activityType, alias, submittedAnswerText, submittedUserAudio, submittedFeedbackText, submittedFeedbackAudio, submittedFeedbackJson, correct, numberOfTries, submissionDate) => {
+const create = async (profileId, phoneNumber, lessonId, questionId, activityType, alias, submittedAnswerText, submittedUserAudio, submittedFeedbackText, submittedFeedbackAudio, submittedFeedbackJson, correct, numberOfTries, submissionDate) => {
     const response = new WA_QuestionResponses({
-        profile_id: profile_id,
+        profile_id: profileId,
         phoneNumber: phoneNumber,
         lessonId: lessonId,
         questionId: questionId,
@@ -32,7 +32,7 @@ const getById = async (id) => {
 };
 
 const updateReplace = async (
-    profile_id,
+    profileId,
     phoneNumber,
     lessonId,
     questionId,
@@ -69,7 +69,7 @@ const updateReplace = async (
     }
 
     // Other fields to update (non-array fields)
-    updateFields.profile_id = profile_id;
+    updateFields.profile_id = profileId;
     updateFields.phoneNumber = phoneNumber;
     updateFields.lessonId = lessonId;
     updateFields.questionId = questionId;
@@ -81,7 +81,7 @@ const updateReplace = async (
     // Execute the update query based on phoneNumber, lessonId, and questionId
     return await WA_QuestionResponses.update(updateFields, {
         where: {
-            profile_id: profile_id,
+            profile_id: profileId,
             phoneNumber: phoneNumber,
             lessonId: lessonId,
             questionId: questionId,
@@ -90,7 +90,7 @@ const updateReplace = async (
 };
 
 const update = async (
-    profile_id,
+    profileId,
     phoneNumber,
     lessonId,
     questionId,
@@ -139,7 +139,7 @@ const update = async (
     }
 
     // Other fields to update (non-array fields)
-    updateFields.profile_id = profile_id;
+    updateFields.profile_id = profileId;
     updateFields.phoneNumber = phoneNumber;
     updateFields.lessonId = lessonId;
     updateFields.questionId = questionId;
@@ -151,7 +151,7 @@ const update = async (
     // Execute the update query based on phoneNumber, lessonId, and questionId
     return await WA_QuestionResponses.update(updateFields, {
         where: {
-            profile_id: profile_id,
+            profile_id: profileId,
             phoneNumber: phoneNumber,
             lessonId: lessonId,
             questionId: questionId,

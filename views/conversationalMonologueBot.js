@@ -14,13 +14,13 @@ import speakActivityQuestionRepository from "../repositories/speakActivityQuesti
 import { extractMispronouncedWords } from "../utils/utils.js";
 import { createAndUploadMonologueScoreImage } from "../utils/imageGenerationUtils.js";
 
-const conversationalMonologueBotView = async (userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
+const conversationalMonologueBotView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
         const activity = startingLesson.dataValues.activity;
         if (persona == 'teacher') {
             if (currentUserState.dataValues.questionNumber === null) {
                 // Lesson Started Record
-                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
+                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
                 // Send lesson message
                 let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
@@ -32,14 +32,14 @@ const conversationalMonologueBotView = async (userMobileNumber, currentUserState
                 const firstConversationalMonologueBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
 
                 // Update question number
-                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstConversationalMonologueBotQuestion.dataValues.questionNumber);
+                await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstConversationalMonologueBotQuestion.dataValues.questionNumber);
 
                 // Send question media file
                 await sendMediaMessage(userMobileNumber, firstConversationalMonologueBotQuestion.dataValues.mediaFile, 'video');
                 await createActivityLog(userMobileNumber, "video", "outbound", firstConversationalMonologueBotQuestion.dataValues.mediaFile, null);
 
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
             }
             else if (messageType === 'audio') {
                 // Get the current Conversational Monologue Bot question
@@ -90,6 +90,7 @@ const conversationalMonologueBotView = async (userMobileNumber, currentUserState
                 const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
                 const submissionDate = new Date();
                 await waQuestionResponsesRepository.create(
+                    profileId,
                     userMobileNumber,
                     currentUserState.dataValues.currentLessonId,
                     currentConversationalMonologueBotQuestion.dataValues.id,
@@ -108,24 +109,24 @@ const conversationalMonologueBotView = async (userMobileNumber, currentUserState
                 const nextConversationalMonologueBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                 if (nextConversationalMonologueBotQuestion) {
                     // Update question number
-                    await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextConversationalMonologueBotQuestion.dataValues.questionNumber);
+                    await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextConversationalMonologueBotQuestion.dataValues.questionNumber);
 
                     // Send question media file
                     await sendMediaMessage(userMobileNumber, nextConversationalMonologueBotQuestion.dataValues.mediaFile, 'video');
                     await createActivityLog(userMobileNumber, "video", "outbound", nextConversationalMonologueBotQuestion.dataValues.mediaFile, null);
                 } else {
                     // Reset Question Number, Retry Counter, and Activity Type
-                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
 
                     // ENDING MESSAGE
-                    await endingMessage(userMobileNumber, currentUserState, startingLesson);
+                    await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
                 }
             }
         }
         else if (persona == 'kid') {
             if (currentUserState.dataValues.questionNumber === null) {
                 // Lesson Started Record
-                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
+                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
                 // Send lesson message
                 let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
@@ -137,14 +138,14 @@ const conversationalMonologueBotView = async (userMobileNumber, currentUserState
                 const firstConversationalMonologueBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
 
                 // Update question number
-                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstConversationalMonologueBotQuestion.dataValues.questionNumber);
+                await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstConversationalMonologueBotQuestion.dataValues.questionNumber);
 
                 // Send question media file
                 await sendMediaMessage(userMobileNumber, firstConversationalMonologueBotQuestion.dataValues.mediaFile, 'video');
                 await createActivityLog(userMobileNumber, "video", "outbound", firstConversationalMonologueBotQuestion.dataValues.mediaFile, null);
 
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
             }
             else if (messageType === 'audio') {
                 // Get the current Conversational Monologue Bot question
@@ -195,6 +196,7 @@ const conversationalMonologueBotView = async (userMobileNumber, currentUserState
                 const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
                 const submissionDate = new Date();
                 await waQuestionResponsesRepository.create(
+                    profileId,
                     userMobileNumber,
                     currentUserState.dataValues.currentLessonId,
                     currentConversationalMonologueBotQuestion.dataValues.id,
@@ -213,17 +215,17 @@ const conversationalMonologueBotView = async (userMobileNumber, currentUserState
                 const nextConversationalMonologueBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                 if (nextConversationalMonologueBotQuestion) {
                     // Update question number
-                    await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextConversationalMonologueBotQuestion.dataValues.questionNumber);
+                    await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextConversationalMonologueBotQuestion.dataValues.questionNumber);
 
                     // Send question media file
                     await sendMediaMessage(userMobileNumber, nextConversationalMonologueBotQuestion.dataValues.mediaFile, 'video');
                     await createActivityLog(userMobileNumber, "video", "outbound", nextConversationalMonologueBotQuestion.dataValues.mediaFile, null);
                 } else {
                     // Reset Question Number, Retry Counter, and Activity Type
-                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
 
                     // ENDING MESSAGE
-                    await endingMessage(userMobileNumber, currentUserState, startingLesson);
+                    await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
                 }
             }
         }

@@ -12,13 +12,13 @@ import { sleep } from "../utils/utils.js";
 import AIServices from "../utils/AIServices.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 
-const conversationalAgencyBotView = async (userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
+const conversationalAgencyBotView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
         const activity = startingLesson.dataValues.activity;
         if (persona == 'teacher') {
             if (currentUserState.dataValues.questionNumber == null) {
                 // Lesson Started Record
-                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
+                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
                 // Send lesson message
                 let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
@@ -39,14 +39,14 @@ const conversationalAgencyBotView = async (userMobileNumber, currentUserState, s
                 }
 
                 // Update question number
-                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstConversationalAgencyBotQuestion.dataValues.questionNumber);
+                await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstConversationalAgencyBotQuestion.dataValues.questionNumber);
 
                 // Send question media file
                 await sendMediaMessage(userMobileNumber, questionAudio, 'audio');
                 await createActivityLog(userMobileNumber, "audio", "outbound", questionAudio, null);
 
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
             }
             else if (messageType === 'audio') {
                 // Get the current Conversational Agency Bot question
@@ -95,6 +95,7 @@ const conversationalAgencyBotView = async (userMobileNumber, currentUserState, s
                         const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
                         const submissionDate = new Date();
                         await waQuestionResponsesRepository.create(
+                            profileId,
                             userMobileNumber,
                             currentUserState.dataValues.currentLessonId,
                             currentConversationalAgencyBotQuestion.dataValues.id,
@@ -113,13 +114,13 @@ const conversationalAgencyBotView = async (userMobileNumber, currentUserState, s
                         const nextConversationalAgencyBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                         if (nextConversationalAgencyBotQuestion) {
                             // Update question number
-                            await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextConversationalAgencyBotQuestion.dataValues.questionNumber);
+                            await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextConversationalAgencyBotQuestion.dataValues.questionNumber);
                         } else {
                             // Reset Question Number, Retry Counter, and Activity Type
-                            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+                            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
 
                             // ENDING MESSAGE
-                            await endingMessage(userMobileNumber, currentUserState, startingLesson);
+                            await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
                         }
                     } else {
                         const previousConversationalAgencyBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber - 1);
@@ -134,7 +135,7 @@ const conversationalAgencyBotView = async (userMobileNumber, currentUserState, s
                         let secondPrompt = currentConversationalAgencyBotQuestion.dataValues.question + "\n\n\n" + modelLanguagePrompt;
                         secondPrompt += "\n\n\nMy response: " + recognizedText;
 
-                        let previousMessages = await waQuestionResponsesRepository.getPreviousMessagesForAgencyBot(userMobileNumber, currentUserState.dataValues.currentLessonId, previousConversationalAgencyBotQuestion.dataValues.question);
+                        let previousMessages = await waQuestionResponsesRepository.getPreviousMessagesForAgencyBot(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId, previousConversationalAgencyBotQuestion.dataValues.question);
                         previousMessages.push({
                             role: "user",
                             content: secondPrompt
@@ -167,6 +168,7 @@ const conversationalAgencyBotView = async (userMobileNumber, currentUserState, s
                         const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
                         const submissionDate = new Date();
                         await waQuestionResponsesRepository.create(
+                            profileId,
                             userMobileNumber,
                             currentUserState.dataValues.currentLessonId,
                             currentConversationalAgencyBotQuestion.dataValues.id,
@@ -185,13 +187,13 @@ const conversationalAgencyBotView = async (userMobileNumber, currentUserState, s
                         const nextConversationalAgencyBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                         if (nextConversationalAgencyBotQuestion) {
                             // Update question number
-                            await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextConversationalAgencyBotQuestion.dataValues.questionNumber);
+                            await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextConversationalAgencyBotQuestion.dataValues.questionNumber);
                         } else {
                             // Reset Question Number, Retry Counter, and Activity Type
-                            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+                            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
 
                             // ENDING MESSAGE
-                            await endingMessage(userMobileNumber, currentUserState, startingLesson);
+                            await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
                         }
                     }
                 }
@@ -200,7 +202,7 @@ const conversationalAgencyBotView = async (userMobileNumber, currentUserState, s
         else if (persona == 'kid') {
             if (currentUserState.dataValues.questionNumber == null) {
                 // Lesson Started Record
-                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date());
+                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
                 // Send lesson message
                 let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
@@ -221,14 +223,14 @@ const conversationalAgencyBotView = async (userMobileNumber, currentUserState, s
                 }
 
                 // Update question number
-                await waUserProgressRepository.updateQuestionNumber(userMobileNumber, firstConversationalAgencyBotQuestion.dataValues.questionNumber);
+                await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstConversationalAgencyBotQuestion.dataValues.questionNumber);
 
                 // Send question media file
                 await sendMediaMessage(userMobileNumber, questionAudio, 'audio');
                 await createActivityLog(userMobileNumber, "audio", "outbound", questionAudio, null);
 
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(userMobileNumber, ["audio"]);
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
             }
             else if (messageType === 'audio') {
                 // Get the current Conversational Agency Bot question
@@ -277,6 +279,7 @@ const conversationalAgencyBotView = async (userMobileNumber, currentUserState, s
                         const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
                         const submissionDate = new Date();
                         await waQuestionResponsesRepository.create(
+                            profileId,
                             userMobileNumber,
                             currentUserState.dataValues.currentLessonId,
                             currentConversationalAgencyBotQuestion.dataValues.id,
@@ -295,13 +298,13 @@ const conversationalAgencyBotView = async (userMobileNumber, currentUserState, s
                         const nextConversationalAgencyBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                         if (nextConversationalAgencyBotQuestion) {
                             // Update question number
-                            await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextConversationalAgencyBotQuestion.dataValues.questionNumber);
+                            await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextConversationalAgencyBotQuestion.dataValues.questionNumber);
                         } else {
                             // Reset Question Number, Retry Counter, and Activity Type
-                            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+                            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
 
                             // ENDING MESSAGE
-                            await endingMessage(userMobileNumber, currentUserState, startingLesson);
+                            await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
                         }
                     } else {
                         const previousConversationalAgencyBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber - 1);
@@ -316,7 +319,7 @@ const conversationalAgencyBotView = async (userMobileNumber, currentUserState, s
                         let secondPrompt = currentConversationalAgencyBotQuestion.dataValues.question + "\n\n\n" + modelLanguagePrompt;
                         secondPrompt += "\n\n\nMy response: " + recognizedText;
 
-                        let previousMessages = await waQuestionResponsesRepository.getPreviousMessagesForAgencyBot(userMobileNumber, currentUserState.dataValues.currentLessonId, previousConversationalAgencyBotQuestion.dataValues.question);
+                        let previousMessages = await waQuestionResponsesRepository.getPreviousMessagesForAgencyBot(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId, previousConversationalAgencyBotQuestion.dataValues.question);
                         previousMessages.push({
                             role: "user",
                             content: secondPrompt
@@ -349,6 +352,7 @@ const conversationalAgencyBotView = async (userMobileNumber, currentUserState, s
                         const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
                         const submissionDate = new Date();
                         await waQuestionResponsesRepository.create(
+                            profileId,
                             userMobileNumber,
                             currentUserState.dataValues.currentLessonId,
                             currentConversationalAgencyBotQuestion.dataValues.id,
@@ -367,13 +371,13 @@ const conversationalAgencyBotView = async (userMobileNumber, currentUserState, s
                         const nextConversationalAgencyBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                         if (nextConversationalAgencyBotQuestion) {
                             // Update question number
-                            await waUserProgressRepository.updateQuestionNumber(userMobileNumber, nextConversationalAgencyBotQuestion.dataValues.questionNumber);
+                            await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextConversationalAgencyBotQuestion.dataValues.questionNumber);
                         } else {
                             // Reset Question Number, Retry Counter, and Activity Type
-                            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+                            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
 
                             // ENDING MESSAGE
-                            await endingMessage(userMobileNumber, currentUserState, startingLesson);
+                            await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
                         }
                     }
                 }
