@@ -26,7 +26,7 @@ const getByPhoneNumber = async (phoneNumber, limit = 15, offset = 0) => {
 const getByProfileId = async (profileId, limit = 15, offset = 0) => {
     return await WA_UserActivityLogs.findAll({
         where: {
-            profileId: profileId
+            profile_id: profileId
         }
     });
 };

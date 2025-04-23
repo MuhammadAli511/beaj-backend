@@ -1,4 +1,4 @@
-import dotenv from "dotenv";
+import dotenv from 'dotenv';
 import waUsersMetadataRepository from "../repositories/waUsersMetadataRepository.js";
 import courseRepository from "../repositories/courseRepository.js";
 import lessonRepository from "../repositories/lessonRepository.js";
@@ -7,6 +7,7 @@ import waUserProgressRepository from "../repositories/waUserProgressRepository.j
 import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRepository.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import waActiveSessionRepository from "../repositories/waActiveSessionRepository.js";
+import waProfileRepository from "../repositories/waProfileRepository.js";
 import { removeUser, startCourseForUser, levelCourseStart, sendCourseLessonToTeacher, sendCourseLessonToKid, removeUserTillCourse, } from "../utils/chatbotUtils.js";
 import {
     demoCourseStart,
@@ -106,6 +107,7 @@ const webhookService = async (body, res) => {
                 });
                 profileId = profile.dataValues.profile_id;
                 await waUsersMetadataRepository.create({ profile_id: profileId, phoneNumber: userMobileNumber, userClickedLink: new Date() });
+                await waActiveSessionRepository.create({ phone_number: userMobileNumber, bot_phone_number_id: botPhoneNumberId, profile_id: profileId });
                 userExists = false;
             }
 
@@ -115,37 +117,37 @@ const webhookService = async (body, res) => {
                 message.image?.id || message.audio?.id || message.video?.id || message.interactive?.button_reply?.title || message.button?.text}`;
             console.log(logger);
 
-            if (message.type === "image") {
-                createActivityLog(userMobileNumber, "image", "inbound", message, null);
-                messageContent = await retrieveMediaURL(message.image.id);
-            } else if (message.type === "audio") {
-                createActivityLog(userMobileNumber, "audio", "inbound", message, null);
-                messageContent = await retrieveMediaURL(message.audio.id);
-            } else if (message.type === "video") {
-                createActivityLog(userMobileNumber, "video", "inbound", message, null);
-                messageContent = await retrieveMediaURL(message.video.id);
-            } else if (message.type === "text") {
-                messageContent = message.text?.body.toLowerCase().trim() || "";
-                createActivityLog(userMobileNumber, "text", "inbound", message.text?.body, null);
-            } else if (message.type === "interactive") {
-                messageContent = message.interactive.button_reply.title.toLowerCase().trim();
-                createActivityLog(userMobileNumber, "template", "inbound", messageContent, null);
-            } else if (message.type == "button") {
-                messageContent = message.button.text.toLowerCase().trim();
-                createActivityLog(userMobileNumber, "template", "inbound", messageContent, null);
-            } else {
-                return;
-            }
-
-            const botStatus = await waConstantsRepository.getByKey("BOT_STATUS");
-            if (!botStatus || botStatus.dataValues.constantValue != "Active") {
-                await sendMessage(userMobileNumber, "Sorry, We are currently not accepting any messages. Please try again later.");
-                await createActivityLog(userMobileNumber, "text", "outbound", "Sorry, We are currently not accepting any messages. Please try again later.", null);
-                return;
-            }
-
             // Wrap the webhook handling logic with the context containing the bot phone number ID
             await runWithContext({ botPhoneNumberId, profileId, userMobileNumber }, async () => {
+                if (message.type === "image") {
+                    createActivityLog(userMobileNumber, "image", "inbound", message, null);
+                    messageContent = await retrieveMediaURL(message.image.id);
+                } else if (message.type === "audio") {
+                    createActivityLog(userMobileNumber, "audio", "inbound", message, null);
+                    messageContent = await retrieveMediaURL(message.audio.id);
+                } else if (message.type === "video") {
+                    createActivityLog(userMobileNumber, "video", "inbound", message, null);
+                    messageContent = await retrieveMediaURL(message.video.id);
+                } else if (message.type === "text") {
+                    messageContent = message.text?.body.toLowerCase().trim() || "";
+                    createActivityLog(userMobileNumber, "text", "inbound", message.text?.body, null);
+                } else if (message.type === "interactive") {
+                    messageContent = message.interactive.button_reply.title.toLowerCase().trim();
+                    createActivityLog(userMobileNumber, "template", "inbound", messageContent, null);
+                } else if (message.type == "button") {
+                    messageContent = message.button.text.toLowerCase().trim();
+                    createActivityLog(userMobileNumber, "template", "inbound", messageContent, null);
+                } else {
+                    return;
+                }
+
+                const botStatus = await waConstantsRepository.getByKey("BOT_STATUS");
+                if (!botStatus || botStatus.dataValues.constantValue != "Active") {
+                    await sendMessage(userMobileNumber, "Sorry, We are currently not accepting any messages. Please try again later.");
+                    await createActivityLog(userMobileNumber, "text", "outbound", "Sorry, We are currently not accepting any messages. Please try again later.", null);
+                    return;
+                }
+
                 let currentUserState = await waUserProgressRepository.getByProfileId(profileId);
 
                 // If message is reset, delete user from database
