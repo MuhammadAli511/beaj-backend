@@ -19,5 +19,9 @@ const updateCurrentProfileIdOnPhoneNumber = async (phoneNumber, profileId, botPh
     return await WA_ActiveSession.update({ profile_id: profileId }, { where: { phone_number: phoneNumber, bot_phone_number_id: botPhoneNumberId } });
 };
 
+const deleteByPhoneNumber = async (phoneNumber) => {
+    return await WA_ActiveSession.destroy({ where: { phone_number: phoneNumber } });
+};
 
-export default { create, getAll, getByPhoneNumberAndBotPhoneNumberId, updateCurrentProfileIdOnPhoneNumber };
+
+export default { create, getAll, getByPhoneNumberAndBotPhoneNumberId, updateCurrentProfileIdOnPhoneNumber, deleteByPhoneNumber };

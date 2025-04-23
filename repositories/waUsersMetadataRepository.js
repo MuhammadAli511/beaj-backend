@@ -17,7 +17,7 @@ const getByPhoneNumber = async (phoneNumber) => {
 };
 
 const getByProfileId = async (profileId) => {
-    return await WA_UsersMetadata.findAll({
+    return await WA_UsersMetadata.findOne({
         where: { profile_id: profileId }
     });
 };

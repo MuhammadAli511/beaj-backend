@@ -6,68 +6,66 @@ import axios from 'axios';
 
 const webhookController = async (req, res, next) => {
     try {
-        if (process.env.ENVIRONMENT == 'DEV') {
-            if (
-                req.body.entry &&
-                req.body.entry[0].changes &&
-                req.body.entry[0].changes[0].value.messages &&
-                req.body.entry[0].changes[0].value.statuses == undefined
-            ) {
-                const message = req.body.entry[0].changes[0].value.messages[0];
-                const phone_number = "+" + message.from;
+        if (
+            req.body.entry &&
+            req.body.entry[0].changes &&
+            req.body.entry[0].changes[0].value.messages &&
+            req.body.entry[0].changes[0].value.statuses == undefined
+        ) {
+            const message = req.body.entry[0].changes[0].value.messages[0];
+            const phone_number = "+" + message.from;
 
-                let incomingLink = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+            let incomingLink = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
 
-                // Check if this is a direct request to the ngrok endpoints
-                if (incomingLink.includes("ngrok-free.app/api/chatbot/webhook")) {
-                    await service.webhookService(req.body, res);
+            // Check if this is a direct request to the ngrok endpoints
+            if (incomingLink.includes("ngrok-free.app/api/chatbot/webhook")) {
+                await service.webhookService(req.body, res);
+                return;
+            }
+
+            // Define the ngrok endpoints for forwarding
+            const salmanEndpoint = "http://smiling-pro-sheep.ngrok-free.app/api/chatbot/webhook";
+            const aliEndpoint = "http://sensibly-solid-aardvark.ngrok-free.app/api/chatbot/webhook";
+            if (phone_number == "+923012232148") {
+                try {
+                    const response = await axios.post(salmanEndpoint, req.body, {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        httpsAgent: new https.Agent({
+                            rejectUnauthorized: false
+                        }),
+                        timeout: 10000 // 10 second timeout
+                    });
+
+                    return res.json(response.data);
+                } catch (error) {
+                    console.error("Request failed:", error.message);
                     return;
                 }
+            }
+            else if (phone_number == "+923225036358") {
+                try {
+                    const response = await axios.post(aliEndpoint, req.body, {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        httpsAgent: new https.Agent({
+                            rejectUnauthorized: false
+                        }),
+                        timeout: 10000 // 10 second timeout
+                    });
 
-                // Define the ngrok endpoints for forwarding
-                const salmanEndpoint = "http://smiling-pro-sheep.ngrok-free.app/api/chatbot/webhook";
-                const aliEndpoint = "http://sensibly-solid-aardvark.ngrok-free.app/api/chatbot/webhook";
-                if (phone_number == "+923012232148") {
-                    try {
-                        const response = await axios.post(salmanEndpoint, req.body, {
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json'
-                            },
-                            httpsAgent: new https.Agent({
-                                rejectUnauthorized: false
-                            }),
-                            timeout: 10000 // 10 second timeout
-                        });
-
-                        return res.json(response.data);
-                    } catch (error) {
-                        console.error("Request failed:", error.message);
-                        return;
-                    }
+                    return res.json(response.data);
+                } catch (error) {
+                    console.error("Request failed:", error.message);
+                    return;
                 }
-                else if (phone_number == "+923225036358") {
-                    try {
-                        const response = await axios.post(aliEndpoint, req.body, {
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json'
-                            },
-                            httpsAgent: new https.Agent({
-                                rejectUnauthorized: false
-                            }),
-                            timeout: 10000 // 10 second timeout
-                        });
-
-                        return res.json(response.data);
-                    } catch (error) {
-                        console.error("Request failed:", error.message);
-                        return;
-                    }
-                }
-                else {
-                    await service.webhookService(req.body, res);
-                }
+            }
+            else {
+                await service.webhookService(req.body, res);
             }
         }
         else {

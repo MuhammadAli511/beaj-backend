@@ -5,7 +5,12 @@ const create = async (data) => {
     return await profile.save();
 };
 
+const deleteByPhoneNumber = async (phoneNumber) => {
+    return await WA_Profile.destroy({ where: { phone_number: phoneNumber } });
+};
+
 
 export default {
-    create
+    create,
+    deleteByPhoneNumber
 };

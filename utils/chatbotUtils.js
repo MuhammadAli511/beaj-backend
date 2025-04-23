@@ -23,6 +23,8 @@ import { watchAndSpeakView } from "../views/watchAndSpeak.js";
 import { mcqsView } from "../views/mcqs.js";
 import { listenAndSpeakView } from "../views/listenAndSpeak.js";
 import { conversationalAgencyBotView } from "../views/conversationalAgencyBot.js";
+import waActiveSessionRepository from "../repositories/waActiveSessionRepository.js";
+import waProfileRepository from "../repositories/waProfileRepository.js";
 dotenv.config();
 
 
@@ -32,6 +34,8 @@ const removeUser = async (phoneNumber) => {
     await waUserActivityLogsRepository.deleteByPhoneNumber(phoneNumber);
     await waLessonsCompletedRepository.deleteByPhoneNumber(phoneNumber);
     await waQuestionResponsesRepository.deleteByPhoneNumber(phoneNumber);
+    await waActiveSessionRepository.deleteByPhoneNumber(phoneNumber);
+    await waProfileRepository.deleteByPhoneNumber(phoneNumber);
 
     await sendMessage(phoneNumber, "Your data has been removed. Please start again using the link provided.");
 };
