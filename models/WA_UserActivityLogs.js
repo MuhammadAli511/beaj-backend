@@ -17,6 +17,10 @@ WA_UserActivityLogs.init({
         type: DataTypes.INTEGER,
         allowNull: false,
     },
+    bot_phone_number_id: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+    },
     actionType: {
         type: DataTypes.TEXT,
         allowNull: false,

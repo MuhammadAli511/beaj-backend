@@ -35,8 +35,13 @@ const getByPhoneNumberAndBotNumberId = async (phoneNumber, botNumberId, limit = 
     return await WA_UserActivityLogs.findAll({
         where: {
             phoneNumber: phoneNumber,
-            botNumberId: botNumberId
-        }
+            bot_phone_number_id: botNumberId
+        },
+        order: [
+            ['timestamp', 'DESC']
+        ],
+        limit: limit,
+        offset: offset
     });
 };
 
