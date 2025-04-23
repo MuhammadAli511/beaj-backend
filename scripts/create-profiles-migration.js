@@ -153,14 +153,6 @@ async function updatePrimaryKeys() {
             'wa_feedback'
         ];
 
-        for (const table of tables) {
-            console.log(`Making profile_id NOT NULL in ${table}...`);
-            await sequelize.query(`
-                ALTER TABLE ${table}
-                ALTER COLUMN profile_id SET NOT NULL;
-            `, { transaction });
-        }
-
         // Change primary key for tables that use phone_number as primary key
         console.log('Changing primary key for wa_users_metadata...');
         await sequelize.query(`
