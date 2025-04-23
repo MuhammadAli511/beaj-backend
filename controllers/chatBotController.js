@@ -25,7 +25,7 @@ const webhookController = async (req, res, next) => {
 
             // Define the ngrok endpoints for forwarding
             const salmanEndpoint = "http://smiling-pro-sheep.ngrok-free.app/api/chatbot/webhook";
-            const aliEndpoint = "http://sensibly-solid-aardvark.ngrok-free.app/api/chatbot/webhook";
+            const aliEndpoint = "https://beaj-backend-dev.azurewebsites.net/api/chatbot/webhook";
             if (phone_number == "+923012232148") {
                 try {
                     const response = await axios.post(salmanEndpoint, req.body, {
@@ -45,7 +45,7 @@ const webhookController = async (req, res, next) => {
                     return;
                 }
             }
-            else if (phone_number == "+923225036358") {
+            else if (phone_number == "+923225036358" || phone_number == "+12028123335" || phone_number == "+923008400080" || phone_number == "+923328251950") {
                 try {
                     const response = await axios.post(aliEndpoint, req.body, {
                         headers: {
