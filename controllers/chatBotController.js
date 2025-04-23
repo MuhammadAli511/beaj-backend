@@ -47,6 +47,11 @@ const webhookController = async (req, res, next) => {
             }
             else if (phone_number == "+923225036358" || phone_number == "+12028123335" || phone_number == "+923008400080" || phone_number == "+923328251950") {
                 try {
+                    // Check if incoming link has backend-dev
+                    if (incomingLink.includes("beaj-backend-dev")) {
+                        await service.webhookService(req.body, res);
+                        return;
+                    }
                     const response = await axios.post(aliEndpoint, req.body, {
                         headers: {
                             'Content-Type': 'application/json',
