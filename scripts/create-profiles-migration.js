@@ -54,7 +54,7 @@ async function migrateUsers() {
         ];
 
         await sequelize.query(`
-            ALTER TABLE "wa_user_activity_logs" ADD COLUMN "botPhoneNumber" text;
+            ALTER TABLE "wa_user_activity_logs" ADD COLUMN "bot_phone_number_id" text;
         `, { transaction });
 
         for (const table of tables) {

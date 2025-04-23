@@ -76,7 +76,7 @@ const createActivityLog = async (
 
 
     await waUserActivityLogsRepository.create({
-        botPhoneNumber: botPhoneNumberId,
+        bot_phone_number_id: botPhoneNumberId,
         profile_id: profileId,
         phoneNumber: phoneNumber,
         actionType: actionType,
