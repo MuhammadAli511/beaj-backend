@@ -115,6 +115,14 @@ async function migrateUsers() {
             }
         }
 
+        // Populate the active sessions table with the specified bot phone number ID
+        console.log('Populating wa_active_sessions table...');
+        await sequelize.query(`
+            INSERT INTO wa_active_sessions (phone_number, bot_phone_number_id, profile_id)
+            SELECT phone_number, '410117285518514', profile_id 
+            FROM wa_profiles;
+        `, { transaction });
+
         console.log('Migration completed successfully. Committing transaction...');
         await transaction.commit();
         console.log('Transaction committed. Migration Phase 1 complete!');
