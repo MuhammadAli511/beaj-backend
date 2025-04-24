@@ -104,7 +104,7 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
             (word.PronunciationAssessment.ErrorType == "Mispronunciation" ||
                 word.PronunciationAssessment.AccuracyScore < 70)
         );
-        if (mispronouncedWordsList.length == 0) {
+        if (mispronouncedWordsList.length == 0 && accuracyScoreNumber > 70) {
             accuracyScoreNumber = 100;
         }
 
@@ -288,7 +288,7 @@ const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
             (word.PronunciationAssessment.ErrorType == "Mispronunciation" ||
                 word.PronunciationAssessment.AccuracyScore < 70)
         );
-        if (mispronouncedWordsList.length == 0) {
+        if (mispronouncedWordsList.length == 0 && accuracyScoreNumber > 70) {
             accuracyScoreNumber = 100;
         }
 

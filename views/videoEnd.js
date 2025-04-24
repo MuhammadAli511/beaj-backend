@@ -18,7 +18,9 @@ const videoEndView = async (profileId, userMobileNumber, currentUserState, start
 
             // Send lesson message
             let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-            lessonMessage += "\n\n" + removeHTMLTags(startingLesson.dataValues.text);
+            let lessonText = startingLesson.dataValues.text;
+            lessonText = lessonText.replace(/\\n/g, '\n');
+            lessonMessage += "\n\n" + removeHTMLTags(lessonText);
 
             // Send video content
             const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
@@ -42,7 +44,9 @@ const videoEndView = async (profileId, userMobileNumber, currentUserState, start
             await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
             // Send lesson message
-            let lessonMessage = startingLesson.dataValues.activityAlias + "\n\n" + startingLesson.dataValues.text;
+            let lessonText = startingLesson.dataValues.text;
+            lessonText = lessonText.replace(/\\n/g, '\n');
+            let lessonMessage = startingLesson.dataValues.activityAlias + "\n\n" + lessonText;
 
             await sendMessage(userMobileNumber, lessonMessage);
             await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);

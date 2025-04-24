@@ -13,7 +13,16 @@ const greetingMessage = async (profileId, userMobileNumber) => {
         engagement_type: "Greeting Message",
         lastUpdated: new Date(),
     });
-    const greetingMessage = "Welcome to Beaj Education! 👋\n\nI'm Ms. Beaj - here to guide you!\n\n👇Click on the button below to start:";
+    const greetingMessage = `
+        Welcome to Beaj Education! 👋\n
+        بیج ایجوکیشن میں خوش آمدید!
+        \n\n
+        I'm Ms. Beaj - here to guide you!\n
+        میں ہوں مس بیج - آپ کی مدد کے لیے حاضر ہوں!
+        \n\n
+        👇Click on the “Start button”\n
+        نیچے Start  بٹن پر کلک کریں۔
+    `;
     const greetingImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/greeting_beaj_face.jpeg";
     await sendButtonMessage(userMobileNumber, greetingMessage, [{ id: 'start', title: 'Start' }], 0, greetingImage);
     await createActivityLog(userMobileNumber, "template", "outbound", greetingMessage, null);
@@ -23,7 +32,7 @@ const greetingMessage = async (profileId, userMobileNumber) => {
 
 const greetingMessageLoop = async (profileId, userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Greeting Message");
-    const greetingMessage = "👇Click on the button below to start:";
+    const greetingMessage = "👇Click on the “Start button”\n نیچے Start  بٹن پر کلک کریں۔";
     await sendButtonMessage(userMobileNumber, greetingMessage, [{ id: 'start', title: 'Start' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", greetingMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start"]);
@@ -35,7 +44,13 @@ const kidsChooseClass = async (profileId, userMobileNumber) => {
     await createActivityLog(userMobileNumber, "video", "outbound", "https://beajbloblive.blob.core.windows.net/beajdocuments/kids_promo_2.mp4", null);
     await sleep(13000);
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Choose Class");
-    const chooseClassMessage = "🆓 Get a Free Trial!\n\n👇Choose your class:";
+    const chooseClassMessage = `
+        🆓 Get a Free Trial!\n
+        فری ٹرائل شروع کریں۔
+        \n\n
+        👇Choose your class:\n
+        آپ کس کلاس میں ہیں؟
+    `;
     await sendButtonMessage(userMobileNumber, chooseClassMessage, [{ id: 'kids_summer_camp_class_1_or_2', title: 'Grade 1 or 2' }, { id: 'kids_summer_camp_class_5_or_6', title: 'Grades 3 to 6' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", chooseClassMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["grade 1 or 2", "grades 3 to 6"]);
@@ -48,7 +63,7 @@ const kidsConfirmClass = async (profileId, userMobileNumber, messageContent) => 
     } else if (messageContent.toLowerCase() == "grades 3 to 6") {
         await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Confirm Class - Level 3");
     }
-    const confirmClassMessage = "🚀 Let's begin your *Free Trial* for " + messageContent.charAt(0).toUpperCase() + messageContent.slice(1) + "!";
+    const confirmClassMessage = "🚀 Ready to start your trial for " + messageContent.charAt(0).toUpperCase() + messageContent.slice(1) + "?\n کلاس 3 سے 6 کے لیے فری ٹرائل شروع کریں؟";
     await sendButtonMessage(userMobileNumber, confirmClassMessage, [{ id: 'start_free_trial', title: 'Start Free Trial' }, { id: 'no_choose_again', title: 'No, Choose Again' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", confirmClassMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start free trial", "no, choose again"]);
@@ -94,7 +109,13 @@ const demoCourseStart = async (profileId, userMobileNumber, startingLesson, cour
     if (courseName == "Free Trial - Teachers") {
         message = "Great! Let's start your free trial! 🤩 Here is your first lesson.";
     } else if (courseName == "Free Trial - Kids - Level 1" || courseName == "Free Trial - Kids - Level 3") {
-        message = "GREAT! 💥\n\nLet's Start Our Adventure! 🤩";
+        message = `
+            Great! 💥Let's Start!\n
+            زبردست! شروع کرتے ہیں!
+            \n\n
+            Build skills and win medals!🏅\n
+            ہر قدم پر انعام جیتیں!
+        `;
     }
     await sendMessage(userMobileNumber, message);
     await createActivityLog(profileId, userMobileNumber, "text", "outbound", message, null);

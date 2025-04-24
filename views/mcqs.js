@@ -289,7 +289,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                     mcqMessage = "👉 *Question " + await convertNumberToEmoji(firstMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n";
                 }
                 if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
-                    mcqMessage += "Choose the correct answer:\n";
+                    mcqMessage += "Choose the correct answer:\nصحیح جواب پر کلک کریں۔\n";
                 }
                 if (mcqType == 'Text') {
                     for (let i = 0; i < mcqAnswers.length; i++) {
@@ -444,7 +444,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                         mcqMessage = "👉 *Question " + await convertNumberToEmoji(nextMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n";
                     }
                     if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
-                        mcqMessage += "Choose the correct answer:\n";
+                        mcqMessage += "Choose the correct answer:\nصحیح جواب پر کلک کریں۔\n";
                     }
                     if (mcqType == 'Text') {
                         for (let i = 0; i < mcqAnswers.length; i++) {
