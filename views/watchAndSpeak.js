@@ -51,7 +51,6 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                 await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
             }
             else if (messageType === 'audio') {
-                await sleep(2000);
                 // Get the current Watch And Speak question
                 const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                 const retryCounter = currentUserState.dataValues.retryCounter;
@@ -320,6 +319,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
 
                     // Update acceptable messages list for the user
                     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no", "no, try again"]);
+                    await sleep(2000);
                     return;
                 }
                 else {

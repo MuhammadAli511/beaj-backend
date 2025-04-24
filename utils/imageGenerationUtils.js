@@ -99,7 +99,11 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
         const completenessScoreNumber = Math.round(pronunciationAssessment.scoreNumber.compScore);
         const words = pronunciationAssessment.words;
 
-        const mispronouncedWordsList = pronunciationAssessment.words.filter(word => word.PronunciationAssessment.ErrorType == "Mispronunciation" || word.PronunciationAssessment.AccuracyScore < 70);
+        const mispronouncedWordsList = pronunciationAssessment.words.filter(word =>
+            word && word.PronunciationAssessment &&
+            (word.PronunciationAssessment.ErrorType == "Mispronunciation" ||
+                word.PronunciationAssessment.AccuracyScore < 70)
+        );
         if (mispronouncedWordsList.length == 0) {
             accuracyScoreNumber = 100;
         }
@@ -189,7 +193,7 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
         // Loop through words and handle line breaks
         words.forEach((wordObj, index) => {
             // If undefined, skip the word
-            if (wordObj == undefined) {
+            if (wordObj == undefined || !wordObj.PronunciationAssessment) {
                 return;
             }
 
@@ -279,7 +283,11 @@ const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
         let accuracyScoreNumber = Math.round(pronunciationAssessment.scoreNumber.accuracyScore);
         const words = pronunciationAssessment.words;
 
-        const mispronouncedWordsList = pronunciationAssessment.words.filter(word => word.PronunciationAssessment.ErrorType == "Mispronunciation" || word.PronunciationAssessment.AccuracyScore < 70);
+        const mispronouncedWordsList = pronunciationAssessment.words.filter(word =>
+            word && word.PronunciationAssessment &&
+            (word.PronunciationAssessment.ErrorType == "Mispronunciation" ||
+                word.PronunciationAssessment.AccuracyScore < 70)
+        );
         if (mispronouncedWordsList.length == 0) {
             accuracyScoreNumber = 100;
         }
@@ -352,7 +360,7 @@ const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
         // Loop through words and handle line breaks
         words.forEach((wordObj) => {
             // If undefined, skip the word
-            if (wordObj == undefined) {
+            if (wordObj == undefined || !wordObj.PronunciationAssessment) {
                 return;
             }
 
@@ -496,7 +504,7 @@ const createAndUploadSpeakingPracticeScoreImage = async (pronunciationAssessment
 
         // Loop through words and handle line breaks
         allWords.forEach(wordObj => {
-            if (wordObj == undefined) {
+            if (wordObj == undefined || !wordObj.PronunciationAssessment) {
                 return;
             }
             if (!['Mispronunciation', 'None'].includes(wordObj.PronunciationAssessment.ErrorType)) {
