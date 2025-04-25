@@ -15,7 +15,7 @@ const greetingMessage = async (profileId, userMobileNumber, persona) => {
     });
     let greetingMessageText = "";
     if (persona == "kids") {
-        greetingMessageText = `Welcome to Beaj Education! 👋\nبیج ایجوکیشن میں خوش آمدید!\n\nI'm Ms. Beaj - here to guide you!\nمیں ہوں مس بیج - آپ کی مدد کے لیے حاضر ہوں!\n\n👇Click on the “Start button”\nنیچے Start  بٹن پر کلک کریں۔`;
+        greetingMessageText = `Welcome to Beaj Education! 👋\nبیج ایجوکیشن میں خوش آمدید!\n\nI'm Ms. Beaj - here to guide you!\nمیں ہوں مس بیج - آپ کی مدد کے لیے حاضر!\n\n👇Click on the “Start” button\nنیچے Start  بٹن پر کلک کریں۔`;
     } else if (persona == "teachers") {
         greetingMessageText = `Welcome to Beaj Education! 👋\n\nI'm Ms. Beaj - here to guide you!\n\n👇Click on the “Start button”`;
     }
@@ -41,22 +41,22 @@ const kidsChooseClass = async (profileId, userMobileNumber) => {
     await sleep(13000);
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Choose Class");
     const chooseClassMessage = `🆓 Get a Free Trial!\nفری ٹرائل شروع کریں۔\n\n👇Choose your class:\nآپ کس کلاس میں ہیں؟`;
-    await sendButtonMessage(userMobileNumber, chooseClassMessage, [{ id: 'kids_summer_camp_class_1_or_2', title: 'Grade 1 or 2' }, { id: 'kids_summer_camp_class_5_or_6', title: 'Grades 3 to 6' }]);
+    await sendButtonMessage(userMobileNumber, chooseClassMessage, [{ id: 'kids_summer_camp_class_1_or_2', title: 'Class 1 or 2' }, { id: 'kids_summer_camp_class_5_or_6', title: 'Class 3 to 6' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", chooseClassMessage, null);
-    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["grade 1 or 2", "grades 3 to 6"]);
+    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["class 1 or 2", "class 3 to 6"]);
     return;
 };
 
 const kidsConfirmClass = async (profileId, userMobileNumber, messageContent) => {
-    if (messageContent.toLowerCase() == "grade 1 or 2") {
+    if (messageContent.toLowerCase() == "class 1 or 2") {
         await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Confirm Class - Level 1");
-    } else if (messageContent.toLowerCase() == "grades 3 to 6") {
+    } else if (messageContent.toLowerCase() == "class 3 to 6") {
         await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Confirm Class - Level 3");
     }
     let confirmClassMessage = "";
-    if (messageContent.toLowerCase() == "grade 1 or 2") {
+    if (messageContent.toLowerCase() == "class 1 or 2") {
         confirmClassMessage = "🚀 Ready to start your trial for " + messageContent.charAt(0).toUpperCase() + messageContent.slice(1) + "?\n کلاس 1 یا 2 کے لیے فری ٹرائل شروع کریں؟";
-    } else if (messageContent.toLowerCase() == "grades 3 to 6") {
+    } else if (messageContent.toLowerCase() == "class 3 to 6") {
         confirmClassMessage = "🚀 Ready to start your trial for " + messageContent.charAt(0).toUpperCase() + messageContent.slice(1) + "?\n کلاس 3 سے 6 کے لیے فری ٹرائل شروع کریں؟";
     }
     await sendButtonMessage(userMobileNumber, confirmClassMessage, [{ id: 'start_free_trial', title: 'Start Free Trial' }, { id: 'no_choose_again', title: 'No, Choose Again' }]);
@@ -68,9 +68,9 @@ const kidsConfirmClass = async (profileId, userMobileNumber, messageContent) => 
 const kidsChooseClassLoop = async (profileId, userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Choose Class");
     const chooseClassMessage = "👇Choose your class:\nآپ کس کلاس میں ہیں؟";
-    await sendButtonMessage(userMobileNumber, chooseClassMessage, [{ id: 'kids_summer_camp_class_1_or_2', title: 'Grade 1 or 2' }, { id: 'kids_summer_camp_class_5_or_6', title: 'Grades 3 to 6' }]);
+    await sendButtonMessage(userMobileNumber, chooseClassMessage, [{ id: 'kids_summer_camp_class_1_or_2', title: 'Class 1 or 2' }, { id: 'kids_summer_camp_class_5_or_6', title: 'Class 3 to 6' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", chooseClassMessage, null);
-    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["grade 1 or 2", "grades 3 to 6"]);
+    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["class 1 or 2", "class 3 to 6"]);
     return;
 };
 
@@ -134,7 +134,7 @@ const endTrialTeachers = async (profileId, userMobileNumber) => {
 const endTrialKids = async (profileId, userMobileNumber) => {
     await waUsersMetadataRepository.updateFreeDemoEnded(profileId, userMobileNumber);
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "End Now");
-    let endTrialMessage = "You have chosen to end your free trial. Next Steps:";
+    let endTrialMessage = "You have chosen to end your free trial. Next Steps:\n\nآپ کا ٹرائل ختم ہوا۔ آپ آگے کیا کرنا چاہیں گے؟";
     const user = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
     if (user.dataValues.userRegistrationComplete) {
         await sendButtonMessage(userMobileNumber, endTrialMessage, [{ id: 'get_another_trial', title: 'Get Another Trial' }]);
@@ -190,10 +190,10 @@ const confirmCityName = async (profileId, userMobileNumber, messageContent) => {
 
 const getUserProfile = async (profileId, userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "User Profile");
-    const userProfileMessage = "Are you a parent or a school owner?\nکیا آپ بچے کے والدین ہیں یا اسکول چلاتے ہیں؟";
-    await sendButtonMessage(userMobileNumber, userProfileMessage, [{ id: 'parent', title: 'Parent' }, { id: 'school_owner', title: 'School Owner' }]);
+    const userProfileMessage = "Are you a parent or school admin?\nکیا آپ بچے کے والدین ہیں یا اسکول چلاتے ہیں؟";
+    await sendButtonMessage(userMobileNumber, userProfileMessage, [{ id: 'parent', title: 'Parent' }, { id: 'school_admin', title: 'School Admin' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", userProfileMessage, null);
-    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["parent", "school owner"]);
+    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["parent", "school admin"]);
     return;
 };
 
@@ -201,7 +201,7 @@ const thankyouMessageSchoolOwner = async (profileId, userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Thankyou Message");
     await waUserProgressRepository.update(profileId, userMobileNumber, null, null, null, null, null, null, null, null, ["get another trial"]);
     const schoolRegistrationImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/school_registration.jpg"
-    let thankyouMessage = "A beaj team member will call you within 24 hrs to discuss a partnership with your school!\n\nWe look forward to speaking with you soon!";
+    let thankyouMessage = "A Beaj team member will call you within 24 hours to discuss a partnership with your school!\n\nWe look forward to speaking with you soon!";
     await sendButtonMessage(userMobileNumber, thankyouMessage, [{ id: 'get_another_trial', title: 'Get Another Trial' }], 0, schoolRegistrationImage);
     await createActivityLog(userMobileNumber, "image", "outbound", schoolRegistrationImage, null);
     await waUsersMetadataRepository.update(profileId, userMobileNumber, {
@@ -213,7 +213,7 @@ const thankyouMessageSchoolOwner = async (profileId, userMobileNumber) => {
 
 const readyToPay = async (profileId, userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Ready to Pay");
-    let readyToPayMessage = "If you are ready to pay, a beaj team member will call you within 24 hrs to confirm your registration.\n\nاگر آپ فیس ادا کرنے کے لیے تیار ہیں، تو بیج ٹیم کا نمائندہ آپ سے 24 گھنٹوں کے اندر رابطہ کر کے آپ کی رجسٹریشن مکمل کرے گا.";
+    let readyToPayMessage = "If you are ready to pay the fee, a Beaj team member will call you within 24 hours to process payment and confirm your registration.\n\nاگر آپ فیس ادا کرنے کے لیے تیار ہیں، تو بیج ٹیم کا نمائندہ آپ کو 24 گھنٹوں کے اندر فون کرے گا اور آپ کی رجسٹریشن مکمل کرے گا۔ پیمنٹ نمائندے سے بات کرنے کے بعد ہوگی۔.";
     await sendButtonMessage(userMobileNumber, readyToPayMessage, [{ id: 'ready_to_register', title: 'Ready to Register' }, { id: 'get_another_trial', title: 'Get Another Trial' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", readyToPayMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["ready to register", "get another trial"]);
