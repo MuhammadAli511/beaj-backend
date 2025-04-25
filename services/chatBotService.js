@@ -15,11 +15,15 @@ import {
     kidsChooseClass,
     kidsConfirmClass,
     kidsChooseClassLoop,
-    endTrial,
+    endTrialTeachers,
+    endTrialKids,
     greetingMessageLoop,
-    getSchoolName,
     confirmSchoolName,
-    thankyouMessage
+    thankyouMessageSchoolOwner,
+    getUserProfile,
+    getSchoolName,
+    getCityName,
+    confirmCityName,
 } from "../utils/trialflowUtils.js";
 import { sendMessage, sendButtonMessage, retrieveMediaURL } from "../utils/whatsappUtils.js";
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
@@ -211,7 +215,11 @@ const webhookService = async (body, res) => {
                     (messageContent.toLowerCase() == "end now") &&
                     (currentUserState.dataValues.engagement_type == "Free Trial - Teachers" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")
                 ) {
-                    await endTrial(profileId, userMobileNumber);
+                    if (botPhoneNumberId == studentBotPhoneNumberId) {
+                        await endTrialKids(profileId, userMobileNumber);
+                    } else {
+                        await endTrialTeachers(profileId, userMobileNumber);
+                    }
                     return;
                 }
 
@@ -230,10 +238,35 @@ const webhookService = async (body, res) => {
 
                 if (
                     text_message_types.includes(message.type) &&
-                    (messageContent.toLowerCase() == "register") &&
+                    (messageContent.toLowerCase() == "register" || messageContent.toLowerCase() == "camp registration") &&
                     (currentUserState.dataValues.engagement_type == "End Now" || currentUserState.dataValues.engagement_type == "Free Trial - Teachers" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")
                 ) {
-                    await getSchoolName(profileId, userMobileNumber);
+                    if (botPhoneNumberId == studentBotPhoneNumberId) {
+                        // Kids Product: Parent + School
+                        await getUserProfile(profileId, userMobileNumber);
+                    } else {
+                        // Teachers Product
+                        await getSchoolName(profileId, userMobileNumber);
+                    }
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "User Profile")
+                ) {
+                    if (messageContent.toLowerCase() == "school owner") {
+                        // TODO: ADD PROSPECTUS HERE
+                        await waUserProgressRepository.updatePersona(profileId, userMobileNumber, "school owner");
+                        await getSchoolName(profileId, userMobileNumber);
+                    } else if (messageContent.toLowerCase() == "parent") {
+                        // TODO: ADD FLYER HERE
+                        await waUserProgressRepository.updatePersona(profileId, userMobileNumber, "parent");
+                        await readyToPay(profileId, userMobileNumber);
+                    } else {
+                        return;
+                    }
+
                     return;
                 }
 
@@ -250,7 +283,7 @@ const webhookService = async (body, res) => {
                     (messageContent.toLowerCase() == "yes") &&
                     (currentUserState.dataValues.engagement_type == "Confirm School Name")
                 ) {
-                    await thankyouMessage(profileId, userMobileNumber);
+                    await getCityName(profileId, userMobileNumber);
                     return;
                 }
 
@@ -260,6 +293,41 @@ const webhookService = async (body, res) => {
                     (currentUserState.dataValues.engagement_type == "Confirm School Name")
                 ) {
                     await getSchoolName(profileId, userMobileNumber);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "City Name")
+                ) {
+                    await confirmCityName(profileId, userMobileNumber, messageContent);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (messageContent.toLowerCase() == "yes") &&
+                    (currentUserState.dataValues.engagement_type == "Confirm City Name")
+                ) {
+                    await thankyouMessageSchoolOwner(profileId, userMobileNumber);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (messageContent.toLowerCase() == "no") &&
+                    (currentUserState.dataValues.engagement_type == "Confirm City Name")
+                ) {
+                    await getCityName(profileId, userMobileNumber);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (messageContent.toLowerCase() == "ready to register") &&
+                    (currentUserState.dataValues.engagement_type == "Ready to Pay")
+                ) {
+                    await thankyouMessageParent(profileId, userMobileNumber);
                     return;
                 }
 
@@ -485,7 +553,7 @@ const webhookService = async (body, res) => {
                         await levelCourseStart(profileId, userMobileNumber, startingLesson, currentUserState.dataValues.currentCourseId);
                         // Send first lesson to user
                         currentUserState = await waUserProgressRepository.getByProfileId(profileId);
-                        if (currentUserState.dataValues.persona == "kid") {
+                        if (currentUserState.dataValues.persona == "kid" || currentUserState.dataValues.persona == "parent" || currentUserState.dataValues.persona == "school owner") {
                             await sendCourseLessonToKid(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent);
                         } else {
                             await sendCourseLessonToTeacher(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent);
@@ -522,7 +590,7 @@ const webhookService = async (body, res) => {
                             const latestUserState = await waUserProgressRepository.getByProfileId(profileId);
 
                             // Send next lesson to user
-                            if (currentUserState.dataValues.persona == "kid") {
+                            if (currentUserState.dataValues.persona == "kid" || currentUserState.dataValues.persona == "parent" || currentUserState.dataValues.persona == "school owner") {
                                 await sendCourseLessonToKid(profileId, userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
                             } else {
                                 await sendCourseLessonToTeacher(profileId, userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
@@ -535,7 +603,7 @@ const webhookService = async (body, res) => {
                 if (text_message_types.includes(message.type) && currentUserState.dataValues.activityType == "watchAndSpeak") {
                     const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
                     if (messageContent.toLowerCase().includes("yes") || messageContent.toLowerCase().includes("no")) {
-                        if (currentUserState.dataValues.persona == "kid") {
+                        if (currentUserState.dataValues.persona == "kid" || currentUserState.dataValues.persona == "parent" || currentUserState.dataValues.persona == "school owner") {
                             await sendCourseLessonToKid(profileId, userMobileNumber, currentUserState, currentLesson, messageType, messageContent);
                         } else {
                             await sendCourseLessonToTeacher(profileId, userMobileNumber, currentUserState, currentLesson, messageType, messageContent);
@@ -656,7 +724,7 @@ const webhookService = async (body, res) => {
                         let latestUserState = await waUserProgressRepository.getByProfileId(profileId);
 
                         // Send next lesson to user
-                        if (currentUserState.dataValues.persona == "kid") {
+                        if (currentUserState.dataValues.persona == "kid" || currentUserState.dataValues.persona == "parent" || currentUserState.dataValues.persona == "school owner") {
                             await sendCourseLessonToKid(profileId, userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
                         } else {
                             await sendCourseLessonToTeacher(profileId, userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
@@ -694,7 +762,7 @@ const webhookService = async (body, res) => {
                             latestUserState = await waUserProgressRepository.getByProfileId(profileId);
 
                             // Send next lesson to user
-                            if (currentUserState.dataValues.persona == "kid") {
+                            if (currentUserState.dataValues.persona == "kid" || currentUserState.dataValues.persona == "parent" || currentUserState.dataValues.persona == "school owner") {
                                 await sendCourseLessonToKid(profileId, userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
                             } else {
                                 await sendCourseLessonToTeacher(profileId, userMobileNumber, latestUserState, nextLesson, messageType, messageContent);
@@ -716,7 +784,7 @@ const webhookService = async (body, res) => {
                     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
 
                     // Update user progress to next question
-                    if (currentUserState.dataValues.persona == "kid") {
+                    if (currentUserState.dataValues.persona == "kid" || currentUserState.dataValues.persona == "parent" || currentUserState.dataValues.persona == "school owner") {
                         await sendCourseLessonToKid(profileId, userMobileNumber, currentUserState, currentLesson, messageType, messageContent);
                     } else {
                         await sendCourseLessonToTeacher(profileId, userMobileNumber, currentUserState, currentLesson, messageType, messageContent);
