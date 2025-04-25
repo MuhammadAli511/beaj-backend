@@ -190,10 +190,10 @@ const confirmCityName = async (profileId, userMobileNumber, messageContent) => {
 
 const getUserProfile = async (profileId, userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "User Profile");
-    const userProfileMessage = "Are you a parent or school admin?\nکیا آپ بچے کے والدین ہیں یا اسکول چلاتے ہیں؟";
-    await sendButtonMessage(userMobileNumber, userProfileMessage, [{ id: 'parent', title: 'Parent' }, { id: 'school_admin', title: 'School Admin' }]);
+    const userProfileMessage = "Are you a parent/student or school admin?\n\nکیا آپ والدین/سٹوڈنٹ ہیں یا سکول چلاتے ہیں؟";
+    await sendButtonMessage(userMobileNumber, userProfileMessage, [{ id: 'parent_student', title: 'Parent or Student' }, { id: 'school_admin', title: 'School Admin' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", userProfileMessage, null);
-    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["parent", "school admin"]);
+    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["parent or student", "school admin"]);
     return;
 };
 
