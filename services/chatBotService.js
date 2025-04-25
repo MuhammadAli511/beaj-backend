@@ -24,11 +24,13 @@ import {
     getSchoolName,
     getCityName,
     confirmCityName,
+    readyToPay,
+    thankyouMessageParent,
 } from "../utils/trialflowUtils.js";
-import { sendMessage, sendButtonMessage, retrieveMediaURL } from "../utils/whatsappUtils.js";
+import { sendMessage, sendButtonMessage, retrieveMediaURL, sendMediaMessage } from "../utils/whatsappUtils.js";
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
 import { createFeedback } from "../utils/createFeedbackUtils.js";
-import { checkUserMessageAndAcceptableMessages, getAcceptableMessagesList } from "../utils/utils.js";
+import { checkUserMessageAndAcceptableMessages, getAcceptableMessagesList, sleep } from "../utils/utils.js";
 import { runWithContext } from "../utils/requestContext.js";
 
 dotenv.config();
@@ -169,7 +171,11 @@ const webhookService = async (body, res) => {
                 // DEMO COURSE
                 // Step 1: If user does not exist
                 if (userExists == false) {
-                    await greetingMessage(profileId, userMobileNumber);
+                    if (botPhoneNumberId == studentBotPhoneNumberId) {
+                        await greetingMessage(profileId, userMobileNumber, "kids");
+                    } else {
+                        await greetingMessage(profileId, userMobileNumber, "teachers");
+                    }
                     return;
                 }
 
@@ -256,11 +262,18 @@ const webhookService = async (body, res) => {
                     (currentUserState.dataValues.engagement_type == "User Profile")
                 ) {
                     if (messageContent.toLowerCase() == "school owner") {
-                        // TODO: ADD PROSPECTUS HERE
+                        let prospectusPdf = "https://beajbloblive.blob.core.windows.net/beajdocuments/Student%20Summer%20Camp%20Prospectus.pdf";
+                        await sendMediaMessage(userMobileNumber, prospectusPdf, "pdf", "Student Summer Camp Prospectus");
+                        await sleep(8000);
                         await waUserProgressRepository.updatePersona(profileId, userMobileNumber, "school owner");
                         await getSchoolName(profileId, userMobileNumber);
                     } else if (messageContent.toLowerCase() == "parent") {
-                        // TODO: ADD FLYER HERE
+                        let flyerEnglish = "https://beajbloblive.blob.core.windows.net/beajdocuments/flyer_english.jpg";
+                        let flyerUrdu = "https://beajbloblive.blob.core.windows.net/beajdocuments/flyer_urdu.jpg";
+                        await sendMediaMessage(userMobileNumber, flyerEnglish, "image", null);
+                        await sleep(2000);
+                        await sendMediaMessage(userMobileNumber, flyerUrdu, "image", null);
+                        await sleep(2000);
                         await waUserProgressRepository.updatePersona(profileId, userMobileNumber, "parent");
                         await readyToPay(profileId, userMobileNumber);
                     } else {
@@ -333,7 +346,11 @@ const webhookService = async (body, res) => {
 
                 if (currentUserState.dataValues.engagement_type == "Thankyou Message") {
                     if (messageContent.toLowerCase() == "get another trial") {
-                        await greetingMessageLoop(profileId, userMobileNumber);
+                        if (botPhoneNumberId == studentBotPhoneNumberId) {
+                            await kidsChooseClassLoop(profileId, userMobileNumber);
+                        } else {
+                            await greetingMessageLoop(profileId, userMobileNumber);
+                        }
                         return;
                     } else {
                         await sendMessage(userMobileNumber, "Your free trial is complete. We will get back to you soon.");
@@ -347,9 +364,7 @@ const webhookService = async (body, res) => {
                     (messageContent.toLowerCase() == "start" || messageContent.toLowerCase() == "start free trial") &&
                     (currentUserState.dataValues.engagement_type == "Greeting Message" || currentUserState.dataValues.engagement_type == "Confirm Class - Level 1" || currentUserState.dataValues.engagement_type == "Confirm Class - Level 3")
                 ) {
-                    if (userExists == false) {
-                        await waUsersMetadataRepository.update(profileId, userMobileNumber, { freeDemoStarted: new Date() });
-                    }
+                    await waUsersMetadataRepository.updateFreeDemoStarted(profileId, userMobileNumber);
 
                     let courseName = "";
                     if (currentUserState.dataValues.engagement_type == "Confirm Class - Level 1") {

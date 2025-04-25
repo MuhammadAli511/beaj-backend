@@ -115,6 +115,13 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, ret
                 type: 'sticker',
                 sticker: { link: mediaUrl },
             };
+        } else if (mediaType == 'pdf') {
+            requestBody = {
+                messaging_product: 'whatsapp',
+                to: to,
+                type: 'document',
+                document: { link: mediaUrl, filename: captionText },
+            };
         } else {
             console.log('Invalid media type:', mediaType);
             return;

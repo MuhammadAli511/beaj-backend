@@ -139,6 +139,9 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
     if (acceptableMessagesList.length > 1) {
         for (let i = 0; i < acceptableMessagesList.length; i++) {
             message += "\n" + acceptableMessagesList[i];
+            if (i < acceptableMessagesList.length - 1) {
+                message += " or";
+            }
         }
     } else {
         message += acceptableMessagesList[0];

@@ -134,9 +134,14 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             await sleep(2000);
 
             // Reply Buttons
-            const readyImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/ready_for_your_first_challenge.jpeg"
+            let finalImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/ready_for_your_first_challenge.jpeg";
+            if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
+                finalImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/ready_for_your_first_challenge_level_3_final.jpg";
+            } else if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1") {
+                finalImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/ready_for_your_first_challenge_level_1_final.jpg";
+            }
             let readyMessage = "Ready for your first challenge? 💪\nاپنے پہلے چیلنج کے لیے تیار ہیں؟";
-            await sendButtonMessage(userMobileNumber, readyMessage, [{ id: 'start_challenge', title: 'Start Challenge' }, { id: 'end_now', title: 'End Now' }], 0, readyImage);
+            await sendButtonMessage(userMobileNumber, readyMessage, [{ id: 'start_challenge', title: 'Start Challenge' }, { id: 'end_now', title: 'End Now' }], 0, finalImage);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start Challenge or End Now", null);
 
             return;

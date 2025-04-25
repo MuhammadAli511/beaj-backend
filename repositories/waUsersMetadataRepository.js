@@ -139,6 +139,44 @@ const updateSchoolName = async (profileId, phoneNumber, schoolName) => {
     });
 };
 
+const updateCityName = async (profileId, phoneNumber, cityName) => {
+    return await WA_UsersMetadata.update({
+        city: cityName
+    }, {
+        where: { profile_id: profileId, phoneNumber: phoneNumber }
+    });
+};
+
+const updateFreeDemoStarted = async (profileId, phoneNumber) => {
+    const user = await WA_UsersMetadata.findOne({
+        where: { profile_id: profileId, phoneNumber: phoneNumber }
+    });
+
+    if (user && user.dataValues.freeDemoStarted === null) {
+        return await WA_UsersMetadata.update({
+            freeDemoStarted: new Date()
+        }, {
+            where: { profile_id: profileId, phoneNumber: phoneNumber }
+        });
+    }
+    return user;
+};
+
+const updateFreeDemoEnded = async (profileId, phoneNumber) => {
+    const user = await WA_UsersMetadata.findOne({
+        where: { profile_id: profileId, phoneNumber: phoneNumber }
+    });
+
+    if (user && user.dataValues.freeDemoEnded === null) {
+        return await WA_UsersMetadata.update({
+            freeDemoEnded: new Date()
+        }, {
+            where: { profile_id: profileId, phoneNumber: phoneNumber }
+        });
+    }
+    return user;
+};
+
 export default {
     create,
     getAll,
@@ -154,5 +192,8 @@ export default {
     getFreeDemoStartedUsersCount,
     getFreeDemoEndedUsersCount,
     getFilteredUsersWithControlGroupAndCohort,
-    updateSchoolName
+    updateSchoolName,
+    updateCityName,
+    updateFreeDemoStarted,
+    updateFreeDemoEnded
 };
