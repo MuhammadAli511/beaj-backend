@@ -8,7 +8,7 @@ import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRe
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import waActiveSessionRepository from "../repositories/waActiveSessionRepository.js";
 import waProfileRepository from "../repositories/waProfileRepository.js";
-import { removeUser, startCourseForUser, levelCourseStart, sendCourseLessonToTeacher, sendCourseLessonToKid, removeUserTillCourse, } from "../utils/chatbotUtils.js";
+import { removeUser, startCourseForUser, levelCourseStart, sendCourseLessonToTeacher, sendCourseLessonToKid } from "../utils/chatbotUtils.js";
 import {
     demoCourseStart,
     greetingMessage,
@@ -151,13 +151,6 @@ const webhookService = async (body, res) => {
                 if (!botStatus || botStatus.dataValues.constantValue != "Active") {
                     await sendMessage(userMobileNumber, "Sorry, We are currently not accepting any messages. Please try again later.");
                     await createActivityLog(userMobileNumber, "text", "outbound", "Sorry, We are currently not accepting any messages. Please try again later.", null);
-                    return;
-                }
-
-
-                // If message is reset, delete user from database
-                if (text_message_types.includes(message.type) && messageContent.toLowerCase() == "reset course") {
-                    await removeUserTillCourse(userMobileNumber);
                     return;
                 }
 
