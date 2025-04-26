@@ -154,7 +154,6 @@ const webhookService = async (body, res) => {
                     return;
                 }
 
-                let currentUserState = await waUserProgressRepository.getByProfileId(profileId);
 
                 // If message is reset, delete user from database
                 if (text_message_types.includes(message.type) && messageContent.toLowerCase() == "reset course") {
@@ -178,6 +177,8 @@ const webhookService = async (body, res) => {
                     }
                     return;
                 }
+
+                let currentUserState = await waUserProgressRepository.getByProfileId(profileId);
 
                 if (currentUserState) {
                     const messageAuth = await checkUserMessageAndAcceptableMessages(profileId, userMobileNumber, currentUserState, messageType, messageContent);

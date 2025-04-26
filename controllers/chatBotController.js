@@ -45,7 +45,7 @@ const webhookController = async (req, res, next) => {
                     return;
                 }
             }
-            else if (phone_number == "+923225036358" || phone_number == "+12028123335" || phone_number == "+923008400080" || phone_number == "+923328251950") {
+            else if (phone_number == "+923225036358") {
                 try {
                     const response = await axios.post(aliEndpoint, req.body, {
                         headers: {

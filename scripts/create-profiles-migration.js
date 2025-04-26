@@ -76,42 +76,67 @@ async function migrateUsers() {
 
         // 4. Insert profiles for each user and update references
         let counter = 0;
-        for (const user of users) {
-            counter++;
-            const phoneNumber = user.dataValues.phoneNumber;
-            console.log(`Processing user ${counter}/${users.length}: ${phoneNumber}`);
-            const botId = teacherBotPhoneNumberId;
+        const batchSize = 100; // Process 100 users at a time
 
-            // Create profile record
-            console.log(`Creating profile for ${phoneNumber} with bot ID ${botId}`);
-            const [result] = await sequelize.query(`
-        INSERT INTO wa_profiles (phone_number, bot_phone_number_id, profile_type)
-        VALUES (:phoneNumber, :botId, 'teacher')
-        RETURNING profile_id;
-      `, {
-                replacements: { phoneNumber, botId },
-                type: sequelize.QueryTypes.INSERT,
-                transaction
+        for (let i = 0; i < users.length; i += batchSize) {
+            const batch = users.slice(i, Math.min(i + batchSize, users.length));
+
+            // Create profile records in bulk
+            console.log(`Creating profiles for batch of ${batch.length} users`);
+            const profileInsertValues = batch.map(user =>
+                `('${user.dataValues.phoneNumber}', '${teacherBotPhoneNumberId}', 'teacher')`
+            ).join(',');
+
+            const [profileResults] = await sequelize.query(`
+                INSERT INTO wa_profiles (phone_number, bot_phone_number_id, profile_type)
+                VALUES ${profileInsertValues}
+                RETURNING profile_id, phone_number;
+            `, { transaction });
+
+            // Create a mapping of phone numbers to profile IDs
+            const phoneToProfileMap = {};
+            profileResults.forEach(row => {
+                phoneToProfileMap[row.phone_number] = row.profile_id;
             });
 
-            const profileId = result[0].profile_id;
-
-            // 5. Update records in each table to set the profile_id
+            // Update each table in bulk for the batch
             for (const table of tables) {
-                console.log(`Updating ${table} for user ${phoneNumber} with profile ID ${profileId}`);
+                console.log(`Updating ${table} for batch of ${batch.length} users`);
+
+                // Build the CASE statement for the update
+                const caseStatements = batch.map(user =>
+                    `WHEN '${user.dataValues.phoneNumber}' THEN ${phoneToProfileMap[user.dataValues.phoneNumber]}`
+                ).join('\n          ');
+
+                const phoneNumbers = batch.map(user => `'${user.dataValues.phoneNumber}'`).join(',');
+
                 await sequelize.query(`
-          UPDATE ${table} 
-          SET profile_id = :profileId 
-          WHERE "phoneNumber" = :phoneNumber;
-        `, {
-                    replacements: { profileId, phoneNumber },
-                    transaction
-                });
+                    UPDATE ${table} 
+                    SET profile_id = CASE "phoneNumber"
+                          ${caseStatements}
+                          ELSE profile_id
+                    END
+                    WHERE "phoneNumber" IN (${phoneNumbers});
+                `, { transaction });
             }
 
-            // Progress indicator for large migrations
-            if (counter % 100 === 0 || counter === users.length) {
-                console.log(`Processed ${counter}/${users.length} users`);
+            // Individual user logging (to maintain same output format)
+            for (const user of batch) {
+                counter++;
+                const phoneNumber = user.dataValues.phoneNumber;
+                const profileId = phoneToProfileMap[phoneNumber];
+
+                console.log(`Processing user ${counter}/${users.length}: ${phoneNumber}`);
+                console.log(`Creating profile for ${phoneNumber} with bot ID ${teacherBotPhoneNumberId}`);
+
+                for (const table of tables) {
+                    console.log(`Updating ${table} for user ${phoneNumber} with profile ID ${profileId}`);
+                }
+
+                // Progress indicator for large migrations
+                if (counter % 100 === 0 || counter === users.length) {
+                    console.log(`Processed ${counter}/${users.length} users`);
+                }
             }
         }
 

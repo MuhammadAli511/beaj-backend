@@ -36,8 +36,8 @@ const greetingMessageLoop = async (profileId, userMobileNumber) => {
 };
 
 const kidsChooseClass = async (profileId, userMobileNumber) => {
-    await sendMediaMessage(userMobileNumber, "https://beajbloblive.blob.core.windows.net/beajdocuments/kids_promo_2.mp4", "video");
-    await createActivityLog(userMobileNumber, "video", "outbound", "https://beajbloblive.blob.core.windows.net/beajdocuments/kids_promo_2.mp4", null);
+    await sendMediaMessage(userMobileNumber, "https://beajbloblive.blob.core.windows.net/beajdocuments/summer_intro_video.mp4", "video");
+    await createActivityLog(userMobileNumber, "video", "outbound", "https://beajbloblive.blob.core.windows.net/beajdocuments/summer_intro_video.mp4", null);
     await sleep(13000);
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Choose Class");
     const chooseClassMessage = `🆓 Get a Free Trial!\nفری ٹرائل شروع کریں۔\n\n👇Choose your class:\nآپ کس کلاس میں ہیں؟`;
