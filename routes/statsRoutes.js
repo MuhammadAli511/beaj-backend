@@ -19,6 +19,9 @@ router.get('/dashboardCardsFunnel', beajFacilitatorsAuth, statsController.dashbo
 // POST api/stats/lastActiveUsers
 router.post('/lastActiveUsers', beajFacilitatorsAuth, statsController.lastActiveUsersController);
 
+// POST api/stats/studentUserJourneyStats
+router.post('/studentUserJourneyStats', beajFacilitatorsAuth, statsController.studentUserJourneyStatsController);
+
 // Use error handler middleware
 router.use(errorHandler);
 

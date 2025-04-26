@@ -4,6 +4,7 @@ import lessonRepository from '../repositories/lessonRepository.js';
 import waUsersMetadataRepository from '../repositories/waUsersMetadataRepository.js';
 import waUserActivityLogsRepository from '../repositories/waUserActivityLogsRepository.js';
 import waPurchasedCoursesRepository from '../repositories/waPurchasedCoursesRepository.js';
+import sequelize from '../config/sequelize.js';
 
 const totalContentStatsService = async () => {
     try {
@@ -103,8 +104,101 @@ const lastActiveUsersService = async (days, cohorts) => {
     }
 };
 
+const studentUserJourneyStatsService = async (date) => {
+    try {
+        // Set default date if not provided
+        const filterDate = date || '2025-04-26 12:00:00';
+
+        // Query 1: Get user data with joins from all three tables
+        const userDataQuery = `
+            SELECT
+                m."phoneNumber", m.name, m.city, m."userClickedLink", m."freeDemoStarted", 
+                m."freeDemoEnded", m."userRegistrationComplete", m."schoolName", m."targetGroup", m.cohort,
+                p.profile_id, p.phone_number, p.profile_type, p.created_at,
+                wup.persona, wup.engagement_type, wup."currentCourseId", wup."currentWeek", 
+                wup."currentDay", wup."currentLessonId", wup."currentLesson_sequence", 
+                wup."activityType"
+            FROM wa_users_metadata m
+            INNER JOIN wa_profiles p
+                ON m."profile_id" = p.profile_id
+            INNER JOIN wa_user_progress wup
+                ON p."profile_id" = wup."profile_id"
+            WHERE
+                m."userClickedLink" > TIMESTAMP '${filterDate}'
+                AND p.profile_type = 'student'
+        `;
+
+        // Query 2: Get statistics for each stage of the journey
+        const statsQuery = `
+            SELECT 'Clicked Link' AS stage, COUNT(*) as count
+            FROM wa_users_metadata m
+            INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
+            INNER JOIN wa_user_progress wup ON p."profile_id" = wup."profile_id"
+            WHERE m."userClickedLink" IS NOT NULL
+            AND m."userClickedLink" > TIMESTAMP '${filterDate}'
+            AND p.profile_type = 'student'
+
+            UNION ALL
+
+            SELECT 'Demo Started' AS stage, COUNT(*) as count
+            FROM wa_users_metadata m
+            INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
+            INNER JOIN wa_user_progress wup ON p."profile_id" = wup."profile_id"
+            WHERE m."freeDemoStarted" IS NOT NULL
+            AND m."userClickedLink" > TIMESTAMP '${filterDate}'
+            AND p.profile_type = 'student'
+
+            UNION ALL
+
+            SELECT 'Demo Ended' AS stage, COUNT(*) as count
+            FROM wa_users_metadata m
+            INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
+            INNER JOIN wa_user_progress wup ON p."profile_id" = wup."profile_id"
+            WHERE m."freeDemoEnded" IS NOT NULL
+            AND m."userClickedLink" > TIMESTAMP '${filterDate}'
+            AND p.profile_type = 'student'
+
+            UNION ALL
+
+            SELECT 'Registration Completed' AS stage, COUNT(*) as count
+            FROM wa_users_metadata m
+            INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
+            INNER JOIN wa_user_progress wup ON p."profile_id" = wup."profile_id"
+            WHERE m."userRegistrationComplete" IS NOT NULL
+            AND m."userClickedLink" > TIMESTAMP '${filterDate}'
+            AND p.profile_type = 'student'
+        `;
+
+        // Execute both queries
+        const [userData] = await sequelize.query(userDataQuery);
+        const [stageStats] = await sequelize.query(statsQuery);
+
+        // Calculate conversion rates between stages
+        const stats = {};
+        let previousCount = null;
+
+        stageStats.forEach(stage => {
+            stats[stage.stage] = {
+                count: parseInt(stage.count),
+                percentage: previousCount ? parseFloat(((stage.count / previousCount) * 100).toFixed(2)) : 100,
+                dropPercentage: previousCount ? parseFloat((100 - ((stage.count / previousCount) * 100)).toFixed(2)) : 0
+            };
+            previousCount = parseInt(stage.count);
+        });
+
+        return {
+            userData,
+            stats
+        };
+    } catch (error) {
+        error.fileName = 'statsService.js';
+        throw error;
+    }
+};
+
 export default {
     totalContentStatsService,
     dashboardCardsFunnelService,
-    lastActiveUsersService
+    lastActiveUsersService,
+    studentUserJourneyStatsService
 };
