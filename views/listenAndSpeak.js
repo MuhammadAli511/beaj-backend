@@ -222,7 +222,9 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
-                let lessonMessage = startingLesson.dataValues.activityAlias + "\n\n" + startingLesson.dataValues.text;
+                let lessonText = startingLesson.dataValues.text;
+                lessonText = lessonText.replace(/\\n/g, '\n');
+                let lessonMessage = startingLesson.dataValues.activityAlias + "\n\n" + lessonText;
 
                 // Text message
                 await sendMessage(userMobileNumber, lessonMessage);
