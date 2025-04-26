@@ -392,7 +392,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                         }
                     } else {
                         // Reset Question Number, Retry Counter, and Activity Type
-                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(userMobileNumber, null, 0, null);
+                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
 
                         // ENDING MESSAGE
                         await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
