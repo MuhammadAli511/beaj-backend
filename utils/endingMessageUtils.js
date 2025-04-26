@@ -188,7 +188,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             await sleep(2000);
 
             let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔\n\nCongratulations! 👏 You have completed your first adventure with Zara and Faiz!\nمبارک ہو👏 ! آپ نے زارا اور فیض کے ساتھ اپنا پہلا "ایڈونچر" مکمل کر لیا ہے۔`;
-            let trialCompleteButtonMessage = `Are you ready to continue?! Click on *Camp Registration*👇\nکیا آپ آگے بڑھنے کے لیے تیار ہیں؟ "Camp Registration" بٹن پر کلک کریں۔`;
+            let trialCompleteButtonMessage = `Are you ready to continue?!\nکیا آپ آگے بڑھنے کے لیے تیار ہیں؟`;
             if (message == null) {
                 await sendMediaMessage(userMobileNumber, trialCompleteImage, 'image', trialCompleteMessage);
                 await createActivityLog(userMobileNumber, "image", "outbound", trialCompleteImage, null, trialCompleteMessage);
