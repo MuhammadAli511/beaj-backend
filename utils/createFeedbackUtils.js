@@ -13,9 +13,9 @@ const createFeedback = async (
 
     const userAcceptableList = userCurrentProgress.acceptableMessages || [];
     if (userAcceptableList.includes("start next activity")) {
-        await waUserProgressRepository.updateAcceptableMessagesList(phoneNumber, ["start next activity"]);
+        await waUserProgressRepository.updateAcceptableMessagesList(profileId, phoneNumber, ["start next activity"]);
     } else if (userAcceptableList.includes("start next lesson")) {
-        await waUserProgressRepository.updateAcceptableMessagesList(phoneNumber, ["start next lesson"]);
+        await waUserProgressRepository.updateAcceptableMessagesList(profileId, phoneNumber, ["start next lesson"]);
     }
 
     let courseId = null,
