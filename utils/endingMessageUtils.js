@@ -157,7 +157,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
 
         if (checkRegistrationComplete == false && lessonLast == true) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial", "register"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial", "camp registration"]);
 
             // Sleep
             await sleep(2000);
