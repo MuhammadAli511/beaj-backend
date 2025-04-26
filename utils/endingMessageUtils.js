@@ -106,6 +106,14 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
         }
     }
     else if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
+        let shell_image = "https://beajbloblive.blob.core.windows.net/beajdocuments/shell_image.jpeg"; // Level 1
+        let gem_image = "https://beajbloblive.blob.core.windows.net/beajdocuments/gem_image.jpeg"; // Level 3
+        let trialCompleteImage = "";
+        if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
+            trialCompleteImage = gem_image;
+        } else if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1") {
+            trialCompleteImage = shell_image;
+        }
         let user = await waUsersMetadataRepository.getByProfileId(profileId);
         let checkRegistrationComplete = user.dataValues.userRegistrationComplete !== null;
         if (startingLesson.dataValues.activityAlias == "🧠 *Let's Think!*") {
@@ -154,14 +162,21 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             // Sleep
             await sleep(2000);
 
-            // Reply Buttons
+            let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔\n\nCongratulations! 👏 You have completed your first adventure with Zara and Faiz!\nمبارک ہو👏 ! آپ نے زارا اور فیض کے ساتھ اپنا پہلا "ایڈونچر" مکمل کر لیا ہے۔`;
+            let trialCompleteButtonMessage = `Are you ready to continue?! Click on *Camp Registration*👇\nکیا آپ آگے بڑھنے کے لیے تیار ہیں؟ "Camp Registration" بٹن پر کلک کریں۔`;
             if (message == null) {
-                await sendButtonMessage(userMobileNumber, '👏🏽Trial Complete! 🤓', [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'register', title: 'Register' }]);
+                await sendMediaMessage(userMobileNumber, trialCompleteImage, 'image', trialCompleteMessage);
+                await createActivityLog(userMobileNumber, "image", "outbound", trialCompleteImage, null, trialCompleteMessage);
+                await sleep(2000);
+                await sendButtonMessage(userMobileNumber, trialCompleteButtonMessage, [{ id: 'camp_registration', title: 'Camp Registration' }, { id: 'get_another_trial', title: 'Get Another Trial' }]);
                 await createActivityLog(userMobileNumber, "template", "outbound", "get another trial or register", null);
             } else {
-                message += "\n\n👏🏽Trial Complete! 🤓";
-                await sendButtonMessage(userMobileNumber, message, [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'register', title: 'Register' }]);
-                await createActivityLog(userMobileNumber, "template", "outbound", message, null);
+                message += "\n\n" + trialCompleteMessage;
+                await sendMediaMessage(userMobileNumber, trialCompleteImage, 'image', message);
+                await createActivityLog(userMobileNumber, "image", "outbound", trialCompleteImage, null, message);
+                await sleep(2000);
+                await sendButtonMessage(userMobileNumber, trialCompleteButtonMessage, [{ id: 'camp_registration', title: 'Camp Registration' }, { id: 'get_another_trial', title: 'Get Another Trial' }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", trialCompleteButtonMessage, null);
             }
 
             return;
@@ -172,14 +187,21 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             // Sleep
             await sleep(2000);
 
-            // Reply Buttons
+            let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔\n\nCongratulations! 👏 You have completed your first adventure with Zara and Faiz!\nمبارک ہو👏 ! آپ نے زارا اور فیض کے ساتھ اپنا پہلا "ایڈونچر" مکمل کر لیا ہے۔`;
+            let trialCompleteButtonMessage = `Are you ready to continue?! Click on *Camp Registration*👇\nکیا آپ آگے بڑھنے کے لیے تیار ہیں؟ "Camp Registration" بٹن پر کلک کریں۔`;
             if (message == null) {
-                await sendButtonMessage(userMobileNumber, '👏🏽Trial Complete! 🤓', [{ id: 'get_another_trial', title: 'Get Another Trial' }]);
+                await sendMediaMessage(userMobileNumber, trialCompleteImage, 'image', trialCompleteMessage);
+                await createActivityLog(userMobileNumber, "image", "outbound", trialCompleteImage, null, trialCompleteMessage);
+                await sleep(2000);
+                await sendButtonMessage(userMobileNumber, trialCompleteButtonMessage, [{ id: 'get_another_trial', title: 'Get Another Trial' }]);
                 await createActivityLog(userMobileNumber, "template", "outbound", "get another trial", null);
             } else {
-                message += "\n\n👏🏽Trial Complete! 🤓";
-                await sendButtonMessage(userMobileNumber, message, [{ id: 'get_another_trial', title: 'Get Another Trial' }]);
-                await createActivityLog(userMobileNumber, "template", "outbound", message, null);
+                message += "\n\n" + trialCompleteMessage;
+                await sendMediaMessage(userMobileNumber, trialCompleteImage, 'image', message);
+                await createActivityLog(userMobileNumber, "image", "outbound", trialCompleteImage, null, message);
+                await sleep(2000);
+                await sendButtonMessage(userMobileNumber, trialCompleteButtonMessage, [{ id: 'get_another_trial', title: 'Get Another Trial' }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", trialCompleteButtonMessage, null);
             }
 
             return;

@@ -104,7 +104,7 @@ const demoCourseStart = async (profileId, userMobileNumber, startingLesson, cour
     if (courseName == "Free Trial - Teachers") {
         message = "Great! Let's start your free trial! 🤩 Here is your first lesson.";
     } else if (courseName == "Free Trial - Kids - Level 1" || courseName == "Free Trial - Kids - Level 3") {
-        message = `Great! 💥Let's Start!\nزبردست! شروع کرتے ہیں!\n\nBuild skills and win medals!🏅\nہر قدم پر انعام جیتیں!`;
+        message = `Great! 💥 Let's Start!\nزبردست! شروع کرتے ہیں!\n\nComplete the trial and win your first reward! 🏅\n ہر قدم پر انعام جیتیں!`;
     }
     await sendMessage(userMobileNumber, message);
     await createActivityLog(profileId, userMobileNumber, "text", "outbound", message, null);
