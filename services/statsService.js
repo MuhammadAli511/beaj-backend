@@ -137,6 +137,15 @@ const studentUserJourneyStatsService = async (date) => {
                 "messageDirection" = 'inbound'
                 AND "messageContent"[1] = 'start free trial'
               GROUP BY profile_id
+            ),
+            
+            last_messages AS (
+              SELECT DISTINCT ON (profile_id)
+                profile_id,
+                "messageContent" AS last_message_content,
+                timestamp AS last_message_timestamp
+              FROM wa_user_activity_logs
+              ORDER BY profile_id, timestamp DESC, id DESC
             )
             
             SELECT
@@ -162,8 +171,12 @@ const studentUserJourneyStatsService = async (date) => {
               wup."currentLessonId", 
               wup."currentLesson_sequence", 
               wup."activityType",
+              wup."questionNumber",
+              wup."acceptableMessages",
               COALESCE(utc.started_113, 0) AS level3_trial_starts,
-              COALESCE(utc.started_117, 0) AS level1_trial_starts
+              COALESCE(utc.started_117, 0) AS level1_trial_starts,
+              lm.last_message_content,
+              lm.last_message_timestamp
             FROM wa_users_metadata m
             INNER JOIN wa_profiles p
               ON m."profile_id" = p.profile_id
@@ -171,6 +184,8 @@ const studentUserJourneyStatsService = async (date) => {
               ON p.profile_id = wup.profile_id
             LEFT JOIN user_trial_counts utc
               ON utc.profile_id = m."profile_id"
+            LEFT JOIN last_messages lm
+              ON lm.profile_id = p.profile_id
             WHERE
               m."userClickedLink" > TIMESTAMP '${filterDate}'
               AND p.profile_type = 'student'
