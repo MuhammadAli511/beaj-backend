@@ -109,23 +109,72 @@ const studentUserJourneyStatsService = async (date) => {
         // Set default date if not provided
         const filterDate = date || '2025-04-26 12:00:00';
 
-        // Query 1: Get user data with joins from all three tables
+        // Query 1: Get user data with joins and trial starts information
         const userDataQuery = `
+            WITH ordered_logs AS (
+              SELECT
+                profile_id,
+                id,
+                timestamp,
+                "messageDirection",
+                "messageContent",
+                "courseId",
+                LEAD("courseId") OVER (
+                  PARTITION BY profile_id
+                  ORDER BY timestamp, id
+                ) AS next_course_id
+              FROM wa_user_activity_logs
+            ),
+            
+            user_trial_counts AS (
+              SELECT
+                profile_id,
+                -- count how many times the next_course_id was 113 or 117 after an inbound "start free trial"
+                SUM(CASE WHEN next_course_id = 113 THEN 1 ELSE 0 END) AS started_113,
+                SUM(CASE WHEN next_course_id = 117 THEN 1 ELSE 0 END) AS started_117
+              FROM ordered_logs
+              WHERE
+                "messageDirection" = 'inbound'
+                AND "messageContent"[1] = 'start free trial'
+              GROUP BY profile_id
+            )
+            
             SELECT
-                m."phoneNumber", m.name, m.city, m."userClickedLink", m."freeDemoStarted", 
-                m."freeDemoEnded", m."userRegistrationComplete", m."schoolName", m."targetGroup", m.cohort,
-                p.profile_id, p.phone_number, p.profile_type, p.created_at,
-                wup.persona, wup.engagement_type, wup."currentCourseId", wup."currentWeek", 
-                wup."currentDay", wup."currentLessonId", wup."currentLesson_sequence", 
-                wup."activityType"
+              m."phoneNumber",
+              m.name,
+              m.city,
+              m."userClickedLink",
+              m."freeDemoStarted",
+              m."freeDemoEnded",
+              m."userRegistrationComplete",
+              m."schoolName",
+              m."targetGroup", 
+              m.cohort,
+              p.profile_id, 
+              p.phone_number, 
+              p.profile_type, 
+              p.created_at,
+              wup.persona,
+              wup.engagement_type, 
+              wup."currentCourseId", 
+              wup."currentWeek", 
+              wup."currentDay", 
+              wup."currentLessonId", 
+              wup."currentLesson_sequence", 
+              wup."activityType",
+              COALESCE(utc.started_113, 0) AS level3_trial_starts,
+              COALESCE(utc.started_117, 0) AS level1_trial_starts
             FROM wa_users_metadata m
             INNER JOIN wa_profiles p
-                ON m."profile_id" = p.profile_id
+              ON m."profile_id" = p.profile_id
             INNER JOIN wa_user_progress wup
-                ON p."profile_id" = wup."profile_id"
+              ON p.profile_id = wup.profile_id
+            LEFT JOIN user_trial_counts utc
+              ON utc.profile_id = m."profile_id"
             WHERE
-                m."userClickedLink" > TIMESTAMP '${filterDate}'
-                AND p.profile_type = 'student'
+              m."userClickedLink" > TIMESTAMP '${filterDate}'
+              AND p.profile_type = 'student'
+            ORDER BY m."phoneNumber"
         `;
 
         // Query 2: Get statistics for each stage of the journey
