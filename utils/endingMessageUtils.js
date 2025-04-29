@@ -125,48 +125,32 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
         if (checkRegistrationComplete == false && lessonLast == true) {
             // Update acceptable messages list for the user
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial", "go to registration", "talk to beaj rep"]);
-            let buttonsArray = [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'go_to_registration', title: 'Go to Registration' }, { id: 'talk_to_beaj_rep', title: 'Talk to Beaj Rep' }];
+            let buttonsArray = [{ id: 'register_now', title: 'Register Now' }, { id: 'talk_to_beaj_rep', title: 'Talk to Beaj Rep' }, { id: 'get_another_trial', title: 'Get Another Trial' }];
 
-
-            let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔\n\nCongratulations! 👏 You have completed your first adventure with Zara and Faiz!\nمبارک ہو👏 ! آپ نے زارا اور فیض کے ساتھ اپنا پہلا "ایڈونچر" مکمل کر لیا ہے۔`;
-            let trialCompleteButtonMessage = `Are you ready to continue?! Click on *Go to Registration*👇\nکیا آپ آگے بڑھنے کے لیے تیار ہیں؟ "Go to Registration" بٹن پر کلک کریں۔`;
+            let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔\n\nAre you ready to continue? Click on Register Now 👇\nکیا آپ آگے بڑھنے کے لیے تیار ہیں؟ "Register Now" بٹن پر کلک کریں۔`;
             if (message == null) {
-                await sendMediaMessage(userMobileNumber, trialCompleteImage, 'image', trialCompleteMessage);
-                await createActivityLog(userMobileNumber, "image", "outbound", trialCompleteImage, null, trialCompleteMessage);
-                await sleep(4000);
-                await sendButtonMessage(userMobileNumber, trialCompleteButtonMessage, buttonsArray);
+                await sendButtonMessage(userMobileNumber, trialCompleteMessage, buttonsArray, 0, trialCompleteImage);
                 await createActivityLog(userMobileNumber, "template", "outbound", "get another trial or register", null);
             } else {
                 message += "\n\n" + trialCompleteMessage;
-                await sendMediaMessage(userMobileNumber, trialCompleteImage, 'image', message);
-                await createActivityLog(userMobileNumber, "image", "outbound", trialCompleteImage, null, message);
-                await sleep(4000);
-                await sendButtonMessage(userMobileNumber, trialCompleteButtonMessage, buttonsArray);
-                await createActivityLog(userMobileNumber, "template", "outbound", trialCompleteButtonMessage, null);
+                await sendButtonMessage(userMobileNumber, trialCompleteMessage, buttonsArray, 0, trialCompleteImage);
+                await createActivityLog(userMobileNumber, "template", "outbound", trialCompleteMessage, null);
             }
 
             return;
         } else if (checkRegistrationComplete == true && lessonLast == true) {
             // Update acceptable messages list for the user
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial"]);
-            let buttonsArray = [{ id: 'get_another_trial', title: 'Get Another Trial' }];
+            let buttonsArray = [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'talk_to_beaj_rep', title: 'Talk to Beaj Rep' }];
 
-
-            let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔\n\nCongratulations! 👏 You have completed your first adventure with Zara and Faiz!\nمبارک ہو👏 ! آپ نے زارا اور فیض کے ساتھ اپنا پہلا "ایڈونچر" مکمل کر لیا ہے۔`;
-            let trialCompleteButtonMessage = `Are you ready to continue?!\nکیا آپ آگے بڑھنے کے لیے تیار ہیں؟`;
+            let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔\n\nAre you ready to continue? Click on Register Now 👇\nکیا آپ آگے بڑھنے کے لیے تیار ہیں؟ "Register Now" بٹن پر کلک کریں۔`;
             if (message == null) {
-                await sendMediaMessage(userMobileNumber, trialCompleteImage, 'image', trialCompleteMessage);
-                await createActivityLog(userMobileNumber, "image", "outbound", trialCompleteImage, null, trialCompleteMessage);
-                await sleep(4000);
-                await sendButtonMessage(userMobileNumber, trialCompleteButtonMessage, buttonsArray);
-                await createActivityLog(userMobileNumber, "template", "outbound", "get another trial", null);
+                await sendButtonMessage(userMobileNumber, trialCompleteMessage, buttonsArray, 0, trialCompleteImage);
+                await createActivityLog(userMobileNumber, "template", "outbound", "get another trial or register", null);
             } else {
                 message += "\n\n" + trialCompleteMessage;
-                await sendMediaMessage(userMobileNumber, trialCompleteImage, 'image', message);
-                await createActivityLog(userMobileNumber, "image", "outbound", trialCompleteImage, null, message);
-                await sleep(4000);
-                await sendButtonMessage(userMobileNumber, trialCompleteButtonMessage, buttonsArray);
-                await createActivityLog(userMobileNumber, "template", "outbound", trialCompleteButtonMessage, null);
+                await sendButtonMessage(userMobileNumber, trialCompleteMessage, buttonsArray, 0, trialCompleteImage);
+                await createActivityLog(userMobileNumber, "template", "outbound", trialCompleteMessage, null);
             }
 
             return;

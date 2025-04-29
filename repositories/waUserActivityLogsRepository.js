@@ -75,7 +75,7 @@ const getLastMessageTime = async () => {
             'phoneNumber',
             [Sequelize.fn('MAX', Sequelize.col('timestamp')), 'timestamp']
         ],
-        group: ['phoneNumber']
+        group: ['profile_id', 'phoneNumber']
     });
 
     return lastMessages;
