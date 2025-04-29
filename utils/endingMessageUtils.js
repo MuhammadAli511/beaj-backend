@@ -59,9 +59,6 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             // Update acceptable messages list for the user
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial", "register"]);
 
-            // Sleep
-            await sleep(2000);
-
             // Reply Buttons
             await sendButtonMessage(userMobileNumber, '👏🏽Trial Complete! 🤓', [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'register', title: 'Register' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "get another trial or register", null);
@@ -71,8 +68,6 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             // Update acceptable messages list for the user
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial"]);
 
-            // Sleep
-            await sleep(2000);
 
             // Reply Buttons
             await sendButtonMessage(userMobileNumber, '👏🏽Trial Complete! 🤓', [{ id: 'get_another_trial', title: 'Get Another Trial' }]);
@@ -83,9 +78,6 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             // Update acceptable messages list for the user
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next activity", "end now"]);
 
-            // Sleep
-            await sleep(2000);
-
             // Reply Buttons
             await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'start_next_activity', title: 'Start Next Activity' }, { id: 'end_now', title: 'End Now' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity or End Now", null);
@@ -94,9 +86,6 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
         } else if (checkRegistrationComplete == true && lessonLast == false) {
             // Update acceptable messages list for the user
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next activity", "end now"]);
-
-            // Sleep
-            await sleep(2000);
 
             // Reply Buttons
             await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'start_next_activity', title: 'Start Next Activity' }, { id: 'end_now', title: 'End Now' }]);
@@ -120,9 +109,6 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             // Update acceptable messages list for the user
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start challenge", "end now"]);
 
-            // Sleep
-            await sleep(2000);
-
             // Reply Buttons
             if (message == null) {
                 await sendButtonMessage(userMobileNumber, 'Start Challenge!', [{ id: 'start_challenge', title: 'Start Challenge' }, { id: 'end_now', title: 'End Now' }]);
@@ -138,8 +124,6 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             // Update acceptable messages list for the user
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start challenge", "end now"]);
 
-            // Sleep
-            await sleep(2000);
 
             // Reply Buttons
             let finalImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/ready_for_your_first_challenge.jpeg";
@@ -159,8 +143,6 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             // Update acceptable messages list for the user
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial", "camp registration"]);
 
-            // Sleep
-            await sleep(2000);
 
             let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔\n\nCongratulations! 👏 You have completed your first adventure with Zara and Faiz!\nمبارک ہو👏 ! آپ نے زارا اور فیض کے ساتھ اپنا پہلا "ایڈونچر" مکمل کر لیا ہے۔`;
             let trialCompleteButtonMessage = `Are you ready to continue?! Click on *Camp Registration*👇\nکیا آپ آگے بڑھنے کے لیے تیار ہیں؟ "Camp Registration" بٹن پر کلک کریں۔`;
@@ -184,8 +166,6 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             // Update acceptable messages list for the user
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial"]);
 
-            // Sleep
-            await sleep(2000);
 
             let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔\n\nCongratulations! 👏 You have completed your first adventure with Zara and Faiz!\nمبارک ہو👏 ! آپ نے زارا اور فیض کے ساتھ اپنا پہلا "ایڈونچر" مکمل کر لیا ہے۔`;
             let trialCompleteButtonMessage = `Are you ready to continue?!\nکیا آپ آگے بڑھنے کے لیے تیار ہیں؟`;
@@ -209,8 +189,6 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             // Update acceptable messages list for the user
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next challenge", "end now"]);
 
-            // Sleep
-            await sleep(2000);
 
             // Reply Buttons
             if (message == null) {
@@ -226,9 +204,6 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             // Update acceptable messages list for the user
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next challenge", "end now"]);
 
-            // Sleep
-            await sleep(2000);
-
             // Reply Buttons
             if (message == null) {
                 await sendButtonMessage(userMobileNumber, 'Challenge Complete! 💪🏽', [{ id: 'next_challenge', title: 'Next Challenge' }, { id: 'end_now', title: 'End Now' }]);
@@ -243,8 +218,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
     }
 
 
-    // If not trial
-    if (currentUserState.dataValues.engagement_type != "Free Trial - Teachers" && currentUserState.dataValues.engagement_type != "Free Trial - Kids - Level 1" && currentUserState.dataValues.engagement_type != "Free Trial - Kids - Level 3") {
+    if (currentUserState.dataValues.engagement_type == "Course Start") {
         // FOR ALL ACTIVITIES
         if (lessonLast) {
             const courseName = await courseRepository.getCourseNameById(currentUserState.currentCourseId);
