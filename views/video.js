@@ -39,6 +39,7 @@ const videoView = async (profileId, userMobileNumber, currentUserState, starting
             let lessonText = startingLesson.dataValues.text;
             lessonText = lessonText.replace(/\\n/g, '\n');
             let lessonMessage = startingLesson.dataValues.activityAlias + "\n\n" + lessonText;
+            lessonMessage += "\n\nThe video might take a few seconds to load.\nویڈیو کو لوڈ ہونے میں شاید چند سیکنڈ لگیں۔";
 
             await sendMessage(userMobileNumber, lessonMessage);
             await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);

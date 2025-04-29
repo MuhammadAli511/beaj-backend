@@ -290,6 +290,9 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                 }
                 if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
                     mcqMessage += "Choose the correct answer:\nصحیح جواب پر کلک کریں۔\n";
+                    if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
+                        mcqMessage += "\n\nor type “next” to skip";
+                    }
                 }
                 if (mcqType == 'Text') {
                     for (let i = 0; i < mcqAnswers.length; i++) {
@@ -445,6 +448,9 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                     }
                     if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
                         mcqMessage += "Choose the correct answer:\nصحیح جواب پر کلک کریں۔\n";
+                        if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
+                            mcqMessage += "\n\nor type “next” to skip";
+                        }
                     }
                     if (mcqType == 'Text') {
                         for (let i = 0; i < mcqAnswers.length; i++) {

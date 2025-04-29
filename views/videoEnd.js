@@ -47,6 +47,7 @@ const videoEndView = async (profileId, userMobileNumber, currentUserState, start
             let lessonText = startingLesson.dataValues.text;
             lessonText = lessonText.replace(/\\n/g, '\n');
             let lessonMessage = startingLesson.dataValues.activityAlias + "\n\n" + lessonText;
+            lessonMessage += "\n\nThe video might take a few seconds to load.\nویڈیو کو لوڈ ہونے میں شاید چند سیکنڈ لگیں۔";
 
             await sendMessage(userMobileNumber, lessonMessage);
             await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
@@ -59,11 +60,11 @@ const videoEndView = async (profileId, userMobileNumber, currentUserState, start
             await sendMediaMessage(userMobileNumber, videoURL, 'video');
             await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
 
-            // Sleep
-            await sleep(12000);
-
             // Reset Question Number, Retry Counter, and Activity Type
             await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
+
+            // Sleep
+            await sleep(14000);
 
             // Ending Message
             await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);

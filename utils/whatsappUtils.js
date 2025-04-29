@@ -222,5 +222,42 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
     }
 };
 
+const sendContactCardMessage = async (to, contactData, retryAttempt = 0) => {
+    const phoneNumberId = getBotPhoneNumberIdForRequest();
+    const MAX_RETRIES = 17;
 
-export { sendMessage, sendMediaMessage, sendButtonMessage, retrieveMediaURL };
+    try {
+        await axios.post(
+            `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
+            {
+                messaging_product: "whatsapp",
+                to: to,
+                type: "contacts",
+                contacts: [contactData]
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${whatsappToken}`,
+                    "Content-Type": "application/json",
+                },
+            }
+        );
+        let logger = `Outbound Message: User: ${to}, From ID: ${phoneNumberId}, Message Type: contacts, Message Content: ${contactData.name?.formatted_name || "Contact card"}`;
+        console.log(logger);
+    } catch (error) {
+        const errData = error.response ? error.response.data : null;
+        console.log(`Error sending contact card (from ${phoneNumberId}). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
+
+        if (retryAttempt < MAX_RETRIES) {
+            const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
+            console.log(`Retrying after ${waitTimeSeconds} seconds...`);
+            await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
+            return sendContactCardMessage(to, contactData, retryAttempt + 1);
+        } else {
+            console.log(`Max retries reached. Giving up on contact card to ${to} from ${phoneNumberId}.`);
+            console.log("Final error:", errData ? errData : error.message);
+        }
+    }
+};
+
+export { sendMessage, sendMediaMessage, sendButtonMessage, retrieveMediaURL, sendContactCardMessage };
