@@ -130,7 +130,8 @@ const demoCourseStart = async (profileId, userMobileNumber, startingLesson, cour
             final_map_image = "https://beajbloblive.blob.core.windows.net/beajdocuments/level3_map.jpeg";
         }
         await sendMediaMessage(userMobileNumber, final_map_image, "image", message);
-        await createActivityLog(userMobileNumber, "image", "outbound", final_map_image, null, message);
+        await createActivityLog(userMobileNumber, "image", "outbound", final_map_image, null);
+        await sleep(2000);
         return;
     }
 

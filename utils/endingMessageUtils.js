@@ -124,7 +124,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
 
         if (checkRegistrationComplete == false && lessonLast == true) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial", "go to registration", "talk to beaj rep"]);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial", "register now", "talk to beaj rep"]);
             let buttonsArray = [{ id: 'register_now', title: 'Register Now' }, { id: 'talk_to_beaj_rep', title: 'Talk to Beaj Rep' }, { id: 'get_another_trial', title: 'Get Another Trial' }];
 
             let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔\n\nAre you ready to continue? Click on Register Now 👇\nکیا آپ آگے بڑھنے کے لیے تیار ہیں؟ "Register Now" بٹن پر کلک کریں۔`;
@@ -143,7 +143,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial"]);
             let buttonsArray = [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'talk_to_beaj_rep', title: 'Talk to Beaj Rep' }];
 
-            let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔\n\nAre you ready to continue? Click on Register Now 👇\nکیا آپ آگے بڑھنے کے لیے تیار ہیں؟ "Register Now" بٹن پر کلک کریں۔`;
+            let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔\n\n`;
             if (message == null) {
                 await sendButtonMessage(userMobileNumber, trialCompleteMessage, buttonsArray, 0, trialCompleteImage);
                 await createActivityLog(userMobileNumber, "template", "outbound", "get another trial or register", null);
