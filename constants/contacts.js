@@ -1,8 +1,8 @@
 const najiaContactData = {
     name: {
-        formatted_name: "Najia Rashid (Beaj Education)",
-        first_name: "Najia",
-        last_name: "Rashid",
+        formatted_name: "Beaj Representative",
+        first_name: "Beaj",
+        last_name: "Representative",
     },
     phones: [{
         phone: "+923325551465",
