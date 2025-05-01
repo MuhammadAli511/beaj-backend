@@ -337,6 +337,7 @@ const studentSpecificClassInput = async (profileId, userMobileNumber, messageCon
 };
 
 const studentSpecificClassConfirmation = async (profileId, userMobileNumber, messageContent) => {
+    await waUsersMetadataRepository.updateClassLevel(profileId, userMobileNumber, messageContent);
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Student Specific Class Confirmation");
     const studentClassConfirmationMessage = "Confirm student's class" + messageContent;
     await sendButtonMessage(userMobileNumber, studentClassConfirmationMessage, [{ id: 'yes', title: 'Yes' }, { id: 'no', title: 'No' }]);
@@ -355,11 +356,17 @@ const singleStudentRegistationComplate = async (profileId, userMobileNumber) => 
     return;
 };
 
+
 const totalRegistrationsSummary = async (profileId, userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Total Registrations Summary");
-    const totalRegistrationsSummaryMessage = "Total registrations summary";
-    await sendMessage(userMobileNumber, totalRegistrationsSummaryMessage);
-    await createActivityLog(userMobileNumber, "text", "outbound", totalRegistrationsSummaryMessage, null);
+    const registrationsSummary = await waUsersMetadataRepository.getTotalRegistrationsSummary(userMobileNumber);
+    const totalRegistrations = registrationsSummary.count;
+    const registrationsList = registrationsSummary.registrations.map((reg, index) =>
+        `${index + 1}) ${reg.name} - ${reg.classLevel}`
+    ).join('\n');
+    const totalRegistrationsSummaryMessage = "Total number of registrations for Kids Summer Camp: " + totalRegistrations + "\n\n" + registrationsList;
+    await sendButtonMessage(userMobileNumber, totalRegistrationsSummaryMessage, [{ id: 'continue_to_payment', title: 'Continue to Payment' }, { id: 'talk_to_beaj_rep', title: 'Talk to Beaj Rep' }]);
+    await createActivityLog(userMobileNumber, "template", "outbound", totalRegistrationsSummaryMessage, null);
     return;
 };
 

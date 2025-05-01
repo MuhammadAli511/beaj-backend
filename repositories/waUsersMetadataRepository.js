@@ -177,6 +177,41 @@ const updateFreeDemoEnded = async (profileId, phoneNumber) => {
     return user;
 };
 
+const updateClassLevel = async (profileId, phoneNumber, classLevel) => {
+    return await WA_UsersMetadata.update({
+        classLevel: classLevel
+    }, {
+        where: { profile_id: profileId, phoneNumber: phoneNumber }
+    });
+};
+
+const getTotalRegistrationsSummary = async (phoneNumber) => {
+    const count = await WA_UsersMetadata.count({
+        where: {
+            classLevel: {
+                [Sequelize.Op.not]: null
+            },
+            phoneNumber: phoneNumber
+        }
+    });
+
+    const registrations = await WA_UsersMetadata.findAll({
+        attributes: ['name', 'classLevel'],
+        where: {
+            classLevel: {
+                [Sequelize.Op.not]: null
+            },
+            phoneNumber: phoneNumber
+        }
+    });
+
+    return {
+        count,
+        registrations
+    };
+};
+
+
 export default {
     create,
     getAll,
@@ -195,5 +230,7 @@ export default {
     updateSchoolName,
     updateCityName,
     updateFreeDemoStarted,
-    updateFreeDemoEnded
+    updateFreeDemoEnded,
+    updateClassLevel,
+    getTotalRegistrationsSummary
 };
