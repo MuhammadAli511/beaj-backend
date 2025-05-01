@@ -38,8 +38,8 @@ const purchaseCourseController = async (req, res, next) => {
     try {
         const phoneNumber = req.body.phoneNumber;
         const courseId = req.body.courseId;
-        const profileId = req.body.profileId;
-        await service.purchaseCourseService(phoneNumber, courseId, profileId);
+        const profileId = req.body.profile_id;
+        await service.purchaseCourseService(phoneNumber, profileId,courseId);
         res.status(200).send({ message: "Course purchased successfully" });
     } catch (error) {
         error.fileName = 'waPurchasedCoursesController.js';
