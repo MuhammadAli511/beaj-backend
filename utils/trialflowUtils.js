@@ -245,6 +245,23 @@ const readyToPay = async (profileId, userMobileNumber) => {
     return;
 };
 
+const parentOrStudentSelection = async (profileId, userMobileNumber) => {
+    await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Parent or Student");
+    let flyerEnglish = "https://beajbloblive.blob.core.windows.net/beajdocuments/flyer_english.jpg";
+    let flyerUrdu = "https://beajbloblive.blob.core.windows.net/beajdocuments/flyer_urdu.jpg";
+    await sendMediaMessage(userMobileNumber, flyerEnglish, "image", null);
+    await sleep(2000);
+    await sendMediaMessage(userMobileNumber, flyerUrdu, "image", null);
+    await sleep(2000);
+    await waUserProgressRepository.updatePersona(profileId, userMobileNumber, "parent or student");
+    // TODO: Instruction to Register
+    // TODO: Voice Note
+    await sendButtonMessage(userMobileNumber, "Please select an option:", [{ id: 'enroll_on_whatsapp', title: 'Enroll on Whatsapp' }, { id: 'talk_to_beaj_rep', title: 'Talk to Beaj Rep' }]);
+    await createActivityLog(userMobileNumber, "template", "outbound", "Please select an option:", null);
+    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["enroll on whatsapp", "talk to beaj rep"]);
+    return;
+};
+
 const thankyouMessageParent = async (profileId, userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Thankyou Message");
     await waUserProgressRepository.update(profileId, userMobileNumber, null, null, null, null, null, null, null, null, ["get another trial", "talk to beaj rep"]);
@@ -267,6 +284,84 @@ const talkToBeajRep = async (userMobileNumber) => {
     return;
 };
 
+// Multi user registration
+
+const studentNameInput = async (profileId, userMobileNumber) => {
+    await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Student Name Input");
+    const studentNameInputMessage = "Please type student's *Full Name*";
+    await sendMessage(userMobileNumber, studentNameInputMessage);
+    await createActivityLog(userMobileNumber, "text", "outbound", studentNameInputMessage, null);
+    return;
+};
+
+const studentNameConfirmation = async (profileId, userMobileNumber, messageContent) => {
+    await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Student Name Confirmation");
+    const studentNameConfirmationMessage = "Confirm name: " + messageContent;
+    await sendButtonMessage(userMobileNumber, studentNameConfirmationMessage, [{ id: 'yes', title: 'Yes' }, { id: 'no', title: 'No' }]);
+    await createActivityLog(userMobileNumber, "template", "outbound", studentNameConfirmationMessage, null);
+    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no"]);
+    return;
+};
+
+const studentGenericClassInput = async (profileId, userMobileNumber) => {
+    await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Student Generic Class Input");
+    const studentClassInputMessage = "Please select student's *class level*:";
+    await sendButtonMessage(userMobileNumber, studentClassInputMessage, [{ id: 'class_1_or_2', title: 'Class 1 or 2' }, { id: 'class_3_or_4', title: 'Class 3 or 4' }, { id: 'class_5_or_6', title: 'Class 5 or 6' }]);
+    await createActivityLog(userMobileNumber, "template", "outbound", studentClassInputMessage, null);
+    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["class 1 or 2", "class 3 or 4", "class 5 or 6"]);
+    return;
+};
+
+const studentGenericClassConfirmation = async (profileId, userMobileNumber, messageContent) => {
+    await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Student Generic Class Confirmation");
+    const studentClassConfirmationMessage = "Confirm class level: " + messageContent;
+    await sendButtonMessage(userMobileNumber, studentClassConfirmationMessage, [{ id: 'yes', title: 'Yes' }, { id: 'no', title: 'No' }]);
+    await createActivityLog(userMobileNumber, "template", "outbound", studentClassConfirmationMessage, null);
+    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no"]);
+    return;
+};
+
+const studentSpecificClassInput = async (profileId, userMobileNumber, messageContent) => {
+    await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Student Specific Class Input");
+    const studentClassInputMessage = "Please select student's *class*:";
+    if (messageContent.toLowerCase() == "class 1 or 2") {
+        await sendButtonMessage(userMobileNumber, studentClassInputMessage, [{ id: 'class_1', title: 'Class 1' }, { id: 'class_2', title: 'Class 2' }]);
+    } else if (messageContent.toLowerCase() == "class 3 or 4") {
+        await sendButtonMessage(userMobileNumber, studentClassInputMessage, [{ id: 'class_3', title: 'Class 3' }, { id: 'class_4', title: 'Class 4' }]);
+    } else if (messageContent.toLowerCase() == "class 5 or 6") {
+        await sendButtonMessage(userMobileNumber, studentClassInputMessage, [{ id: 'class_5', title: 'Class 5' }, { id: 'class_6', title: 'Class 6' }]);
+    }
+    await createActivityLog(userMobileNumber, "template", "outbound", studentClassInputMessage, null);
+    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["class 1", "class 2", "class 3", "class 4", "class 5", "class 6"]);
+    return;
+};
+
+const studentSpecificClassConfirmation = async (profileId, userMobileNumber, messageContent) => {
+    await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Student Specific Class Confirmation");
+    const studentClassConfirmationMessage = "Confirm student's class" + messageContent;
+    await sendButtonMessage(userMobileNumber, studentClassConfirmationMessage, [{ id: 'yes', title: 'Yes' }, { id: 'no', title: 'No' }]);
+    await createActivityLog(userMobileNumber, "template", "outbound", studentClassConfirmationMessage, null);
+    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no"]);
+    return;
+};
+
+const singleStudentRegistationComplate = async (profileId, userMobileNumber) => {
+    await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Single Student Registration Complete");
+    const user = await waUsersMetadataRepository.getByProfileId(profileId);
+    const name = user.dataValues.name;
+    const singleStudentRegistrationCompleteMessage = name + "'s registration is now complete!\n\nDo you want to register another student?";
+    await sendButtonMessage(userMobileNumber, singleStudentRegistrationCompleteMessage, [{ id: 'yes', title: 'Yes' }, { id: 'no', title: 'No' }]);
+    await createActivityLog(userMobileNumber, "template", "outbound", singleStudentRegistrationCompleteMessage, null);
+    return;
+};
+
+const totalRegistrationsSummary = async (profileId, userMobileNumber) => {
+    await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Total Registrations Summary");
+    const totalRegistrationsSummaryMessage = "Total registrations summary";
+    await sendMessage(userMobileNumber, totalRegistrationsSummaryMessage);
+    await createActivityLog(userMobileNumber, "text", "outbound", totalRegistrationsSummaryMessage, null);
+    return;
+};
 
 export {
     greetingMessage,
@@ -286,4 +381,7 @@ export {
     readyToPay,
     thankyouMessageParent,
     talkToBeajRep,
+    parentOrStudentSelection,
+    studentGenericClassInput,
+    studentSpecificClassInput
 };

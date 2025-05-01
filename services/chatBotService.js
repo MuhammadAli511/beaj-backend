@@ -23,7 +23,7 @@ import {
     getSchoolName,
     getCityName,
     confirmCityName,
-    readyToPay,
+    parentOrStudentSelection,
     thankyouMessageParent,
 } from "../utils/trialflowUtils.js";
 import { sendMessage, sendButtonMessage, retrieveMediaURL, sendMediaMessage } from "../utils/whatsappUtils.js";
@@ -260,18 +260,10 @@ const webhookService = async (body, res) => {
                         await waUserProgressRepository.updatePersona(profileId, userMobileNumber, "school admin");
                         await getSchoolName(profileId, userMobileNumber);
                     } else if (messageContent.toLowerCase() == "parent or student") {
-                        let flyerEnglish = "https://beajbloblive.blob.core.windows.net/beajdocuments/flyer_english.jpg";
-                        let flyerUrdu = "https://beajbloblive.blob.core.windows.net/beajdocuments/flyer_urdu.jpg";
-                        await sendMediaMessage(userMobileNumber, flyerEnglish, "image", null);
-                        await sleep(2000);
-                        await sendMediaMessage(userMobileNumber, flyerUrdu, "image", null);
-                        await sleep(2000);
-                        await waUserProgressRepository.updatePersona(profileId, userMobileNumber, "parent or student");
-                        await readyToPay(profileId, userMobileNumber);
+                        await parentOrStudentSelection(profileId, userMobileNumber);
                     } else {
                         return;
                     }
-
                     return;
                 }
 
@@ -349,6 +341,28 @@ const webhookService = async (body, res) => {
                         return;
                     }
                 }
+
+                // Multi User Registration
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Parent or Student") &&
+                    (messageContent.toLowerCase() == "enroll on whatsapp")
+                ) {
+                    await childClassInput(profileId, userMobileNumber);
+                    return;
+                }
+
+
+
+
+
+
+
+
+
+
+
+
 
                 // Teacher Training Trial
                 if (
