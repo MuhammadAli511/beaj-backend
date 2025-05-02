@@ -21,6 +21,10 @@ const feedbackMcqsView = async (profileId, userMobileNumber, currentUserState, s
                 const activityAlias = startingLesson.dataValues.activityAlias;
                 let lessonText = startingLesson.dataValues.text;
                 lessonText = removeHTMLTags(lessonText);
+                let lessonMessage = "Activity: " + activityAlias;
+                lessonMessage += "\n\n" + lessonText;
+                await sendMessage(userMobileNumber, lessonMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
                 // Send first MCQs question
                 const firstMCQsQuestion = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, null);
@@ -49,6 +53,9 @@ const feedbackMcqsView = async (profileId, userMobileNumber, currentUserState, s
                 // Get current MCQ question
                 const currentMCQsQuestion = await multipleChoiceQuestionRepository.getCurrentMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
+                const originalAnswer = messageContent;
+                const userAnswer = messageContent.toLowerCase();
+
                 // Save user response to the database
                 const submissionDate = new Date();
                 await waQuestionResponsesRepository.create(
@@ -58,7 +65,7 @@ const feedbackMcqsView = async (profileId, userMobileNumber, currentUserState, s
                     currentMCQsQuestion.dataValues.Id,
                     activity,
                     startingLesson.dataValues.activityAlias,
-                    null,
+                    [originalAnswer],
                     null,
                     null,
                     null,

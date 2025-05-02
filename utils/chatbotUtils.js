@@ -43,6 +43,15 @@ const removeUser = async (phoneNumber) => {
     await sendMessage(phoneNumber, "Your data has been removed. Please start again using the link provided.");
 };
 
+const removeUserTillCourse = async (profileId, phoneNumber) => {
+    await waUserProgressRepository.update(profileId, phoneNumber, null, null, null, null, null, null, null, null, ["start my course"]);
+    await waUserProgressRepository.updateEngagementType(profileId, phoneNumber, "School Input");
+    await waUserActivityLogsRepository.deleteByPhoneNumber(phoneNumber);
+    await waLessonsCompletedRepository.deleteByPhoneNumber(phoneNumber);
+    await waQuestionResponsesRepository.deleteByPhoneNumber(phoneNumber);
+    await sendMessage(phoneNumber, "Your data has been removed. Please start again using the link provided.");
+};
+
 const weekEndScoreCalculation = async (profileId, phoneNumber, weekNumber, courseId) => {
     // Get lessonIds for mcqs of that week
     const mcqLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'mcqs');
@@ -297,5 +306,6 @@ export {
     levelCourseStart,
     sendCourseLessonToTeacher,
     sendCourseLessonToKid,
-    weekEndScoreCalculation
+    weekEndScoreCalculation,
+    removeUserTillCourse
 };

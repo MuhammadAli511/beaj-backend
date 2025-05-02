@@ -8,7 +8,7 @@ import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRe
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import waActiveSessionRepository from "../repositories/waActiveSessionRepository.js";
 import waProfileRepository from "../repositories/waProfileRepository.js";
-import { removeUser, startCourseForUser, levelCourseStart, sendCourseLessonToTeacher, sendCourseLessonToKid } from "../utils/chatbotUtils.js";
+import { removeUser, removeUserTillCourse, startCourseForUser, levelCourseStart, sendCourseLessonToTeacher, sendCourseLessonToKid } from "../utils/chatbotUtils.js";
 import {
     demoCourseStart,
     greetingMessage,
@@ -157,6 +157,12 @@ const webhookService = async (body, res) => {
                 // If message is reset, delete user from database
                 if (text_message_types.includes(message.type) && messageContent.toLowerCase() == "reset all") {
                     await removeUser(userMobileNumber);
+                    return;
+                }
+
+                // If message is reset till course, delete user from database
+                if (text_message_types.includes(message.type) && messageContent.toLowerCase() == "reset course") {
+                    await removeUserTillCourse(profileId, userMobileNumber);
                     return;
                 }
 
@@ -664,9 +670,10 @@ const webhookService = async (body, res) => {
                             currentUserState.dataValues.currentDay,
                             currentUserState.dataValues.currentLesson_sequence
                         );
+                        let latestUserState = await waUserProgressRepository.getByProfileId(profileId);
 
-                        if (messageContent.toLowerCase().includes("next") && nextLesson.dataValues.activity == "feedbackAudio") {
-                            await waLessonsCompletedRepository.endLessonByPhoneNumberLessonIdAndProfileId(userMobileNumber, nextLesson.dataValues.LessonId, profileId);
+                        if (messageContent.toLowerCase().includes("next") && latestUserState.dataValues.activityType == "feedbackAudio") {
+                            await waLessonsCompletedRepository.endLessonByPhoneNumberLessonIdAndProfileId(userMobileNumber, latestUserState.dataValues.currentLessonId, profileId);
                         }
 
                         if (!nextLesson) {
@@ -748,7 +755,7 @@ const webhookService = async (body, res) => {
                             0,
                             acceptableMessagesList
                         );
-                        let latestUserState = await waUserProgressRepository.getByProfileId(profileId);
+                        latestUserState = await waUserProgressRepository.getByProfileId(profileId);
 
                         // Send next lesson to user
                         if (currentUserState.dataValues.persona == "kid" || currentUserState.dataValues.persona == "parent or student" || currentUserState.dataValues.persona == "school admin") {

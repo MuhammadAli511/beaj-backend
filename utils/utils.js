@@ -77,6 +77,8 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
     if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "read" || activityType === "speakingPractice" || activityType === "feedbackAudio") {
         if (acceptableMessagesList.includes("audio") && messageType === "audio") {
             return true;
+        } else if (messageContent.toLowerCase() == "next" && activityType === "feedbackAudio") {
+            return true;
         } else if (messageContent.toLowerCase() == "next" && (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")) {
             return true;
         }
