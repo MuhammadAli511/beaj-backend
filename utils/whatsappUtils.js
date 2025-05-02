@@ -28,15 +28,15 @@ const sendMessage = async (to, body, retryAttempt = 0) => {
         const errData = error.response ? error.response.data : null;
         console.log(`Error sending message (from ${phoneNumberId}). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
 
-        // if (retryAttempt < MAX_RETRIES) {
-        //     const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
-        //     console.log(`Retrying after ${waitTimeSeconds} seconds...`);
-        //     await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
-        //     return sendMessage(to, body, retryAttempt + 1);
-        // } else {
-        //     console.log(`Max retries reached. Giving up on message to ${to} from ${phoneNumberId}.`);
-        //     console.log("Final error:", errData ? errData : error.message);
-        // }
+        if (retryAttempt < MAX_RETRIES) {
+            const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
+            console.log(`Retrying after ${waitTimeSeconds} seconds...`);
+            await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
+            return sendMessage(to, body, retryAttempt + 1);
+        } else {
+            console.log(`Max retries reached. Giving up on message to ${to} from ${phoneNumberId}.`);
+            console.log("Final error:", errData ? errData : error.message);
+        }
     }
 };
 
@@ -45,7 +45,6 @@ const retrieveMediaURL = async (mediaId, retryAttempt = 0) => {
     const MAX_RETRIES = 17;
 
     try {
-        console.log("mediaId", mediaId);
         const mediaResponse = await axios.get(
             `https://graph.facebook.com/v20.0/${mediaId}`,
             {
@@ -54,10 +53,8 @@ const retrieveMediaURL = async (mediaId, retryAttempt = 0) => {
                 },
             }
         );
-        console.log("mediaResponse", mediaResponse);
 
         const audioUrl = mediaResponse.data.url;
-
 
         const audioResponse = await axios.get(audioUrl, {
             responseType: "arraybuffer",
@@ -71,15 +68,15 @@ const retrieveMediaURL = async (mediaId, retryAttempt = 0) => {
     } catch (error) {
         const errData = error.response ? error.response.data : null;
         console.log(`Error retrieving media. Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
-        // if (retryAttempt < MAX_RETRIES) {
-        //     const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
-        //     console.log(`Retrying after ${waitTimeSeconds} seconds...`);
-        //     await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
-        //     return retrieveMediaURL(mediaId, retryAttempt + 1);
-        // } else {
-        //     console.log(`Max retries reached. Giving up on media retrieval for ${mediaId}.`);
-        //     console.log("Final error:", errData ? errData : error.message);
-        // }
+        if (retryAttempt < MAX_RETRIES) {
+            const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
+            console.log(`Retrying after ${waitTimeSeconds} seconds...`);
+            await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
+            return retrieveMediaURL(mediaId, retryAttempt + 1);
+        } else {
+            console.log(`Max retries reached. Giving up on media retrieval for ${mediaId}.`);
+            console.log("Final error:", errData ? errData : error.message);
+        }
 
     }
 };
@@ -146,15 +143,15 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, ret
     } catch (error) {
         const errData = error.response ? error.response.data : null;
         console.log(`Error sending media message (from ${phoneNumberId}). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
-        // if (retryAttempt < MAX_RETRIES) {
-        //     const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
-        //     console.log(`Retrying after ${waitTimeSeconds} seconds...`);
-        //     await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
-        //     return sendMediaMessage(to, mediaUrl, mediaType, captionText, retryAttempt + 1);
-        // } else {
-        //     console.log(`Max retries reached. Giving up on media message to ${to} from ${phoneNumberId}.`);
-        //     console.log("Final error:", errData ? errData : error.message);
-        // }
+        if (retryAttempt < MAX_RETRIES) {
+            const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
+            console.log(`Retrying after ${waitTimeSeconds} seconds...`);
+            await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
+            return sendMediaMessage(to, mediaUrl, mediaType, captionText, retryAttempt + 1);
+        } else {
+            console.log(`Max retries reached. Giving up on media message to ${to} from ${phoneNumberId}.`);
+            console.log("Final error:", errData ? errData : error.message);
+        }
     }
 };
 
@@ -207,21 +204,21 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
     } catch (error) {
         const errData = error.response ? error.response.data : null;
         console.log(`Error sending button message (from ${phoneNumberId}). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
-        // if (retryAttempt < MAX_RETRIES) {
-        //     const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
-        //     console.log(`Retrying after ${waitTimeSeconds} seconds...`);
-        //     await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
-        //     if (imageUrl) {
-        //         return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, imageUrl);
-        //     } else if (videoUrl) {
-        //         return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, null, videoUrl);
-        //     } else {
-        //         return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1);
-        //     }
-        // } else {
-        //     console.log(`Max retries reached. Giving up on button message to ${to} from ${phoneNumberId}.`);
-        //     console.log("Final error:", errData ? errData : error.message);
-        // }
+        if (retryAttempt < MAX_RETRIES) {
+            const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
+            console.log(`Retrying after ${waitTimeSeconds} seconds...`);
+            await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
+            if (imageUrl) {
+                return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, imageUrl);
+            } else if (videoUrl) {
+                return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, null, videoUrl);
+            } else {
+                return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1);
+            }
+        } else {
+            console.log(`Max retries reached. Giving up on button message to ${to} from ${phoneNumberId}.`);
+            console.log("Final error:", errData ? errData : error.message);
+        }
     }
 };
 
@@ -251,15 +248,15 @@ const sendContactCardMessage = async (to, contactData, retryAttempt = 0) => {
         const errData = error.response ? error.response.data : null;
         console.log(`Error sending contact card (from ${phoneNumberId}). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
 
-        // if (retryAttempt < MAX_RETRIES) {
-        //     const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
-        //     console.log(`Retrying after ${waitTimeSeconds} seconds...`);
-        //     await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
-        //     return sendContactCardMessage(to, contactData, retryAttempt + 1);
-        // } else {
-        //     console.log(`Max retries reached. Giving up on contact card to ${to} from ${phoneNumberId}.`);
-        //     console.log("Final error:", errData ? errData : error.message);
-        // }
+        if (retryAttempt < MAX_RETRIES) {
+            const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
+            console.log(`Retrying after ${waitTimeSeconds} seconds...`);
+            await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
+            return sendContactCardMessage(to, contactData, retryAttempt + 1);
+        } else {
+            console.log(`Max retries reached. Giving up on contact card to ${to} from ${phoneNumberId}.`);
+            console.log("Final error:", errData ? errData : error.message);
+        }
     }
 };
 

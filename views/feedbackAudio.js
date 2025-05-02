@@ -30,7 +30,7 @@ const feedbackAudioView = async (profileId, userMobileNumber, currentUserState, 
 
                 // Send lesson message
                 let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\n\nListen to the audio question and send your answer as a voice message.💬";
+                lessonMessage += "\n\nListen to the audio question and send your answer as a voice message.💬\nOR\n" + "Type “next” to skip";
 
                 // Text message
                 await sendMessage(userMobileNumber, lessonMessage);
@@ -56,58 +56,58 @@ const feedbackAudioView = async (profileId, userMobileNumber, currentUserState, 
                 // Get the current Listen and Speak question
                 const currentListenAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
-                    // Uploading user audio to Azure Blob Storage
-                    const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
-                    const uniqueID = uuidv4();
-                    const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
-                    const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                // Uploading user audio to Azure Blob Storage
+                const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
+                const uniqueID = uuidv4();
+                const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
+                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
 
-                    // Save user response to the database
-                    const submissionDate = new Date();
-                    const retryCounter = currentUserState.dataValues.retryCounter;
-                    // User first attempt
-                        await waQuestionResponsesRepository.create(
-                            profileId,
-                            userMobileNumber,
-                            currentUserState.dataValues.currentLessonId,
-                            currentListenAndSpeakQuestion.dataValues.id,
-                            activity,
-                            startingLesson.dataValues.activityAlias,
-                            null,
-                            [userAudioFileUrl],
-                            null,
-                            null,
-                            null,
-                            null,
-                            retryCounter + 1,
-                            submissionDate
-                        );
-                
-                    const nextListenAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
-                    if (nextListenAndSpeakQuestion) {
-                        // Update question number
-                        await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextListenAndSpeakQuestion.dataValues.questionNumber);
+                // Save user response to the database
+                const submissionDate = new Date();
+                const retryCounter = currentUserState.dataValues.retryCounter;
+                // User first attempt
+                await waQuestionResponsesRepository.create(
+                    profileId,
+                    userMobileNumber,
+                    currentUserState.dataValues.currentLessonId,
+                    currentListenAndSpeakQuestion.dataValues.id,
+                    activity,
+                    startingLesson.dataValues.activityAlias,
+                    null,
+                    [userAudioFileUrl],
+                    null,
+                    null,
+                    null,
+                    null,
+                    retryCounter + 1,
+                    submissionDate
+                );
 
-                        const mediaType = nextListenAndSpeakQuestion.dataValues.mediaFile.endsWith('.mp4') ? 'video' : 'audio';
-                        if (mediaType == 'video') {
-                            await sendMediaMessage(userMobileNumber, nextListenAndSpeakQuestion.dataValues.mediaFile, 'video');
-                            await createActivityLog(userMobileNumber, "video", "outbound", nextListenAndSpeakQuestion.dataValues.mediaFile, null);
-                        }
+                const nextListenAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                if (nextListenAndSpeakQuestion) {
+                    // Update question number
+                    await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextListenAndSpeakQuestion.dataValues.questionNumber);
 
-                        // Update acceptable messages list for the user
-                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
-                        if (mediaType == 'video') {
-                            await sleep(5000);
-                        }
-
-                    } else {
-                        // Reset Question Number, Retry Counter, and Activity Type
-                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
-
-                        // ENDING MESSAGE
-                        await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
+                    const mediaType = nextListenAndSpeakQuestion.dataValues.mediaFile.endsWith('.mp4') ? 'video' : 'audio';
+                    if (mediaType == 'video') {
+                        await sendMediaMessage(userMobileNumber, nextListenAndSpeakQuestion.dataValues.mediaFile, 'video');
+                        await createActivityLog(userMobileNumber, "video", "outbound", nextListenAndSpeakQuestion.dataValues.mediaFile, null);
                     }
-                
+
+                    // Update acceptable messages list for the user
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                    if (mediaType == 'video') {
+                        await sleep(5000);
+                    }
+
+                } else {
+                    // Reset Question Number, Retry Counter, and Activity Type
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
+
+                    // ENDING MESSAGE
+                    await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
+                }
+
             }
         }
         return;

@@ -49,12 +49,10 @@ const createActivityLog = async (
     } else if (actionType === "audio" && messageDirection == 'inbound') {
         const mediaId = messageContent.audio.id;
         const mediaResponse = await retrieveMediaURL(mediaId);
-        console.log("azureUrl",mediaResponse.data);
         const azureUrl = await azureBlobStorage.uploadToBlobStorage(
             mediaResponse.data,
             mediaId
         );
-        
         finalMessageContent = azureUrl;
     } else if (actionType === "video" && messageDirection == 'inbound') {
         const mediaId = messageContent.video.id;

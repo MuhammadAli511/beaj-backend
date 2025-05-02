@@ -129,7 +129,6 @@ const webhookService = async (body, res) => {
                     createActivityLog(userMobileNumber, "image", "inbound", message, null);
                     messageContent = await retrieveMediaURL(message.image.id);
                 } else if (message.type === "audio") {
-                    console.log("audio message", message);
                     createActivityLog(userMobileNumber, "audio", "inbound", message, null);
                     messageContent = await retrieveMediaURL(message.audio.id);
                 } else if (message.type === "video") {
@@ -646,7 +645,8 @@ const webhookService = async (body, res) => {
                         messageContent.toLowerCase().includes("it can be improved 🤔") ||
                         messageContent.toLowerCase().includes("yes") ||
                         messageContent.toLowerCase().includes("no, try again") ||
-                        messageContent.toLowerCase().includes("no")
+                        messageContent.toLowerCase().includes("no") ||
+                        messageContent.toLowerCase().includes("next")
                     ) {
                         if (
                             messageContent.toLowerCase().includes("it was great") ||
@@ -664,6 +664,10 @@ const webhookService = async (body, res) => {
                             currentUserState.dataValues.currentDay,
                             currentUserState.dataValues.currentLesson_sequence
                         );
+
+                        if (messageContent.toLowerCase().includes("next") && nextLesson.dataValues.activity == "feedbackAudio") {
+                            await waLessonsCompletedRepository.endLessonByPhoneNumberLessonIdAndProfileId(userMobileNumber, nextLesson.dataValues.LessonId, profileId);
+                        }
 
                         if (!nextLesson) {
                             // Check if current lesson
