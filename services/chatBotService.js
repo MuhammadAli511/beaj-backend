@@ -675,6 +675,7 @@ const webhookService = async (body, res) => {
                         let theStartingLesson = await lessonRepository.getByLessonId(currentUserState.dataValues.currentLessonId);
 
                         if (messageContent.toLowerCase().includes("next") && latestUserState.dataValues.activityType == "feedbackAudio") {
+                            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
                             await endingMessage(profileId, userMobileNumber, currentUserState, theStartingLesson);
                         }
 

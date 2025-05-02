@@ -250,8 +250,9 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
                 await createActivityLog(userMobileNumber, "video", "outbound", fizza_level3, null);
                 await sleep(12000);
                 let endingMessageLevel3 = "🎓 This brings us to the end of Beaj Education's Self Development Course! \n\nPlease note: \n\n📳 A Beaj team member will call you in the next few weeks for a short phone survey. Please pick up and share your valuable feedback.\n\n🏆 You will recieve your certificate within one week.\n\n🎁 Winners of the Lucky Draw will be announced after May 10th!\n\nPlease do not forget to join our Teacher Leaders community. Links to the community have been shared in your class groups.\n\nWe thank you for your time and dedication and hope your learning journey continues!\n\nBest wishes,\nTeam Beaj"
-                await sendMessage(userMobileNumber, endingMessageLevel3);
-                await createActivityLog(userMobileNumber, "text", "outbound", endingMessageLevel3, null);
+                let endingImageLevel3 = "https://beajbloblive.blob.core.windows.net/beajdocuments/level3_ender_beaj.jpeg";
+                await sendMediaMessage(userMobileNumber, endingImageLevel3, 'image', endingMessageLevel3);
+                await createActivityLog(userMobileNumber, "image", "outbound", endingImageLevel3, null, endingMessageLevel3);
             }
 
             // Feedback Message
