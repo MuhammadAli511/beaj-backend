@@ -47,6 +47,8 @@ let activity_types_to_repeat = [
     "conversationalAgencyBot",
     "watchAndAudio",
     "watchAndImage",
+    "feedbackAudio",
+    "feedbackMcqs",
 ];
 
 let text_message_types = [
@@ -127,6 +129,7 @@ const webhookService = async (body, res) => {
                     createActivityLog(userMobileNumber, "image", "inbound", message, null);
                     messageContent = await retrieveMediaURL(message.image.id);
                 } else if (message.type === "audio") {
+                    console.log("audio message", message);
                     createActivityLog(userMobileNumber, "audio", "inbound", message, null);
                     messageContent = await retrieveMediaURL(message.audio.id);
                 } else if (message.type === "video") {
@@ -549,7 +552,8 @@ const webhookService = async (body, res) => {
                     "+923232658153",
                     "+923390001510",
                     "+923288954660",
-                    "+923704558660"
+                    "+923704558660",
+                    "+923012232148",
                 ];
 
                 // START MAIN COURSE

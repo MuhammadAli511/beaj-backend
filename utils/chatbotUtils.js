@@ -25,6 +25,9 @@ import { listenAndSpeakView } from "../views/listenAndSpeak.js";
 import { conversationalAgencyBotView } from "../views/conversationalAgencyBot.js";
 import waActiveSessionRepository from "../repositories/waActiveSessionRepository.js";
 import waProfileRepository from "../repositories/waProfileRepository.js";
+import { feedbackMcqsView } from "../views/feedbackMcqs.js";
+import { feedbackAudioView } from "../views/feedbackAudio.js";
+
 dotenv.config();
 
 
@@ -242,6 +245,13 @@ const sendCourseLessonToTeacher = async (profileId, userMobileNumber, currentUse
         else if (activity == 'speakingPractice') {
             await speakingPracticeView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
         }
+        else if (activity == 'feedbackAudio') {
+            await feedbackAudioView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+        }
+        else if (activity == 'feedbackMcqs') {
+            await feedbackMcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+        }
+
     } catch (error) {
         console.log('Error sending lesson to user:', error);
         error.fileName = 'chatBotService.js';

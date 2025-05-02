@@ -3,6 +3,7 @@ import service from '../services/lessonService.js';
 const createLessonController = async (req, res, next) => {
     try {
         const { lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status } = req.body;
+        console.log(req.body);
         const lesson = await service.createLessonService(lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status);
         res.status(200).send({ message: "Lesson created successfully", lesson });
     } catch (error) {
@@ -47,6 +48,7 @@ const updateLessonController = async (req, res, next) => {
 const deleteLessonController = async (req, res, next) => {
     try {
         const id = req.params.id;
+        console.log("id", id);
         await service.deleteLessonService(id);
         res.status(200).send({ message: "Lesson deleted successfully" });
     } catch (error) {
@@ -59,6 +61,8 @@ const getLessonsByActivityController = async (req, res, next) => {
     try {
         const { course, activity } = req.body;
         const result = await service.getLessonsByActivity(course, activity);
+
+        console.log("result", result);
         res.status(200).send(result);
     } catch (error) {
         error.fileName = 'lessonController.js';
