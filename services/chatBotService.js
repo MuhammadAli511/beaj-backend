@@ -29,6 +29,7 @@ import {
 import { sendMessage, sendButtonMessage, retrieveMediaURL, sendMediaMessage } from "../utils/whatsappUtils.js";
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
 import { createFeedback } from "../utils/createFeedbackUtils.js";
+import { endingMessage } from "../utils/endingMessageUtils.js";
 import { checkUserMessageAndAcceptableMessages, getAcceptableMessagesList, sleep } from "../utils/utils.js";
 import { runWithContext } from "../utils/requestContext.js";
 dotenv.config();
@@ -671,9 +672,10 @@ const webhookService = async (body, res) => {
                             currentUserState.dataValues.currentLesson_sequence
                         );
                         let latestUserState = await waUserProgressRepository.getByProfileId(profileId);
+                        let theStartingLesson = await lessonRepository.getByLessonId(currentUserState.dataValues.currentLessonId);
 
                         if (messageContent.toLowerCase().includes("next") && latestUserState.dataValues.activityType == "feedbackAudio") {
-                            await waLessonsCompletedRepository.endLessonByPhoneNumberLessonIdAndProfileId(userMobileNumber, latestUserState.dataValues.currentLessonId, profileId);
+                            await endingMessage(profileId, userMobileNumber, currentUserState, theStartingLesson);
                         }
 
                         if (!nextLesson) {

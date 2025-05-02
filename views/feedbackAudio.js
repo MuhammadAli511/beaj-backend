@@ -30,7 +30,7 @@ const feedbackAudioView = async (profileId, userMobileNumber, currentUserState, 
 
                 // Send lesson message
                 let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\n\nListen to the audio question and send your answer as a voice message.💬\nOR\n" + "Type “next” to skip";
+                lessonMessage += "\n\nListen to the audio instruction and send your response as a voice message.💬\nOR\n" + "Type “next” to skip";
 
                 // Text message
                 await sendMessage(userMobileNumber, lessonMessage);

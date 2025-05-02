@@ -1,6 +1,6 @@
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import lessonRepository from "../repositories/lessonRepository.js";
-import { sendMediaMessage, sendButtonMessage } from "./whatsappUtils.js";
+import { sendMediaMessage, sendButtonMessage, sendMessage } from "./whatsappUtils.js";
 import { createActivityLog } from "./createActivityLogUtils.js";
 import waUsersMetadataRepository from "../repositories/waUsersMetadataRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
@@ -244,16 +244,28 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
                 await sleep(5000);
             }
 
+            if (lessonNumber == 24 && strippedCourseName == "Level 3") {
+                const fizza_level3 = "https://beajbloblive.blob.core.windows.net/beajdocuments/Fizza_Level3.mp4";
+                await sendMediaMessage(userMobileNumber, fizza_level3, 'video', null);
+                await createActivityLog(userMobileNumber, "video", "outbound", fizza_level3, null);
+                await sleep(12000);
+                let endingMessageLevel3 = "🎓 This brings us to the end of Beaj Education's Self Development Course! \n\nPlease note: \n\n📳 A Beaj team member will call you in the next few weeks for a short phone survey. Please pick up and share your valuable feedback.\n\n🏆 You will recieve your certificate within one week.\n\n🎁 Winners of the Lucky Draw will be announced after May 10th!\n\nPlease do not forget to join our Teacher Leaders community. Links to the community have been shared in your class groups.\n\nWe thank you for your time and dedication and hope your learning journey continues!\n\nBest wishes,\nTeam Beaj"
+                await sendMessage(userMobileNumber, endingMessageLevel3);
+                await createActivityLog(userMobileNumber, "text", "outbound", endingMessageLevel3, null);
+            }
+
             // Feedback Message
-            const randomNumber = Math.floor(Math.random() * 100) + 1;
-            if (randomNumber >= 75) {
-                let cleanedAlias = startingLesson.dataValues.activityAlias.replace(/\?/g, '');
-                let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + cleanedAlias + " activity?";
-                await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
-                await createActivityLog(userMobileNumber, "template", "outbound", feedbackMessage, null);
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next lesson", "it was great 😁", "it can be improved 🤔"]);
-            } else {
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next lesson"]);
+            if (lessonNumber != 24 && lessonNumber != 3) {
+                const randomNumber = Math.floor(Math.random() * 100) + 1;
+                if (randomNumber >= 75) {
+                    let cleanedAlias = startingLesson.dataValues.activityAlias.replace(/\?/g, '');
+                    let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + cleanedAlias + " activity?";
+                    await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
+                    await createActivityLog(userMobileNumber, "template", "outbound", feedbackMessage, null);
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next lesson", "it was great 😁", "it can be improved 🤔"]);
+                } else {
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next lesson"]);
+                }
             }
 
 

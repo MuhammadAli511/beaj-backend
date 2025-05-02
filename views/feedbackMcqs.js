@@ -37,7 +37,7 @@ const feedbackMcqsView = async (profileId, userMobileNumber, currentUserState, s
                 const questionText = firstMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
                 let mcqMessage = questionText + "\n\n";
                 if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
-                    mcqMessage += "Choose the correct answer:\n";
+                    mcqMessage += "Select one response:\n";
                 }
                 for (let i = 0; i < mcqAnswers.length; i++) {
                     mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
@@ -87,7 +87,7 @@ const feedbackMcqsView = async (profileId, userMobileNumber, currentUserState, s
                     const questionText = nextMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
                     let mcqMessage = questionText + "\n\n";
                     if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
-                        mcqMessage += "Choose the correct answer:\n";
+                        mcqMessage += "Select one response:\n";
                     }
                     for (let i = 0; i < mcqAnswers.length; i++) {
                         mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;

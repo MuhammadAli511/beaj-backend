@@ -29,6 +29,14 @@ const getById = async (id) => {
     return await Lesson.findByPk(id);
 };
 
+const getByLessonId = async (lessonId) => {
+    return await Lesson.findOne({
+        where: {
+            LessonId: lessonId
+        }
+    });
+};
+
 const getLessonsArrayForWeek = async (courseId, week) => {
     const lessons = await Lesson.findAll({
         where: {
@@ -287,5 +295,6 @@ export default {
     getLessonsByCourse,
     getLessonIdsByCourseAndWeekAndActivityType,
     getActivityByLessonId,
-    getByLessonIds
+    getByLessonIds,
+    getByLessonId
 };
