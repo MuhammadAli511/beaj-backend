@@ -45,7 +45,7 @@ const deleteByPhoneNumber = async (phoneNumber) => {
     });
 };
 
-const assignTargetGroup = async (profileId, phoneNumber, targetGroup) => {
+const assignTargetGroup = async (phoneNumber,profile_id, targetGroup) => {
     if (targetGroup == "None") {
         targetGroup = null;
     }
@@ -54,7 +54,7 @@ const assignTargetGroup = async (profileId, phoneNumber, targetGroup) => {
     }, {
         where: {
             phoneNumber: phoneNumber,
-            profile_id: profileId
+            profile_id: profile_id
         }
     });
 };

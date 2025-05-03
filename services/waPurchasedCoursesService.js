@@ -1,54 +1,64 @@
+
 import waPurchasedCoursesRepository from '../repositories/waPurchasedCoursesRepository.js';
 import courseRepository from '../repositories/courseRepository.js';
 
-const getAllCoursesByProfileIdService = async (profileId) => {
+const getAllCoursesByPhoneNumberService = async (phoneNumber) => {
     const allCourses = await courseRepository.getAll();
-    const purchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByProfileId(profileId);
+    const purchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByPhoneNumber(phoneNumber);
     const courses = allCourses.map(course => {
         const purchasedCourse = purchasedCourses.find(purchasedCourse => purchasedCourse.courseId === course.CourseId);
         let userStatus;
+        let profile_id = null;
         if (purchasedCourse) {
             if (purchasedCourse.courseEndDate) {
                 userStatus = "completed";
+                profile_id = purchasedCourse.profile_id;
             } else {
                 userStatus = "purchased";
+                profile_id = purchasedCourse.profile_id;
             }
         } else {
             userStatus = "unpurchased";
         }
         return {
             ...course.dataValues,
-            user_status: userStatus
+            user_status: userStatus,
+            profile_id: profile_id
         };
     });
     return courses;
 };
 
-const getPurchasedCoursesByProfileIdService = async (profileId) => {
-    const purchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByProfileId(profileId);
+const getPurchasedCoursesByPhoneNumberService = async (phoneNumber) => {
+    const purchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByPhoneNumber(phoneNumber);
     const allCourses = await courseRepository.getAll();
     const courses = allCourses.map(course => {
         const purchasedCourse = purchasedCourses.find(purchasedCourse => purchasedCourse.courseId === course.CourseId);
         let userStatus;
+        let profile_id = null;
         if (purchasedCourse) {
             if (purchasedCourse.courseEndDate) {
                 userStatus = "completed";
+                profile_id = purchasedCourse.profile_id;
             } else {
                 userStatus = "purchased";
+                profile_id = purchasedCourse.profile_id;
             }
         } else {
             userStatus = "unpurchased";
         }
         return {
             ...course.dataValues,
-            user_status: userStatus
+            user_status: userStatus,
+            profile_id: profile_id,
         };
     });
+    // console.log(purchasedCourses);
     return courses.filter(course => course.user_status !== "unpurchased");
 };
 
-const getUnpurchasedCoursesByProfileIdService = async (profileId) => {
-    const purchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByProfileId(profileId);
+const getUnpurchasedCoursesByPhoneNumberService = async (phoneNumber) => {
+    const purchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByPhoneNumber(phoneNumber);
     const allCourses = await courseRepository.getAll();
     const courses = allCourses.map(course => {
         const purchasedCourse = purchasedCourses.find(purchasedCourse => purchasedCourse.courseId === course.CourseId);
@@ -61,28 +71,28 @@ const getUnpurchasedCoursesByProfileIdService = async (profileId) => {
     return courses.filter(course => course.user_status === "unpurchased");
 };
 
-const purchaseCourseService = async (phoneNumber,profileId, courseId) => {
+const purchaseCourseService = async (phoneNumber,profile_id, courseId) => {
     const allCourses = await courseRepository.getAll();
     const course = allCourses.find(course => course.CourseId == courseId);
     if (!course) {
         throw new Error("Course not found");
     }
-    const purchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByProfileId(profileId);
+    const purchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByPhoneNumber(phoneNumber,profile_id);
     if (purchasedCourses.some(purchasedCourse => purchasedCourse.courseId == courseId)) {
         throw new Error("Course already purchased");
     }
     return await waPurchasedCoursesRepository.create({
         phoneNumber: phoneNumber,
-        profile_id: profileId,
         courseId: courseId,
         courseCategoryId: course.CourseCategoryId,
         courseStartDate: new Date(),
         purchaseDate: new Date(),
+        profile_id: profile_id,
     });
 };
 
-const getCompletedCourseService = async (profileId) => {
-    const purchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByProfileId(profileId);
+const getCompletedCourseService = async (phoneNumber) => {
+    const purchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByPhoneNumber(phoneNumber);
     const allCourses = await courseRepository.getAll();
     const courses = allCourses.map(course => {
         const purchasedCourse = purchasedCourses.find(purchasedCourse => purchasedCourse.courseId === course.CourseId);
@@ -97,9 +107,9 @@ const getCompletedCourseService = async (profileId) => {
 
 
 export default {
-    getPurchasedCoursesByProfileIdService,
-    getUnpurchasedCoursesByProfileIdService,
+    getPurchasedCoursesByPhoneNumberService,
+    getUnpurchasedCoursesByPhoneNumberService,
     purchaseCourseService,
     getCompletedCourseService,
-    getAllCoursesByProfileIdService
+    getAllCoursesByPhoneNumberService
 };

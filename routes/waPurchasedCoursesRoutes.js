@@ -10,20 +10,20 @@ router.get('/status', (req, res) => {
     res.status(200).send("Wa Purchased Courses Route Status : Working");
 });
 
-// GET api/waPurchasedCourses/getAllCoursesByProfileId/:profileId
-router.get('/getAllCoursesByProfileId/:profileId', beajFacilitatorsAuth, waPurchasedCoursesController.getAllCoursesByProfileIdController);
+// GET api/waPurchasedCourses/getAllCoursesByPhoneNumber/:phoneNumber
+router.get('/getAllCoursesByPhoneNumber/:phoneNumber', beajFacilitatorsAuth, waPurchasedCoursesController.getAllCoursesByPhoneNumberController);
 
-// GET  api/waPurchasedCourses/getPurchasedCoursesByProfileId/:profileId
-router.get('/getPurchasedCoursesByProfileId/:profileId', beajFacilitatorsAuth, waPurchasedCoursesController.getPurchasedCoursesByProfileIdController);
+// GET  api/waPurchasedCourses/getPurchasedCoursesByPhoneNumber/:phoneNumber
+router.get('/getPurchasedCoursesByPhoneNumber/:phoneNumber', beajFacilitatorsAuth, waPurchasedCoursesController.getPurchasedCoursesByPhoneNumberController);
 
-// GET api/waPurchasedCourses/getUnpurchasedCoursesByProfileId/:profileId
-router.get('/getUnpurchasedCoursesByProfileId/:profileId', beajFacilitatorsAuth, waPurchasedCoursesController.getUnpurchasedCoursesByProfileIdController);
+// GET api/waPurchasedCourses/getUnpurchasedCoursesByPhoneNumber/:phoneNumber
+router.get('/getUnpurchasedCoursesByPhoneNumber/:phoneNumber', beajFacilitatorsAuth, waPurchasedCoursesController.getUnpurchasedCoursesByPhoneNumberController);
 
 // POST api/waPurchasedCourses/purchaseCourse
 router.post('/purchaseCourse', beajFacilitatorsAuth, waPurchasedCoursesController.purchaseCourseController);
 
-// GET api/waPurchasedCourses/getCompletedCourses/:profileId
-router.get('/getCompletedCourses/:profileId', beajFacilitatorsAuth, waPurchasedCoursesController.getCompletedCourseController);
+// GET api/waPurchasedCourses/getCompletedCourse/:phoneNumber
+router.get('/getCompletedCourses/:phoneNumber', beajFacilitatorsAuth, waPurchasedCoursesController.getCompletedCourseController);
 
 // Use error handler middleware
 router.use(errorHandler);

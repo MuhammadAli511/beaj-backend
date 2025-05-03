@@ -1509,7 +1509,7 @@ const getActivityNameCount = async (course_id1, course_id2,course_id3,grp,cohort
       WHERE 
         m."targetGroup" = '${grp}' and ${cohort}
       GROUP BY 
-        m."phoneNumber"
+        m."phoneNumber",  m."cohort"
       ORDER BY 
         m."cohort" ASC;`;
       }

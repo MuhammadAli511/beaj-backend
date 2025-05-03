@@ -14,6 +14,7 @@ import newWeekActivityScore from "../google_sheet_utils/newWeekActivityScore.js"
 import etl_T1Repository from "../repositories/etl_T1Repository.js";
 import DashboardUtils_load from "../google_sheet_utils/DashboardUtils.js";
 import CumulativeUtils_load from "../google_sheet_utils/cumulativeUtils.js";
+import { generateCertificatesForEligibleStudents } from '../google_sheet_utils/certificate-utils.js';
 
 import etlService_auto from "./etlService_Auto.js";
 const runCumulativeSheets = async() =>{
@@ -115,7 +116,8 @@ const runCumulativeSheets = async() =>{
     ])
   }
   arrayT1_List2 = arrayT1_List2.map(obj => Object.values(obj).map(value => value));
-
+  let cer_list = arrayT1_List2;
+  
   let ActivityCompletedCount1 = await etlRepository.getActivityNameCount(courseId_l1, courseId_l2, courseId_l3, 'T1', '');
   let ActivityCompletedCount2 = await etlRepository.getActivityNameCount(courseId_l10, courseId_l20, courseId_l30, 'T2', '');
 
@@ -372,6 +374,7 @@ const runCumulativeSheets = async() =>{
     individual_weekly_score_l1_list_total,
     individual_weekly_score_l2_list_total
   );
+  await generateCertificatesForEligibleStudents(cer_list,"cumulative");
 }
 
 const runETL = async () => {

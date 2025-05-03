@@ -124,6 +124,12 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
           last_activityCompleted_l3,
           module_week,
         );
+        if(module == "Week"){
+          if(arrayT1_List){
+            console.log(arrayT1_List);
+            await generateCertificatesForEligibleStudents(arrayT1_List,'weekly',targetGroup,cohort);
+          }
+        }
       }
     }
     // Check if the current date matches the target date

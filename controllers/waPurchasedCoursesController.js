@@ -1,9 +1,9 @@
 import service from '../services/waPurchasedCoursesService.js';
 
-const getAllCoursesByProfileIdController = async (req, res, next) => {
+const getAllCoursesByPhoneNumberController = async (req, res, next) => {
     try {
-        const profileId = req.params.profileId;
-        const result = await service.getAllCoursesByProfileIdService(profileId);
+        const phoneNumber = req.params.phoneNumber;
+        const result = await service.getAllCoursesByPhoneNumberService(phoneNumber);
         res.status(200).send(result);
     }
     catch (error) {
@@ -12,10 +12,10 @@ const getAllCoursesByProfileIdController = async (req, res, next) => {
     }
 };
 
-const getPurchasedCoursesByProfileIdController = async (req, res, next) => {
+const getPurchasedCoursesByPhoneNumberController = async (req, res, next) => {
     try {
-        const profileId = req.params.profileId;
-        const result = await service.getPurchasedCoursesByProfileIdService(profileId);
+        const phoneNumber = req.params.phoneNumber;
+        const result = await service.getPurchasedCoursesByPhoneNumberService(phoneNumber);
         res.status(200).send(result);
     } catch (error) {
         error.fileName = 'waPurchasedCoursesController.js';
@@ -23,10 +23,11 @@ const getPurchasedCoursesByProfileIdController = async (req, res, next) => {
     }
 };
 
-const getUnpurchasedCoursesByProfileIdController = async (req, res, next) => {
+const getUnpurchasedCoursesByPhoneNumberController = async (req, res, next) => {
     try {
-        const profileId = req.params.profileId;
-        const result = await service.getUnpurchasedCoursesByProfileIdService(profileId);
+        const phoneNumber = req.params.phoneNumber;
+        // const profileId = req.query.profile_id;
+        const result = await service.getUnpurchasedCoursesByPhoneNumberService(phoneNumber);
         res.status(200).send(result);
     } catch (error) {
         error.fileName = 'waPurchasedCoursesController.js';
@@ -38,8 +39,9 @@ const purchaseCourseController = async (req, res, next) => {
     try {
         const phoneNumber = req.body.phoneNumber;
         const courseId = req.body.courseId;
-        const profileId = req.body.profile_id;
-        await service.purchaseCourseService(phoneNumber, profileId,courseId);
+        const profile_id = req.body.profile_id;
+        // console.log(profile_id);
+        const result = await service.purchaseCourseService(phoneNumber,profile_id, courseId);
         res.status(200).send({ message: "Course purchased successfully" });
     } catch (error) {
         error.fileName = 'waPurchasedCoursesController.js';
@@ -49,8 +51,8 @@ const purchaseCourseController = async (req, res, next) => {
 
 const getCompletedCourseController = async (req, res, next) => {
     try {
-        const profileId = req.params.profileId;
-        const result = await service.getCompletedCourseService(profileId);
+        const phoneNumber = req.params.phoneNumber;
+        const result = await service.getCompletedCourseService(phoneNumber);
         res.status(200).send(result);
     } catch (error) {
         error.fileName = 'waPurchasedCoursesController.js';
@@ -60,9 +62,9 @@ const getCompletedCourseController = async (req, res, next) => {
 
 
 export default {
-    getPurchasedCoursesByProfileIdController,
-    getUnpurchasedCoursesByProfileIdController,
+    getPurchasedCoursesByPhoneNumberController,
+    getUnpurchasedCoursesByPhoneNumberController,
     purchaseCourseController,
     getCompletedCourseController,
-    getAllCoursesByProfileIdController
+    getAllCoursesByPhoneNumberController
 };

@@ -1410,7 +1410,7 @@ const getCount_UpdateLagCohortWise = async (course_id,grp) => {
             WHERE 
                 m."targetGroup" = '${grp}' and m."cohort" != 'Pilot' and m."cohort" != 'Cohort 0'
             GROUP BY 
-                m."phoneNumber"
+                m."phoneNumber", m."cohort"
         ),
         ThresholdComparison AS (
             SELECT 

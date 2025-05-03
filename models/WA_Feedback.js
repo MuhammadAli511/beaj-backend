@@ -49,7 +49,11 @@ WA_Feedback.init({
     metadata: {
         type: DataTypes.JSONB,
         allowNull: true,
-    }
+    },
+    profile_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    },
 }, {
     sequelize,
     modelName: 'WA_Feedback',
