@@ -13,10 +13,6 @@ const lesson_loadDataToGoogleSheets = async (
   pilot_t2_w1_weekly_Score,
   pilot_t1_w1_weekly_Score1,
   pilot_t2_w1_weekly_Score1,
-  // pilot_t1_l2_w2
-  // hello_testing
-  // pilot_t1_w1_weekly_Score_l1,
-  // pilot_t2_w1_weekly_Score_l1
 ) => {
   try {
     const auth = new google.auth.GoogleAuth({
@@ -61,7 +57,6 @@ const lesson_loadDataToGoogleSheets = async (
         });
       }
     }
-    // console.log(pilot_t2_w1_weekly_Score);
     await sheets.spreadsheets.values.update({
       auth: authClient,
       spreadsheetId,
@@ -81,7 +76,6 @@ const lesson_loadDataToGoogleSheets = async (
       },
     });
 
-    // console.log(pilot_t1_w1_weekly_Score1);
     await sheets.spreadsheets.values.update({
       auth: authClient,
       spreadsheetId,
@@ -100,52 +94,6 @@ const lesson_loadDataToGoogleSheets = async (
         values: pilot_t2_w1_weekly_Score1,
       },
     });
-
-    // await sheets.spreadsheets.values.update({
-    //   auth: authClient,
-    //   spreadsheetId,
-    //   range: 'Pilot T1-Weekly Score!I3',
-    //   valueInputOption: "RAW",
-    //   resource: {
-    //     values: pilot_t1_l2_w2,
-    //   },
-    // });
-
-
-    // await sheets.spreadsheets.values.update({
-    //   auth: authClient,
-    //   spreadsheetId,
-    //   range: 'TestingSheet!D3',
-    //   valueInputOption: "RAW",
-    //   resource: {
-    //     values: hello_testing,
-    //   },
-    // });
-
-
-
-
-    // await sheets.spreadsheets.values.update({
-    //   auth: authClient,
-    //   spreadsheetId,
-    //   range: 'Pilot T1-Weekly Score!G3',
-    //   valueInputOption: "RAW",
-    //   resource: {
-    //     values: pilot_t1_w1_weekly_Score_l1,
-    //   },
-    // });
-    // await sheets.spreadsheets.values.update({
-    //   auth: authClient,
-    //   spreadsheetId,
-    //   range: 'Pilot T2-Weekly Score!G3',
-    //   valueInputOption: "RAW",
-    //   resource: {
-    //     values: pilot_t2_w1_weekly_Score_l1,
-    //   },
-    // });
-
-
-
   } catch (error) {
     console.error("Error in loadDataToGoogleSheets:", error);
     error.fileName = "googleSheetUtils.js";

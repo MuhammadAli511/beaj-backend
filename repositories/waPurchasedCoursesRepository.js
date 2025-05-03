@@ -40,15 +40,7 @@ const getAllByPhoneNumber = async (phoneNumber) => {
 const getPurchasedCoursesByPhoneNumber = async (phoneNumber) => {
     return await WA_PurchasedCourses.findAll({
         where: {
-            phoneNumber: phoneNumber
-        }
-    });
-};
-
-const getPurchasedCoursesByProfileId = async (profileId) => {
-    return await WA_PurchasedCourses.findAll({
-        where: {
-            profile_id: profileId
+            phoneNumber: phoneNumber,
         }
     });
 };
@@ -56,7 +48,7 @@ const getPurchasedCoursesByProfileId = async (profileId) => {
 const getPurchasedCount = async () => {
     return await WA_PurchasedCourses.count({
         distinct: true,
-        col: 'profile_id'
+        col: 'phoneNumber'
     });
 };
 
@@ -68,6 +60,5 @@ export default {
     deleteById,
     getAllByPhoneNumber,
     getPurchasedCoursesByPhoneNumber,
-    getPurchasedCoursesByProfileId,
     getPurchasedCount
 };
