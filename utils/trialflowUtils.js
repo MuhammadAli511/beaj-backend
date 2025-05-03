@@ -22,11 +22,13 @@ const greetingMessage = async (profileId, userMobileNumber, persona) => {
     }
 
     if (persona == "kids") {
-        const greetingImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/welcome_new.jpeg";
-        await sendMediaMessage(userMobileNumber, greetingImage, "image", greetingMessageText);
-        await createActivityLog(userMobileNumber, "image", "outbound", greetingImage, null);
-        await sleep(1000);
-        let videoCaption = "Why should you choose Beaj Education? - A message from the Founder.\nآپ کو بیج ایجوکیشن کیوں چُننا چاہیے؟ — بیج ایجوکیشن کی سربراہ کا پیغام۔";
+        // const greetingImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/welcome_new.jpeg";
+        // await sendMediaMessage(userMobileNumber, greetingImage, "image", greetingMessageText);
+        // await createActivityLog(userMobileNumber, "image", "outbound", greetingImage, null);
+        // await sleep(1000);
+        await sendMessage(userMobileNumber, greetingMessageText);
+        await createActivityLog(userMobileNumber, "text", "outbound", greetingMessageText, null);
+        let videoCaption = "Why should you choose Beaj Education? Here is a message from our founder.\nآپ کو بیج ایجوکیشن کیوں چُننا چاہیے؟ — بیج ایجوکیشن کی سربراہ کا پیغام۔";
         await sendButtonMessage(userMobileNumber, videoCaption, [{ id: 'start_free_trial', title: 'Start Free Trial' }, { id: 'go_to_registration', title: 'Go to Registration' }], 0, null, "https://beajbloblive.blob.core.windows.net/beajdocuments/why_beaj.mp4");
         await createActivityLog(userMobileNumber, "template", "outbound", videoCaption, null);
         await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start free trial", "go to registration"]);
@@ -53,7 +55,7 @@ const kidsChooseClass = async (profileId, userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Choose Class");
     // await sendMediaMessage(userMobileNumber, "https://beajbloblive.blob.core.windows.net/beajdocuments/summer_intro_video.mp4", "video");
     // await createActivityLog(userMobileNumber, "video", "outbound", "https://beajbloblive.blob.core.windows.net/beajdocuments/summer_intro_video.mp4", null);
-    const chooseClassMessage = `Take a quick look inside the course!\nکورس کی ایک جھلک دیکھیں۔\n\n👇Choose your class:\nاپنی کلاس منتخب کریں۔`;
+    const chooseClassMessage = `Take a look inside the course!\nکورس کی ایک جھلک دیکھیں۔\n\n👇Choose your class:\nاپنی کلاس منتخب کریں۔`;
     await sendButtonMessage(userMobileNumber, chooseClassMessage, [{ id: 'kids_summer_camp_class_1_or_2', title: 'Class 1 or 2' }, { id: 'kids_summer_camp_class_5_or_6', title: 'Class 3 to 6' }], 0, null, "https://beajbloblive.blob.core.windows.net/beajdocuments/summer_intro_video.mp4");
     await createActivityLog(userMobileNumber, "template", "outbound", chooseClassMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["class 1 or 2", "class 3 to 6"]);

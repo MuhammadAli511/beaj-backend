@@ -40,12 +40,10 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
         await createActivityLog(userMobileNumber, "sticker", "outbound", activityCompleteSticker, null);
     }
     if (!lessonLast && currentUserState.dataValues.persona == "kid") {
-        if (!(currentUserState.dataValues.currentWeek == 1 && currentUserState.dataValues.currentDay == 1 && currentUserState.dataValues.currentLesson_sequence == 1)) {
-            if (startingLesson.dataValues.activityAlias != "🧠 *Let's Think!*") {
-                const challengeCompleteSticker = "https://beajbloblive.blob.core.windows.net/beajdocuments/challenge_complete_with_text.webp"
-                await sendMediaMessage(userMobileNumber, challengeCompleteSticker, 'sticker');
-                await createActivityLog(userMobileNumber, "sticker", "outbound", challengeCompleteSticker, null);
-            }
+        if ((startingLesson.dataValues.engagement_type === "Free Trial - Kids - Level 1" || startingLesson.dataValues.engagement_type === "Free Trial - Kids - Level 3") && startingLesson.dataValues.activityType !== 'videoEnd') {
+            const challengeCompleteSticker = "https://beajbloblive.blob.core.windows.net/beajdocuments/challenge_complete_with_text.webp"
+            await sendMediaMessage(userMobileNumber, challengeCompleteSticker, 'sticker');
+            await createActivityLog(userMobileNumber, "sticker", "outbound", challengeCompleteSticker, null);
         }
     }
 
