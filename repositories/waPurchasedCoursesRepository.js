@@ -45,6 +45,14 @@ const getPurchasedCoursesByPhoneNumber = async (phoneNumber) => {
     });
 };
 
+const getPurchasedCoursesByProfileId = async (profileId) => {
+    return await WA_PurchasedCourses.findAll({
+        where: {
+            profileId: profileId
+        }
+    });
+};
+
 const getPurchasedCount = async () => {
     return await WA_PurchasedCourses.count({
         distinct: true,
@@ -60,5 +68,6 @@ export default {
     deleteById,
     getAllByPhoneNumber,
     getPurchasedCoursesByPhoneNumber,
-    getPurchasedCount
+    getPurchasedCount,
+    getPurchasedCoursesByProfileId
 };
