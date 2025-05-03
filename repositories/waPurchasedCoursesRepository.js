@@ -48,7 +48,7 @@ const getPurchasedCoursesByPhoneNumber = async (phoneNumber) => {
 const getPurchasedCoursesByProfileId = async (profileId) => {
     return await WA_PurchasedCourses.findAll({
         where: {
-            profileId: profileId
+            profile_id: profileId
         }
     });
 };
