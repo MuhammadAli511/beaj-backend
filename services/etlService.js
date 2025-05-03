@@ -2,25 +2,15 @@ import etlRepository from "../repositories/etlRepository.js";
 import loadDataToGoogleSheets from "../google_sheet_utils/googleSheetUtil.js";
 import new_loadDataToGoogleSheets from "../google_sheet_utils/LevelGoogleSheet.js";
 import lesson_loadDataToGoogleSheets from "../google_sheet_utils/LessonGoogleSheet.js";
-import dashboardFunnel from "./statsService.js";
 import getPhoneNumberColumn from "../google_sheet_utils/getPhoneNumberColumn.js";
 import googleSheetStats from "../google_sheet_utils/googleSheetStats.js";
 import T1Repository from "../repositories/etl_T1Repository.js";
-import getDatefromGSheet from "../google_sheet_utils/getDatefromGSheet.js";
-import getWeeklyDate from "../google_sheet_utils/weekscore_getdate.js";
-import courseId_gSheet from "../google_sheet_utils/courseId_gSheet.js";
 import getWeeklyActivityCompleted1 from "../repositories/etl_weeklyScoreRepository.js";
-import newWeekActivityScore from "../google_sheet_utils/newWeekActivityScore.js";
-import etl_T1Repository from "../repositories/etl_T1Repository.js";
 import DashboardUtils_load from "../google_sheet_utils/DashboardUtils.js";
 import CumulativeUtils_load from "../google_sheet_utils/cumulativeUtils.js";
 import { generateCertificatesForEligibleStudents } from '../google_sheet_utils/certificate-utils.js';
 
-import etlService_auto from "./etlService_Auto.js";
-const runCumulativeSheets = async() =>{
-
-  // await etlService_auto.runETL('T2', 'Week', 'Cohort 41', 41, 10);
-
+const runCumulativeSheets = async () => {
   let courseId_l1 = 106;
   let courseId_l2 = 111;
   let courseId_l3 = 118;
@@ -30,40 +20,40 @@ const runCumulativeSheets = async() =>{
   let courseId_l30 = 112;
 
 
-  let array_Lesson_List1 = await getWeeklyActivityCompleted1.getLessonCompletions(courseId_l1,courseId_l2,courseId_l3,'T1');
+  let array_Lesson_List1 = await getWeeklyActivityCompleted1.getLessonCompletions(courseId_l1, courseId_l2, courseId_l3, 'T1');
   array_Lesson_List1 = array_Lesson_List1.map(obj => Object.values(obj).map(value => value));
-  
-  let array_Lesson_List2 = await getWeeklyActivityCompleted1.getLessonCompletions(courseId_l10,courseId_l20,courseId_l30,'T2');
+
+  let array_Lesson_List2 = await getWeeklyActivityCompleted1.getLessonCompletions(courseId_l10, courseId_l20, courseId_l30, 'T2');
   array_Lesson_List2 = array_Lesson_List2.map(obj => Object.values(obj).map(value => value));
 
   var array_Lesson_List = array_Lesson_List1.concat(array_Lesson_List2);
 
-  
-  let array_activity_List1 = await getWeeklyActivityCompleted1.getActivity_Completions(courseId_l1,courseId_l2,courseId_l3,'T1');
+
+  let array_activity_List1 = await getWeeklyActivityCompleted1.getActivity_Completions(courseId_l1, courseId_l2, courseId_l3, 'T1');
   array_activity_List1 = array_activity_List1.map(obj => Object.values(obj).map(value => value));
 
-  let array_activity_List2 = await getWeeklyActivityCompleted1.getActivity_Completions(courseId_l10,courseId_l20,courseId_l30,'T2');
+  let array_activity_List2 = await getWeeklyActivityCompleted1.getActivity_Completions(courseId_l10, courseId_l20, courseId_l30, 'T2');
   array_activity_List2 = array_activity_List2.map(obj => Object.values(obj).map(value => value));
 
   var array_activity_List = array_activity_List1.concat(array_activity_List2);
 
-  let weekly_score_l1_list = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l1,'T1');
-  let weekly_score_l2_list = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l2,'T1');
-  let weekly_score_l3_list = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l3,'T1');
-  let weekly_score_l1_list0 = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l10,'T2');
-  let weekly_score_l2_list1 = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l20,'T2');
-  let weekly_score_l3_list2 = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l30,'T2');
+  let weekly_score_l1_list = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l1, 'T1');
+  let weekly_score_l2_list = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l2, 'T1');
+  let weekly_score_l3_list = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l3, 'T1');
+  let weekly_score_l1_list0 = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l10, 'T2');
+  let weekly_score_l2_list1 = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l20, 'T2');
+  let weekly_score_l3_list2 = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l30, 'T2');
 
   let arrayT1_List2 = [];
 
   for (let i = 0; i < weekly_score_l1_list.length; i++) {
-  
+
     let l1_entry = weekly_score_l1_list[i];
     let l2_entry = weekly_score_l2_list[i];
     let l3_entry = weekly_score_l3_list[i];
 
     arrayT1_List2.push([
-       i+1,
+      i + 1,
       l1_entry.phoneNumber,
       l1_entry.name,
       l1_entry.final_percentage_week1,
@@ -87,7 +77,7 @@ const runCumulativeSheets = async() =>{
   }
 
   for (let i = 0; i < weekly_score_l1_list0.length; i++) {
-  
+
     let l1_entry = weekly_score_l1_list0[i];
     let l2_entry = weekly_score_l2_list1[i];
     let l3_entry = weekly_score_l3_list2[i];
@@ -117,15 +107,15 @@ const runCumulativeSheets = async() =>{
   }
   arrayT1_List2 = arrayT1_List2.map(obj => Object.values(obj).map(value => value));
   let cer_list = arrayT1_List2;
-  
+
   let ActivityCompletedCount1 = await etlRepository.getActivityNameCount(courseId_l1, courseId_l2, courseId_l3, 'T1', '');
   let ActivityCompletedCount2 = await etlRepository.getActivityNameCount(courseId_l10, courseId_l20, courseId_l30, 'T2', '');
 
-  let individual_weekly_score_l1_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l1,'T1');
-  let individual_weekly_score_l2_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l2,'T1');
-  let individual_weekly_score_l3_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l3,'T1');
+  let individual_weekly_score_l1_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l1, 'T1');
+  let individual_weekly_score_l2_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l2, 'T1');
+  let individual_weekly_score_l3_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l3, 'T1');
 
-  let individual_weekly_score_l1_list_total= [], individual_weekly_score_l2_list_total=[];
+  let individual_weekly_score_l1_list_total = [], individual_weekly_score_l2_list_total = [];
   let arrayT1_List01 = [];
 
   let maxL1 = {
@@ -136,7 +126,7 @@ const runCumulativeSheets = async() =>{
     conversationalMonologue_total: 0,
     Speaking_practice_total: 0
   };
-  
+
   let maxL2 = {
     listenAndSpeak_total: 0,
     mcqs_total: 0,
@@ -145,7 +135,7 @@ const runCumulativeSheets = async() =>{
     conversationalMonologue_total: 0,
     Speaking_practice_total: 0
   };
-  
+
   let maxL3 = {
     listenAndSpeak_total: 0,
     mcqs_total: 0,
@@ -159,7 +149,7 @@ const runCumulativeSheets = async() =>{
     let l1_entry = individual_weekly_score_l1_list[i];
     let l2_entry = individual_weekly_score_l2_list[i];
     let l3_entry = individual_weekly_score_l3_list[i];
-  
+
     // Update max totals for L1
     maxL1.listenAndSpeak_total = Math.max(maxL1.listenAndSpeak_total, l1_entry.listenAndSpeak_total);
     maxL1.mcqs_total = Math.max(maxL1.mcqs_total, l1_entry.mcqs_total);
@@ -167,7 +157,7 @@ const runCumulativeSheets = async() =>{
     maxL1.read_total = Math.max(maxL1.read_total, l1_entry.read_total);
     maxL1.conversationalMonologue_total = Math.max(maxL1.conversationalMonologue_total, l1_entry.conversationalMonologue_total);
     maxL1.Speaking_practice_total = Math.max(maxL1.Speaking_practice_total, l1_entry.Speaking_practice_total);
-  
+
     // Update max totals for L2
     maxL2.listenAndSpeak_total = Math.max(maxL2.listenAndSpeak_total, l2_entry.listenAndSpeak_total);
     maxL2.mcqs_total = Math.max(maxL2.mcqs_total, l2_entry.mcqs_total);
@@ -175,7 +165,7 @@ const runCumulativeSheets = async() =>{
     maxL2.read_total = Math.max(maxL2.read_total, l2_entry.read_total);
     maxL2.conversationalMonologue_total = Math.max(maxL2.conversationalMonologue_total, l2_entry.conversationalMonologue_total);
     maxL2.Speaking_practice_total = Math.max(maxL2.Speaking_practice_total, l2_entry.Speaking_practice_total);
-  
+
     // Update max totals for L3
     maxL3.listenAndSpeak_total = Math.max(maxL3.listenAndSpeak_total, l3_entry.listenAndSpeak_total);
     maxL3.mcqs_total = Math.max(maxL3.mcqs_total, l3_entry.mcqs_total);
@@ -183,7 +173,7 @@ const runCumulativeSheets = async() =>{
     maxL3.read_total = Math.max(maxL3.read_total, l3_entry.read_total);
     maxL3.conversationalMonologue_total = Math.max(maxL3.conversationalMonologue_total, l3_entry.conversationalMonologue_total);
     maxL3.Speaking_practice_total = Math.max(maxL3.Speaking_practice_total, l3_entry.Speaking_practice_total);
-  
+
     // Your existing array push
     arrayT1_List01.push([
       i + 1,
@@ -213,7 +203,7 @@ const runCumulativeSheets = async() =>{
       l1_entry.cohort
     ]);
   }
-  
+
   // Push final max row to individual_weekly_score_l1_list_total
   individual_weekly_score_l1_list_total.push([
     maxL1.listenAndSpeak_total,
@@ -238,12 +228,12 @@ const runCumulativeSheets = async() =>{
     maxL3.Speaking_practice_total
   ]);
 
-  individual_weekly_score_l1_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l10,'T2');
-  individual_weekly_score_l2_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l20,'T2');
-  individual_weekly_score_l3_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l30,'T2');
-  
-  
-   maxL1 = {
+  individual_weekly_score_l1_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l10, 'T2');
+  individual_weekly_score_l2_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l20, 'T2');
+  individual_weekly_score_l3_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l30, 'T2');
+
+
+  maxL1 = {
     listenAndSpeak_total: 0,
     mcqs_total: 0,
     watchAndSpeak_total: 0,
@@ -251,7 +241,7 @@ const runCumulativeSheets = async() =>{
     conversationalMonologue_total: 0,
     Speaking_practice_total: 0
   };
-  
+
   maxL2 = {
     listenAndSpeak_total: 0,
     mcqs_total: 0,
@@ -260,7 +250,7 @@ const runCumulativeSheets = async() =>{
     conversationalMonologue_total: 0,
     Speaking_practice_total: 0
   };
-  
+
   maxL3 = {
     listenAndSpeak_total: 0,
     mcqs_total: 0,
@@ -277,7 +267,7 @@ const runCumulativeSheets = async() =>{
     let l1_entry = individual_weekly_score_l1_list[i];
     let l2_entry = individual_weekly_score_l2_list[i];
     let l3_entry = individual_weekly_score_l3_list[i];
-  
+
     // Update max totals for L1
     maxL1.listenAndSpeak_total = Math.max(maxL1.listenAndSpeak_total, l1_entry.listenAndSpeak_total);
     maxL1.mcqs_total = Math.max(maxL1.mcqs_total, l1_entry.mcqs_total);
@@ -285,7 +275,7 @@ const runCumulativeSheets = async() =>{
     maxL1.read_total = Math.max(maxL1.read_total, l1_entry.read_total);
     maxL1.conversationalMonologue_total = Math.max(maxL1.conversationalMonologue_total, l1_entry.conversationalMonologue_total);
     maxL1.Speaking_practice_total = Math.max(maxL1.Speaking_practice_total, l1_entry.Speaking_practice_total);
-  
+
     // Update max totals for L2
     maxL2.listenAndSpeak_total = Math.max(maxL2.listenAndSpeak_total, l2_entry.listenAndSpeak_total);
     maxL2.mcqs_total = Math.max(maxL2.mcqs_total, l2_entry.mcqs_total);
@@ -293,7 +283,7 @@ const runCumulativeSheets = async() =>{
     maxL2.read_total = Math.max(maxL2.read_total, l2_entry.read_total);
     maxL2.conversationalMonologue_total = Math.max(maxL2.conversationalMonologue_total, l2_entry.conversationalMonologue_total);
     maxL2.Speaking_practice_total = Math.max(maxL2.Speaking_practice_total, l2_entry.Speaking_practice_total);
-  
+
     // Update max totals for L3
     maxL3.listenAndSpeak_total = Math.max(maxL3.listenAndSpeak_total, l3_entry.listenAndSpeak_total);
     maxL3.mcqs_total = Math.max(maxL3.mcqs_total, l3_entry.mcqs_total);
@@ -301,7 +291,7 @@ const runCumulativeSheets = async() =>{
     maxL3.read_total = Math.max(maxL3.read_total, l3_entry.read_total);
     maxL3.conversationalMonologue_total = Math.max(maxL3.conversationalMonologue_total, l3_entry.conversationalMonologue_total);
     maxL3.Speaking_practice_total = Math.max(maxL3.Speaking_practice_total, l3_entry.Speaking_practice_total);
-  
+
     // Your existing array push
     arrayT1_List02.push([
       i + 1,
@@ -331,7 +321,7 @@ const runCumulativeSheets = async() =>{
       l1_entry.cohort
     ]);
   }
-  
+
   // Push final max row to individual_weekly_score_l1_list_total
   individual_weekly_score_l2_list_total.push([
     maxL1.listenAndSpeak_total,
@@ -362,7 +352,7 @@ const runCumulativeSheets = async() =>{
   individual_weekly_score_l1_list_total = individual_weekly_score_l1_list_total.map(obj => Object.values(obj).map(value => value));
   individual_weekly_score_l2_list_total = individual_weekly_score_l2_list_total.map(obj => Object.values(obj).map(value => value));
   console.log(individual_weekly_score_l1_list_total);
-  
+
   await CumulativeUtils_load(
     array_Lesson_List,
     array_activity_List,
@@ -374,7 +364,7 @@ const runCumulativeSheets = async() =>{
     individual_weekly_score_l1_list_total,
     individual_weekly_score_l2_list_total
   );
-  await generateCertificatesForEligibleStudents(cer_list,"cumulative");
+  await generateCertificatesForEligibleStudents(cer_list, "cumulative");
 }
 
 const runETL = async () => {
@@ -432,9 +422,6 @@ const runETL = async () => {
     const pilot_lastActivityCompleted_t2_l1_Map = pilot_lastActivityCompleted_t2_l1.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
     const pilot_lastActivityCompleted_t2_l2 = await etlRepository.getLastActivityCompleted(t2_l2_courseId, 'T2', 'Pilot');
     const pilot_lastActivityCompleted_t2_l2_Map = pilot_lastActivityCompleted_t2_l2.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
-
-
-    // console.log(pilot_lastActivityCompleted_t2_l2_Map);
 
     const activityCompletedMap1 = activityCompleted_list1.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
     const activityCompletedMap2 = activityCompleted_list2.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
@@ -612,48 +599,11 @@ const runETL = async () => {
       entry.final_percentage_week4,
     ]);
 
-    //  console.log(pilot_t1_w1_weekly_Score);
-
-    // pilot_t1_w1_weekly_Score = pilot_t1_w1_weekly_Score.map(entry => entry.final_percentage).map(value => [value]);
-    // pilot_t2_w1_weekly_Score = pilot_t2_w1_weekly_Score.map(entry => entry.final_percentage).map(value => [value]);
-    // console.log(arrayOfT1Activity_level_Pilot);
-    // if (date_T1 && date_T2) {
-    //   for (const date of date_T1) {
-    //     const data1 = await T1Repository.getDataFromPostgres(
-    //       date,
-    //       "T1",
-    //       t1_l1_courseId
-    //     );
-    //     if (data1.length !== 0) {
-    //       activityCnt1.push(data1);
-    //     }
-    //   }
-    //   for (const date of date_T2) {
-    //     const data1 = await T1Repository.getDataFromPostgres(
-    //       date,
-    //       "T2",
-    //       t2_l1_courseId
-    //     );
-
-    //     if (data1.length !== 0) {
-    //       activityCnt2.push(data1);
-    //     }
-    //   }
-    // }
-    // const courseid3 = await courseId_gSheet("T1 Weekly-score");
-    // const courseid4 = await courseId_gSheet("T2 Weekly-score");
-
-    // const new_weeklyCntT1 = await newWeekActivityScore(activity_weekly_list1, "T1", courseid3);
-    // const new_weeklyCntT2 = await newWeekActivityScore(activity_weekly_list2, "T2", courseid4);
     const new_weeklyCntT1 = [];
     const new_weeklyCntT2 = [];
 
-    // const weeklyCntT1 = await getWeeklyDate("T1", courseid3);
-    // const weeklyCntT2 = await getWeeklyDate("T2", courseid4);
     const weeklyCntT1 = [];
     const weeklyCntT2 = [];
-    // console.log(success_list1);
-    //  console.log(arrayOfT1Activity_Pilot);
 
     await lesson_loadDataToGoogleSheets(
       arrayOfT1Lesson_Pilot,
@@ -661,9 +611,6 @@ const runETL = async () => {
       pilot_t2_w1_weekly_Score,
       pilot_t1_w1_weekly_Score1,
       pilot_t2_w1_weekly_Score1,
-      // pilot_t1_l2_w2
-      // pilot_t1_w1_weekly_Score_l1,
-      // pilot_t2_w1_weekly_Score_l1
     );
 
     await new_loadDataToGoogleSheets(
@@ -679,7 +626,6 @@ const runETL = async () => {
       pilot_lastActivityCompleted_t2_l2_Map
     );
 
-    // console.log(funnel);
 
     await loadDataToGoogleSheets(
       new_data_list,
@@ -720,18 +666,18 @@ const runETL_Dashboard = async () => {
     userMetadata_Rollout = userMetadata_Rollout.map(obj => Object.values(obj).map(value => value));
     userMetadata_overTime = userMetadata_overTime.map(obj => Object.values(obj).map(value => value));
 
-    let successRate1 = await etlRepository.getSuccessRate(98,'T1','Pilot');
-    let successRate2 = await etlRepository.getSuccessRate(99,'T2','Pilot');
-    let successRate3 = await etlRepository.getSuccessRate(104,'T1','Pilot');
-    let successRate4 = await etlRepository.getSuccessRate(103,'T2','Pilot');
-    let successRate5 = await etlRepository.getSuccessRate(109,'T1','Pilot');
-    let successRate6 = await etlRepository.getSuccessRate(108,'T2','Pilot');
+    let successRate1 = await etlRepository.getSuccessRate(98, 'T1', 'Pilot');
+    let successRate2 = await etlRepository.getSuccessRate(99, 'T2', 'Pilot');
+    let successRate3 = await etlRepository.getSuccessRate(104, 'T1', 'Pilot');
+    let successRate4 = await etlRepository.getSuccessRate(103, 'T2', 'Pilot');
+    let successRate5 = await etlRepository.getSuccessRate(109, 'T1', 'Pilot');
+    let successRate6 = await etlRepository.getSuccessRate(108, 'T2', 'Pilot');
 
-    let successRate01 = await etlRepository.getSuccessRate(106,'T1','');
-    let successRate02 = await etlRepository.getSuccessRate(105,'T2','');
-    
-    let successRate03 = await etlRepository.getSuccessRate(111,'T1','');
-    let successRate04 = await etlRepository.getSuccessRate(110,'T2','');
+    let successRate01 = await etlRepository.getSuccessRate(106, 'T1', '');
+    let successRate02 = await etlRepository.getSuccessRate(105, 'T2', '');
+
+    let successRate03 = await etlRepository.getSuccessRate(111, 'T1', '');
+    let successRate04 = await etlRepository.getSuccessRate(110, 'T2', '');
 
     successRate1 = Object.values(successRate1[0]).map((value) => {
       return Number(value) || null;
@@ -766,74 +712,68 @@ const runETL_Dashboard = async () => {
       return Number(value) || null;
     });
 
-    let dailyAvgAct_t1 = await getWeeklyActivityCompleted1.getDaily_AvgActivity_Rollout(118,'T1');
+    let dailyAvgAct_t1 = await getWeeklyActivityCompleted1.getDaily_AvgActivity_Rollout(118, 'T1');
     dailyAvgAct_t1 = dailyAvgAct_t1.map(obj => Object.values(obj).map(value => Number(value)));
-    let dailyAvgAct_t2 = await getWeeklyActivityCompleted1.getDaily_AvgActivity_Rollout(112,'T2');
+    let dailyAvgAct_t2 = await getWeeklyActivityCompleted1.getDaily_AvgActivity_Rollout(112, 'T2');
     dailyAvgAct_t2 = dailyAvgAct_t2.map(obj => Object.values(obj).map(value => Number(value)));
 
-    let last_activity_t1_l1 = await etlRepository.getLastActivityCompleted(106,'T1','Rollout');
+    let last_activity_t1_l1 = await etlRepository.getLastActivityCompleted(106, 'T1', 'Rollout');
     last_activity_t1_l1 = last_activity_t1_l1.map(obj => Object.values(obj).map(value => value));
-    let last_activity_t2_l1 = await etlRepository.getLastActivityCompleted(105,'T2','Rollout');
+    let last_activity_t2_l1 = await etlRepository.getLastActivityCompleted(105, 'T2', 'Rollout');
     last_activity_t2_l1 = last_activity_t2_l1.map(obj => Object.values(obj).map(value => value));
 
-    let cumulativeAvgAct_t1 = await getWeeklyActivityCompleted1.getCumulative_AvgActivity_Rollout(106,'T1','');
+    let cumulativeAvgAct_t1 = await getWeeklyActivityCompleted1.getCumulative_AvgActivity_Rollout(106, 'T1', '');
     cumulativeAvgAct_t1 = cumulativeAvgAct_t1.map(obj => Object.values(obj).map(value => Number(value)));
-    let cumulativeAvgAct_t2 = await getWeeklyActivityCompleted1.getCumulative_AvgActivity_Rollout(105,'T2','');
+    let cumulativeAvgAct_t2 = await getWeeklyActivityCompleted1.getCumulative_AvgActivity_Rollout(105, 'T2', '');
     cumulativeAvgAct_t2 = cumulativeAvgAct_t2.map(obj => Object.values(obj).map(value => Number(value)));
 
-    let NotStartedCohort_T1 = await getWeeklyActivityCompleted1.getNotStartCohortCount_Rollout(106,'T1');
-    NotStartedCohort_T1 = NotStartedCohort_T1.map(obj => [String(obj.cohort),Number(obj.count)]);
+    let NotStartedCohort_T1 = await getWeeklyActivityCompleted1.getNotStartCohortCount_Rollout(106, 'T1');
+    NotStartedCohort_T1 = NotStartedCohort_T1.map(obj => [String(obj.cohort), Number(obj.count)]);
 
-    let NotStartedCohort_T2 = await getWeeklyActivityCompleted1.getNotStartCohortCount_Rollout(105,'T2');
-    NotStartedCohort_T2 = NotStartedCohort_T2.map(obj => [String(obj.cohort),Number(obj.count)]);
+    let NotStartedCohort_T2 = await getWeeklyActivityCompleted1.getNotStartCohortCount_Rollout(105, 'T2');
+    NotStartedCohort_T2 = NotStartedCohort_T2.map(obj => [String(obj.cohort), Number(obj.count)]);
 
-    let LastLessonCompleted_T1 = await getWeeklyActivityCompleted1.getLastLessonCompleted_Rollout(106,'T1','Rollout');
+    let LastLessonCompleted_T1 = await getWeeklyActivityCompleted1.getLastLessonCompleted_Rollout(106, 'T1', 'Rollout');
     LastLessonCompleted_T1 = LastLessonCompleted_T1.map(obj => Object.values(obj).map(value => value));
 
-    let LastLessonCompleted_T2 = await getWeeklyActivityCompleted1.getLastLessonCompleted_Rollout(105,'T2','Rollout');
+    let LastLessonCompleted_T2 = await getWeeklyActivityCompleted1.getLastLessonCompleted_Rollout(105, 'T2', 'Rollout');
     LastLessonCompleted_T2 = LastLessonCompleted_T2.map(obj => Object.values(obj).map(value => value));
-    
-    let CohortWiseUpdateLag_T1 = await getWeeklyActivityCompleted1.getCount_UpdateLagCohortWise(106,'T1');
+
+    let CohortWiseUpdateLag_T1 = await getWeeklyActivityCompleted1.getCount_UpdateLagCohortWise(106, 'T1');
     CohortWiseUpdateLag_T1 = CohortWiseUpdateLag_T1.map(obj => Object.values(obj).map(value => value));
 
-    let CohortWiseUpdateLag_T2 = await getWeeklyActivityCompleted1.getCount_UpdateLagCohortWise(105,'T2');
+    let CohortWiseUpdateLag_T2 = await getWeeklyActivityCompleted1.getCount_UpdateLagCohortWise(105, 'T2');
     CohortWiseUpdateLag_T2 = CohortWiseUpdateLag_T2.map(obj => Object.values(obj).map(value => value));
 
 
 
-    let last_activity_t1_l2 = await etlRepository.getLastActivityCompleted(111,'T1','Rollout');
+    let last_activity_t1_l2 = await etlRepository.getLastActivityCompleted(111, 'T1', 'Rollout');
     last_activity_t1_l2 = last_activity_t1_l2.map(obj => Object.values(obj).map(value => value));
-    let last_activity_t2_l2 = await etlRepository.getLastActivityCompleted(110,'T2','Rollout');
+    let last_activity_t2_l2 = await etlRepository.getLastActivityCompleted(110, 'T2', 'Rollout');
     last_activity_t2_l2 = last_activity_t2_l2.map(obj => Object.values(obj).map(value => value));
 
-    let cumulativeAvgAct_t1_l2 = await getWeeklyActivityCompleted1.getCumulative_AvgActivity_Rollout(111,'T1','');
+    let cumulativeAvgAct_t1_l2 = await getWeeklyActivityCompleted1.getCumulative_AvgActivity_Rollout(111, 'T1', '');
     cumulativeAvgAct_t1_l2 = cumulativeAvgAct_t1_l2.map(obj => Object.values(obj).map(value => Number(value)));
-    let cumulativeAvgAct_t2_l2 = await getWeeklyActivityCompleted1.getCumulative_AvgActivity_Rollout(110,'T2','');
+    let cumulativeAvgAct_t2_l2 = await getWeeklyActivityCompleted1.getCumulative_AvgActivity_Rollout(110, 'T2', '');
     cumulativeAvgAct_t2_l2 = cumulativeAvgAct_t2_l2.map(obj => Object.values(obj).map(value => Number(value)));
 
-    let NotStartedCohort_T1_l2 = await getWeeklyActivityCompleted1.getNotStartCohortCount_Rollout(111,'T1');
-    NotStartedCohort_T1_l2 = NotStartedCohort_T1_l2.map(obj => [String(obj.cohort),Number(obj.count)]);
+    let NotStartedCohort_T1_l2 = await getWeeklyActivityCompleted1.getNotStartCohortCount_Rollout(111, 'T1');
+    NotStartedCohort_T1_l2 = NotStartedCohort_T1_l2.map(obj => [String(obj.cohort), Number(obj.count)]);
 
-    let NotStartedCohort_T2_l2 = await getWeeklyActivityCompleted1.getNotStartCohortCount_Rollout(110,'T2');
-    NotStartedCohort_T2_l2 = NotStartedCohort_T2_l2.map(obj => [String(obj.cohort),Number(obj.count)]);
+    let NotStartedCohort_T2_l2 = await getWeeklyActivityCompleted1.getNotStartCohortCount_Rollout(110, 'T2');
+    NotStartedCohort_T2_l2 = NotStartedCohort_T2_l2.map(obj => [String(obj.cohort), Number(obj.count)]);
 
-    let LastLessonCompleted_T1_l2 = await getWeeklyActivityCompleted1.getLastLessonCompleted_Rollout(111,'T1','Rollout');
+    let LastLessonCompleted_T1_l2 = await getWeeklyActivityCompleted1.getLastLessonCompleted_Rollout(111, 'T1', 'Rollout');
     LastLessonCompleted_T1_l2 = LastLessonCompleted_T1_l2.map(obj => Object.values(obj).map(value => value));
 
-    let LastLessonCompleted_T2_l2 = await getWeeklyActivityCompleted1.getLastLessonCompleted_Rollout(110,'T2','Rollout');
+    let LastLessonCompleted_T2_l2 = await getWeeklyActivityCompleted1.getLastLessonCompleted_Rollout(110, 'T2', 'Rollout');
     LastLessonCompleted_T2_l2 = LastLessonCompleted_T2_l2.map(obj => Object.values(obj).map(value => value));
-    
-    let CohortWiseUpdateLag_T1_l2 = await getWeeklyActivityCompleted1.getCount_UpdateLagCohortWise(111,'T1');
+
+    let CohortWiseUpdateLag_T1_l2 = await getWeeklyActivityCompleted1.getCount_UpdateLagCohortWise(111, 'T1');
     CohortWiseUpdateLag_T1_l2 = CohortWiseUpdateLag_T1_l2.map(obj => Object.values(obj).map(value => value));
 
-    let CohortWiseUpdateLag_T2_l2 = await getWeeklyActivityCompleted1.getCount_UpdateLagCohortWise(110,'T2');
+    let CohortWiseUpdateLag_T2_l2 = await getWeeklyActivityCompleted1.getCount_UpdateLagCohortWise(110, 'T2');
     CohortWiseUpdateLag_T2_l2 = CohortWiseUpdateLag_T2_l2.map(obj => Object.values(obj).map(value => value));
-
-    
-
-    //  console.log(last_activity_t1_l1);
-
-    // console.log(dailyAvgAct_t1);
 
     await DashboardUtils_load(
       userMetadata_Pilot,

@@ -26,7 +26,6 @@ const getPurchasedCoursesByPhoneNumberController = async (req, res, next) => {
 const getUnpurchasedCoursesByPhoneNumberController = async (req, res, next) => {
     try {
         const phoneNumber = req.params.phoneNumber;
-        // const profileId = req.query.profile_id;
         const result = await service.getUnpurchasedCoursesByPhoneNumberService(phoneNumber);
         res.status(200).send(result);
     } catch (error) {
@@ -40,8 +39,7 @@ const purchaseCourseController = async (req, res, next) => {
         const phoneNumber = req.body.phoneNumber;
         const courseId = req.body.courseId;
         const profile_id = req.body.profile_id;
-        // console.log(profile_id);
-        const result = await service.purchaseCourseService(phoneNumber,profile_id, courseId);
+        await service.purchaseCourseService(phoneNumber, profile_id, courseId);
         res.status(200).send({ message: "Course purchased successfully" });
     } catch (error) {
         error.fileName = 'waPurchasedCoursesController.js';

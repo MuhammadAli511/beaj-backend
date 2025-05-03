@@ -3,28 +3,28 @@ import { Op, Sequelize } from "sequelize";
 import WA_UsersMetadata from "../models/WA_UsersMetadata.js";
 
 const getDataFromPostgres = async () => {
-  try {
+    try {
 
-    const res = await WA_UsersMetadata.findAll();
-    
-    return res;
-  } catch (error) {
-    error.fileName = "etlRepository.js";
-    throw error;
-  }
+        const res = await WA_UsersMetadata.findAll();
+
+        return res;
+    } catch (error) {
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
 };
 
-const getSuccessRate = async (course_id, grp,cohort) => {
-  try {
-    let cohortCondition = '';
-    if (cohort === 'Pilot') {
-        cohortCondition = `m."cohort" = '${cohort}'`; 
-      } 
-      else {
-        if((grp == 'T1' || grp == 'T2') && cohort !== 'Pilot'){
-           cohortCondition = `m."cohort" != 'Pilot'`; 
-      }
-    }
+const getSuccessRate = async (course_id, grp, cohort) => {
+    try {
+        let cohortCondition = '';
+        if (cohort === 'Pilot') {
+            cohortCondition = `m."cohort" = '${cohort}'`;
+        }
+        else {
+            if ((grp == 'T1' || grp == 'T2') && cohort !== 'Pilot') {
+                cohortCondition = `m."cohort" != 'Pilot'`;
+            }
+        }
         let qry = `WITH StudentActivities AS (
             SELECT 
                 m."phoneNumber" AS "Student_Number", 
@@ -99,34 +99,34 @@ const getSuccessRate = async (course_id, grp,cohort) => {
             ROUND((SUM("Meets_Threshold_0")::DECIMAL / COUNT(*) * 100),2)  AS "at_zero_percent"
         FROM 
             ThresholdComparison;`;
-  
-    const res = await sequelize.query(qry);
 
-    return res[0];
-  } catch (error) {
-    error.fileName = "etlRepository.js";
-    throw error;
-  }
+        const res = await sequelize.query(qry);
+
+        return res[0];
+    } catch (error) {
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
 };
 
 const getActivityTotalCount = async (course_id1, course_id2) => {
-  try {
-  
-    const qry = `select "activity", count("activity") from "Lesson" where "courseId" = ${course_id1} or "courseId" = ${course_id2}  group by "activity" order by "activity";`;
-    const res = await sequelize.query(qry);
+    try {
 
-    return res[0];
-  } catch (error) {
-    error.fileName = "etlRepository.js";
-    throw error;
-  }
+        const qry = `select "activity", count("activity") from "Lesson" where "courseId" = ${course_id1} or "courseId" = ${course_id2}  group by "activity" order by "activity";`;
+        const res = await sequelize.query(qry);
+
+        return res[0];
+    } catch (error) {
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
 };
 
-const getCompletedActivity = async (course_id1, course_id2, grp, activity_name_list,cohort) => {
-  try {
-    const dynamicSumActivity = activity_name_list.map(activity =>  `COALESCE(sum(case when s."activity" = '${activity}' then 1 else null end), null) as "${activity}"`).join(",\n");
-    
-    const qry = `
+const getCompletedActivity = async (course_id1, course_id2, grp, activity_name_list, cohort) => {
+    try {
+        const dynamicSumActivity = activity_name_list.map(activity => `COALESCE(sum(case when s."activity" = '${activity}' then 1 else null end), null) as "${activity}"`).join(",\n");
+
+        const qry = `
       SELECT 
         ${dynamicSumActivity}
       FROM 
@@ -149,55 +149,19 @@ const getCompletedActivity = async (course_id1, course_id2, grp, activity_name_l
       ORDER BY 
         m."name" ASC;`;
 
-    // const qry = `SELECT 
-    // m."phoneNumber",
-    // COUNT(s."activity") AS "Total_Activities",
-    // sum(CASE WHEN s."activity" = 'conversationalMonologueBot' THEN 1 else null END) AS "conversationalMonologueBot",
-    // sum(CASE WHEN s."activity" = 'videoEnd' THEN 1 else null END) AS "videoEnd",
-    // sum(CASE WHEN s."activity" = 'mcqs' THEN 1 else null END) AS "mcqs",
-    // sum(CASE WHEN s."activity" = 'conversationalAgencyBot' THEN 1 else null END) AS "conversationalAgencyBot",
-    // sum(CASE WHEN s."activity" = 'listenAndSpeak' THEN 1 else null END) AS "listenAndSpeak",
-    // sum(CASE WHEN s."activity" = 'read' THEN 1 else null END) AS "read",
-    // sum(CASE WHEN s."activity" = 'video' THEN 1 else null END) AS "video",
-    // sum(CASE WHEN s."activity" = 'watchAndSpeak' THEN 1 else null END) AS "watchAndSpeak",
-    // sum(CASE WHEN s."activity" = 'conversationalQuestionsBot' THEN 1 else null END) AS "conversationalQuestionsBot"
-    
-    // FROM 
-    //     "wa_users_metadata" m
-    // LEFT JOIN 
-    //     "wa_lessons_completed" l 
-    // ON 
-    //     m."phoneNumber" = l."phoneNumber" 
-    //     AND (l."courseId" = ${course_id1} or l."courseId" = ${course_id2} )
-    //     AND l."completionStatus" = 'Completed'
-    // LEFT JOIN 
-    //     "Lesson" s 
-    // ON 
-    //     l."lessonId" = s."LessonId" 
-    //     AND l."courseId" = s."courseId"
-    // WHERE 
-    //     m."targetGroup" = '${grp}' 
-    // GROUP BY 
-    //     m."phoneNumber"
-    // ORDER BY 
-    //     m."phoneNumber" asc;`;
+        const res = await sequelize.query(qry);
 
-
-    const res = await sequelize.query(qry);
-
-    // console.log(res[0])
-
-    return res[0];
-  } catch (error) {
-    error.fileName = "etlRepository.js";
-    throw error;
-  }
+        return res[0];
+    } catch (error) {
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
 };
 
-const getLessonCompletions = async (course_id1,course_id2,course_id3,grp,cohort) => {
-  try {
-  
-    const qry = `WITH LessonAssignments AS (
+const getLessonCompletions = async (course_id1, course_id2, course_id3, grp, cohort) => {
+    try {
+
+        const qry = `WITH LessonAssignments AS (
     SELECT
         "courseId",
         "weekNumber",
@@ -378,19 +342,19 @@ ORDER BY
     "name";`;
 
 
-    const res = await sequelize.query(qry);
+        const res = await sequelize.query(qry);
 
-    return res[0];
-  } catch (error) {
-    error.fileName = "etlRepository.js";
-    throw error;
-  }
+        return res[0];
+    } catch (error) {
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
 };
 
-const getLessonCompletion = async (course_id,grp,cohort) => {
+const getLessonCompletion = async (course_id, grp, cohort) => {
     try {
-    
-      const qry = `WITH LessonAssignments AS (
+
+        const qry = `WITH LessonAssignments AS (
       SELECT
           "weekNumber",
           "dayNumber",
@@ -513,39 +477,39 @@ const getLessonCompletion = async (course_id,grp,cohort) => {
           PivotedProgress pp
       ORDER BY
       pp."name";`;
-  
-  
-      const res = await sequelize.query(qry);
-  
-      return res[0];
+
+
+        const res = await sequelize.query(qry);
+
+        return res[0];
     } catch (error) {
-      error.fileName = "etlRepository.js";
-      throw error;
+        error.fileName = "etlRepository.js";
+        throw error;
     }
-  };
+};
 
-const getLastActivityCompleted = async (course_id1, grp,cohort) => {
-  try {
-    let flag = cohort;
-    let cohortCondition = '';
-    let total_cnt = [];
-   if(cohort == 'Pilots' || cohort == 'Rollout'){
-    if(cohort == 'Pilots'){cohort = 'Pilot'} else {cohort = ''}
-      total_cnt = await getCount_NotStartedActivity(course_id1, grp,cohort);
-    if (cohort === 'Pilot') {
-        cohortCondition = `m."cohort" = '${cohort}'`; 
-      } 
-      else {
-        if((grp == 'T1' || grp == 'T2') && cohort !== 'Pilot'){
-           cohortCondition = `m."cohort" != 'Pilot'`; 
-      }
-    }
-}
-else{
-    cohortCondition = `m."cohort" = '${cohort}'`; 
-}
+const getLastActivityCompleted = async (course_id1, grp, cohort) => {
+    try {
+        let flag = cohort;
+        let cohortCondition = '';
+        let total_cnt = [];
+        if (cohort == 'Pilots' || cohort == 'Rollout') {
+            if (cohort == 'Pilots') { cohort = 'Pilot' } else { cohort = '' }
+            total_cnt = await getCount_NotStartedActivity(course_id1, grp, cohort);
+            if (cohort === 'Pilot') {
+                cohortCondition = `m."cohort" = '${cohort}'`;
+            }
+            else {
+                if ((grp == 'T1' || grp == 'T2') && cohort !== 'Pilot') {
+                    cohortCondition = `m."cohort" != 'Pilot'`;
+                }
+            }
+        }
+        else {
+            cohortCondition = `m."cohort" = '${cohort}'`;
+        }
 
-const qry =     `WITH TargetGroup AS (
+        const qry = `WITH TargetGroup AS (
     SELECT 
         m."phoneNumber"
     FROM 
@@ -607,43 +571,38 @@ ORDER BY
     g."weekNumber",g."dayNumber",g."SequenceNumber";`
 
 
-    const res = await sequelize.query(qry);
-    let finalOutput = [];
-    if(flag == 'Pilots' || flag == 'Rollout'){
-    finalOutput = [
-        { LessonId: 'Total', total_students_completed: parseInt(total_cnt[0].total_count, 10) },
-        { LessonId: 'Start', total_students_completed: parseInt(total_cnt[0].total_not_started, 10) },
-        ...res[0].map(item => ({
-          LessonId: item.LessonId,
-          total_students_completed: item.total_students_completed !== null ? parseInt(item.total_students_completed, 10) : null
-        }))
-      ];
+        const res = await sequelize.query(qry);
+        let finalOutput = [];
+        if (flag == 'Pilots' || flag == 'Rollout') {
+            finalOutput = [
+                { LessonId: 'Total', total_students_completed: parseInt(total_cnt[0].total_count, 10) },
+                { LessonId: 'Start', total_students_completed: parseInt(total_cnt[0].total_not_started, 10) },
+                ...res[0].map(item => ({
+                    LessonId: item.LessonId,
+                    total_students_completed: item.total_students_completed !== null ? parseInt(item.total_students_completed, 10) : null
+                }))
+            ];
+        }
+        else {
+            finalOutput = res[0];
+        }
+        return finalOutput;
+    } catch (error) {
+        error.fileName = "etlRepository.js";
+        throw error;
     }
-    else{
-        finalOutput = res[0];
-    }
-
-    // console.log(finalOutput);
-
-    // console.log(res[0])
-
-    return finalOutput;
-  } catch (error) {
-    error.fileName = "etlRepository.js";
-    throw error;
-  }
 };
-const getCount_NotStartedActivity = async (course_id,grp,cohort) => {
+const getCount_NotStartedActivity = async (course_id, grp, cohort) => {
     try {
         let cohortCondition = '';
-    if (cohort === 'Pilot') {
-        cohortCondition = `m."cohort" = '${cohort}'`; 
-      } 
-      else {
-        if((grp == 'T1' || grp == 'T2') && cohort !== 'Pilot'){
-           cohortCondition = `m."cohort" != 'Pilot'`; 
-      }
-    }
+        if (cohort === 'Pilot') {
+            cohortCondition = `m."cohort" = '${cohort}'`;
+        }
+        else {
+            if ((grp == 'T1' || grp == 'T2') && cohort !== 'Pilot') {
+                cohortCondition = `m."cohort" != 'Pilot'`;
+            }
+        }
         const qry = `
            WITH TargetGroup AS (
     SELECT 
@@ -671,7 +630,7 @@ SELECT
     (SELECT COUNT(*) FROM TargetGroup) AS "total_count",
     (SELECT COUNT(*) FROM UnattemptedPhoneNumbers) AS "total_not_started";
         `;
-  
+
         const res = await sequelize.query(qry);
         return res[0];
     } catch (error) {
@@ -680,10 +639,10 @@ SELECT
     }
 };
 
-const getWeeklyScore = async (course_id,grp,cohort) => {
-  try {
-  
-    const qry = `
+const getWeeklyScore = async (course_id, grp, cohort) => {
+    try {
+
+        const qry = `
 WITH target_group_users AS (
     SELECT "phoneNumber"
     FROM "wa_users_metadata" 
@@ -1177,19 +1136,19 @@ WHERE
     m."targetGroup" = '${grp}' and m."cohort" = '${cohort}' order by m."name" asc;`;
 
 
-    const res = await sequelize.query(qry);
+        const res = await sequelize.query(qry);
 
-    return res[0];
-  } catch (error) {
-    error.fileName = "etlRepository.js";
-    throw error;
-  }
+        return res[0];
+    } catch (error) {
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
 };
 
-const getWeeklyScore_pilot = async (course_id,grp,weekNo,cohort) => {
+const getWeeklyScore_pilot = async (course_id, grp, weekNo, cohort) => {
     try {
-    
-      const qry = `
+
+        const qry = `
   WITH target_group_users AS (
       SELECT "phoneNumber"
       FROM "wa_users_metadata" 
@@ -1379,14 +1338,14 @@ const getWeeklyScore_pilot = async (course_id,grp,weekNo,cohort) => {
       wa_lessons_completed wc ON m."phoneNumber" = wc."phoneNumber"
   WHERE 
       m."targetGroup" = '${grp}' and m."cohort" = '${cohort}';`;
-  
-  
-      const res = await sequelize.query(qry);
-  
-      return res[0];
+
+
+        const res = await sequelize.query(qry);
+
+        return res[0];
     } catch (error) {
-      error.fileName = "etlRepository.js";
-      throw error;
+        error.fileName = "etlRepository.js";
+        throw error;
     }
 };
 
@@ -1450,18 +1409,18 @@ const getActivity_Completions = async (course1_id, course2_id, course3_id, grp, 
     }
 };
 
-const getActivityNameCount = async (course_id1, course_id2,course_id3,grp,cohort) => {
+const getActivityNameCount = async (course_id1, course_id2, course_id3, grp, cohort) => {
     try {
-      const qry1 = `select "activity", count("activity") from "Lesson" where ("courseId" = ${course_id1} or "courseId" = ${course_id2} or "courseId" = ${course_id3})  group by "activity" order by "activity";`;
-      const res1 = await sequelize.query(qry1);
-      let cohort1 = cohort;
-      let activities = res1[0].map(item => item.activity);
+        const qry1 = `select "activity", count("activity") from "Lesson" where ("courseId" = ${course_id1} or "courseId" = ${course_id2} or "courseId" = ${course_id3})  group by "activity" order by "activity";`;
+        const res1 = await sequelize.query(qry1);
+        let cohort1 = cohort;
+        let activities = res1[0].map(item => item.activity);
 
-      const dynamicSumActivity = activities.map(activity =>  `COALESCE(sum(case when s."activity" = '${activity}' then 1 else null end), null) as "${activity}"`).join(",\n");
-      let qry2 = ``;
-      if(cohort != ''){
-        cohort = `m."cohort" = '${cohort}'`;
-        qry2 = `
+        const dynamicSumActivity = activities.map(activity => `COALESCE(sum(case when s."activity" = '${activity}' then 1 else null end), null) as "${activity}"`).join(",\n");
+        let qry2 = ``;
+        if (cohort != '') {
+            cohort = `m."cohort" = '${cohort}'`;
+            qry2 = `
       SELECT 
         ${dynamicSumActivity}
       FROM 
@@ -1483,10 +1442,10 @@ const getActivityNameCount = async (course_id1, course_id2,course_id3,grp,cohort
         m."phoneNumber"
       ORDER BY 
         m."name" ASC;`;
-      }
-      else{
-        cohort = `m."cohort" != 'Pilot'`;
-        qry2 = `
+        }
+        else {
+            cohort = `m."cohort" != 'Pilot'`;
+            qry2 = `
       SELECT 
         ROW_NUMBER() OVER (ORDER BY MAX(m."cohort") ASC) AS row_number,
         m."phoneNumber",
@@ -1512,8 +1471,8 @@ const getActivityNameCount = async (course_id1, course_id2,course_id3,grp,cohort
         m."phoneNumber",  m."cohort"
       ORDER BY 
         m."cohort" ASC;`;
-      }
-    
+        }
+
         const res2 = await sequelize.query(qry2);
         let activityTotal = [];
 
@@ -1532,21 +1491,17 @@ const getActivityNameCount = async (course_id1, course_id2,course_id3,grp,cohort
 
         activityTotal = activityTotal.concat(activityCompleted);
 
-        // console.log(activityTotal);
-
-  
-      return activityTotal;
+        return activityTotal;
     } catch (error) {
-      error.fileName = "etlRepository.js";
-      throw error;
+        error.fileName = "etlRepository.js";
+        throw error;
     }
 };
 
 
 
-const getPhoneNumber_userNudges = async (course_id,grp,cohort,date) => {
+const getPhoneNumber_userNudges = async (course_id, grp, cohort, date) => {
     try {
-        // console.log("Parameters:", { date, course_id, grp, cohort });
         const qry = `
            SELECT distinct m."phoneNumber"
 FROM "wa_users_metadata" m 
@@ -1557,9 +1512,8 @@ FROM "wa_users_metadata" m
 WHERE m."targetGroup" = '${grp}' 
   AND m."cohort" = '${cohort}'  AND l."phoneNumber" IS NOT NULL;
         `;
-  
+
         const res = await sequelize.query(qry);
-        // console.log(res[0]);
         return res[0];
     } catch (error) {
         error.fileName = "etlRepository.js";
@@ -1567,6 +1521,6 @@ WHERE m."targetGroup" = '${grp}'
     }
 };
 
-export default { getDataFromPostgres, getSuccessRate, getActivityTotalCount,getCompletedActivity, getLessonCompletion,getLastActivityCompleted,getWeeklyScore,getPhoneNumber_userNudges,getWeeklyScore_pilot,getCount_NotStartedActivity,getLessonCompletions,getActivity_Completions,getActivityNameCount,
-   
- };
+export default {
+    getDataFromPostgres, getSuccessRate, getActivityTotalCount, getCompletedActivity, getLessonCompletion, getLastActivityCompleted, getWeeklyScore, getPhoneNumber_userNudges, getWeeklyScore_pilot, getCount_NotStartedActivity, getLessonCompletions, getActivity_Completions, getActivityNameCount,
+};

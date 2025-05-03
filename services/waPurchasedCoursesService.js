@@ -53,7 +53,6 @@ const getPurchasedCoursesByPhoneNumberService = async (phoneNumber) => {
             profile_id: profile_id,
         };
     });
-    // console.log(purchasedCourses);
     return courses.filter(course => course.user_status !== "unpurchased");
 };
 
@@ -71,13 +70,13 @@ const getUnpurchasedCoursesByPhoneNumberService = async (phoneNumber) => {
     return courses.filter(course => course.user_status === "unpurchased");
 };
 
-const purchaseCourseService = async (phoneNumber,profile_id, courseId) => {
+const purchaseCourseService = async (phoneNumber, profile_id, courseId) => {
     const allCourses = await courseRepository.getAll();
     const course = allCourses.find(course => course.CourseId == courseId);
     if (!course) {
         throw new Error("Course not found");
     }
-    const purchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByPhoneNumber(phoneNumber,profile_id);
+    const purchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByPhoneNumber(phoneNumber, profile_id);
     if (purchasedCourses.some(purchasedCourse => purchasedCourse.courseId == courseId)) {
         throw new Error("Course already purchased");
     }

@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename);
 
 // Constants
 const SPREADSHEET_ID = '1Nat0B3coOFoIeF_aO-vY-KHuqQxtjLYKx5lNPFBJndg';
-const SHEET_NAME = 'Certificate Tracker'; // Change if your sheet has a different name
+const SHEET_NAME = 'Certificate Tracker';
 const CERTIFICATE_TEMPLATE_PATH = path.join(__dirname, 'certificate.png');
 const MAIN_DRIVE_FOLDER = 'Teacher Self Development - Certificates';
 
@@ -22,13 +22,13 @@ async function checkFolderStructure() {
     const creds = JSON.parse(
       await readFile(new URL('../cert_cred.json', import.meta.url), 'utf-8')
     );
-    
+
     // Initialize Google Auth
     const auth = new google.auth.GoogleAuth({
       credentials: creds,
       scopes: ["https://www.googleapis.com/auth/drive"],
     });
-    
+
     const authClient = await auth.getClient();
     const drive = google.drive({ version: 'v3', auth: authClient });
 
@@ -36,19 +36,19 @@ async function checkFolderStructure() {
     const findExactFolder = async (folderName, parentId = null) => {
       let query = `mimeType='application/vnd.google-apps.folder' and name='${folderName}' and trashed=false`;
       if (parentId) query += ` and '${parentId}' in parents`;
-      
+
       const res = await drive.files.list({
         q: query,
         fields: 'files(id, name, parents)',
         spaces: 'drive'
       });
-      
+
       // Exact match - must have correct parent (if specified)
       const exactMatch = res.data.files.find(f => {
         const hasCorrectParent = !parentId || (f.parents && f.parents.includes(parentId));
         return hasCorrectParent && f.name === folderName;
       });
-      
+
       return exactMatch?.id || null;
     };
 
@@ -57,7 +57,7 @@ async function checkFolderStructure() {
       // First try to find exact match
       const existingId = await findExactFolder(folderName, parentId);
       if (existingId) return existingId;
-      
+
       // If not found, create with collision handling
       try {
         const folder = await drive.files.create({
@@ -84,16 +84,16 @@ async function checkFolderStructure() {
     };
 
     console.log('Verifying folder structure...');
-    
+
     // 1. Main folder
     const mainFolderId = await ensureFolderExists('Teacher Self Development - Certificates');
-    
+
     // 2. T1/T2 folders
     const [t1Id, t2Id] = await Promise.all([
       ensureFolderExists('T1', mainFolderId),
       ensureFolderExists('T2', mainFolderId)
     ]);
-    
+
     // 3. Cohort folders (processed in batches)
     const createCohorts = async (prefix, start, end, parentId) => {
       const promises = [];
@@ -102,15 +102,15 @@ async function checkFolderStructure() {
       }
       await Promise.all(promises);
     };
-    
+
     await Promise.all([
       createCohorts('Cohort', 1, 20, t1Id),
       createCohorts('Cohort', 25, 44, t2Id)
     ]);
-    
+
     console.log('Folder structure verified successfully');
     return true;
-    
+
   } catch (error) {
     console.error('Folder structure verification failed:', error);
     throw error;
@@ -123,33 +123,33 @@ export { checkFolderStructure };
 const generateCertificate = async (name) => {
   try {
     console.log(`Generating certificate for ${name}...`);
-    
+
     // Check if template exists
     if (!fs.existsSync(CERTIFICATE_TEMPLATE_PATH)) {
       throw new Error(`Certificate template not found at: ${CERTIFICATE_TEMPLATE_PATH}`);
     }
-    
+
     // Load the certificate template
     const image = await loadImage(CERTIFICATE_TEMPLATE_PATH);
     const canvas = createCanvas(image.width, image.height);
     const ctx = canvas.getContext('2d');
-    
+
     // Draw template on canvas
     ctx.drawImage(image, 0, 0, image.width, image.height);
-    
+
     // Configure text style for the name
     ctx.fillStyle = 'black';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.font = 'Bold 20.1px Arial, Sans-serif';
-    
+
     // Position for the name (centered)
     const nameX = image.width / 2;
     const nameY = image.height / 2 - 30;
-    
+
     // Draw the name
     ctx.fillText(name.toUpperCase(), nameX, nameY);
-    
+
     // Convert to buffer
     const buffer = canvas.toBuffer('image/png');
     console.log(`Certificate generated successfully for ${name}`);
@@ -165,13 +165,13 @@ const findFolder = async (drive, folderName, parentFolderId = null) => {
   try {
     let query = `mimeType='application/vnd.google-apps.folder' and name='${folderName}' and trashed=false`;
     if (parentFolderId) query += ` and '${parentFolderId}' in parents`;
-    
+
     const response = await drive.files.list({
       q: query,
       fields: 'files(id, name)',
       spaces: 'drive'
     });
-    
+
     return response.data.files?.[0]?.id || null;
   } catch (error) {
     console.error(`Error finding folder ${folderName}:`, error);
@@ -184,48 +184,48 @@ const findFolder = async (drive, folderName, parentFolderId = null) => {
 const uploadCertificateToDrive = async (buffer, name, cohort, targetGrp) => {
   try {
     console.log(`Uploading certificate for ${name} to Drive (${targetGrp}/${cohort})...`);
-    
+
     // Load credentials
     const creds = JSON.parse(
       await readFile(new URL('../cert_cred.json', import.meta.url), 'utf-8')
     );
-    
+
     // Initialize Google Auth
     const auth = new google.auth.GoogleAuth({
       credentials: creds,
       scopes: ["https://www.googleapis.com/auth/drive"],
     });
-    
+
     const authClient = await auth.getClient();
     const drive = google.drive({ version: 'v3', auth: authClient });
-    
+
     // Find the main certificates folder
     const mainFolderId = await findFolder(drive, MAIN_DRIVE_FOLDER);
     if (!mainFolderId) throw new Error(`Main folder "${MAIN_DRIVE_FOLDER}" not found`);
-    
+
     // Find target group folder within main folder
     const targetGroupFolder = await findFolder(drive, targetGrp, mainFolderId);
     if (!targetGroupFolder) throw new Error(`Target group folder "${targetGrp}" not found`);
-    
+
     // Find cohort folder within target group
     const cohortFolder = await findFolder(drive, cohort, targetGroupFolder);
     if (!cohortFolder) throw new Error(`Cohort folder "${cohort}" not found`);
-    
+
     // Format name and create filename
     name = name
       .split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ');
-    
+
     const safeName = name.replace(/[^a-zA-Z0-9]/g, '_');
     const timestamp = Date.now();
     const fileName = `${safeName}_Certificate_${timestamp}.png`;
-    
+
     // Convert buffer to stream
     const bufferStream = new Readable();
     bufferStream.push(buffer);
     bufferStream.push(null); // Signals end of stream
-    
+
     // Upload to Drive
     const uploadResponse = await drive.files.create({
       requestBody: {
@@ -239,10 +239,10 @@ const uploadCertificateToDrive = async (buffer, name, cohort, targetGrp) => {
       },
       fields: 'id, webViewLink'
     });
-    
+
     const fileId = uploadResponse.data.id;
     const viewLink = uploadResponse.data.webViewLink;
-    
+
     // Make file publicly viewable
     await drive.permissions.create({
       fileId: fileId,
@@ -251,100 +251,15 @@ const uploadCertificateToDrive = async (buffer, name, cohort, targetGrp) => {
         type: 'anyone'
       }
     });
-    
+
     console.log(`Certificate uploaded successfully. File ID: ${fileId}`);
     return { fileId, viewLink };
-    
+
   } catch (error) {
     console.error("Error uploading certificate to Drive:", error);
     throw error;
   }
 };
-
-// const uploadCertificateToDrive = async (buffer, name, cohort, targetGrp) => {
-//   try {
-//     console.log(`Uploading certificate for ${name} to Drive (${targetGrp}/${cohort})...`);
-    
-//     // Load credentials
-//     const creds = JSON.parse(
-//       await readFile(new URL('../my_cred.json', import.meta.url), 'utf-8')
-//     );
-    
-//     // Initialize Google Auth
-//     const auth = new google.auth.GoogleAuth({
-//       credentials: creds,
-//       scopes: ["https://www.googleapis.com/auth/drive"],
-//     });
-    
-//     const authClient = await auth.getClient();
-//     const drive = google.drive({ version: 'v3', auth: authClient });
-    
-//     // Find the main certificates folder
-//     const mainFolderId = await findFolder(drive, MAIN_DRIVE_FOLDER);
-//     if (!mainFolderId) throw new Error(`Main folder "${MAIN_DRIVE_FOLDER}" not found`);
-    
-//     // Find target group folder within main folder
-//     const targetGroupFolder = await findFolder(drive, targetGrp, mainFolderId);
-//     if (!targetGroupFolder) throw new Error(`Target group folder "${targetGrp}" not found`);
-    
-//     // Find cohort folder within target group
-//     const cohortFolder = await findFolder(drive, cohort, targetGroupFolder);
-//     if (!cohortFolder) throw new Error(`Cohort folder "${cohort}" not found`);
-    
-//     // Format name and create filename
-//     name = name
-//       .split(' ')
-//       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-//       .join(' ');
-    
-//     const safeName = name.replace(/[^a-zA-Z0-9]/g, '_');
-//     const timestamp = Date.now();
-//     const fileName = `${safeName}_Certificate_${timestamp}.png`;
-    
-//     // Create temp file
-//     const tempFilePath = path.join(process.cwd(), `temp_cert_${timestamp}.png`);
-//     fs.writeFileSync(tempFilePath, buffer);
-    
-//     try {
-//       // Upload to Drive
-//       const uploadResponse = await drive.files.create({
-//         requestBody: {
-//           name: fileName,
-//           parents: [cohortFolder],
-//           mimeType: 'image/png'
-//         },
-//         media: {
-//           mimeType: 'image/png',
-//           body: fs.createReadStream(tempFilePath)
-//         },
-//         fields: 'id, webViewLink'
-//       });
-      
-//       const fileId = uploadResponse.data.id;
-//       const viewLink = uploadResponse.data.webViewLink;
-      
-//       // Make file publicly viewable
-//       await drive.permissions.create({
-//         fileId: fileId,
-//         requestBody: {
-//           role: 'reader',
-//           type: 'anyone'
-//         }
-//       });
-      
-//       console.log(`Certificate uploaded successfully. File ID: ${fileId}`);
-//       return { fileId, viewLink };
-//     } finally {
-//       // Clean up temp file
-//       if (fs.existsSync(tempFilePath)) {
-//         fs.unlinkSync(tempFilePath);
-//       }
-//     }
-//   } catch (error) {
-//     console.error("Error uploading certificate to Drive:", error);
-//     throw error;
-//   }
-// };
 
 const processCertificate = async (name, cohort, targetGrp) => {
   try {
@@ -427,7 +342,7 @@ const generateCertificatesForEligibleStudents = async (
   try {
     await checkFolderStructure();
     console.log('Starting certificate generation process...');
-    
+
     // Load existing phone numbers from tracking sheet
     const trackedStudents = await loadTrackingSheet(SPREADSHEET_ID, SHEET_NAME);
 
@@ -447,7 +362,7 @@ const generateCertificatesForEligibleStudents = async (
         const phoneNumber = student[1];
         const name = student[2];
         const week4Score = student[16]; // L3 Week 4 percentage
-        
+
         // Determine cohort and target group
         const studentCohort = callType === "cumulative" ? student[18] : cohort;
         const studentTargetGroup = callType === "cumulative" ? student[19] : targetGroup;
@@ -469,7 +384,7 @@ const generateCertificatesForEligibleStudents = async (
         // Generate and upload certificate
         console.log(`Processing certificate for ${name} (${phoneNumber})`);
         await processCertificate(name, studentCohort, studentTargetGroup);
-        
+
         newlyGeneratedStudents.push({ phoneNumber, name });
         stats.newlyGenerated++;
       } catch (error) {
@@ -498,7 +413,7 @@ const generateCertificatesForEligibleStudents = async (
   }
 };
 
-export { 
+export {
   generateCertificate,
   uploadCertificateToDrive,
   processCertificate,

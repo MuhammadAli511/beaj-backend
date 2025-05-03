@@ -37,7 +37,7 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
       flag_valid = 1;
     }
 
-    if((facilitator == 9 || facilitator == 10 ) || today >= comparisonDate){
+    if ((facilitator == 9 || facilitator == 10) || today >= comparisonDate) {
       if (flag_valid == 1 && module && facilitator) {
         let arrayT1_List = [], ActivityCompletedCount = [];
         let last_activityCompleted_l1 = [], last_activityCompleted_l2 = [], last_activityCompleted_l3 = [];
@@ -53,17 +53,17 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
         );
         let module_week = module;
         flag_valid = 2;
-  
+
         if (module == "Lesson") {
           arrayT1_List = await etlRepository.getLessonCompletions(courseId_l1, courseId_l2, courseId_l3, targetGroup, cohort);
           arrayT1_List = arrayT1_List.map(obj => Object.values(obj).map(value => value));
         }
-  
+
         if (module == "Activity") {
           arrayT1_List = await etlRepository.getActivity_Completions(courseId_l1, courseId_l2, courseId_l3, targetGroup, cohort);
           arrayT1_List = arrayT1_List.map(obj => Object.values(obj).map(value => value));
           ActivityCompletedCount = await etlRepository.getActivityNameCount(courseId_l1, courseId_l2, courseId_l3, targetGroup, cohort);
-  
+
           last_activityCompleted_l1 = await etlRepository.getLastActivityCompleted(courseId_l1, targetGroup, cohort);
           last_activityCompleted_l1 = last_activityCompleted_l1.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
           last_activityCompleted_l2 = await etlRepository.getLastActivityCompleted(courseId_l2, targetGroup, cohort);
@@ -71,18 +71,18 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
           last_activityCompleted_l3 = await etlRepository.getLastActivityCompleted(courseId_l3, targetGroup, cohort);
           last_activityCompleted_l3 = last_activityCompleted_l3.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
         }
-  
+
         if (module == "Week") {
           let weekly_score_l1_list = await etlRepository.getWeeklyScore(courseId_l1, targetGroup, cohort);
           let weekly_score_l2_list = await etlRepository.getWeeklyScore(courseId_l2, targetGroup, cohort);
           let weekly_score_l3_list = await etlRepository.getWeeklyScore(courseId_l3, targetGroup, cohort);
-  
+
           for (let i = 0; i < weekly_score_l1_list.length; i++) {
-  
+
             const l1_entry = weekly_score_l1_list[i];
             const l2_entry = weekly_score_l2_list[i];
             const l3_entry = weekly_score_l3_list[i];
-  
+
             arrayT1_List.push([
               l1_entry.sr_no,
               l1_entry.phoneNumber,
@@ -105,14 +105,11 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
               null
             ])
           }
-          
+
           arrayT1_List = arrayT1_List.map(obj => Object.values(obj).map(value => value));
 
-          
-  
-          // console.log(arrayT1_List);
         }
-  
+
         await new_loadDataToGoogleSheets(
           arrayT1_List,
           facilitator,
@@ -124,16 +121,16 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
           last_activityCompleted_l3,
           module_week,
         );
-        if(module == "Week"){
-          if(arrayT1_List){
+        if (module == "Week") {
+          if (arrayT1_List) {
             console.log(arrayT1_List);
-            await generateCertificatesForEligibleStudents(arrayT1_List,'weekly',targetGroup,cohort);
+            await generateCertificatesForEligibleStudents(arrayT1_List, 'weekly', targetGroup, cohort);
           }
         }
       }
     }
     // Check if the current date matches the target date
-    else   {
+    else {
       if (flag_valid == 1 && module && facilitator) {
         let arrayT1_List = [], ActivityCompletedCount = [];
         let last_activityCompleted_l1 = [], last_activityCompleted_l2 = [], last_activityCompleted_l3 = [];
@@ -151,114 +148,114 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
         flag_valid = 2;
 
         let phone_list = await etlRepository.getPhoneNumber_userNudges(courseId_l2, targetGroup, cohort, '2025-03-24');
-const phoneSet = new Set(phone_list.map(item => item.phoneNumber));
+        const phoneSet = new Set(phone_list.map(item => item.phoneNumber));
 
-if (module == "Lesson") {
-    arrayT1_List = await etlRepository.getLessonCompletions(courseId_l1, courseId_l2, courseId_l3, targetGroup, cohort);
-    
-    let temp_list = arrayT1_List.filter(user => phoneSet.has(user.phoneNumber));
-    
-    arrayT1_List = arrayT1_List.filter(record => record.course2_week4 !== '6' && record.course1_week1 !== null);
-    
-    arrayT1_List = [...arrayT1_List, ...temp_list];
+        if (module == "Lesson") {
+          arrayT1_List = await etlRepository.getLessonCompletions(courseId_l1, courseId_l2, courseId_l3, targetGroup, cohort);
 
-    const uniqueList = [];
-    const phoneNumbersSeen = new Set();
+          let temp_list = arrayT1_List.filter(user => phoneSet.has(user.phoneNumber));
 
-    arrayT1_List.forEach(record => {
-        if (!phoneNumbersSeen.has(record.phoneNumber)) {
-            uniqueList.push(record);
-            phoneNumbersSeen.add(record.phoneNumber);
-        }
-    });
-    arrayT1_List = uniqueList;
+          arrayT1_List = arrayT1_List.filter(record => record.course2_week4 !== '6' && record.course1_week1 !== null);
 
-    console.log(arrayT1_List);
+          arrayT1_List = [...arrayT1_List, ...temp_list];
 
-    arrayT1_List = arrayT1_List.map(obj => Object.values(obj));
-    arrayT1_List.forEach((record, index) => { record[0] = index + 1; });
-}
+          const uniqueList = [];
+          const phoneNumbersSeen = new Set();
 
-if (module == "Activity") {
-    arrayT1_List = await etlRepository.getActivity_Completions(courseId_l1, courseId_l2, courseId_l3, targetGroup, cohort);
-    
-    let temp_list = arrayT1_List.filter(user => phoneSet.has(user.phoneNumber));
+          arrayT1_List.forEach(record => {
+            if (!phoneNumbersSeen.has(record.phoneNumber)) {
+              uniqueList.push(record);
+              phoneNumbersSeen.add(record.phoneNumber);
+            }
+          });
+          arrayT1_List = uniqueList;
 
-    if (targetGroup == "T1") {
-        arrayT1_List = arrayT1_List.filter(record => record.course2_week4_activities !== '18');
-    } else {
-        arrayT1_List = arrayT1_List.filter(record => record.course2_week4_activities !== '20');
-    }
+          console.log(arrayT1_List);
 
-    arrayT1_List = arrayT1_List.filter(record => record.course1_week1_activities !== null);
-    arrayT1_List = [...arrayT1_List, ...temp_list];
-    const uniqueList = [];
-    const phoneNumbersSeen = new Set();
-
-    arrayT1_List.forEach(record => {
-        if (!phoneNumbersSeen.has(record.phoneNumber)) {
-            uniqueList.push(record);
-            phoneNumbersSeen.add(record.phoneNumber);
-        }
-    });
-    arrayT1_List = uniqueList;
-
-    arrayT1_List = arrayT1_List.map(obj => Object.values(obj));
-    arrayT1_List.forEach((record, index) => { record[0] = index + 1; });
-
-    ActivityCompletedCount = [];
-    last_activityCompleted_l1 = await etlRepository.getLastActivityCompleted(courseId_l1, targetGroup, cohort);
-    last_activityCompleted_l1 = last_activityCompleted_l1.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
-
-    last_activityCompleted_l2 = await etlRepository.getLastActivityCompleted(courseId_l2, targetGroup, cohort);
-    last_activityCompleted_l2 = last_activityCompleted_l2.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
-
-    last_activityCompleted_l3 = await etlRepository.getLastActivityCompleted(courseId_l3, targetGroup, cohort);
-    last_activityCompleted_l3 = last_activityCompleted_l3.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
-}
-
-if (module == "Week") {
-    let weekly_score_l1_list = await etlRepository.getWeeklyScore(courseId_l1, targetGroup, cohort);
-    let weekly_score_l2_list = await etlRepository.getWeeklyScore(courseId_l2, targetGroup, cohort);
-    let weekly_score_l3_list = await etlRepository.getWeeklyScore(courseId_l3, targetGroup, cohort);
-
-    for (let i = 0; i < weekly_score_l1_list.length; i++) {
-        const l1_entry = weekly_score_l1_list[i];
-        const l2_entry = weekly_score_l2_list[i];
-        const l3_entry = weekly_score_l3_list[i];
-
-        arrayT1_List.push([
-            l1_entry.sr_no,
-            l1_entry.phoneNumber,
-            l1_entry.name,
-            l1_entry.final_percentage_week1,
-            l1_entry.final_percentage_week2,
-            l1_entry.final_percentage_week3,
-            l1_entry.final_percentage_week4,
-            null,
-            l2_entry.final_percentage_week1,
-            l2_entry.final_percentage_week2,
-            l2_entry.final_percentage_week3,
-            l2_entry.final_percentage_week4,
-            null,
-            l3_entry.final_percentage_week1,
-            l3_entry.final_percentage_week2,
-            l3_entry.final_percentage_week3,
-            l3_entry.final_percentage_week4,
-            null,
-            null
-        ]);
+          arrayT1_List = arrayT1_List.map(obj => Object.values(obj));
+          arrayT1_List.forEach((record, index) => { record[0] = index + 1; });
         }
 
-        let temp_list = arrayT1_List.filter(user => phoneSet.has(user[1]));
-        arrayT1_List = arrayT1_List.filter(record => record[11] === null && record[3] !== null);
-        arrayT1_List = [...arrayT1_List, ...temp_list];
-       
+        if (module == "Activity") {
+          arrayT1_List = await etlRepository.getActivity_Completions(courseId_l1, courseId_l2, courseId_l3, targetGroup, cohort);
 
-        arrayT1_List = arrayT1_List.map(obj => Object.values(obj));
-        arrayT1_List.forEach((record, index) => { record[0] = index + 1; });
-      }
-  
+          let temp_list = arrayT1_List.filter(user => phoneSet.has(user.phoneNumber));
+
+          if (targetGroup == "T1") {
+            arrayT1_List = arrayT1_List.filter(record => record.course2_week4_activities !== '18');
+          } else {
+            arrayT1_List = arrayT1_List.filter(record => record.course2_week4_activities !== '20');
+          }
+
+          arrayT1_List = arrayT1_List.filter(record => record.course1_week1_activities !== null);
+          arrayT1_List = [...arrayT1_List, ...temp_list];
+          const uniqueList = [];
+          const phoneNumbersSeen = new Set();
+
+          arrayT1_List.forEach(record => {
+            if (!phoneNumbersSeen.has(record.phoneNumber)) {
+              uniqueList.push(record);
+              phoneNumbersSeen.add(record.phoneNumber);
+            }
+          });
+          arrayT1_List = uniqueList;
+
+          arrayT1_List = arrayT1_List.map(obj => Object.values(obj));
+          arrayT1_List.forEach((record, index) => { record[0] = index + 1; });
+
+          ActivityCompletedCount = [];
+          last_activityCompleted_l1 = await etlRepository.getLastActivityCompleted(courseId_l1, targetGroup, cohort);
+          last_activityCompleted_l1 = last_activityCompleted_l1.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
+
+          last_activityCompleted_l2 = await etlRepository.getLastActivityCompleted(courseId_l2, targetGroup, cohort);
+          last_activityCompleted_l2 = last_activityCompleted_l2.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
+
+          last_activityCompleted_l3 = await etlRepository.getLastActivityCompleted(courseId_l3, targetGroup, cohort);
+          last_activityCompleted_l3 = last_activityCompleted_l3.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
+        }
+
+        if (module == "Week") {
+          let weekly_score_l1_list = await etlRepository.getWeeklyScore(courseId_l1, targetGroup, cohort);
+          let weekly_score_l2_list = await etlRepository.getWeeklyScore(courseId_l2, targetGroup, cohort);
+          let weekly_score_l3_list = await etlRepository.getWeeklyScore(courseId_l3, targetGroup, cohort);
+
+          for (let i = 0; i < weekly_score_l1_list.length; i++) {
+            const l1_entry = weekly_score_l1_list[i];
+            const l2_entry = weekly_score_l2_list[i];
+            const l3_entry = weekly_score_l3_list[i];
+
+            arrayT1_List.push([
+              l1_entry.sr_no,
+              l1_entry.phoneNumber,
+              l1_entry.name,
+              l1_entry.final_percentage_week1,
+              l1_entry.final_percentage_week2,
+              l1_entry.final_percentage_week3,
+              l1_entry.final_percentage_week4,
+              null,
+              l2_entry.final_percentage_week1,
+              l2_entry.final_percentage_week2,
+              l2_entry.final_percentage_week3,
+              l2_entry.final_percentage_week4,
+              null,
+              l3_entry.final_percentage_week1,
+              l3_entry.final_percentage_week2,
+              l3_entry.final_percentage_week3,
+              l3_entry.final_percentage_week4,
+              null,
+              null
+            ]);
+          }
+
+          let temp_list = arrayT1_List.filter(user => phoneSet.has(user[1]));
+          arrayT1_List = arrayT1_List.filter(record => record[11] === null && record[3] !== null);
+          arrayT1_List = [...arrayT1_List, ...temp_list];
+
+
+          arrayT1_List = arrayT1_List.map(obj => Object.values(obj));
+          arrayT1_List.forEach((record, index) => { record[0] = index + 1; });
+        }
+
         await new_loadDataToGoogleSheets(
           arrayT1_List,
           facilitator,
@@ -273,7 +270,7 @@ if (module == "Week") {
         console.log("Todat is the target date!");
       }
     }
-  
+
   } catch (error) {
     error.fileName = "etlService_Auto.js";
     throw error;
