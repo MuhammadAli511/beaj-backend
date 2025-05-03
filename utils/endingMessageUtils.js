@@ -105,15 +105,27 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
         }
         let user = await waUsersMetadataRepository.getByProfileId(profileId);
         let checkRegistrationComplete = user.dataValues.userRegistrationComplete !== null;
-        if (startingLesson.dataValues.activityAlias == "🧠 *Let's Think!*") {
+        if (startingLesson.dataValues.activityAlias == "📕 *Story Time!*") {
+            let final_map_image = "";
+            let message = "Start questions and win your first gem! 💎\nسوالات شروع کریں اور اپنا پہلا gem جیتیں!";
+            if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1") {
+                final_map_image = "https://beajbloblive.blob.core.windows.net/beajdocuments/level1_map.jpeg";
+            } else if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
+                final_map_image = "https://beajbloblive.blob.core.windows.net/beajdocuments/level3_map.jpeg";
+            }
+            await sendMediaMessage(userMobileNumber, final_map_image, "image");
+            await createActivityLog(userMobileNumber, "image", "outbound", final_map_image, null);
+            await sleep(2000);
+
+
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start challenge", "go to registration", "talk to beaj rep"]);
-            let buttonsArray = [{ id: 'start_challenge', title: 'Start Challenge' }, { id: 'go_to_registration', title: 'Go to Registration' }, { id: 'talk_to_beaj_rep', title: 'Talk to Beaj Rep' }];
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start questions", "go to registration", "talk to beaj rep"]);
+            let buttonsArray = [{ id: 'start_questions', title: 'Start Questions' }, { id: 'go_to_registration', title: 'Go to Registration' }, { id: 'talk_to_beaj_rep', title: 'Talk to Beaj Rep' }];
 
             // Reply Buttons
             if (message == null) {
-                await sendButtonMessage(userMobileNumber, 'Start Challenge!', buttonsArray);
-                await createActivityLog(userMobileNumber, "template", "outbound", "Start Challenge or Go to Registration or Talk to Beaj Rep", null);
+                await sendButtonMessage(userMobileNumber, 'Start Questions!', buttonsArray);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Start Questions or Go to Registration or Talk to Beaj Rep", null);
             } else {
                 await sendButtonMessage(userMobileNumber, message, buttonsArray);
                 await createActivityLog(userMobileNumber, "template", "outbound", message, null);
@@ -156,8 +168,8 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             return;
         } else if (checkRegistrationComplete == false && lessonLast == false) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["go to next activity", "go to registration", "talk to beaj rep"]);
-            let buttonsArray = [{ id: 'go_to_next_activity', title: 'Go to Next Activity' }, { id: 'go_to_registration', title: 'Go to Registration' }, { id: 'talk_to_beaj_rep', title: 'Talk to Beaj Rep' }];
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "go to registration", "talk to beaj rep"]);
+            let buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'go_to_registration', title: 'Go to Registration' }, { id: 'talk_to_beaj_rep', title: 'Talk to Beaj Rep' }];
 
 
             // Reply Buttons
@@ -172,8 +184,8 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             return;
         } else if (checkRegistrationComplete == true && lessonLast == false) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["go to next activity", "talk to beaj rep"]);
-            let buttonsArray = [{ id: 'go_to_next_activity', title: 'Go to Next Activity' }, { id: 'talk_to_beaj_rep', title: 'Talk to Beaj Rep' }];
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "talk to beaj rep"]);
+            let buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'talk_to_beaj_rep', title: 'Talk to Beaj Rep' }];
 
             // Reply Buttons
             if (message == null) {

@@ -16,7 +16,7 @@ const greetingMessage = async (profileId, userMobileNumber, persona) => {
     });
     let greetingMessageText = "";
     if (persona == "kids") {
-        greetingMessageText = `Welcome to Beaj Education! 👋\nبیج ایجوکیشن میں خوش آمدید!\n\nI'm Ms. Beaj - here to guide you!\nمیں ہوں مس بیج - آپ کی مدد کے لیے حاضر!`;
+        greetingMessageText = `Welcome to Beaj Education! 👋\nبیج ایجوکیشن میں خوش آمدید!\n\n`;
     } else if (persona == "teachers") {
         greetingMessageText = `Welcome to Beaj Education! 👋\n\nI'm Ms. Beaj - here to guide you!\n\n👇Click on the “Start button”`;
     }
@@ -26,14 +26,11 @@ const greetingMessage = async (profileId, userMobileNumber, persona) => {
         await sendMediaMessage(userMobileNumber, greetingImage, "image", greetingMessageText);
         await createActivityLog(userMobileNumber, "image", "outbound", greetingImage, null);
         await sleep(1000);
-        await sendMediaMessage(userMobileNumber, "https://beajbloblive.blob.core.windows.net/beajdocuments/summer_intro_video.mp4", "video");
-        await createActivityLog(userMobileNumber, "video", "outbound", "https://beajbloblive.blob.core.windows.net/beajdocuments/summer_intro_video.mp4", null);
-        await sleep(12000);
-        await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Choose Class");
-        const chooseClassMessage = `🆓 Get a Free Trial!\nفری ٹرائل شروع کریں۔\n\n👇Choose your class:\nآپ کس کلاس میں ہیں؟`;
-        await sendButtonMessage(userMobileNumber, chooseClassMessage, [{ id: 'kids_summer_camp_class_1_or_2', title: 'Class 1 or 2' }, { id: 'kids_summer_camp_class_5_or_6', title: 'Class 3 to 6' }]);
-        await createActivityLog(userMobileNumber, "template", "outbound", chooseClassMessage, null);
-        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["class 1 or 2", "class 3 to 6"]);
+        let videoCaption = "Why should you choose Beaj Education? - A message from the Founder.\nآپ کو بیج ایجوکیشن کیوں چُننا چاہیے؟ — بیج ایجوکیشن کی سربراہ کا پیغام۔";
+        await sendButtonMessage(userMobileNumber, videoCaption, [{ id: 'start_free_trial', title: 'Start Free Trial' }, { id: 'go_to_registration', title: 'Go to Registration' }], 0, null, "https://beajbloblive.blob.core.windows.net/beajdocuments/why_beaj.mp4");
+        await createActivityLog(userMobileNumber, "template", "outbound", videoCaption, null);
+        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start free trial", "go to registration"]);
+        await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Greeting Message - Kids");
     } else if (persona == "teachers") {
         const greetingImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/welcome_new.jpeg";
         await sendButtonMessage(userMobileNumber, greetingMessageText, [{ id: 'start', title: 'Start' }], 0, greetingImage);
@@ -54,8 +51,10 @@ const greetingMessageLoop = async (profileId, userMobileNumber) => {
 
 const kidsChooseClass = async (profileId, userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Choose Class");
-    const chooseClassMessage = `🆓 Get a Free Trial!\nفری ٹرائل شروع کریں۔\n\n👇Choose your class:\nآپ کس کلاس میں ہیں؟`;
-    await sendButtonMessage(userMobileNumber, chooseClassMessage, [{ id: 'kids_summer_camp_class_1_or_2', title: 'Class 1 or 2' }, { id: 'kids_summer_camp_class_5_or_6', title: 'Class 3 to 6' }]);
+    // await sendMediaMessage(userMobileNumber, "https://beajbloblive.blob.core.windows.net/beajdocuments/summer_intro_video.mp4", "video");
+    // await createActivityLog(userMobileNumber, "video", "outbound", "https://beajbloblive.blob.core.windows.net/beajdocuments/summer_intro_video.mp4", null);
+    const chooseClassMessage = `Take a quick look inside the course!\nکورس کی ایک جھلک دیکھیں۔\n\n👇Choose your class:\nاپنی کلاس منتخب کریں۔`;
+    await sendButtonMessage(userMobileNumber, chooseClassMessage, [{ id: 'kids_summer_camp_class_1_or_2', title: 'Class 1 or 2' }, { id: 'kids_summer_camp_class_5_or_6', title: 'Class 3 to 6' }], 0, null, "https://beajbloblive.blob.core.windows.net/beajdocuments/summer_intro_video.mp4");
     await createActivityLog(userMobileNumber, "template", "outbound", chooseClassMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["class 1 or 2", "class 3 to 6"]);
     return;
@@ -121,16 +120,10 @@ const demoCourseStart = async (profileId, userMobileNumber, startingLesson, cour
         await createActivityLog(userMobileNumber, "text", "outbound", message, null);
         return;
     } else if (courseName == "Free Trial - Kids - Level 1" || courseName == "Free Trial - Kids - Level 3") {
-        message = `Great! 💥 Let's Start!\nزبردست! شروع کرتے ہیں!\n\nComplete the trial and win your first reward! 🏅\n ہر قدم پر انعام جیتیں!`;
-        let final_map_image = "";
-        if (courseName == "Free Trial - Kids - Level 1") {
-            final_map_image = "https://beajbloblive.blob.core.windows.net/beajdocuments/level1_map.jpeg";
-        } else if (courseName == "Free Trial - Kids - Level 3") {
-            final_map_image = "https://beajbloblive.blob.core.windows.net/beajdocuments/level3_map.jpeg";
-        }
-        await sendMediaMessage(userMobileNumber, final_map_image, "image", message);
-        await createActivityLog(userMobileNumber, "image", "outbound", final_map_image, null);
-        await sleep(2000);
+        // message = `Great! 💥 Let's Start!\nزبردست! شروع کرتے ہیں!\n\nComplete the trial and win your first reward! 🏅\n ہر قدم پر انعام جیتیں!`;
+        message = `Great! 💥 Let's Start!\nزبردست! شروع کرتے ہیں!`;
+        await sendMessage(userMobileNumber, message);
+        await createActivityLog(userMobileNumber, "text", "outbound", message, null);
         return;
     }
 
