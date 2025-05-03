@@ -38,9 +38,8 @@ const greetingMessage = async (profileId, userMobileNumber, persona) => {
         const greetingImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/welcome_new.jpeg";
         await sendButtonMessage(userMobileNumber, greetingMessageText, [{ id: 'start', title: 'Start' }], 0, greetingImage);
         await createActivityLog(userMobileNumber, "image", "outbound", greetingImage, null);
-        await sleep(1000);
+        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start"]);
         return;
-
     }
 };
 

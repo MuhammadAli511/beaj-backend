@@ -74,8 +74,10 @@ const convertNumberToEmoji = async (number) => {
 const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber, currentUserState, messageType, messageContent) => {
     const acceptableMessagesList = currentUserState.dataValues.acceptableMessages;
     const activityType = currentUserState.dataValues.activityType;
-    if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "read" || activityType === "speakingPractice") {
+    if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "read" || activityType === "speakingPractice" || activityType === "feedbackAudio") {
         if (acceptableMessagesList.includes("audio") && messageType === "audio") {
+            return true;
+        } else if (messageContent.toLowerCase() == "next" && activityType === "feedbackAudio") {
             return true;
         } else if (messageContent.toLowerCase() == "next" && (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")) {
             return true;
@@ -155,7 +157,7 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
 };
 
 const getAcceptableMessagesList = async (activityType) => {
-    if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "speakingPractice") {
+    if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "speakingPractice" || activityType === "feedbackAudio") {
         return ["audio"];
     } else if (activityType === "watchAndImage") {
         return ["image"];

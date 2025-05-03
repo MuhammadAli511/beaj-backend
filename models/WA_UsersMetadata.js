@@ -66,6 +66,10 @@ WA_UsersMetadata.init({
         type: DataTypes.TEXT,
         allowNull: true,
     },
+    classLevel: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
 }, {
     sequelize,
     modelName: 'WA_UsersMetadata',
