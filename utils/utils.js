@@ -77,9 +77,9 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
     if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "read" || activityType === "speakingPractice" || activityType === "feedbackAudio") {
         if (acceptableMessagesList.includes("audio") && messageType === "audio") {
             return true;
-        } else if (messageContent.toLowerCase() == "next" && activityType === "feedbackAudio") {
+        } else if (messageType == "text" && messageContent.toLowerCase() == "next" && activityType === "feedbackAudio") {
             return true;
-        } else if (messageContent.toLowerCase() == "next" && (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")) {
+        } else if (messageType == "text" && messageContent.toLowerCase() == "next" && (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")) {
             return true;
         }
     }
@@ -95,7 +95,7 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
         return true;
     }
     if (acceptableMessagesList.includes("yes") && acceptableMessagesList.includes("no")) {
-        if (messageContent.toLowerCase() == "yes" || messageContent.toLowerCase() == "no" || messageContent.toLowerCase() == "no, try again") {
+        if (messageType == "text" && (messageContent.toLowerCase() == "yes" || messageContent.toLowerCase() == "no" || messageContent.toLowerCase() == "no, try again")) {
             return true;
         } else {
             await sendMessage(userMobileNumber, "yes or no type kerain.");
@@ -103,7 +103,7 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
             return false;
         }
     }
-    if (acceptableMessagesList.includes(messageContent.toLowerCase())) {
+    if (messageType == "text" && acceptableMessagesList.includes(messageContent.toLowerCase())) {
         return true;
     }
 
@@ -115,7 +115,7 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
     }
     // If list has "a", "b", "c" then "a", "b", "c" type kerain.
     if (acceptableMessagesList.includes("a") && acceptableMessagesList.includes("b") && acceptableMessagesList.includes("c")) {
-        if (messageContent.toLowerCase() == "next" && (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")) {
+        if (messageType == "text" && messageContent.toLowerCase() == "next" && (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")) {
             return true;
         }
         await sendMessage(userMobileNumber, "a, b, ya c mein se koi aik button press kerain.");
