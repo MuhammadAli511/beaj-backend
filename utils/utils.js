@@ -1,4 +1,4 @@
-import { sendMessage } from "./whatsappUtils.js";
+import { sendButtonMessage, sendMessage } from "./whatsappUtils.js";
 import { createActivityLog } from "./createActivityLogUtils.js";
 
 
@@ -87,7 +87,7 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
         return true;
     }
     if (activityType === "watchAndImage" && messageType != "image") {
-        await sendMessage(userMobileNumber, "Image bhejain.");
+        await sendMessage(userMobileNumber, "Please send an image.");
         await createActivityLog(userMobileNumber, "text", "outbound", "Image bhejain.", null);
         return false;
     }
@@ -98,8 +98,8 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
         if (messageType == "text" && (messageContent.toLowerCase() == "yes" || messageContent.toLowerCase() == "no" || messageContent.toLowerCase() == "no, try again")) {
             return true;
         } else {
-            await sendMessage(userMobileNumber, "yes or no type kerain.");
-            await createActivityLog(userMobileNumber, "text", "outbound", "yes or no type kerain.", null);
+            await sendButtonMessage(userMobileNumber, "Please select an option.", [{ id: "yes", title: "Yes" }, { id: "no", title: "No" }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Please select an option. (Yes or No)", null);
             return false;
         }
     }
@@ -109,8 +109,8 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
 
     // If list has "option a", "option b", "option c" then "option a", "option b", "option c" type kerain.
     if (acceptableMessagesList.includes("option a") && acceptableMessagesList.includes("option b") && acceptableMessagesList.includes("option c")) {
-        await sendMessage(userMobileNumber, "option a, option b, ya option c mein se koi aik button press kerain.");
-        await createActivityLog(userMobileNumber, "text", "outbound", "option a, option b, ya option c mein se koi aik button press kerain.", null);
+        await sendButtonMessage(userMobileNumber, "Please select an option.", [{ id: "option a", title: "Option A" }, { id: "option b", title: "Option B" }, { id: "option c", title: "Option C" }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "Please select an option. (Option A, Option B, Option C)", null);
         return false;
     }
     // If list has "a", "b", "c" then "a", "b", "c" type kerain.
@@ -118,8 +118,8 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
         if (messageType == "text" && messageContent.toLowerCase() == "next" && (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")) {
             return true;
         }
-        await sendMessage(userMobileNumber, "a, b, ya c mein se koi aik button press kerain.");
-        await createActivityLog(userMobileNumber, "text", "outbound", "a, b, ya c mein se koi aik button press kerain.", null);
+        await sendButtonMessage(userMobileNumber, "Please select an option.", [{ id: "a", title: "Option A" }, { id: "b", title: "Option B" }, { id: "c", title: "Option C" }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "Please select an option. (Option A, Option B, Option C)", null);
         return false;
     }
     // If list has "audio"
@@ -135,24 +135,19 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
         return false;
     }
     if (acceptableMessagesList.includes("start")) {
-        await sendMessage(userMobileNumber, "Please write: \n\nstart");
-        await createActivityLog(userMobileNumber, "text", "outbound", "Please write: \n\nstart", null);
+        await sendButtonMessage(userMobileNumber, "Please write: \n\nstart", [{ id: "start", title: "Start" }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "Please write: \n\nstart", null);
         return false;
     }
-    // Write customized message based on the acceptable messages list
-    let message = "Please write: \n\n";
-    if (acceptableMessagesList.length > 1) {
-        for (let i = 0; i < acceptableMessagesList.length; i++) {
-            message += "\n" + acceptableMessagesList[i];
-            if (i < acceptableMessagesList.length - 1) {
-                message += "\nor";
-            }
-        }
-    } else {
-        message += acceptableMessagesList[0];
-    }
-    await sendMessage(userMobileNumber, message);
-    await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+    const buttonOptions = acceptableMessagesList.map(message => ({
+        id: message.replace(/\s+/g, '_'),
+        title: message.charAt(0).toUpperCase() + message.slice(1)
+    }));
+
+    const limitedButtonOptions = buttonOptions.slice(0, 3);
+    let logMessage = "Please select an option. (" + buttonOptions.map(option => option.title).join(", ") + ")";
+    await sendButtonMessage(userMobileNumber, "Please select an option.", limitedButtonOptions);
+    await createActivityLog(userMobileNumber, "template", "outbound", logMessage, null);
     return false;
 };
 
