@@ -167,6 +167,11 @@ const webhookService = async (body, res) => {
                     return;
                 }
 
+                if (text_message_types.includes(message.type) && messageContent.toLowerCase() == "talk to beaj rep") {
+                    await talkToBeajRep(userMobileNumber);
+                    return;
+                }
+
                 // DEMO COURSE
                 // Step 1: If user does not exist
                 if (userExists == false) {
