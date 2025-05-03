@@ -8,8 +8,9 @@ const getWaUserMetadataByPhoneNumberService = async (phoneNumber) => {
     return await waUsersMetadataRepository.getByPhoneNumber(phoneNumber);
 };
 
-const assignTargetGroupService = async (phoneNumber, targetGroup) => {
-    return await waUsersMetadataRepository.assignTargetGroup(phoneNumber, targetGroup);
+
+const assignTargetGroupService = async (phoneNumber,profile_id, targetGroup) => {
+    return await waUsersMetadataRepository.assignTargetGroup(phoneNumber,profile_id, targetGroup);
 }
 
 

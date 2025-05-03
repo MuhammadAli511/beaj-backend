@@ -39,7 +39,6 @@ const getPhoneNumberColumn = async (data) => {
         ).toLocaleString()
         : null,
     ]);
-    // console.log(formattedData[0])
     return formattedData;
   } catch (error) {
     error.fileName = "getPhoneNumberColumn.js";

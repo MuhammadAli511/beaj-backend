@@ -19,6 +19,8 @@ import waPurchasedCoursesRoutes from './waPurchasedCoursesRoutes.js';
 import etlRoutes from './etlRoutes.js';
 import waFeedbackRoutes from './waFeedbackRoutes.js';
 import waQuestionResponsesRoutes from './waQuestionResponsesRoutes.js';
+import userProgressRoutes from './userProgressRoutes.js';
+
 const router = express.Router();
 
 // GET  api/status/
@@ -46,5 +48,6 @@ router.use('/waPurchasedCourses', waPurchasedCoursesRoutes);
 router.use('/waFeedback', waFeedbackRoutes);
 router.use('/waQuestionResponses', waQuestionResponsesRoutes);
 router.use('/etl_pipline', etlRoutes);
+router.use('/userProgress', userProgressRoutes);
 
 export default router;

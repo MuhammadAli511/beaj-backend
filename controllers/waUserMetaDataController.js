@@ -25,8 +25,9 @@ const getWaUserMetaDataByPhoneNumberController = async (req, res, next) => {
 const assignTargetGroupController = async (req, res, next) => {
     try {
         const phoneNumber = req.body.phoneNumber;
+        const profile_id = req.body.profile_id;
         const targetGroup = req.body.targetGroup;
-        const result = await service.assignTargetGroupService(phoneNumber, targetGroup);
+        const result = await service.assignTargetGroupService(phoneNumber,profile_id, targetGroup);
         res.status(200).send({ message: "Target group assigned successfully" });
     } catch (error) {
         error.fileName = 'waUserMetaDataController.js';

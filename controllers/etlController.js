@@ -14,7 +14,6 @@ const runETL = async () => {
 const runETL1 = async (req, res) => {
     try {
         const selectedValue = req.body.selectedValue;
-        // console.log("Received value from Google Sheets: ", selectedValue);
 
         let parts = selectedValue.split(" ");
 
@@ -30,11 +29,6 @@ const runETL1 = async (req, res) => {
             cohort = parts[2].split("-")[1] + " " + parts[3];
             co_no = parts[3];
         }
-
-        // console.log("Part 1: ", facilitator);
-        // console.log("Part 2: ", tgrp);
-        // console.log("Part 3: ", module);
-        // console.log("Part 4: ", cohort);
 
         if (tgrp && module && facilitator && cohort && co_no !== undefined) {
             await etlService_auto.runETL(tgrp, module, cohort, co_no, facilitator);
