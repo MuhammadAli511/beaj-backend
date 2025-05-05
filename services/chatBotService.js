@@ -22,7 +22,6 @@ import {
     getUserProfile,
     getSchoolName,
     getCityName,
-    confirmCityName,
     readyToPay,
     thankyouMessageParent,
 } from "../utils/trialflowUtils.js";
@@ -168,7 +167,7 @@ const webhookService = async (body, res) => {
                 }
 
                 if (text_message_types.includes(message.type) && (messageContent.toLowerCase() == "talk to beaj rep" || messageContent.toLowerCase() == "chat with beaj rep" || messageContent.toLowerCase() == "get help")) {
-                    await talkToBeajRep(userMobileNumber);
+                    await talkToBeajRep(profileId, userMobileNumber);
                     return;
                 }
 
@@ -196,7 +195,7 @@ const webhookService = async (body, res) => {
                     text_message_types.includes(message.type) &&
                     (messageContent.toLowerCase() == "talk to beaj rep" || messageContent.toLowerCase() == "chat with beaj rep" || messageContent.toLowerCase() == "get help")
                 ) {
-                    await talkToBeajRep(userMobileNumber);
+                    await talkToBeajRep(profileId, userMobileNumber);
                     return;
                 }
 
@@ -330,18 +329,10 @@ const webhookService = async (body, res) => {
 
                 if (
                     text_message_types.includes(message.type) &&
-                    (currentUserState.dataValues.engagement_type == "City Name")
-                ) {
-                    await confirmCityName(profileId, userMobileNumber, messageContent);
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
                     (messageContent.toLowerCase() == "yes") &&
-                    (currentUserState.dataValues.engagement_type == "Confirm City Name")
+                    (currentUserState.dataValues.engagement_type == "City Name" || currentUserState.dataValues.engagement_type == "Confirm City Name")
                 ) {
-                    await thankyouMessageSchoolOwner(profileId, userMobileNumber);
+                    await thankyouMessageSchoolOwner(profileId, userMobileNumber, messageContent);
                     return;
                 }
 

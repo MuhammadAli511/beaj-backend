@@ -217,12 +217,13 @@ const getUserProfile = async (profileId, userMobileNumber) => {
     return;
 };
 
-const thankyouMessageSchoolOwner = async (profileId, userMobileNumber) => {
+const thankyouMessageSchoolOwner = async (profileId, userMobileNumber, messageContent) => {
+    await waUsersMetadataRepository.updateCityName(profileId, userMobileNumber, messageContent);
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Thankyou Message");
     await waUserProgressRepository.update(profileId, userMobileNumber, null, null, null, null, null, null, null, null, ["get another trial", "chat with beaj rep"]);
     const schoolRegistrationImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/school_registration.jpg"
-    let thankyouMessage = "A Beaj team member will call you within 24 hours to discuss a partnership with your school!\n\nWe look forward to speaking with you soon!\n\nIn the meantime, if you have any questions, please click on 'Chat with Beaj Rep' to talk to our team. ";
-    await sendButtonMessage(userMobileNumber, thankyouMessage, [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }], 0, schoolRegistrationImage);
+    let thankyouMessage = "A Beaj team member will call you within 24 hours to discuss a partnership with your school!\nWe look forward to speaking with you soon!\nاگلے 24 گھنٹے میں بیج ٹیم کا نمائندہ آپ سے اسکول پارٹنرشپ کے لئے رابطہ کرے گا۔ ہم آپ سے بات کرنے کے منتظر ہیں! \n\nIn the meantime, if you have any questions, please click on 'Chat with Beaj Rep' to talk to our team.\nاس دوران اگر آپ کے کوئ سوال ہیں، تو ‘Chat with Beaj Rep’ پر کلک کیجیئے اور ہم سے رابطہ کریں۔";
+    await sendButtonMessage(userMobileNumber, thankyouMessage, [{ id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }, { id: 'get_another_trial', title: 'Get Another Trial' }], 0, schoolRegistrationImage);
     await createActivityLog(userMobileNumber, "image", "outbound", schoolRegistrationImage, null);
     await waUsersMetadataRepository.update(profileId, userMobileNumber, {
         userRegistrationComplete: new Date()
@@ -253,8 +254,8 @@ const thankyouMessageParent = async (profileId, userMobileNumber) => {
     return;
 };
 
-const talkToBeajRep = async (userMobileNumber) => {
-    const user = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
+const talkToBeajRep = async (profileId, userMobileNumber) => {
+    const user = await waUserProgressRepository.getByProfileId(profileId);
     if (user.dataValues.persona == "school admin") {
         await sendContactCardMessage(userMobileNumber, najiaContactData);
     } else {
