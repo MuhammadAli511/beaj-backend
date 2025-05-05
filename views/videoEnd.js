@@ -46,7 +46,10 @@ const videoEndView = async (profileId, userMobileNumber, currentUserState, start
             // Send lesson message
             let lessonText = startingLesson.dataValues.text;
             lessonText = lessonText.replace(/\\n/g, '\n');
-            let lessonMessage = startingLesson.dataValues.activityAlias + "\n\n" + lessonText;
+            let lessonMessage = startingLesson.dataValues.activityAlias;
+            if (lessonText != null && lessonText != "") {
+                lessonMessage += "\n\n" + lessonText;
+            }
             lessonMessage += "\n\nThe video might take a few seconds to load.\nویڈیو کو لوڈ ہونے میں شاید چند سیکنڈ لگیں۔";
 
             await sendMessage(userMobileNumber, lessonMessage);

@@ -257,7 +257,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                 // Send lesson message
                 let lessonText = startingLesson.dataValues.text;
                 lessonText = lessonText.replace(/\\n/g, '\n');
-                let lessonMessage = startingLesson.dataValues.activityAlias + "\n\n" + lessonText;
+                let lessonMessage = startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n') + "\n\n" + lessonText;
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 

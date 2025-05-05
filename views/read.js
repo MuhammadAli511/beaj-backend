@@ -111,7 +111,7 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
                 await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
                 // Send lesson message
-                let lessonMessage = startingLesson.dataValues.activityAlias + "\n\n" + "🧏 Listen first, then practice reading.";
+                let lessonMessage = startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n');
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 

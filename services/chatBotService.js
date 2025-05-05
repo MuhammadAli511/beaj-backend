@@ -167,7 +167,7 @@ const webhookService = async (body, res) => {
                     return;
                 }
 
-                if (text_message_types.includes(message.type) && messageContent.toLowerCase() == "talk to beaj rep") {
+                if (text_message_types.includes(message.type) && (messageContent.toLowerCase() == "talk to beaj rep" || messageContent.toLowerCase() == "chat with beaj rep" || messageContent.toLowerCase() == "get help")) {
                     await talkToBeajRep(userMobileNumber);
                     return;
                 }
@@ -192,10 +192,9 @@ const webhookService = async (body, res) => {
                     }
                 }
 
-                // Talk to Beaj Rep
                 if (
                     text_message_types.includes(message.type) &&
-                    (messageContent.toLowerCase() == "talk to beaj rep")
+                    (messageContent.toLowerCase() == "talk to beaj rep" || messageContent.toLowerCase() == "chat with beaj rep" || messageContent.toLowerCase() == "get help")
                 ) {
                     await talkToBeajRep(userMobileNumber);
                     return;
@@ -479,6 +478,14 @@ const webhookService = async (body, res) => {
                                 currentUserState.dataValues.currentDay,
                                 currentUserState.dataValues.currentLesson_sequence
                             );
+
+                            let theStartingLesson = await lessonRepository.getByLessonId(currentUserState.dataValues.currentLessonId);
+
+                            // If next and nextLesson not available call ending message
+                            if (!nextLesson) {
+                                await endingMessage(profileId, userMobileNumber, currentUserState, theStartingLesson);
+                                return;
+                            }
 
                             // Get acceptable messages for the next question/lesson
                             const acceptableMessagesList = await getAcceptableMessagesList(nextLesson.dataValues.activity);
