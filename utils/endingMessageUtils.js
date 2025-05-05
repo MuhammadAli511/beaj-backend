@@ -128,8 +128,8 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
         }
 
         if (startingLesson.dataValues.activityAlias == "✨ *Fun Fact!*" || startingLesson.dataValues.activityAlias == "🧪 *Science Fun!*") {
-            let funFactMessage = "To listen to Zara and Faiz’s story, click on ‘Next Activity’.\nزارا اور فےز کی کہانی جاننے کے لیئے، ‘Next Activity’ پہ کلک کریں۔";
-            let scienceFunMessage = "To do a fun science question, click on ‘Next Activity’.\nسایئنس کا ایک مزیدار سوال کرنے کے لیئے ‘Next Activity’ پہ کلک کریں۔";
+            let funFactMessage = "To listen to Zara and Faiz’s story, click on ‘Next Activity’.\n\nزارا اور فےز کی کہانی جاننے کے لیئے، ‘Next Activity’ پہ کلک کریں۔";
+            let scienceFunMessage = "To do a fun science question, click on ‘Next Activity’.\n\nسایئنس کا ایک مزیدار سوال کرنے کے لیئے ‘Next Activity’ پہ کلک کریں۔";
             let finalTextMessage = "";
             if (startingLesson.dataValues.activityAlias == "✨ *Fun Fact!*") {
                 finalTextMessage = funFactMessage;
@@ -151,8 +151,8 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
 
         if (checkRegistrationComplete == false && lessonLast == true) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial", "register now", "get help"]);
-            let buttonsArray = [{ id: 'register_now', title: 'Register Now' }, { id: 'get_help', title: 'Get Help' }, { id: 'get_another_trial', title: 'Get Another Trial' }];
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial", "register now"]);
+            let buttonsArray = [{ id: 'register_now', title: 'Register Now' }, { id: 'get_another_trial', title: 'Get Another Trial' }];
 
             let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔\n\nAre you ready to continue? Click on Register Now 👇\nکیا آپ آگے بڑھنے کے لیے تیار ہیں؟ "Register Now" بٹن پر کلک کریں۔`;
             if (message == null) {
@@ -167,8 +167,8 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             return;
         } else if (checkRegistrationComplete == true && lessonLast == true) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial", "get help"]);
-            let buttonsArray = [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'get_help', title: 'Get Help' }];
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial"]);
+            let buttonsArray = [{ id: 'get_another_trial', title: 'Get Another Trial' }];
 
             let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔\n\n`;
             if (message == null) {

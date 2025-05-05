@@ -273,7 +273,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                 let instructions = "👉 *Question " + await convertNumberToEmoji(firstWatchAndSpeakQuestion.dataValues.questionNumber) + " of " + totalQuestions + "*\n\n";
                 instructions += "Record a voice message:";
                 if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
-                    instructions += "\nOR\n" + "Type “next” to skip challenge";
+                    instructions += "\nOR\n" + "Type “next” to skip";
                 }
                 await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, 'video', instructions);
                 await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
@@ -382,7 +382,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                         let instructions = "👉 *Question " + await convertNumberToEmoji(nextWatchAndSpeakQuestion.dataValues.questionNumber) + " of " + totalQuestions + "*\n\n";
                         instructions += "Record a voice message:\nوائس میسج ریکارڈ کریں";
                         if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
-                            instructions += "\nOR\n" + "Type “next” to skip challenge";
+                            instructions += "\nOR\n" + "Type “next” to skip";
                         }
                         await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video', instructions);
                         await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
@@ -460,7 +460,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                     let instructions = "👉 *Question " + await convertNumberToEmoji(nextWatchAndSpeakQuestion.dataValues.questionNumber) + " of " + totalQuestions + "*\n\n";
                     instructions += "Record a voice message:\nوائس میسج ریکارڈ کریں";
                     if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
-                        instructions += "\nOR\n" + "Type “next” to skip challenge";
+                        instructions += "\nOR\n" + "Type “next” to skip";
                     }
                     await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video', instructions);
                     await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
