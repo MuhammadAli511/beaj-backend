@@ -29,7 +29,7 @@ const greetingMessage = async (profileId, userMobileNumber, persona) => {
         await sendMessage(userMobileNumber, greetingMessageText);
         await createActivityLog(userMobileNumber, "text", "outbound", greetingMessageText, null);
         let videoCaption = "Why should you choose Beaj Education? Here is a message from our founder.\nآپ کو بیج ایجوکیشن کیوں چُننا چاہیے؟ — بیج ایجوکیشن کی سربراہ کا پیغام۔";
-        await sendButtonMessage(userMobileNumber, videoCaption, [{ id: 'start_free_trial', title: 'Start Free Trial' }, { id: 'go_to_registration', title: 'Go to Registration' }], 0, null, "https://beajbloblive.blob.core.windows.net/beajdocuments/why_beaj2.mp4");
+        await sendButtonMessage(userMobileNumber, videoCaption, [{ id: 'start_free_trial', title: 'Start Free Trial' }, { id: 'go_to_registration', title: 'Go to Registration' }], 0, null, "https://beajbloblive.blob.core.windows.net/beajdocuments/why_beaj3.mp4");
         await createActivityLog(userMobileNumber, "template", "outbound", videoCaption, null);
         await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start free trial", "go to registration"]);
         await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Greeting Message - Kids");
