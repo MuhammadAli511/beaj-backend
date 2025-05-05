@@ -1,6 +1,6 @@
 import etlRepository from "../repositories/etlRepository.js";
+import { generateCertificatesForEligibleStudents } from '../google_sheet_utils/certificate-utils.js';
 import new_loadDataToGoogleSheets from "../google_sheet_utils/auto_GoogleSheetUtils.js";
-import { or } from "sequelize";
 
 const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
   try {
