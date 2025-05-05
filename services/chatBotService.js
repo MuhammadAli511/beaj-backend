@@ -329,7 +329,6 @@ const webhookService = async (body, res) => {
 
                 if (
                     text_message_types.includes(message.type) &&
-                    (messageContent.toLowerCase() == "yes") &&
                     (currentUserState.dataValues.engagement_type == "City Name" || currentUserState.dataValues.engagement_type == "Confirm City Name")
                 ) {
                     await thankyouMessageSchoolOwner(profileId, userMobileNumber, messageContent);
