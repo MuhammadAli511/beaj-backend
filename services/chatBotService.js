@@ -332,8 +332,9 @@ const webhookService = async (body, res) => {
                     text_message_types.includes(message.type) &&
                     (currentUserState.dataValues.engagement_type == "City Name" || currentUserState.dataValues.engagement_type == "Confirm City Name")
                 ) {
+                    let finalClickTimeMessage = new Date(currentUserMetadata.dataValues.userClickedLink.getTime() + 5 * 60 * 60 * 1000);
                     let notificationMessage = "🔔" + userMobileNumber + " registered as a school admin."
-                        + "\n\nUser Link Click Time: " + currentUserMetadata.dataValues.userClickedLink.toLocaleString()
+                        + "\n\nUser Link Click Time: " + finalClickTimeMessage
                         + "\nCity Name: " + messageContent
                         + "\nSchool Name: " + currentUserMetadata.dataValues.schoolName
                         ;
@@ -367,7 +368,7 @@ const webhookService = async (body, res) => {
                         + "\n\nPersona: "
                         + currentUserState.dataValues.persona
                         + "\nUser Link Click Time: "
-                        + finalClickTimeMessage.toLocaleString()
+                        + finalClickTimeMessage
                         ;
                     await thankyouMessageParent(profileId, userMobileNumber);
                     await sendMessage("+923170729640", notificationMessage); // Ali
