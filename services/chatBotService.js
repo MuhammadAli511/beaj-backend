@@ -183,6 +183,7 @@ const webhookService = async (body, res) => {
                 }
 
                 let currentUserState = await waUserProgressRepository.getByProfileId(profileId);
+                let currentUserMetadata = await waUsersMetadataRepository.getByProfileId(profileId);
 
                 if (currentUserState) {
                     const messageAuth = await checkUserMessageAndAcceptableMessages(profileId, userMobileNumber, currentUserState, messageType, messageContent);
@@ -331,7 +332,17 @@ const webhookService = async (body, res) => {
                     text_message_types.includes(message.type) &&
                     (currentUserState.dataValues.engagement_type == "City Name" || currentUserState.dataValues.engagement_type == "Confirm City Name")
                 ) {
+                    let notificationMessage = "🔔" + userMobileNumber + " registered as a school admin."
+                        + "\n\nUser Link Click Time: " + currentUserMetadata.dataValues.userClickedLink.toLocaleString()
+                        + "\nCity Name: " + messageContent
+                        + "\nSchool Name: " + currentUserMetadata.dataValues.schoolName
+                        ;
                     await thankyouMessageSchoolOwner(profileId, userMobileNumber, messageContent);
+                    await sendMessage("+923170729640", notificationMessage); // Ali
+                    await sendMessage("+923008400080", notificationMessage); // Semal
+                    await sendMessage("+12028123335", notificationMessage); // Zainab
+                    await sendMessage("+923331432681", notificationMessage); // Amna
+                    await sendMessage("+923196609478", notificationMessage); // Midhat
                     return;
                 }
 
@@ -349,7 +360,21 @@ const webhookService = async (body, res) => {
                     (messageContent.toLowerCase() == "ready to register" || messageContent.toLowerCase() == "ready for payment") &&
                     (currentUserState.dataValues.engagement_type == "Ready to Pay")
                 ) {
+                    let finalClickTimeMessage = new Date(currentUserMetadata.dataValues.userClickedLink.getTime() + 5 * 60 * 60 * 1000);
+                    let notificationMessage = "🔔 "
+                        + userMobileNumber
+                        + " clicked on 'Ready for Payment'."
+                        + "\n\nPersona: "
+                        + currentUserState.dataValues.persona
+                        + "\nUser Link Click Time: "
+                        + finalClickTimeMessage.toLocaleString()
+                        ;
                     await thankyouMessageParent(profileId, userMobileNumber);
+                    await sendMessage("+923170729640", notificationMessage); // Ali
+                    await sendMessage("+923008400080", notificationMessage); // Semal
+                    await sendMessage("+12028123335", notificationMessage); // Zainab
+                    await sendMessage("+923331432681", notificationMessage); // Amna
+                    await sendMessage("+923196609478", notificationMessage); // Midhat
                     return;
                 }
 
