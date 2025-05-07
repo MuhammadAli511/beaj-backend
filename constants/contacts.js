@@ -24,4 +24,30 @@ const najiaContactData = {
     }]
 }
 
-export { najiaContactData };
+const amnaContactData = {
+    name: {
+        formatted_name: "Beaj Representative",
+        first_name: "Beaj",
+        last_name: "Representative",
+    },
+    phones: [{
+        phone: "+923365905444",
+        type: "WORK",
+        wa_id: "923365905444"
+    }],
+    emails: [{
+        email: "info@beaj.org",
+        type: "WORK"
+    }],
+    org: {
+        company: "Beaj Education",
+        department: "Outreach Team",
+        title: "Outreach Manager"
+    },
+    urls: [{
+        url: "https://beaj.org",
+        type: "WORK"
+    }]
+}
+
+export { najiaContactData, amnaContactData };

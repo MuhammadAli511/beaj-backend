@@ -114,30 +114,47 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             await sendMediaMessage(userMobileNumber, final_map_image, "image");
             await createActivityLog(userMobileNumber, "image", "outbound", final_map_image, null);
             await sleep(2000);
-
-
-            // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start questions", "go to registration", "talk to beaj rep"]);
-            let buttonsArray = [{ id: 'start_questions', title: 'Start Questions' }, { id: 'go_to_registration', title: 'Go to Registration' }, { id: 'talk_to_beaj_rep', title: 'Talk to Beaj Rep' }];
-
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start questions", "go to registration", "get help"]);
+            let buttonsArray = [{ id: 'start_questions', title: 'Start Questions' }, { id: 'go_to_registration', title: 'Go to Registration' }, { id: 'get_help', title: 'Get Help' }];
             // Reply Buttons
             if (message == null) {
                 await sendButtonMessage(userMobileNumber, 'Start Questions!', buttonsArray);
-                await createActivityLog(userMobileNumber, "template", "outbound", "Start Questions or Go to Registration or Talk to Beaj Rep", null);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Start Questions or Go to Registration or Get Help", null);
             } else {
                 await sendButtonMessage(userMobileNumber, message, buttonsArray);
                 await createActivityLog(userMobileNumber, "template", "outbound", message, null);
             }
+            return;
+        }
 
+        if (startingLesson.dataValues.activityAlias == "✨ *Fun Fact!*" || startingLesson.dataValues.activityAlias == "🧪 *Science Fun!*") {
+            let funFactMessage = "To listen to Zara and Faiz’s story, click on ‘Next Activity’.\n\nزارا اور فےز کی کہانی جاننے کے لیئے، ‘Next Activity’ پہ کلک کریں۔";
+            let scienceFunMessage = "To do a fun science question, click on ‘Next Activity’.\n\nسایئنس کا ایک مزیدار سوال کرنے کے لیئے ‘Next Activity’ پہ کلک کریں۔";
+            let finalTextMessage = "";
+            if (startingLesson.dataValues.activityAlias == "✨ *Fun Fact!*") {
+                finalTextMessage = funFactMessage;
+            } else if (startingLesson.dataValues.activityAlias == "🧪 *Science Fun!*") {
+                finalTextMessage = scienceFunMessage;
+            }
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "go to registration", "get help"]);
+            let buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'go_to_registration', title: 'Go to Registration' }, { id: 'get_help', title: 'Get Help' }];
+            // Reply Buttons
+            if (message == null) {
+                await sendButtonMessage(userMobileNumber, finalTextMessage, buttonsArray);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Next Activity or Go to Registration or Get Help", null);
+            } else {
+                await sendButtonMessage(userMobileNumber, message, buttonsArray);
+                await createActivityLog(userMobileNumber, "template", "outbound", message, null);
+            }
             return;
         }
 
         if (checkRegistrationComplete == false && lessonLast == true) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial", "register now", "talk to beaj rep"]);
-            let buttonsArray = [{ id: 'register_now', title: 'Register Now' }, { id: 'talk_to_beaj_rep', title: 'Talk to Beaj Rep' }, { id: 'get_another_trial', title: 'Get Another Trial' }];
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial", "register now"]);
+            let buttonsArray = [{ id: 'register_now', title: 'Register Now' }, { id: 'get_another_trial', title: 'Get Another Trial' }];
 
-            let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔\n\nAre you ready to continue? Click on Register Now 👇\nکیا آپ آگے بڑھنے کے لیے تیار ہیں؟ "Register Now" بٹن پر کلک کریں۔`;
+            let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔\n\nIf you are interested in registration, click on Register Now 👇\nاگر آپ ریجسٹریشن میں دلچسپی رکھتے ہیں، تو ‘Register Now’ پر کلک کریں۔`;
             if (message == null) {
                 await sendButtonMessage(userMobileNumber, trialCompleteMessage, buttonsArray, 0, trialCompleteImage);
                 await createActivityLog(userMobileNumber, "template", "outbound", "get another trial or register", null);
@@ -151,7 +168,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
         } else if (checkRegistrationComplete == true && lessonLast == true) {
             // Update acceptable messages list for the user
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial"]);
-            let buttonsArray = [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'talk_to_beaj_rep', title: 'Talk to Beaj Rep' }];
+            let buttonsArray = [{ id: 'get_another_trial', title: 'Get Another Trial' }];
 
             let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔\n\n`;
             if (message == null) {
@@ -166,14 +183,14 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             return;
         } else if (checkRegistrationComplete == false && lessonLast == false) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "go to registration", "talk to beaj rep"]);
-            let buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'go_to_registration', title: 'Go to Registration' }, { id: 'talk_to_beaj_rep', title: 'Talk to Beaj Rep' }];
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "go to registration", "get help"]);
+            let buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'go_to_registration', title: 'Go to Registration' }, { id: 'get_help', title: 'Get Help' }];
 
 
             // Reply Buttons
             if (message == null) {
                 await sendButtonMessage(userMobileNumber, 'Challenge Complete! 💪🏽', buttonsArray);
-                await createActivityLog(userMobileNumber, "template", "outbound", "Next Activity or Go to Registration or Talk to Beaj Rep", null);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Next Activity or Go to Registration or Get Help", null);
             } else {
                 await sendButtonMessage(userMobileNumber, message, buttonsArray);
                 await createActivityLog(userMobileNumber, "template", "outbound", message, null);
@@ -182,13 +199,13 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             return;
         } else if (checkRegistrationComplete == true && lessonLast == false) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "talk to beaj rep"]);
-            let buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'talk_to_beaj_rep', title: 'Talk to Beaj Rep' }];
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "get help"]);
+            let buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'get_help', title: 'Get Help' }];
 
             // Reply Buttons
             if (message == null) {
                 await sendButtonMessage(userMobileNumber, 'Challenge Complete! 💪🏽', buttonsArray);
-                await createActivityLog(userMobileNumber, "template", "outbound", "Next Activity or Talk to Beaj Rep", null);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Next Activity or Get Help", null);
             } else {
                 await sendButtonMessage(userMobileNumber, message, buttonsArray);
                 await createActivityLog(userMobileNumber, "template", "outbound", message, null);
@@ -291,6 +308,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             } else {
                 await sendButtonMessage(userMobileNumber, 'Are you ready to start your next lesson?', [{ id: 'start_next_lesson', title: 'Start Next Lesson' }]);
                 await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Lesson", null);
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next lesson"]);
             }
         } else {
             // Feedback Message

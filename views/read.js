@@ -111,7 +111,7 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
                 await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
                 // Send lesson message
-                let lessonMessage = startingLesson.dataValues.activityAlias + "\n\n" + "🧏 Listen first, then practice reading.";
+                let lessonMessage = startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n');
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
@@ -123,7 +123,7 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
                 const lessonText = startingLesson.dataValues.text;
                 let instructionMessage = "Send us a voice message of you reading this passage:\n\n" + lessonText;
                 if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
-                    instructionMessage += "\n\nOR\n\n" + "Type “next” to skip challenge";
+                    instructionMessage += "\n\nOR\n\n" + "Type “next” to skip";
                 }
                 await sendMediaMessage(userMobileNumber, videoURL, 'video', instructionMessage);
                 await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);

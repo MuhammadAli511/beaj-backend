@@ -24,6 +24,7 @@ import {
     getCityName,
     confirmCityName,
     parentOrStudentSelection,
+    readyToPay,
     thankyouMessageParent,
 } from "../utils/trialflowUtils.js";
 import { sendMessage, sendButtonMessage, retrieveMediaURL, sendMediaMessage } from "../utils/whatsappUtils.js";
@@ -167,8 +168,8 @@ const webhookService = async (body, res) => {
                     return;
                 }
 
-                if (text_message_types.includes(message.type) && messageContent.toLowerCase() == "talk to beaj rep") {
-                    await talkToBeajRep(userMobileNumber);
+                if (text_message_types.includes(message.type) && (messageContent.toLowerCase() == "talk to beaj rep" || messageContent.toLowerCase() == "chat with beaj rep" || messageContent.toLowerCase() == "get help")) {
+                    await talkToBeajRep(profileId, userMobileNumber);
                     return;
                 }
 
@@ -184,6 +185,7 @@ const webhookService = async (body, res) => {
                 }
 
                 let currentUserState = await waUserProgressRepository.getByProfileId(profileId);
+                let currentUserMetadata = await waUsersMetadataRepository.getByProfileId(profileId);
 
                 if (currentUserState) {
                     const messageAuth = await checkUserMessageAndAcceptableMessages(profileId, userMobileNumber, currentUserState, messageType, messageContent);
@@ -192,12 +194,11 @@ const webhookService = async (body, res) => {
                     }
                 }
 
-                // Talk to Beaj Rep
                 if (
                     text_message_types.includes(message.type) &&
-                    (messageContent.toLowerCase() == "talk to beaj rep")
+                    (messageContent.toLowerCase() == "talk to beaj rep" || messageContent.toLowerCase() == "chat with beaj rep" || messageContent.toLowerCase() == "get help")
                 ) {
-                    await talkToBeajRep(userMobileNumber);
+                    await talkToBeajRep(profileId, userMobileNumber);
                     return;
                 }
 
@@ -323,18 +324,20 @@ const webhookService = async (body, res) => {
 
                 if (
                     text_message_types.includes(message.type) &&
-                    (currentUserState.dataValues.engagement_type == "City Name")
+                    (currentUserState.dataValues.engagement_type == "City Name" || currentUserState.dataValues.engagement_type == "Confirm City Name")
                 ) {
-                    await confirmCityName(profileId, userMobileNumber, messageContent);
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    (messageContent.toLowerCase() == "yes") &&
-                    (currentUserState.dataValues.engagement_type == "Confirm City Name")
-                ) {
-                    await thankyouMessageSchoolOwner(profileId, userMobileNumber);
+                    let finalClickTimeMessage = new Date(currentUserMetadata.dataValues.userClickedLink.getTime() + 5 * 60 * 60 * 1000);
+                    let notificationMessage = "🔔" + userMobileNumber + " registered as a school admin."
+                        + "\n\nUser Link Click Time: " + finalClickTimeMessage
+                        + "\nCity Name: " + messageContent
+                        + "\nSchool Name: " + currentUserMetadata.dataValues.schoolName
+                        ;
+                    await thankyouMessageSchoolOwner(profileId, userMobileNumber, messageContent);
+                    await sendMessage("+923170729640", notificationMessage); // Ali
+                    await sendMessage("+923008400080", notificationMessage); // Semal
+                    await sendMessage("+12028123335", notificationMessage); // Zainab
+                    await sendMessage("+923331432681", notificationMessage); // Amna
+                    await sendMessage("+923196609478", notificationMessage); // Midhat
                     return;
                 }
 
@@ -352,7 +355,21 @@ const webhookService = async (body, res) => {
                     (messageContent.toLowerCase() == "ready to register" || messageContent.toLowerCase() == "ready for payment") &&
                     (currentUserState.dataValues.engagement_type == "Ready to Pay")
                 ) {
+                    let finalClickTimeMessage = new Date(currentUserMetadata.dataValues.userClickedLink.getTime() + 5 * 60 * 60 * 1000);
+                    let notificationMessage = "🔔 "
+                        + userMobileNumber
+                        + " clicked on 'Ready for Payment'."
+                        + "\n\nPersona: "
+                        + currentUserState.dataValues.persona
+                        + "\nUser Link Click Time: "
+                        + finalClickTimeMessage
+                        ;
                     await thankyouMessageParent(profileId, userMobileNumber);
+                    await sendMessage("+923170729640", notificationMessage); // Ali
+                    await sendMessage("+923008400080", notificationMessage); // Semal
+                    await sendMessage("+12028123335", notificationMessage); // Zainab
+                    await sendMessage("+923331432681", notificationMessage); // Amna
+                    await sendMessage("+923196609478", notificationMessage); // Midhat
                     return;
                 }
 
@@ -493,6 +510,14 @@ const webhookService = async (body, res) => {
                                 currentUserState.dataValues.currentDay,
                                 currentUserState.dataValues.currentLesson_sequence
                             );
+
+                            let theStartingLesson = await lessonRepository.getByLessonId(currentUserState.dataValues.currentLessonId);
+
+                            // If next and nextLesson not available call ending message
+                            if (!nextLesson) {
+                                await endingMessage(profileId, userMobileNumber, currentUserState, theStartingLesson);
+                                return;
+                            }
 
                             // Get acceptable messages for the next question/lesson
                             const acceptableMessagesList = await getAcceptableMessagesList(nextLesson.dataValues.activity);

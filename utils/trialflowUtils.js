@@ -3,7 +3,7 @@ import waUserProgressRepository from "../repositories/waUserProgressRepository.j
 import courseRepository from "../repositories/courseRepository.js";
 import { sendButtonMessage, sendMessage, sendMediaMessage, sendContactCardMessage } from "./whatsappUtils.js";
 import { createActivityLog } from "./createActivityLogUtils.js";
-import { najiaContactData } from "../constants/contacts.js";
+import { najiaContactData, amnaContactData } from "../constants/contacts.js";
 import { sleep } from "./utils.js";
 
 
@@ -28,8 +28,8 @@ const greetingMessage = async (profileId, userMobileNumber, persona) => {
         // await sleep(1000);
         await sendMessage(userMobileNumber, greetingMessageText);
         await createActivityLog(userMobileNumber, "text", "outbound", greetingMessageText, null);
-        let videoCaption = "Why should you choose Beaj Education? Here is a message from our founder.\nآپ کو بیج ایجوکیشن کیوں چُننا چاہیے؟ — بیج ایجوکیشن کی سربراہ کا پیغام۔";
-        await sendButtonMessage(userMobileNumber, videoCaption, [{ id: 'start_free_trial', title: 'Start Free Trial' }, { id: 'go_to_registration', title: 'Go to Registration' }], 0, null, "https://beajbloblive.blob.core.windows.net/beajdocuments/why_beaj.mp4");
+        let videoCaption = "Why should you choose Beaj Education? Here is a message from our founder.\n\nآپ کو بیج ایجوکیشن کیوں چُننا چاہیے؟ — بیج ایجوکیشن کی سربراہ کا پیغام۔";
+        await sendButtonMessage(userMobileNumber, videoCaption, [{ id: 'start_free_trial', title: 'Start Free Trial' }, { id: 'go_to_registration', title: 'Go to Registration' }], 0, null, "https://beajbloblive.blob.core.windows.net/beajdocuments/why_beaj3.mp4");
         await createActivityLog(userMobileNumber, "template", "outbound", videoCaption, null);
         await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start free trial", "go to registration"]);
         await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Greeting Message - Kids");
@@ -82,7 +82,7 @@ const kidsConfirmClass = async (profileId, userMobileNumber, messageContent) => 
 
 const kidsChooseClassLoop = async (profileId, userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Choose Class");
-    const chooseClassMessage = "👇Choose your class:\nآپ کس کلاس میں ہیں؟";
+    const chooseClassMessage = "👇Choose your class:\nکلاس منتخب کریں:";
     await sendButtonMessage(userMobileNumber, chooseClassMessage, [{ id: 'kids_summer_camp_class_1_or_2', title: 'Class 1 or 2' }, { id: 'kids_summer_camp_class_5_or_6', title: 'Class 3 to 6' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", chooseClassMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["class 1 or 2", "class 3 to 6"]);
@@ -217,12 +217,13 @@ const getUserProfile = async (profileId, userMobileNumber) => {
     return;
 };
 
-const thankyouMessageSchoolOwner = async (profileId, userMobileNumber) => {
+const thankyouMessageSchoolOwner = async (profileId, userMobileNumber, messageContent) => {
+    await waUsersMetadataRepository.updateCityName(profileId, userMobileNumber, messageContent);
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Thankyou Message");
-    await waUserProgressRepository.update(profileId, userMobileNumber, null, null, null, null, null, null, null, null, ["get another trial", "talk to beaj rep"]);
+    await waUserProgressRepository.update(profileId, userMobileNumber, null, null, null, null, null, null, null, null, ["get another trial", "chat with beaj rep"]);
     const schoolRegistrationImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/school_registration.jpg"
-    let thankyouMessage = "A Beaj team member will call you within 24 hours to discuss a partnership with your school!\n\nWe look forward to speaking with you soon!";
-    await sendButtonMessage(userMobileNumber, thankyouMessage, [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'talk_to_beaj_rep', title: 'Talk to Beaj Rep' }], 0, schoolRegistrationImage);
+    let thankyouMessage = "A Beaj team member will call you within 24 hours to discuss a partnership with your school!\nWe look forward to speaking with you soon!\nاگلے 24 گھنٹے میں بیج ٹیم کا نمائندہ آپ سے اسکول پارٹنرشپ کے لئے رابطہ کرے گا۔ ہم آپ سے بات کرنے کے منتظر ہیں! \n\nIn the meantime, if you have any questions, please click on 'Chat with Beaj Rep' to talk to our team.\nاس دوران اگر آپ کے کوئ سوال ہیں، تو ‘Chat with Beaj Rep’ پر کلک کیجیئے اور ہم سے رابطہ کریں۔";
+    await sendButtonMessage(userMobileNumber, thankyouMessage, [{ id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }, { id: 'get_another_trial', title: 'Get Another Trial' }], 0, schoolRegistrationImage);
     await createActivityLog(userMobileNumber, "image", "outbound", schoolRegistrationImage, null);
     await waUsersMetadataRepository.update(profileId, userMobileNumber, {
         userRegistrationComplete: new Date()
@@ -233,10 +234,10 @@ const thankyouMessageSchoolOwner = async (profileId, userMobileNumber) => {
 
 const readyToPay = async (profileId, userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Ready to Pay");
-    let readyToPayMessage = "If you are ready to pay the fee, a Beaj team member will call you within 24 hours to process payment and confirm your registration.\n\nاگر آپ فیس ادا کرنے کے لیے تیار ہیں، تو بیج ٹیم کا نمائندہ آپ کو 24 گھنٹوں کے اندر فون کرے گا اور آپ کی رجسٹریشن مکمل کرے گا۔ پیمنٹ نمائندے سے بات کرنے کے بعد ہوگی۔";
-    await sendButtonMessage(userMobileNumber, readyToPayMessage, [{ id: 'ready_for_payment', title: 'Ready for Payment' }, { id: 'talk_to_beaj_rep', title: 'Talk to Beaj Rep' }, { id: 'get_another_trial', title: 'Get Another Trial' }]);
+    let readyToPayMessage = "If you are ready for fee payment, click on 'Ready for payment'\nOr if you have any questions, click on 'Chat with Beaj Rep'\n\nاگر آپ فیس ادا کرنے کے لیے تیار ہیں،  تو 'Ready for payment' پر کلک کریں۔\nیاں اگر آپ کوئ سوال پوچھنا چاہتے ہیں، تو 'Chat with Beaj Rep' پر کلک کریں۔";
+    await sendButtonMessage(userMobileNumber, readyToPayMessage, [{ id: 'ready_for_payment', title: 'Ready for Payment' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }, { id: 'get_another_trial', title: 'Get Another Trial' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", readyToPayMessage, null);
-    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["ready for payment", "talk to beaj rep", "get another trial"]);
+    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["ready for payment", "chat with beaj rep", "get another trial"]);
     return;
 };
 
@@ -259,10 +260,10 @@ const parentOrStudentSelection = async (profileId, userMobileNumber) => {
 
 const thankyouMessageParent = async (profileId, userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Thankyou Message");
-    await waUserProgressRepository.update(profileId, userMobileNumber, null, null, null, null, null, null, null, null, ["get another trial", "talk to beaj rep"]);
+    await waUserProgressRepository.update(profileId, userMobileNumber, null, null, null, null, null, null, null, null, ["get another trial"]);
     const parentThankyouImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/parents_registration.jpg"
-    let thankyouMessage = `Thank You! A Beaj team member will call you within 24 hours to confirm your registration! We are excited to speak to you soon!\n\nبیج کا نمائندہ آپ سے اگلے 24 گھنٹوں میں رابطہ کرے گا۔ ہم آپ سے بات کرنے کے منتظر ہیں۔`;
-    await sendButtonMessage(userMobileNumber, thankyouMessage, [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'talk_to_beaj_rep', title: 'Talk to Beaj Rep' }], 0, parentThankyouImage);
+    let thankyouMessage = `Thank You!\n\nA Beaj Rep will call you within the next 24 hours to confirm your registration.\nWe are excited to speak to you soon!\nشکریہ!\n\nبیج ٹیم کا نمائندہ آپ سے 24 گھنٹوں کے اندر رابطہ کر کے آپ کی رجسٹریشن مکمل کرے گا.\nہم آپ سے بات کرنے کے منتظر ہی`;
+    await sendButtonMessage(userMobileNumber, thankyouMessage, [{ id: 'get_another_trial', title: 'Get Another Trial' }], 0, parentThankyouImage);
     await createActivityLog(userMobileNumber, "image", "outbound", parentThankyouImage, null);
     await waUsersMetadataRepository.update(profileId, userMobileNumber, {
         userRegistrationComplete: new Date()
@@ -270,8 +271,13 @@ const thankyouMessageParent = async (profileId, userMobileNumber) => {
     return;
 };
 
-const talkToBeajRep = async (userMobileNumber) => {
-    await sendContactCardMessage(userMobileNumber, najiaContactData);
+const talkToBeajRep = async (profileId, userMobileNumber) => {
+    const user = await waUserProgressRepository.getByProfileId(profileId);
+    if (user.dataValues.persona == "school admin") {
+        await sendContactCardMessage(userMobileNumber, najiaContactData);
+    } else {
+        await sendContactCardMessage(userMobileNumber, amnaContactData);
+    }
     await sleep(2000);
     let contactCardMessage = `👆Click on the Message button to chat with a Beaj Representative.\nبیج کے نمائندے سے بات کرنے کے لیئے "Message" بٹن پر کلک کریں۔`;
     await sendMessage(userMobileNumber, contactCardMessage);

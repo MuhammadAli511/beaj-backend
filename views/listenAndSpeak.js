@@ -224,7 +224,7 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
 
                 let lessonText = startingLesson.dataValues.text;
                 lessonText = lessonText.replace(/\\n/g, '\n');
-                let lessonMessage = startingLesson.dataValues.activityAlias + "\n\n" + lessonText;
+                let lessonMessage = startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n') + "\n\n" + lessonText;
 
                 // Text message
                 await sendMessage(userMobileNumber, lessonMessage);

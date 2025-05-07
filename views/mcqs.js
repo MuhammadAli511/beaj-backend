@@ -263,7 +263,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
                 // Activity Alias
-                const activityAlias = startingLesson.dataValues.activityAlias;
+                const activityAlias = startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n');
                 let message = activityAlias + "\n\n" + startingLesson.dataValues.text;
 
                 await sendMessage(userMobileNumber, message);
