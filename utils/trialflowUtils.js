@@ -252,9 +252,9 @@ const parentOrStudentSelection = async (profileId, userMobileNumber) => {
     await waUserProgressRepository.updatePersona(profileId, userMobileNumber, "parent or student");
     // TODO: Instruction to Register
     // TODO: Voice Note
-    await sendButtonMessage(userMobileNumber, "Please select an option:", [{ id: 'enroll_on_whatsapp', title: 'Enroll on Whatsapp' }, { id: 'talk_to_beaj_rep', title: 'Talk to Beaj Rep' }]);
+    await sendButtonMessage(userMobileNumber, "Please select an option:", [{ id: 'enroll_on_whatsapp', title: 'Enroll on Whatsapp' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", "Please select an option:", null);
-    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["enroll on whatsapp", "talk to beaj rep"]);
+    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["enroll on whatsapp", "chat with beaj rep"]);
     return;
 };
 
@@ -292,6 +292,7 @@ const studentNameInput = async (profileId, userMobileNumber) => {
     const studentNameInputMessage = "Please type student's *Full Name*";
     await sendMessage(userMobileNumber, studentNameInputMessage);
     await createActivityLog(userMobileNumber, "text", "outbound", studentNameInputMessage, null);
+    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["text"]);
     return;
 };
 
@@ -354,6 +355,7 @@ const singleStudentRegistationComplate = async (profileId, userMobileNumber) => 
     const singleStudentRegistrationCompleteMessage = name + "'s registration is now complete!\n\nDo you want to register another student?";
     await sendButtonMessage(userMobileNumber, singleStudentRegistrationCompleteMessage, [{ id: 'yes', title: 'Yes' }, { id: 'no', title: 'No' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", singleStudentRegistrationCompleteMessage, null);
+    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no"]);
     return;
 };
 
@@ -366,8 +368,9 @@ const totalRegistrationsSummary = async (profileId, userMobileNumber) => {
         `${index + 1}) ${reg.name} - ${reg.classLevel}`
     ).join('\n');
     const totalRegistrationsSummaryMessage = "Total number of registrations for Kids Summer Camp: " + totalRegistrations + "\n\n" + registrationsList;
-    await sendButtonMessage(userMobileNumber, totalRegistrationsSummaryMessage, [{ id: 'continue_to_payment', title: 'Continue to Payment' }, { id: 'talk_to_beaj_rep', title: 'Talk to Beaj Rep' }]);
+    await sendButtonMessage(userMobileNumber, totalRegistrationsSummaryMessage, [{ id: 'continue_to_payment', title: 'Continue to Payment' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", totalRegistrationsSummaryMessage, null);
+    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["continue to payment", "chat with beaj rep"]);
     return;
 };
 
