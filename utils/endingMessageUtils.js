@@ -308,6 +308,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             } else {
                 await sendButtonMessage(userMobileNumber, 'Are you ready to start your next lesson?', [{ id: 'start_next_lesson', title: 'Start Next Lesson' }]);
                 await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Lesson", null);
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next lesson"]);
             }
         } else {
             // Feedback Message
