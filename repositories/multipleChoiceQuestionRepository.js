@@ -26,6 +26,15 @@ const getById = async (id) => {
     return multipleChoiceQuestion;
 };
 
+const getByIds = async (ids) => {
+    const multipleChoiceQuestions = await MultipleChoiceQuestion.findAll({
+        where: {
+            Id: { [Sequelize.Op.in]: ids }
+        }
+    });
+    return multipleChoiceQuestions;
+}
+
 const update = async (id, file, image, video, questionType, questionText, questionNumber, lessonId, optionsType) => {
     return await MultipleChoiceQuestion.update({
         QuestionAudioUrl: file,
@@ -136,5 +145,6 @@ export default {
     getByLessonIds,
     getByLessonId,
     deleteByLessonId,
-    getTotalQuestions
+    getTotalQuestions,
+    getByIds
 };

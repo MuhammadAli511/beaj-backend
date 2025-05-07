@@ -98,10 +98,97 @@ const getWaQuestionResponsesByActivityTypeService = async (activityType) => {
         };
     });
 
+    if (activityType == 'feedbackMcqs') {
+        const feedbackMcqsStatistics = await getFeedbackMcqsStatisticsService();
+        return {
+            result: result,
+            feedbackMcqsStatistics: feedbackMcqsStatistics
+        };
+    } else {
+        return {
+            result: result
+        };
+    }
+};
+
+const getFeedbackMcqsStatisticsService = async () => {
+    // Get all feedback MCQs responses
+    const feedbackResponses = await waQuestionResponsesRepository.getByActivityType('feedbackMcqs');
+
+    if (!feedbackResponses || feedbackResponses.length === 0) {
+        return {};
+    }
+
+    // Get unique lesson IDs and question IDs
+    const lessonIds = [...new Set(feedbackResponses.map(response => response.lessonId))];
+    const questionIds = [...new Set(feedbackResponses.map(response => response.questionId))];
+
+    // Get questions and answer options
+    const questions = await multipleChoiceQuestionRepository.getByIds(questionIds);
+
+    // Initialize result object
+    const result = {};
+
+    // Get all answer options for each question
+    const questionsWithAnswers = {};
+    for (const question of questions) {
+        const answers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(question.Id);
+        questionsWithAnswers[question.Id] = {
+            question: question,
+            answers: answers
+        };
+    }
+
+    // Group responses by question
+    for (const question of questions) {
+        const questionText = question.QuestionText;
+        const questionResponses = feedbackResponses.filter(response => response.questionId === question.Id);
+
+        const answerCounts = {};
+
+        // Count each answer option
+        for (const response of questionResponses) {
+            if (!response.submittedAnswerText || response.submittedAnswerText.length === 0) {
+                continue;
+            }
+
+            const userOption = response.submittedAnswerText[0].toLowerCase();
+            let selectedOption = null;
+
+            // Extract the letter from "option a", "option b", etc.
+            if (userOption.includes('option')) {
+                selectedOption = userOption.split(' ')[1];
+            } else {
+                selectedOption = userOption;
+            }
+
+            // Convert to index (a->0, b->1, c->2)
+            if (selectedOption) {
+                const index = selectedOption.charCodeAt(0) - 'a'.charCodeAt(0);
+                const answers = questionsWithAnswers[question.Id].answers;
+
+                if (answers && index >= 0 && index < answers.length) {
+                    const answerText = answers[index].dataValues.AnswerText;
+
+                    // Initialize or increment count
+                    if (!answerCounts[answerText]) {
+                        answerCounts[answerText] = 1;
+                    } else {
+                        answerCounts[answerText]++;
+                    }
+                }
+            }
+        }
+
+        // Add to result
+        result[questionText] = answerCounts;
+    }
+
     return result;
 };
 
 export default {
     getAllWaQuestionResponsesService,
-    getWaQuestionResponsesByActivityTypeService
+    getWaQuestionResponsesByActivityTypeService,
+    getFeedbackMcqsStatisticsService
 };
