@@ -3,6 +3,7 @@ import lessonRepository from "../repositories/lessonRepository.js";
 import courseRepository from "../repositories/courseRepository.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import waUsersMetadataRepository from "../repositories/waUsersMetadataRepository.js";
+import multipleChoiceQuestionRepository from "../repositories/multipleChoiceQuestionRepository.js";
 
 const getAllWaQuestionResponsesService = async () => {
     return await waQuestionResponsesRepository.getAll();
@@ -16,20 +17,29 @@ const getWaQuestionResponsesByActivityTypeService = async (activityType) => {
     // Course Details
     const courseIds = lessons.map(lesson => lesson.courseId);
     const courses = await courseRepository.getByCourseIds(courseIds);
-    // Speak Activity Question Details
-    const speakActivityLessonIds = lessons.map(lesson => lesson.LessonId);
-    const speakActivityQuestions = await speakActivityQuestionRepository.getByLessonIds(speakActivityLessonIds);
+    // Multiple Choice Question Details
+    let multipleChoiceQuestions = null;
+    let speakActivityQuestions = null;
+    if (activityType == 'mcqs' || activityType == 'feedbackMcqs') {
+        const multipleChoiceLessonIds = lessons.map(lesson => lesson.LessonId);
+        multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonIds(multipleChoiceLessonIds);
+    } else {
+        // Speak Activity Question Details
+        const speakActivityLessonIds = lessons.map(lesson => lesson.LessonId);
+        speakActivityQuestions = await speakActivityQuestionRepository.getByLessonIds(speakActivityLessonIds);
+    }
     // User Details
-    const profileIds = waQuestionResponses.map(response => response.profile_id);
-    const users = await waUsersMetadataRepository.getByProfileIds(profileIds);
-
     const result = waQuestionResponses.map(response => {
         const lesson = lessons.find(lesson => lesson.LessonId == response.lessonId);
         const course = courses.find(course => course.CourseId == lesson?.courseId);
-        const speakActivityQuestion = speakActivityQuestions.find(speakActivityQuestion => speakActivityQuestion.id == response.dataValues.questionId);
-        const user = users.find(user => user.profileId == response.profile_id);
         const responseData = response.dataValues || response;
-
+        let multipleChoiceQuestion = null;
+        let speakActivityQuestion = null;
+        if (multipleChoiceQuestions) {
+            multipleChoiceQuestion = multipleChoiceQuestions.find(multipleChoiceQuestion => multipleChoiceQuestion.Id == response.dataValues.questionId);
+        } else {
+            speakActivityQuestion = speakActivityQuestions.find(speakActivityQuestion => speakActivityQuestion.id == response.dataValues.questionId);
+        }
         return {
             id: responseData.id,
             profileId: responseData.profile_id,
@@ -49,12 +59,11 @@ const getWaQuestionResponsesByActivityTypeService = async (activityType) => {
             courseId: lesson?.courseId,
             courseName: course?.CourseName,
             SequenceNumber: lesson?.SequenceNumber,
-            question: speakActivityQuestion?.question?.match(/<question>(.*?)<\/question>/s)?.[1]?.trim() || speakActivityQuestion?.question,
+            question: speakActivityQuestion?.question?.match(/<question>(.*?)<\/question>/s)?.[1]?.trim() || speakActivityQuestion?.question || multipleChoiceQuestion?.QuestionText,
             answer: speakActivityQuestion?.answer,
             mediaFile: activityType == 'conversationalMonologueBot' ? null : speakActivityQuestion?.mediaFile,
             mediaFileSecond: speakActivityQuestion?.mediaFileSecond,
-            questionNumber: speakActivityQuestion?.questionNumber,
-            name: user?.name
+            questionNumber: speakActivityQuestion?.questionNumber || multipleChoiceQuestion?.QuestionNumber,
         };
     });
 
