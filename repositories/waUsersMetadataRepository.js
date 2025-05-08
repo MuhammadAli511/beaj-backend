@@ -196,7 +196,7 @@ const getTotalRegistrationsSummary = async (phoneNumber) => {
     });
 
     const registrations = await WA_UsersMetadata.findAll({
-        attributes: ['name', 'classLevel'],
+        attributes: ['name', 'classLevel', 'profile_id', 'phoneNumber'],
         where: {
             classLevel: {
                 [Sequelize.Op.not]: null

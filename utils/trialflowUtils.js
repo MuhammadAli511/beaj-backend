@@ -1,10 +1,13 @@
 import waUsersMetadataRepository from "../repositories/waUsersMetadataRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
+import waPurchasedCoursesRepository from "../repositories/waPurchasedCoursesRepository.js";
 import courseRepository from "../repositories/courseRepository.js";
 import { sendButtonMessage, sendMessage, sendMediaMessage, sendContactCardMessage } from "./whatsappUtils.js";
 import { createActivityLog } from "./createActivityLogUtils.js";
 import { najiaContactData, amnaContactData } from "../constants/contacts.js";
+import courses from "../constants/courses.js";
 import { sleep } from "./utils.js";
+import waUserActivityLogsRepository from "../repositories/waUserActivityLogsRepository.js";
 
 
 const greetingMessage = async (profileId, userMobileNumber, persona) => {
@@ -352,6 +355,9 @@ const studentSpecificClassConfirmation = async (profileId, userMobileNumber, mes
 };
 
 const singleStudentRegistationComplate = async (profileId, userMobileNumber) => {
+    await waUsersMetadataRepository.update(profileId, userMobileNumber, {
+        userRegistrationComplete: new Date()
+    });
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Single Student Registration Complete");
     const user = await waUsersMetadataRepository.getByProfileId(profileId);
     const name = user.dataValues.name;
@@ -377,7 +383,14 @@ const totalRegistrationsSummary = async (profileId, userMobileNumber) => {
 };
 
 const paymentDetails = async (profileId, userMobileNumber) => {
-    let bankAccountDetails = "To confirm your registration, please make a payment of Rs. ___ to our bank account.\n\nBeaj Bank Account details:\n\nPlease send us a screenshot of your payment or click on Chat with Beaj Rep to talk to us.";
+    const registrationsSummary = await waUsersMetadataRepository.getTotalRegistrationsSummary(userMobileNumber);
+    const totalRegistrations = registrationsSummary.count;
+    let perCoursePrice = await waUserActivityLogsRepository.getStudentCoursePriceByFirstMessage(userMobileNumber);
+    if (totalRegistrations > 1) {
+        perCoursePrice = 1200;
+    }
+    const totalPrice = totalRegistrations * perCoursePrice;
+    let bankAccountDetails = "To confirm your registration, please make a payment of Rs. " + totalPrice + " to our bank account.\n\nBeaj Bank Account details:\n\nPlease send us a screenshot of your payment or click on Chat with Beaj Rep to talk to us.";
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Payment Details");
     await sendButtonMessage(userMobileNumber, bankAccountDetails, [{ id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", bankAccountDetails, null);
@@ -386,6 +399,28 @@ const paymentDetails = async (profileId, userMobileNumber) => {
 };
 
 const paymentComplete = async (profileId, userMobileNumber) => {
+    const registrationsSummary = await waUsersMetadataRepository.getTotalRegistrationsSummary(userMobileNumber);
+    const users = registrationsSummary.registrations;
+    for (const user of users) {
+        const userPhoneNumber = user.dataValues.phoneNumber;
+        const userProfileId = user.dataValues.profile_id;
+        const userPurchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByProfileId(userProfileId);
+        if (userPurchasedCourses.length > 0) {
+            continue;
+        }
+        const userClassLevel = user.dataValues.classLevel;
+        const courseName = courses[userClassLevel];
+        const courseCategoryId = await courseRepository.getCourseCategoryIdByName(courseName);
+        const courseId = await courseRepository.getCourseIdByName(courseName);
+        const courseStartDate = new Date();
+        await waPurchasedCoursesRepository.create({
+            phoneNumber: userPhoneNumber,
+            profile_id: userProfileId,
+            courseCategoryId: courseCategoryId,
+            courseId: courseId,
+            courseStartDate: courseStartDate
+        });
+    }
     let thankYouMessage = "Thank You! A member from the Beaj Team will call you to confirm your registration and add you to the Summer Camp class!\n\nIf you have any additional questions, please click on Chat with Beaj Rep.";
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Payment Complete");
     await sendButtonMessage(userMobileNumber, thankYouMessage, [{ id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }]);
