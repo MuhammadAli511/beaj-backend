@@ -10,22 +10,34 @@ import waActiveSessionRepository from "../repositories/waActiveSessionRepository
 import waProfileRepository from "../repositories/waProfileRepository.js";
 import { removeUser, removeUserTillCourse, startCourseForUser, levelCourseStart, sendCourseLessonToTeacher, sendCourseLessonToKid } from "../utils/chatbotUtils.js";
 import {
-    demoCourseStart,
     greetingMessage,
-    kidsChooseClass,
-    kidsChooseClassLoop,
-    endTrialTeachers,
-    talkToBeajRep,
     greetingMessageLoop,
+    kidsChooseClass,
+    kidsConfirmClass,
+    kidsChooseClassLoop,
+    demoCourseStart,
+    endTrialTeachers,
+    endTrialKids,
     confirmSchoolName,
     thankyouMessageSchoolOwner,
     getUserProfile,
     getSchoolName,
     getCityName,
     confirmCityName,
-    parentOrStudentSelection,
     readyToPay,
     thankyouMessageParent,
+    talkToBeajRep,
+    parentOrStudentSelection,
+    studentGenericClassInput,
+    studentSpecificClassInput,
+    paymentDetails,
+    paymentComplete,
+    totalRegistrationsSummary,
+    singleStudentRegistationComplate,
+    studentNameInput,
+    studentNameConfirmation,
+    studentGenericClassConfirmation,
+    studentSpecificClassConfirmation
 } from "../utils/trialflowUtils.js";
 import { sendMessage, sendButtonMessage, retrieveMediaURL, sendMediaMessage } from "../utils/whatsappUtils.js";
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
@@ -393,17 +405,150 @@ const webhookService = async (body, res) => {
                     (currentUserState.dataValues.engagement_type == "Parent or Student") &&
                     (messageContent.toLowerCase() == "enroll on whatsapp")
                 ) {
-                    await childClassInput(profileId, userMobileNumber);
+                    await studentNameInput(profileId, userMobileNumber);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Student Name Input")
+                ) {
+                    await studentNameConfirmation(profileId, userMobileNumber, messageContent);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Student Name Confirmation") &&
+                    (messageContent.toLowerCase() == "no" || messageContent.toLowerCase() == "no, type again")
+                ) {
+                    await studentNameInput(profileId, userMobileNumber);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Student Name Confirmation") &&
+                    (messageContent.toLowerCase() == "yes")
+                ) {
+                    await studentGenericClassInput(profileId, userMobileNumber);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Student Generic Class Input") &&
+                    (
+                        messageContent.toLowerCase() == "class 1, 2 or 3" ||
+                        messageContent.toLowerCase() == "class 4, 5 or 6" ||
+                        messageContent.toLowerCase() == "class 7 or 8"
+                    )
+                ) {
+                    await studentGenericClassConfirmation(profileId, userMobileNumber, messageContent);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Student Generic Class Confirmation") &&
+                    (messageContent.toLowerCase() == "no" || messageContent.toLowerCase() == "no, choose again")
+                ) {
+                    await studentGenericClassInput(profileId, userMobileNumber);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Student Generic Class Confirmation") &&
+                    (messageContent.toLowerCase() == "yes")
+                ) {
+                    await studentSpecificClassInput(profileId, userMobileNumber, currentUserMetadata.dataValues.classLevel);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Student Specific Class Input") &&
+                    (
+                        messageContent.toLowerCase() == "class 1" ||
+                        messageContent.toLowerCase() == "class 2" ||
+                        messageContent.toLowerCase() == "class 3" ||
+                        messageContent.toLowerCase() == "class 4" ||
+                        messageContent.toLowerCase() == "class 5" ||
+                        messageContent.toLowerCase() == "class 6" ||
+                        messageContent.toLowerCase() == "class 7" ||
+                        messageContent.toLowerCase() == "class 8"
+                    )
+                ) {
+                    await studentSpecificClassConfirmation(profileId, userMobileNumber, messageContent);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Student Specific Class Confirmation") &&
+                    (messageContent.toLowerCase() == "no")
+                ) {
+                    await studentSpecificClassInput(profileId, userMobileNumber, currentUserMetadata.dataValues.classLevel);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Student Specific Class Confirmation") &&
+                    (messageContent.toLowerCase() == "yes")
+                ) {
+                    await singleStudentRegistationComplate(profileId, userMobileNumber);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Single Student Registration Complete") &&
+                    (messageContent.toLowerCase() == "no")
+                ) {
+                    await totalRegistrationsSummary(profileId, userMobileNumber);
                     return;
                 }
 
 
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Single Student Registration Complete") &&
+                    (messageContent.toLowerCase() == "yes")
+                ) {
+                    const profile_type = "student";
+                    let profile = await waProfileRepository.create({ phone_number: userMobileNumber, bot_phone_number_id: botPhoneNumberId, profile_type: profile_type });
+                    profileId = profile.dataValues.profile_id;
+                    await waUsersMetadataRepository.create({ profile_id: profileId, phoneNumber: userMobileNumber, userClickedLink: new Date() });
+                    await waActiveSessionRepository.updateCurrentProfileIdOnPhoneNumber(userMobileNumber, profileId, botPhoneNumberId);
+                    await waUserProgressRepository.create({ profile_id: profileId, phoneNumber: userMobileNumber, engagement_type: "Greeting Message", lastUpdated: new Date() });
+                    await studentNameInput(profileId, userMobileNumber);
+                    return;
+                }
 
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Total Registrations Summary") &&
+                    (messageContent.toLowerCase() == "continue to payment")
+                ) {
+                    await paymentDetails(profileId, userMobileNumber);
+                    return;
+                }
 
-
-
-
-
+                if (
+                    (message.type == "image") &&
+                    (currentUserState.dataValues.engagement_type == "Payment Details")
+                ) {
+                    await paymentComplete(profileId, userMobileNumber);
+                    return;
+                } else if (
+                    (message.type != "image") &&
+                    (currentUserState.dataValues.engagement_type == "Payment Details")
+                ) {
+                    await sendButtonMessage(userMobileNumber, "Please send us a screenshot of your payment or click on Chat with Beaj Rep to talk to us.", [{ id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }]);
+                    return;
+                }
 
 
 

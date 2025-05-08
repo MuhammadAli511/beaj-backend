@@ -10,7 +10,7 @@ WA_ActiveSession.init({
     },
     bot_phone_number_id: {
         type: DataTypes.TEXT,
-        allowNull: false
+        primaryKey: true,
     },
     profile_id: {
         type: DataTypes.INTEGER,

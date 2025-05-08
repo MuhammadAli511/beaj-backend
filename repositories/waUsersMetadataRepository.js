@@ -45,7 +45,7 @@ const deleteByPhoneNumber = async (phoneNumber) => {
     });
 };
 
-const assignTargetGroup = async (phoneNumber,profile_id, targetGroup) => {
+const assignTargetGroup = async (phoneNumber, profile_id, targetGroup) => {
     if (targetGroup == "None") {
         targetGroup = null;
     }
@@ -211,6 +211,13 @@ const getTotalRegistrationsSummary = async (phoneNumber) => {
     };
 };
 
+const updateName = async (profileId, phoneNumber, name) => {
+    return await WA_UsersMetadata.update({
+        name: name
+    }, {
+        where: { profile_id: profileId, phoneNumber: phoneNumber }
+    });
+};
 
 export default {
     create,
@@ -232,5 +239,6 @@ export default {
     updateFreeDemoStarted,
     updateFreeDemoEnded,
     updateClassLevel,
-    getTotalRegistrationsSummary
+    getTotalRegistrationsSummary,
+    updateName
 };

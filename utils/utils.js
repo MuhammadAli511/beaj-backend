@@ -74,6 +74,14 @@ const convertNumberToEmoji = async (number) => {
 const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber, currentUserState, messageType, messageContent) => {
     const acceptableMessagesList = currentUserState.dataValues.acceptableMessages;
     const activityType = currentUserState.dataValues.activityType;
+    if (acceptableMessagesList.includes("image") && messageType != "image") {
+        await sendMessage(userMobileNumber, "Please send an image.");
+        await createActivityLog(userMobileNumber, "text", "outbound", "Please send an image.", null);
+        return false;
+    }
+    if (acceptableMessagesList.includes("image") && messageType == "image") {
+        return true;
+    }
     if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "read" || activityType === "speakingPractice" || activityType === "feedbackAudio") {
         if (acceptableMessagesList.includes("audio") && messageType === "audio") {
             return true;
@@ -83,19 +91,11 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
             return true;
         }
     }
-    if (activityType === "watchAndImage" && messageType === "image") {
-        return true;
-    }
-    if (activityType === "watchAndImage" && messageType != "image") {
-        await sendMessage(userMobileNumber, "Please send an image.");
-        await createActivityLog(userMobileNumber, "text", "outbound", "Image bhejain.", null);
-        return false;
-    }
     if (messageType === "text" && acceptableMessagesList.includes("text")) {
         return true;
     }
-    if (acceptableMessagesList.includes("yes") && acceptableMessagesList.includes("no")) {
-        if (messageType == "text" && (messageContent.toLowerCase() == "yes" || messageContent.toLowerCase() == "no" || messageContent.toLowerCase() == "no, try again")) {
+    if ((messageType == "text" || messageType == "button" || messageType == "interactive") && acceptableMessagesList.includes("no")) {
+        if (messageContent.toLowerCase() == "yes" || messageContent.toLowerCase() == "no" || messageContent.toLowerCase() == "no, try again") {
             return true;
         } else {
             await sendButtonMessage(userMobileNumber, "Please select an option.", [{ id: "yes", title: "Yes" }, { id: "no", title: "No" }]);
@@ -103,10 +103,9 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
             return false;
         }
     }
-    if (messageType == "text" && acceptableMessagesList.includes(messageContent.toLowerCase())) {
+    if ((messageType == "text" || messageType == "button" || messageType == "interactive") && acceptableMessagesList.includes(messageContent.toLowerCase())) {
         return true;
     }
-
     // If list has "option a", "option b", "option c" then "option a", "option b", "option c" type kerain.
     if (acceptableMessagesList.includes("option a") && acceptableMessagesList.includes("option b") && acceptableMessagesList.includes("option c")) {
         await sendButtonMessage(userMobileNumber, "Please select an option.", [{ id: "option a", title: "Option A" }, { id: "option b", title: "Option B" }, { id: "option c", title: "Option C" }]);
@@ -115,7 +114,7 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
     }
     // If list has "a", "b", "c" then "a", "b", "c" type kerain.
     if (acceptableMessagesList.includes("a") && acceptableMessagesList.includes("b") && acceptableMessagesList.includes("c")) {
-        if (messageType == "text" && messageContent.toLowerCase() == "next" && (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")) {
+        if ((messageType == "text" || messageType == "button" || messageType == "interactive") && messageContent.toLowerCase() == "next" && (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")) {
             return true;
         }
         await sendButtonMessage(userMobileNumber, "Please select an option.", [{ id: "a", title: "Option A" }, { id: "b", title: "Option B" }, { id: "c", title: "Option C" }]);
@@ -143,7 +142,6 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
         id: message.replace(/\s+/g, '_'),
         title: message.charAt(0).toUpperCase() + message.slice(1)
     }));
-
     const limitedButtonOptions = buttonOptions.slice(0, 3);
     let logMessage = "Please select an option. (" + buttonOptions.map(option => option.title).join(", ") + ")";
     await sendButtonMessage(userMobileNumber, "Please select an option.", limitedButtonOptions);
