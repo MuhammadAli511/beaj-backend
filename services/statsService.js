@@ -124,12 +124,19 @@ const studentUserJourneyStatsService = async (date) => {
                   ORDER BY timestamp, id
                 ) AS next_course_id
               FROM wa_user_activity_logs
+              -- Add filter here to reduce the dataset early
+              WHERE profile_id IN (
+                SELECT p.profile_id
+                FROM wa_users_metadata m
+                INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
+                WHERE m."userClickedLink" > TIMESTAMP '${filterDate}'
+                AND p.profile_type = 'student'
+              )
             ),
             
             user_trial_counts AS (
               SELECT
                 profile_id,
-                -- count how many times the next_course_id was 113 or 117 after an inbound "start free trial"
                 SUM(CASE WHEN next_course_id = 113 THEN 1 ELSE 0 END) AS started_113,
                 SUM(CASE WHEN next_course_id = 117 THEN 1 ELSE 0 END) AS started_117
               FROM ordered_logs
@@ -139,26 +146,65 @@ const studentUserJourneyStatsService = async (date) => {
               GROUP BY profile_id
             ),
             
+            first_messages AS (
+              SELECT DISTINCT ON (profile_id)
+                profile_id,
+                "messageContent"[1] AS first_message_content
+              FROM wa_user_activity_logs
+              WHERE profile_id IN (
+                SELECT p.profile_id
+                FROM wa_users_metadata m
+                INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
+                WHERE m."userClickedLink" > TIMESTAMP '${filterDate}'
+                AND p.profile_type = 'student'
+              )
+              ORDER BY profile_id, timestamp ASC, id ASC
+            ),
+            
             last_messages AS (
               SELECT DISTINCT ON (profile_id)
                 profile_id,
                 "messageContent" AS last_message_content,
                 timestamp AS last_message_timestamp
               FROM wa_user_activity_logs
+              WHERE profile_id IN (
+                SELECT p.profile_id
+                FROM wa_users_metadata m
+                INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
+                WHERE m."userClickedLink" > TIMESTAMP '${filterDate}'
+                AND p.profile_type = 'student'
+              )
               ORDER BY profile_id, timestamp DESC, id DESC
+            ),
+            
+            filtered_users AS (
+              SELECT 
+                m."phoneNumber",
+                m.name,
+                m.city,
+                m."userClickedLink",
+                m."freeDemoStarted",
+                m."freeDemoEnded",
+                m."userRegistrationComplete",
+                m."schoolName",
+                m."targetGroup", 
+                m.cohort,
+                m."profile_id"
+              FROM wa_users_metadata m
+              WHERE m."userClickedLink" > TIMESTAMP '${filterDate}'
             )
             
             SELECT
-              m."phoneNumber",
-              m.name,
-              m.city,
-              m."userClickedLink",
-              m."freeDemoStarted",
-              m."freeDemoEnded",
-              m."userRegistrationComplete",
-              m."schoolName",
-              m."targetGroup", 
-              m.cohort,
+              fu."phoneNumber",
+              fu.name,
+              fu.city,
+              fu."userClickedLink",
+              fu."freeDemoStarted",
+              fu."freeDemoEnded",
+              fu."userRegistrationComplete",
+              fu."schoolName",
+              fu."targetGroup", 
+              fu.cohort,
               p.profile_id, 
               p.phone_number, 
               p.profile_type, 
@@ -175,32 +221,44 @@ const studentUserJourneyStatsService = async (date) => {
               wup."acceptableMessages",
               COALESCE(utc.started_113, 0) AS level3_trial_starts,
               COALESCE(utc.started_117, 0) AS level1_trial_starts,
+              CASE
+                WHEN fm.first_message_content = 'Start Free Trial now!' THEN 'Community'
+                WHEN fm.first_message_content = 'Start my Free Trial now!' THEN 'Social Media ads'
+                ELSE 'Unknown'
+              END AS source,
               lm.last_message_content,
               lm.last_message_timestamp
-            FROM wa_users_metadata m
+            FROM filtered_users fu
             INNER JOIN wa_profiles p
-              ON m."profile_id" = p.profile_id
+              ON fu."profile_id" = p.profile_id
             INNER JOIN wa_user_progress wup
               ON p.profile_id = wup.profile_id
             LEFT JOIN user_trial_counts utc
-              ON utc.profile_id = m."profile_id"
+              ON utc.profile_id = fu."profile_id"
+            LEFT JOIN first_messages fm
+              ON fm.profile_id = p.profile_id
             LEFT JOIN last_messages lm
               ON lm.profile_id = p.profile_id
-            WHERE
-              m."userClickedLink" > TIMESTAMP '${filterDate}'
-              AND p.profile_type = 'student'
-            ORDER BY m."phoneNumber"
+            WHERE p.profile_type = 'student'
+            ORDER BY fu."phoneNumber"
         `;
 
-        // Query 2: Get statistics for each stage of the journey
+        // Query 2: Get statistics for each stage of the journey - adding filter subquery to improve performance
         const statsQuery = `
+            WITH filtered_users AS (
+                SELECT m."profile_id"
+                FROM wa_users_metadata m
+                INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
+                WHERE m."userClickedLink" > TIMESTAMP '${filterDate}'
+                AND p.profile_type = 'student'
+            )
+            
             SELECT 'Clicked Link' AS stage, COUNT(*) as count
             FROM wa_users_metadata m
             INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
             INNER JOIN wa_user_progress wup ON p."profile_id" = wup."profile_id"
-            WHERE m."userClickedLink" IS NOT NULL
-            AND m."userClickedLink" > TIMESTAMP '${filterDate}'
-            AND p.profile_type = 'student'
+            WHERE m."profile_id" IN (SELECT "profile_id" FROM filtered_users)
+            AND m."userClickedLink" IS NOT NULL
 
             UNION ALL
 
@@ -208,9 +266,8 @@ const studentUserJourneyStatsService = async (date) => {
             FROM wa_users_metadata m
             INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
             INNER JOIN wa_user_progress wup ON p."profile_id" = wup."profile_id"
-            WHERE m."freeDemoStarted" IS NOT NULL
-            AND m."userClickedLink" > TIMESTAMP '${filterDate}'
-            AND p.profile_type = 'student'
+            WHERE m."profile_id" IN (SELECT "profile_id" FROM filtered_users)
+            AND m."freeDemoStarted" IS NOT NULL
 
             UNION ALL
 
@@ -218,9 +275,8 @@ const studentUserJourneyStatsService = async (date) => {
             FROM wa_users_metadata m
             INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
             INNER JOIN wa_user_progress wup ON p."profile_id" = wup."profile_id"
-            WHERE m."freeDemoEnded" IS NOT NULL
-            AND m."userClickedLink" > TIMESTAMP '${filterDate}'
-            AND p.profile_type = 'student'
+            WHERE m."profile_id" IN (SELECT "profile_id" FROM filtered_users)
+            AND m."freeDemoEnded" IS NOT NULL
 
             UNION ALL
 
@@ -228,14 +284,43 @@ const studentUserJourneyStatsService = async (date) => {
             FROM wa_users_metadata m
             INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
             INNER JOIN wa_user_progress wup ON p."profile_id" = wup."profile_id"
-            WHERE m."userRegistrationComplete" IS NOT NULL
-            AND m."userClickedLink" > TIMESTAMP '${filterDate}'
-            AND p.profile_type = 'student'
+            WHERE m."profile_id" IN (SELECT "profile_id" FROM filtered_users)
+            AND m."userRegistrationComplete" IS NOT NULL
         `;
 
-        // Execute both queries
-        const [userData] = await sequelize.query(userDataQuery);
-        const [stageStats] = await sequelize.query(statsQuery);
+        // Graph query - fixed duplicate condition and made date consistent with filterDate
+        const graphQuery = `
+            WITH daily_stats AS (
+                SELECT 
+                    DATE(m."userClickedLink") AS date,
+                    COUNT(DISTINCT m."phoneNumber") AS clicked_count,
+                    COUNT(DISTINCT CASE WHEN m."userRegistrationComplete" IS NOT NULL THEN m."phoneNumber" END) AS registered_count
+                FROM wa_users_metadata m
+                INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
+                WHERE 
+                    m."userClickedLink" >= TIMESTAMP '${filterDate}'
+                    AND p.profile_type = 'student'
+                GROUP BY DATE(m."userClickedLink")
+                ORDER BY date
+            )
+            
+            SELECT 
+                date,
+                clicked_count,
+                registered_count,
+                CASE 
+                    WHEN clicked_count > 0 THEN ROUND((registered_count::numeric / clicked_count) * 100, 2)
+                    ELSE 0
+                END AS conversion_percentage
+            FROM daily_stats;
+        `;
+
+        // Execute all queries concurrently
+        const [userData, stageStats, graphData] = await Promise.all([
+            sequelize.query(userDataQuery),
+            sequelize.query(statsQuery),
+            sequelize.query(graphQuery)
+        ]).then(results => results.map(result => result[0]));
 
         // Calculate conversion rates between stages
         const stats = {};
@@ -252,7 +337,8 @@ const studentUserJourneyStatsService = async (date) => {
 
         return {
             userData,
-            stats
+            stats,
+            graphData
         };
     } catch (error) {
         error.fileName = 'statsService.js';
@@ -260,9 +346,10 @@ const studentUserJourneyStatsService = async (date) => {
     }
 };
 
+
 export default {
     totalContentStatsService,
     dashboardCardsFunnelService,
     lastActiveUsersService,
-    studentUserJourneyStatsService
+    studentUserJourneyStatsService,
 };

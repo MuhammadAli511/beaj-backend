@@ -348,8 +348,9 @@ const webhookService = async (body, res) => {
                     await sendMessage("+923170729640", notificationMessage); // Ali
                     await sendMessage("+923008400080", notificationMessage); // Semal
                     await sendMessage("+12028123335", notificationMessage); // Zainab
-                    await sendMessage("+923331432681", notificationMessage); // Amna
+                    await sendMessage("+923365905444", notificationMessage); // Amna
                     await sendMessage("+923196609478", notificationMessage); // Midhat
+                    await sendMessage("+923322097852", notificationMessage); // Midhat 2
                     return;
                 }
 
@@ -380,8 +381,9 @@ const webhookService = async (body, res) => {
                     await sendMessage("+923170729640", notificationMessage); // Ali
                     await sendMessage("+923008400080", notificationMessage); // Semal
                     await sendMessage("+12028123335", notificationMessage); // Zainab
-                    await sendMessage("+923331432681", notificationMessage); // Amna
+                    await sendMessage("+923365905444", notificationMessage); // Amna
                     await sendMessage("+923196609478", notificationMessage); // Midhat
+                    await sendMessage("+923322097852", notificationMessage); // Midhat 2
                     return;
                 }
 
