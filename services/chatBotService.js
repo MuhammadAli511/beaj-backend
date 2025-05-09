@@ -281,6 +281,14 @@ const webhookService = async (body, res) => {
                     (currentUserState.dataValues.engagement_type == "User Profile")
                 ) {
                     if (messageContent.toLowerCase() == "school admin") {
+                        let finalClickTimeMessage = new Date(currentUserMetadata.dataValues.userClickedLink.getTime()).toLocaleString('en-US', { timeZone: 'Asia/Karachi' });
+                        let notificationMessage = "🔔" + userMobileNumber + " clicked on 'School Admin'." + "\n\nUser Link Click Time: " + finalClickTimeMessage;
+                        await sendMessage("+923170729640", notificationMessage); // Ali
+                        await sendMessage("+923008400080", notificationMessage); // Semal
+                        await sendMessage("+12028123335", notificationMessage); // Zainab
+                        await sendMessage("+923365905444", notificationMessage); // Amna
+                        await sendMessage("+923196609478", notificationMessage); // Midhat
+                        await sendMessage("+923322097852", notificationMessage); // Midhat 2
                         let prospectusPdf = "https://beajbloblive.blob.core.windows.net/beajdocuments/Student%20Summer%20Camp%20Prospectus.pdf";
                         await sendMediaMessage(userMobileNumber, prospectusPdf, "pdf", "Student Summer Camp Prospectus");
                         await sleep(8000);
@@ -332,7 +340,8 @@ const webhookService = async (body, res) => {
                     text_message_types.includes(message.type) &&
                     (currentUserState.dataValues.engagement_type == "City Name" || currentUserState.dataValues.engagement_type == "Confirm City Name")
                 ) {
-                    let finalClickTimeMessage = new Date(currentUserMetadata.dataValues.userClickedLink.getTime() + 5 * 60 * 60 * 1000);
+                    let finalClickTimeMessage = new Date(currentUserMetadata.dataValues.userClickedLink.getTime())
+                        .toLocaleString('en-US', { timeZone: 'Asia/Karachi' });
                     let notificationMessage = "🔔" + userMobileNumber + " registered as a school admin."
                         + "\n\nUser Link Click Time: " + finalClickTimeMessage
                         + "\nCity Name: " + messageContent
@@ -362,7 +371,8 @@ const webhookService = async (body, res) => {
                     (messageContent.toLowerCase() == "ready to register" || messageContent.toLowerCase() == "ready for payment") &&
                     (currentUserState.dataValues.engagement_type == "Ready to Pay")
                 ) {
-                    let finalClickTimeMessage = new Date(currentUserMetadata.dataValues.userClickedLink.getTime() + 5 * 60 * 60 * 1000);
+                    let finalClickTimeMessage = new Date(currentUserMetadata.dataValues.userClickedLink.getTime())
+                        .toLocaleString('en-US', { timeZone: 'Asia/Karachi' });
                     let notificationMessage = "🔔 "
                         + userMobileNumber
                         + " clicked on 'Ready for Payment'."
