@@ -258,7 +258,7 @@ const parentOrStudentSelection = async (profileId, userMobileNumber) => {
     await sendMediaMessage(userMobileNumber, instructionAudio, "audio", null);
     await createActivityLog(userMobileNumber, "audio", "outbound", instructionAudio, null);
     await sleep(5000);
-    let selectOptionMessage = "👆Listen to the audio instructions and select an option:\n\n👆 آڈیو ہدایات سنیں اور ایک آپشن منتخب کریں:";
+    let selectOptionMessage = "👆Listen to the audio instructions and select an option:\n\n:آڈیو ہدایات سنیں اور ایک آپشن منتخب کریں";
     await sendButtonMessage(userMobileNumber, selectOptionMessage, [{ id: 'enroll_on_whatsapp', title: 'Enroll on Whatsapp' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", selectOptionMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["enroll on whatsapp", "chat with beaj rep"]);
@@ -368,8 +368,8 @@ const singleStudentRegistationComplate = async (profileId, userMobileNumber) => 
     const singleStudentRegistrationCompleteMessage =
         name + "'s registration is now complete! 🎉" +
         "\n\n👉 Do you want to register another student?" +
-        "\n\n" + "کا اندراج مکمل ہو چکا ہے!🎉 " + name +
-        "\n\n👈کیا آپ کسی اور طالب علم کا اندراج کرنا چاہتے ہیں؟";
+        "\n\n" + "\u202B" + "کا اندراج مکمل ہو چکا ہے! 🎉 " + name + "\u202C" +
+        "\n\n\u202B👈کیا آپ کسی اور طالب علم کا اندراج کرنا چاہتے ہیں؟\u202C";
     await sendButtonMessage(userMobileNumber, singleStudentRegistrationCompleteMessage, [{ id: 'yes', title: 'Yes' }, { id: 'no', title: 'No, go to payment' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", singleStudentRegistrationCompleteMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no", "no, go to payment"]);
@@ -413,12 +413,12 @@ const paymentDetails = async (profileId, userMobileNumber) => {
         "Bank Name: Bank Al Falah\n" +
         "Account Number: 04041007987401\n\n" +
         "👉Please send us a screenshot of your payment.\n\n\n\n" +
-        "اپنی رجسٹریشن کی *تصدیق* کے لئے،  " + totalPrice + " روپے ہماری بینک اکاؤنٹ میں جمع کروائیں۔" +
-        "\n\n*بیج بینک اکاؤنٹ کی تفصیلات*:\n" +
+        "\u202Bاپنی رجسٹریشن کی *تصدیق* کے لئے، " + totalPrice + " روپے ہماری بینک اکاؤنٹ میں جمع کروائیں۔\u202C" +
+        "\n\n\u202B*بیج بینک اکاؤنٹ کی تفصیلات:*\n" +
         "اکاؤنٹ کا نام: بیج ایجوکیشن پرائیویٹ لمیٹڈ\n" +
         "بینک کا نام: بینک الفلاح\n" +
-        "اکاؤنٹ نمبر: 04041007987401\n\n" +
-        "👈اپنی ادائیگی کا اسکرین شاٹ ہمیں بھیجیں۔";
+        "اکاؤنٹ نمبر: 04041007987401\u202C\n\n" +
+        "\u202B👉 اپنی ادائیگی کا اسکرین شاٹ ہمیں بھیجیں۔\u202C";
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Payment Details");
     await sendButtonMessage(userMobileNumber, bankAccountDetails, [{ id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", bankAccountDetails, null);
@@ -426,7 +426,7 @@ const paymentDetails = async (profileId, userMobileNumber) => {
     return;
 };
 
-const paymentComplete = async (profileId, userMobileNumber) => {
+const paymentComplete = async (profileId, userMobileNumber, paymentProof) => {
     const registrationsSummary = await waUsersMetadataRepository.getTotalRegistrationsSummary(userMobileNumber);
     const users = registrationsSummary.registrations;
     for (const user of users) {
@@ -446,7 +446,9 @@ const paymentComplete = async (profileId, userMobileNumber) => {
             profile_id: userProfileId,
             courseCategoryId: courseCategoryId,
             courseId: courseId,
-            courseStartDate: courseStartDate
+            courseStartDate: courseStartDate,
+            paymentProof: paymentProof,
+            paymentStatus: "Pending Approval"
         });
     }
     let thankYouMessage =

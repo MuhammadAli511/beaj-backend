@@ -139,14 +139,17 @@ const webhookService = async (body, res) => {
 
             // Wrap the webhook handling logic with the context containing the bot phone number ID
             await runWithContext({ botPhoneNumberId, profileId, userMobileNumber }, async () => {
+                let inboundUploadedImage = null;
+                let inboundUploadedAudio = null;
+                let inboundUploadedVideo = null;
                 if (message.type === "image") {
-                    createActivityLog(userMobileNumber, "image", "inbound", message, null);
+                    inboundUploadedImage = await createActivityLog(userMobileNumber, "image", "inbound", message, null);
                     messageContent = await retrieveMediaURL(message.image.id);
                 } else if (message.type === "audio") {
-                    createActivityLog(userMobileNumber, "audio", "inbound", message, null);
+                    inboundUploadedAudio = await createActivityLog(userMobileNumber, "audio", "inbound", message, null);
                     messageContent = await retrieveMediaURL(message.audio.id);
                 } else if (message.type === "video") {
-                    createActivityLog(userMobileNumber, "video", "inbound", message, null);
+                    inboundUploadedVideo = await createActivityLog(userMobileNumber, "video", "inbound", message, null);
                     messageContent = await retrieveMediaURL(message.video.id);
                 } else if (message.type === "text") {
                     messageContent = message.text?.body.toLowerCase().trim() || "";
@@ -552,7 +555,7 @@ const webhookService = async (body, res) => {
                     (message.type == "image") &&
                     (currentUserState.dataValues.engagement_type == "Payment Details")
                 ) {
-                    await paymentComplete(profileId, userMobileNumber);
+                    await paymentComplete(profileId, userMobileNumber, inboundUploadedImage);
                     return;
                 } else if (
                     (message.type != "image") &&

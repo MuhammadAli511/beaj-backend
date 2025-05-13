@@ -1,4 +1,5 @@
 import WA_PurchasedCourses from '../models/WA_PurchasedCourses.js';
+import { Op } from 'sequelize';
 
 const create = async (data) => {
     const purchasedCourse = new WA_PurchasedCourses(data);
@@ -60,6 +61,28 @@ const getPurchasedCount = async () => {
     });
 };
 
+const getPurchasedCourseByPaymentStatus = async (paymentStatus) => {
+    return await WA_PurchasedCourses.findAll({
+        where: {
+            paymentStatus: paymentStatus,
+            classLevel: {
+                [Op.and]: [
+                    { [Op.ne]: null },
+                    { [Op.ne]: '' }
+                ]
+            }
+        }
+    });
+};
+
+const updatePaymentStatusByProfileId = async (profileId, paymentStatus) => {
+    return await WA_PurchasedCourses.update({
+        paymentStatus: paymentStatus
+    }, {
+        where: { profile_id: profileId }
+    });
+};
+
 export default {
     create,
     getAll,
@@ -69,5 +92,7 @@ export default {
     getAllByPhoneNumber,
     getPurchasedCoursesByPhoneNumber,
     getPurchasedCount,
-    getPurchasedCoursesByProfileId
+    getPurchasedCoursesByProfileId,
+    getPurchasedCourseByPaymentStatus,
+    updatePaymentStatusByProfileId
 };

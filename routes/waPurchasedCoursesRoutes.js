@@ -25,6 +25,12 @@ router.post('/purchaseCourse', beajFacilitatorsAuth, waPurchasedCoursesControlle
 // GET api/waPurchasedCourses/getCompletedCourse/:phoneNumber
 router.get('/getCompletedCourses/:phoneNumber', beajFacilitatorsAuth, waPurchasedCoursesController.getCompletedCourseController);
 
+// PUT api/waPurchasedCourses/updatePaymentStatusByProfileId
+router.put('/updatePaymentStatusByProfileId', beajFacilitatorsAuth, waPurchasedCoursesController.updatePaymentStatusByProfileIdController);
+
+// GET api/waPurchasedCourses/getPurchasedCourseByPaymentStatus/:paymentStatus
+router.get('/getPurchasedCourseByPaymentStatus/:paymentStatus', beajFacilitatorsAuth, waPurchasedCoursesController.getPurchasedCourseByPaymentStatusController);
+
 // Use error handler middleware
 router.use(errorHandler);
 
