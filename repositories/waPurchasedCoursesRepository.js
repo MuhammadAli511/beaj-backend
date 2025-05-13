@@ -65,11 +65,8 @@ const getPurchasedCourseByPaymentStatus = async (paymentStatus) => {
     return await WA_PurchasedCourses.findAll({
         where: {
             paymentStatus: paymentStatus,
-            classLevel: {
-                [Op.and]: [
-                    { [Op.ne]: null },
-                    { [Op.ne]: '' }
-                ]
+            courseStartDate: {
+                [Op.gt]: new Date('2025-04-26')
             }
         }
     });

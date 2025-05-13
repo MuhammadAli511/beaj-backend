@@ -368,8 +368,8 @@ const singleStudentRegistationComplate = async (profileId, userMobileNumber) => 
     const singleStudentRegistrationCompleteMessage =
         name + "'s registration is now complete! 🎉" +
         "\n\n👉 Do you want to register another student?" +
-        "\n\n" + "\u202B" + "کا اندراج مکمل ہو چکا ہے! 🎉 " + name + "\u202C" +
-        "\n\n\u202B👈کیا آپ کسی اور طالب علم کا اندراج کرنا چاہتے ہیں؟\u202C";
+        "\n\n\u202B" + name + " کا اندراج مکمل ہو چکا ہے! 🎉" + "\u202C" +
+        "\n\n\u202B👈 کیا آپ کسی اور طالب علم کا اندراج کرنا چاہتے ہیں؟\u202C";
     await sendButtonMessage(userMobileNumber, singleStudentRegistrationCompleteMessage, [{ id: 'yes', title: 'Yes' }, { id: 'no', title: 'No, go to payment' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", singleStudentRegistrationCompleteMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no", "no, go to payment"]);
@@ -418,7 +418,7 @@ const paymentDetails = async (profileId, userMobileNumber) => {
         "اکاؤنٹ کا نام: بیج ایجوکیشن پرائیویٹ لمیٹڈ\n" +
         "بینک کا نام: بینک الفلاح\n" +
         "اکاؤنٹ نمبر: 04041007987401\u202C\n\n" +
-        "\u202B👉 اپنی ادائیگی کا اسکرین شاٹ ہمیں بھیجیں۔\u202C";
+        "\u202B👈 اپنی ادائیگی کا اسکرین شاٹ ہمیں بھیجیں۔\u202C";
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Payment Details");
     await sendButtonMessage(userMobileNumber, bankAccountDetails, [{ id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", bankAccountDetails, null);
@@ -440,25 +440,27 @@ const paymentComplete = async (profileId, userMobileNumber, paymentProof) => {
         const courseName = courses[userClassLevel];
         const courseCategoryId = await courseRepository.getCourseCategoryIdByName(courseName);
         const courseId = await courseRepository.getCourseIdByName(courseName);
-        const courseStartDate = new Date();
         await waPurchasedCoursesRepository.create({
             phoneNumber: userPhoneNumber,
             profile_id: userProfileId,
             courseCategoryId: courseCategoryId,
             courseId: courseId,
-            courseStartDate: courseStartDate,
+            courseStartDate: new Date(),
             paymentProof: paymentProof,
-            paymentStatus: "Pending Approval"
+            paymentStatus: "Pending Approval",
+            purchaseDate: new Date()
         });
     }
+    const parentThankyouImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/parents_registration.jpg"
     let thankYouMessage =
         "Thank You! A member from the Beaj Team will call you to confirm your payment and add you to your Summer Camp class!" +
         "\n\nIf you have any additional questions, please click on Chat with Beaj Rep." +
         "\n\nشکریہ! بیج ٹیم کا ایک رکن آپ کو آپ کی ادائیگی کی تصدیق کے لئے کال کرے گا اور آپ کو آپ کی سمر کیمپ کلاس میں شامل کرے گا۔" +
         "\n\nاگر آپ کے پاس کوئی اضافی سوالات ہیں، تو 'بیج ریپ کے ساتھ چیٹ کریں' پر کلک کریں۔";
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Payment Complete");
-    await sendButtonMessage(userMobileNumber, thankYouMessage, [{ id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }]);
+    await sendButtonMessage(userMobileNumber, thankYouMessage, [{ id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }], 0, parentThankyouImage);
     await createActivityLog(userMobileNumber, "template", "outbound", thankYouMessage, null);
+    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["chat with beaj rep"]);
     return;
 };
 
