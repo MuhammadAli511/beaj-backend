@@ -517,7 +517,7 @@ const webhookService = async (body, res) => {
                 if (
                     text_message_types.includes(message.type) &&
                     (currentUserState.dataValues.engagement_type == "Single Student Registration Complete") &&
-                    (messageContent.toLowerCase() == "no")
+                    (messageContent.toLowerCase() == "no" || messageContent.toLowerCase() == "no, go to payment")
                 ) {
                     await totalRegistrationsSummary(profileId, userMobileNumber);
                     return;
