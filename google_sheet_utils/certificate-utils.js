@@ -293,7 +293,7 @@ const loadTrackingSheet = async (spreadsheetId, sheetName) => {
     const sheets = await initializeSheets();
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${sheetName}!A2:B`, // Skip header row
+      range: `${sheetName}!A2:C`, // Skip header row
     });
 
     const trackedStudents = new Set();
@@ -316,11 +316,11 @@ const loadTrackingSheet = async (spreadsheetId, sheetName) => {
 const updateTrackingSheet = async (spreadsheetId, sheetName, newStudents) => {
   try {
     const sheets = await initializeSheets();
-    const rowsToAppend = newStudents.map(student => [student.phoneNumber, student.name]);
+    const rowsToAppend = newStudents.map(student => [student.phoneNumber, student.name, student.cohort]);
 
     await sheets.spreadsheets.values.append({
       spreadsheetId,
-      range: `${sheetName}!A2:B`, // Append after last row
+      range: `${sheetName}!A2:C`, // Append after last row
       valueInputOption: 'RAW',
       insertDataOption: 'INSERT_ROWS',
       resource: { values: rowsToAppend },
@@ -332,6 +332,40 @@ const updateTrackingSheet = async (spreadsheetId, sheetName, newStudents) => {
     throw error;
   }
 };
+
+const updateCohortInTrackingSheet = async (spreadsheetId, sheetName, phoneNumber, cohort) => {
+  const sheets = await initializeSheets();
+  // const sheets = google.sheets({ version: 'v4', auth }); // Make sure `auth` is correctly imported
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: `${sheetName}!A2:A`, // Column A has phone numbers, assume header in row 1
+  });
+
+  const phoneList = res.data.values?.flat() || [];
+
+  // Find the row number (add 2 for zero-based index + header row)
+  const rowIndex = phoneList.findIndex(p => p.trim() === phoneNumber.trim());
+  if (rowIndex === -1) {
+    console.warn(`Phone number ${phoneNumber} not found in sheet to update cohort.`);
+    return;
+  }
+
+  const rowNumber = rowIndex + 2;
+  const cohortRange = `${sheetName}!C${rowNumber}`;
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: cohortRange,
+    valueInputOption: 'RAW',
+    requestBody: {
+      values: [[cohort]],
+    },
+  });
+
+  console.log(`Updated cohort '${cohort}' for ${phoneNumber} at row ${rowNumber}`);
+};
+
 
 const generateCertificatesForEligibleStudents = async (
   studentData,
@@ -376,8 +410,10 @@ const generateCertificatesForEligibleStudents = async (
         stats.eligible++;
 
         if (trackedStudents.has(phoneNumber)) {
+          await updateCohortInTrackingSheet(SPREADSHEET_ID, SHEET_NAME, phoneNumber, studentCohort);
           console.log(`Skipping ${name} - certificate already generated`);
           stats.alreadyGenerated++;
+
           continue;
         }
 
@@ -385,7 +421,7 @@ const generateCertificatesForEligibleStudents = async (
         console.log(`Processing certificate for ${name} (${phoneNumber})`);
         await processCertificate(name, studentCohort, studentTargetGroup);
 
-        newlyGeneratedStudents.push({ phoneNumber, name });
+        newlyGeneratedStudents.push({ phoneNumber, name , cohort: studentCohort });
         stats.newlyGenerated++;
       } catch (error) {
         console.error(`Error processing student: ${error.message}`);
