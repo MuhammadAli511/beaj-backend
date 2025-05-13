@@ -563,4 +563,212 @@ const createAndUploadSpeakingPracticeScoreImage = async (pronunciationAssessment
     }
 };
 
-export { weekEndImage, createAndUploadScoreImage, createAndUploadMonologueScoreImage, createAndUploadSpeakingPracticeScoreImage };
+const generateInvoiceImage = async (userMobileNumber, registrationsSummary) => {
+    try {
+        // Set physical dimensions (smaller visually but higher resolution for quality)
+        const physicalWidth = 550;  // Physical width in pixels (appears smaller)
+        const physicalHeight = 750; // Physical height in pixels (appears smaller)
+
+        // Set a higher DPI scaling factor for better text quality
+        const scaleFactor = 3;  // 3x resolution for crisp text
+
+        // Create high-resolution canvas
+        const width = physicalWidth * scaleFactor;
+        const height = physicalHeight * scaleFactor;
+        const canvas = createCanvas(width, height);
+        const ctx = canvas.getContext('2d');
+
+        // Scale all drawing operations
+        ctx.scale(scaleFactor, scaleFactor);
+
+        // Set background to white
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, physicalWidth, physicalHeight);
+
+        // Top section - make more compact
+        const marginX = 25;
+        const marginY = 25;
+
+        // Load and draw logo
+        const logo = await loadImage("https://beajbloblive.blob.core.windows.net/beajdocuments/logo1.png");
+        ctx.drawImage(logo, 0, 0, 150, 100);
+
+        // Draw "INVOICE" text
+        ctx.font = 'bold 45px Garet';
+        ctx.fillStyle = '#000000';
+        ctx.textAlign = 'right';
+        ctx.fillText('INVOICE', physicalWidth - marginX, marginY + marginX + 15);
+        ctx.textAlign = 'left';
+
+        // Billing section - more compact
+        const headerY = marginY + 85;
+        ctx.font = 'bold 11px Garet';
+        ctx.fillText('BILLING TO:', marginX + 10, headerY);
+
+        ctx.font = 'bold 11px Garet';
+        ctx.fillText(userMobileNumber, marginX + 10, headerY + 15);
+
+        // Invoice details section
+        const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        ctx.font = 'bold 11px Garet';
+        ctx.textAlign = 'right';
+        ctx.fillText(`Invoice Date : ${today}`, physicalWidth - marginX, headerY);
+        ctx.textAlign = 'left';
+
+        // Table headers - positioned to allow for many rows
+        const tableTop = headerY + 55;
+        const tableWidth = physicalWidth - (marginX * 2);
+        const colWidth1 = tableWidth * 0.1;  // Sr No.
+        const colWidth2 = tableWidth * 0.3;  // Student Name
+        const colWidth3 = tableWidth * 0.3;  // Student Class
+        const colWidth4 = tableWidth * 0.3;  // Price
+
+        // Make rows smaller to fit more
+        const rowHeight = 20;
+
+        // Draw table header background colors
+        ctx.fillStyle = '#DBDF10'; // Yellow green color
+        ctx.fillRect(marginX, tableTop, colWidth1, rowHeight); // Sr No.
+        ctx.fillRect(marginX + colWidth1, tableTop, colWidth2, rowHeight); // Student Name
+        ctx.fillRect(marginX + colWidth1 + colWidth2, tableTop, colWidth3, rowHeight); // Student Class
+        ctx.fillStyle = '#75C5D3'; // Light blue color
+        ctx.fillRect(marginX + colWidth1 + colWidth2 + colWidth3, tableTop, colWidth4, rowHeight); // Price
+
+        // Header text
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 12px Garet';
+        ctx.fillText('Sr No.', marginX + 5, tableTop + 14);
+        ctx.fillText('Student Name', marginX + colWidth1 + 5, tableTop + 14);
+        ctx.fillText('Student Class', marginX + colWidth1 + colWidth2 + 5, tableTop + 14);
+        ctx.fillText('PRICE', marginX + colWidth1 + colWidth2 + colWidth3 + 5, tableTop + 14);
+
+        // Get total registrations and prepare rows
+        const totalRegistrations = registrationsSummary.count;
+        let perCoursePrice = 1500; // Default price
+        if (totalRegistrations > 1) {
+            perCoursePrice = 1200; // Discounted price for multiple registrations
+        }
+
+        // Convert registrations to rows for rendering
+        const rows = registrationsSummary.registrations.map((reg, index) => ({
+            srNo: (index + 1).toString(),
+            name: reg.name,
+            className: reg.classLevel,
+            price: `PKR ${perCoursePrice.toLocaleString()}`
+        }));
+
+        // Calculate total
+        const totalAmount = totalRegistrations * perCoursePrice;
+
+        // Table content - render all rows
+        ctx.fillStyle = '#000000';
+        ctx.font = '12px Garet';
+
+        rows.forEach((row, index) => {
+            const y = tableTop + rowHeight + (index * rowHeight) + 14;
+            ctx.fillText(row.srNo, marginX + 5, y);
+            ctx.fillText(row.name, marginX + colWidth1 + 5, y);
+            ctx.fillText(row.className, marginX + colWidth1 + colWidth2 + 5, y);
+
+            // Right align the price text
+            ctx.textAlign = 'right';
+            ctx.fillText(row.price, marginX + colWidth1 + colWidth2 + colWidth3 + colWidth4 - 5, y);
+            ctx.textAlign = 'left';
+
+            // Draw a light horizontal line after each row except the last one
+            if (index < rows.length - 1) {
+                ctx.strokeStyle = '#EEEEEE';
+                ctx.lineWidth = 0.5;
+                ctx.beginPath();
+                ctx.moveTo(marginX, tableTop + rowHeight + (index + 1) * rowHeight);
+                ctx.lineTo(physicalWidth - marginX, tableTop + rowHeight + (index + 1) * rowHeight);
+                ctx.stroke();
+            }
+        });
+
+        // Draw a horizontal line after the last row
+        ctx.strokeStyle = '#CCCCCC';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(marginX, tableTop + rowHeight + (rows.length * rowHeight));
+        ctx.lineTo(physicalWidth - marginX, tableTop + rowHeight + (rows.length * rowHeight));
+        ctx.stroke();
+
+        // Add watermark
+        const watermarkLogo = await loadImage("https://beajbloblive.blob.core.windows.net/beajdocuments/logo1.png");
+        ctx.globalAlpha = 0.15; // Less transparent (increased from 0.05)
+        ctx.drawImage(watermarkLogo, physicalWidth / 2 - 180, physicalHeight / 2 - 90, 360, 180); // 4x bigger (doubled width and height)
+        ctx.globalAlpha = 1.0; // Reset transparency
+
+        // Total section - position at end of table or with fixed offset from bottom
+        // Calculate position based on table size
+        const tableBottom = tableTop + rowHeight + (rows.length * rowHeight) + 25;
+        const totalY = Math.min(tableBottom, physicalHeight - 70); // Don't let it overlap with footer
+
+        ctx.font = 'bold 12px Garet';
+        ctx.textAlign = 'right';
+        ctx.fillText('TOTAL', physicalWidth - marginX - 70, totalY);
+        ctx.fillText(`PKR ${totalAmount.toLocaleString()}`, physicalWidth - marginX, totalY);
+        ctx.textAlign = 'left';
+
+        // Footer - fixed at bottom
+        const footerHeight = physicalHeight - 30;
+
+        // Draw footer background with diagonal cut
+        ctx.fillStyle = '#DBDF10'; // Yellow green color
+        ctx.beginPath();
+        ctx.moveTo(0, footerHeight);
+        ctx.lineTo(physicalWidth / 2 + 20, footerHeight);
+        ctx.lineTo(physicalWidth / 2, footerHeight + 30);
+        ctx.lineTo(0, footerHeight + 30);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#75C5D3'; // Light blue color
+        ctx.beginPath();
+        ctx.moveTo(physicalWidth / 2 + 20, footerHeight);
+        ctx.lineTo(physicalWidth, footerHeight);
+        ctx.lineTo(physicalWidth, footerHeight + 30);
+        ctx.lineTo(physicalWidth / 2, footerHeight + 30);
+        ctx.closePath();
+        ctx.fill();
+
+        // Footer text
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 12px Garet';
+
+        // Phone icon placeholder and number
+        ctx.fillText(`☎ +92 332 5551465`, marginX + 15, footerHeight + 20);
+
+        // Email icon placeholder and email
+        ctx.textAlign = 'right';
+        // Draw larger email icon
+        ctx.font = 'bold 18px Garet';
+        ctx.fillText('✉', physicalWidth - marginX - 8 - ctx.measureText('info@beaj.org').width, footerHeight + 20);
+        // Switch back to regular font for email text
+        ctx.font = 'bold 12px Garet';
+        ctx.fillText('info@beaj.org', physicalWidth - marginX - 40, footerHeight + 19.5);
+        ctx.textAlign = 'left';
+
+        // Reset scale for saving
+        ctx.scale(1 / scaleFactor, 1 / scaleFactor);
+
+        // Convert the canvas to a buffer
+        const buffer = canvas.toBuffer('image/png');
+
+        // Upload to Azure Blob Storage
+        const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
+        return imageUrl;
+    } catch (err) {
+        console.log('Error creating and uploading invoice image:', err);
+        throw new Error('Failed to create and upload invoice image');
+    }
+};
+
+export {
+    weekEndImage,
+    createAndUploadScoreImage,
+    createAndUploadMonologueScoreImage,
+    createAndUploadSpeakingPracticeScoreImage,
+    generateInvoiceImage
+};

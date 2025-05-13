@@ -8,6 +8,7 @@ import { najiaContactData, amnaContactData } from "../constants/contacts.js";
 import courses from "../constants/courses.js";
 import { sleep } from "./utils.js";
 import waUserActivityLogsRepository from "../repositories/waUserActivityLogsRepository.js";
+import * as imageGenerationUtils from "./imageGenerationUtils.js";
 
 
 const greetingMessage = async (profileId, userMobileNumber, persona) => {
@@ -19,7 +20,7 @@ const greetingMessage = async (profileId, userMobileNumber, persona) => {
     });
     let greetingMessageText = "";
     if (persona == "kids") {
-        greetingMessageText = `Welcome to Beaj Education! 👋\nبیج ایجوکیشن میں خوش آمدید!\n\n`;
+        greetingMessageText = `Welcome to Beaj Education! 👋\n\nبیج ایجوکیشن میں خوش آمدید!\n\n`;
     } else if (persona == "teachers") {
         greetingMessageText = `Welcome to Beaj Education! 👋\n\nI'm Ms. Beaj - here to guide you!\n\n👇Click on the “Start button”`;
     }
@@ -253,10 +254,13 @@ const parentOrStudentSelection = async (profileId, userMobileNumber) => {
     await sendMediaMessage(userMobileNumber, flyerUrdu, "image", null);
     await sleep(2000);
     await waUserProgressRepository.updatePersona(profileId, userMobileNumber, "parent or student");
-    // TODO: Instruction to Register
-    // TODO: Voice Note
-    await sendButtonMessage(userMobileNumber, "Please select an option:", [{ id: 'enroll_on_whatsapp', title: 'Enroll on Whatsapp' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }]);
-    await createActivityLog(userMobileNumber, "template", "outbound", "Please select an option:", null);
+    let instructionAudio = "https://beajbloblive.blob.core.windows.net/beajdocuments/registration_instructions1.mp3";
+    await sendMediaMessage(userMobileNumber, instructionAudio, "audio", null);
+    await createActivityLog(userMobileNumber, "audio", "outbound", instructionAudio, null);
+    await sleep(5000);
+    let selectOptionMessage = "Please select an option:\n\nبراہ کرم ایک آپشن منتخب کریں:";
+    await sendButtonMessage(userMobileNumber, selectOptionMessage, [{ id: 'enroll_on_whatsapp', title: 'Enroll on Whatsapp' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }]);
+    await createActivityLog(userMobileNumber, "template", "outbound", selectOptionMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["enroll on whatsapp", "chat with beaj rep"]);
     return;
 };
@@ -291,7 +295,7 @@ const talkToBeajRep = async (profileId, userMobileNumber) => {
 // Multi user registration
 const studentNameInput = async (profileId, userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Student Name Input");
-    const studentNameInputMessage = "Please type student's *Full Name*";
+    const studentNameInputMessage = "Please type student's *Full Name*\n\nبراہ کرم طالب علم کا مکمل نام لکھیں۔";
     await sendMessage(userMobileNumber, studentNameInputMessage);
     await createActivityLog(userMobileNumber, "text", "outbound", studentNameInputMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["text"]);
@@ -301,7 +305,7 @@ const studentNameInput = async (profileId, userMobileNumber) => {
 const studentNameConfirmation = async (profileId, userMobileNumber, messageContent) => {
     await waUsersMetadataRepository.updateName(profileId, userMobileNumber, messageContent);
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Student Name Confirmation");
-    const studentNameConfirmationMessage = "Confirm name: " + messageContent;
+    const studentNameConfirmationMessage = "Confirm name: " + messageContent + "\n\nنام کی تصدیق کریں: " + messageContent;
     await sendButtonMessage(userMobileNumber, studentNameConfirmationMessage, [{ id: 'yes', title: 'Yes' }, { id: 'no', title: 'No, type again' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", studentNameConfirmationMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no", "no, type again"]);
@@ -310,7 +314,7 @@ const studentNameConfirmation = async (profileId, userMobileNumber, messageConte
 
 const studentGenericClassInput = async (profileId, userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Student Generic Class Input");
-    const studentClassInputMessage = "Please select student's *class level*:";
+    const studentClassInputMessage = "Please select student's *class level*:\n\nبراہ کرم طالب علم کی *کلاس* منتخب کریں۔";
     await sendButtonMessage(userMobileNumber, studentClassInputMessage, [{ id: 'class_1_or_2_or_3', title: 'Class 1, 2 or 3' }, { id: 'class_4_or_5_or_6', title: 'Class 4, 5 or 6' }, { id: 'class_7_or_8', title: 'Class 7 or 8' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", studentClassInputMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["class 1, 2 or 3", "class 4, 5 or 6", "class 7 or 8"]);
@@ -320,7 +324,7 @@ const studentGenericClassInput = async (profileId, userMobileNumber) => {
 const studentGenericClassConfirmation = async (profileId, userMobileNumber, messageContent) => {
     await waUsersMetadataRepository.updateClassLevel(profileId, userMobileNumber, messageContent);
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Student Generic Class Confirmation");
-    const studentClassConfirmationMessage = "Confirm class level: " + messageContent;
+    const studentClassConfirmationMessage = "Confirm class level: " + messageContent + "\n\nکلاس کی تصدیق کریں: " + messageContent;
     await sendButtonMessage(userMobileNumber, studentClassConfirmationMessage, [{ id: 'yes', title: 'Yes' }, { id: 'no', title: 'No, choose again' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", studentClassConfirmationMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no", "no, choose again"]);
@@ -329,7 +333,7 @@ const studentGenericClassConfirmation = async (profileId, userMobileNumber, mess
 
 const studentSpecificClassInput = async (profileId, userMobileNumber, genericClass) => {
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Student Specific Class Input");
-    const studentClassInputMessage = "Please select student's *class*:";
+    const studentClassInputMessage = "Please select student's *class*:\n\nبراہ کرم طالب علم کی *کلاس* منتخب کریں۔";
     if (genericClass.toLowerCase() == "class 1, 2 or 3") {
         await sendButtonMessage(userMobileNumber, studentClassInputMessage, [{ id: 'class_1', title: 'Class 1' }, { id: 'class_2', title: 'Class 2' }, { id: 'class_3', title: 'Class 3' }]);
         await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["class 1", "class 2", "class 3"]);
@@ -347,7 +351,7 @@ const studentSpecificClassInput = async (profileId, userMobileNumber, genericCla
 const studentSpecificClassConfirmation = async (profileId, userMobileNumber, messageContent) => {
     await waUsersMetadataRepository.updateClassLevel(profileId, userMobileNumber, messageContent);
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Student Specific Class Confirmation");
-    const studentClassConfirmationMessage = "Confirm student's class: " + messageContent;
+    const studentClassConfirmationMessage = "Confirm student's class: " + messageContent + "\n\nطالب علم کی کلاس کی تصدیق کریں: " + messageContent;
     await sendButtonMessage(userMobileNumber, studentClassConfirmationMessage, [{ id: 'yes', title: 'Yes' }, { id: 'no', title: 'No' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", studentClassConfirmationMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no"]);
@@ -361,7 +365,11 @@ const singleStudentRegistationComplate = async (profileId, userMobileNumber) => 
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Single Student Registration Complete");
     const user = await waUsersMetadataRepository.getByProfileId(profileId);
     const name = user.dataValues.name;
-    const singleStudentRegistrationCompleteMessage = name + "'s registration is now complete!\n\nDo you want to register another student?";
+    const singleStudentRegistrationCompleteMessage =
+        name + "'s registration is now complete!" +
+        "\n\nDo you want to register another student?" +
+        "\n\n" + "کا اندراج مکمل ہو چکا ہے! " + name +
+        "\n\nکیا آپ کسی اور طالب علم کا اندراج کرنا چاہتے ہیں؟";
     await sendButtonMessage(userMobileNumber, singleStudentRegistrationCompleteMessage, [{ id: 'yes', title: 'Yes' }, { id: 'no', title: 'No' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", singleStudentRegistrationCompleteMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no"]);
@@ -375,7 +383,11 @@ const totalRegistrationsSummary = async (profileId, userMobileNumber) => {
     const registrationsList = registrationsSummary.registrations.map((reg, index) =>
         `${index + 1}) ${reg.name} - ${reg.classLevel}`
     ).join('\n');
-    const totalRegistrationsSummaryMessage = "Total number of registrations for Kids Summer Camp: " + totalRegistrations + "\n\n" + registrationsList;
+    const totalRegistrationsSummaryMessage =
+        "Total number of registrations for Beaj Student Summer Camp: " + totalRegistrations +
+        "\n" + registrationsList +
+        "\n\n\nبیج اسٹوڈنٹ سمر کیمپ کے لئے کل رجسٹریشنز کی تعداد: " + totalRegistrations +
+        "\n" + registrationsList;
     await sendButtonMessage(userMobileNumber, totalRegistrationsSummaryMessage, [{ id: 'continue_to_payment', title: 'Continue to Payment' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", totalRegistrationsSummaryMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["continue to payment", "chat with beaj rep"]);
@@ -390,7 +402,23 @@ const paymentDetails = async (profileId, userMobileNumber) => {
         perCoursePrice = 1200;
     }
     const totalPrice = totalRegistrations * perCoursePrice;
-    let bankAccountDetails = "To confirm your registration, please make a payment of Rs. " + totalPrice + " to our bank account.\n\nBeaj Bank Account details:\n\nPlease send us a screenshot of your payment or click on Chat with Beaj Rep to talk to us.";
+    const invoiceImageUrl = await imageGenerationUtils.generateInvoiceImage(userMobileNumber, registrationsSummary);
+    await sendMediaMessage(userMobileNumber, invoiceImageUrl, "image");
+    await createActivityLog(userMobileNumber, "image", "outbound", invoiceImageUrl, null);
+    await sleep(4000);
+    let bankAccountDetails =
+        "To *confirm* your registration, please make a payment of Rs. " + totalPrice + " to our bank account." +
+        "\n\nBeaj Bank Account details:\n" +
+        "Account Name: Beaj Education Pvt Ltd\n" +
+        "Bank Name: Bank Al Falah\n" +
+        "Account Number: 04041007987401\n\n" +
+        "👉Please send us a screenshot of your payment.\n\n\n\n" +
+        "اپنی رجسٹریشن کی *تصدیق* کے لئے، براہ کرم " + totalPrice + " روپے ہماری بینک اکاؤنٹ میں جمع کروائیں۔" +
+        "\n\nبیج بینک اکاؤنٹ کی تفصیلات:\n" +
+        "اکاؤنٹ کا نام: بیج ایجوکیشن پرائیویٹ لمیٹڈ\n" +
+        "بینک کا نام: بینک الفلاح\n" +
+        "اکاؤنٹ نمبر: 04041007987401\n\n" +
+        "👉براہ کرم اپنی ادائیگی کا اسکرین شاٹ ہمیں بھیجیں۔";
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Payment Details");
     await sendButtonMessage(userMobileNumber, bankAccountDetails, [{ id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", bankAccountDetails, null);
@@ -421,7 +449,11 @@ const paymentComplete = async (profileId, userMobileNumber) => {
             courseStartDate: courseStartDate
         });
     }
-    let thankYouMessage = "Thank You! A member from the Beaj Team will call you to confirm your registration and add you to the Summer Camp class!\n\nIf you have any additional questions, please click on Chat with Beaj Rep.";
+    let thankYouMessage =
+        "Thank You! A member from the Beaj Team will call you to confirm your payment and add you to your Summer Camp class!" +
+        "\n\nIf you have any additional questions, please click on Chat with Beaj Rep." +
+        "\n\nشکریہ! بیج ٹیم کا ایک رکن آپ کو آپ کی ادائیگی کی تصدیق کے لئے کال کرے گا اور آپ کو آپ کی سمر کیمپ کلاس میں شامل کرے گا۔" +
+        "\n\nاگر آپ کے پاس کوئی اضافی سوالات ہیں، تو براہ کرم 'بیج ریپ کے ساتھ چیٹ کریں' پر کلک کریں۔";
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Payment Complete");
     await sendButtonMessage(userMobileNumber, thankYouMessage, [{ id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", thankYouMessage, null);
