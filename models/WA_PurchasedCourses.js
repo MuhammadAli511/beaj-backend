@@ -36,6 +36,14 @@ WA_PurchasedCourses.init({
     purchaseDate: {
         type: DataTypes.DATE,
         allowNull: true,
+    },
+    paymentProof: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    paymentStatus: {
+        type: DataTypes.TEXT,
+        allowNull: true,
     }
 }, {
     sequelize,
