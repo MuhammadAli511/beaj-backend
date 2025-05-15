@@ -566,8 +566,8 @@ const createAndUploadSpeakingPracticeScoreImage = async (pronunciationAssessment
 const generateInvoiceImage = async (userMobileNumber, registrationsSummary) => {
     try {
         // Set physical dimensions (smaller visually but higher resolution for quality)
-        const physicalWidth = 550;  // Physical width in pixels (appears smaller)
-        const physicalHeight = 750; // Physical height in pixels (appears smaller)
+        const physicalWidth = 800;  // Physical width in pixels (wider for landscape)
+        const physicalHeight = 450; // Physical height in pixels (shorter for landscape)
 
         // Set a higher DPI scaling factor for better text quality
         const scaleFactor = 3;  // 3x resolution for crisp text
@@ -587,44 +587,42 @@ const generateInvoiceImage = async (userMobileNumber, registrationsSummary) => {
 
         // Top section - make more compact
         const marginX = 25;
-        const marginY = 25;
+        const marginY = 20;
 
         // Load and draw logo
         const logo = await loadImage("https://beajbloblive.blob.core.windows.net/beajdocuments/logo1.png");
-        ctx.drawImage(logo, 0, 0, 150, 100);
+        ctx.drawImage(logo, marginX - 20, marginY - 15, 100, 67);
 
         // Draw "INVOICE" text
-        ctx.font = 'bold 45px Garet';
+        ctx.font = 'bold 35px Mont';
         ctx.fillStyle = '#000000';
         ctx.textAlign = 'right';
-        ctx.fillText('INVOICE', physicalWidth - marginX, marginY + marginX + 15);
+        ctx.fillText('INVOICE', physicalWidth - marginX, marginY + 35);
         ctx.textAlign = 'left';
 
         // Billing section - more compact
-        const headerY = marginY + 85;
+        const headerY = marginY + 65;
         ctx.font = 'bold 11px Garet';
-        ctx.fillText('BILLING TO:', marginX + 10, headerY);
-
-        ctx.font = 'bold 11px Garet';
-        ctx.fillText(userMobileNumber, marginX + 10, headerY + 15);
+        ctx.textAlign = 'left';
+        ctx.fillText('BILLING TO:', marginX, headerY);
+        ctx.fillText(userMobileNumber, marginX, headerY + 15);
 
         // Invoice details section
         const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        ctx.font = 'bold 11px Garet';
         ctx.textAlign = 'right';
         ctx.fillText(`Invoice Date : ${today}`, physicalWidth - marginX, headerY);
         ctx.textAlign = 'left';
 
         // Table headers - positioned to allow for many rows
-        const tableTop = headerY + 55;
+        const tableTop = headerY + 35;
         const tableWidth = physicalWidth - (marginX * 2);
-        const colWidth1 = tableWidth * 0.1;  // Sr No.
-        const colWidth2 = tableWidth * 0.3;  // Student Name
-        const colWidth3 = tableWidth * 0.3;  // Student Class
-        const colWidth4 = tableWidth * 0.3;  // Price
+        const colWidth1 = tableWidth * 0.08;  // Sr No. (smaller)
+        const colWidth2 = tableWidth * 0.34;  // Student Name (wider)
+        const colWidth3 = tableWidth * 0.34;  // Student Class (wider)
+        const colWidth4 = tableWidth * 0.24;  // Price
 
         // Make rows smaller to fit more
-        const rowHeight = 20;
+        const rowHeight = 18;
 
         // Draw table header background colors
         ctx.fillStyle = '#DBDF10'; // Yellow green color
@@ -695,15 +693,15 @@ const generateInvoiceImage = async (userMobileNumber, registrationsSummary) => {
         ctx.stroke();
 
         // Add watermark
-        const watermarkLogo = await loadImage("https://beajbloblive.blob.core.windows.net/beajdocuments/logo1.png");
-        ctx.globalAlpha = 0.15; // Less transparent (increased from 0.05)
-        ctx.drawImage(watermarkLogo, physicalWidth / 2 - 180, physicalHeight / 2 - 90, 360, 180); // 4x bigger (doubled width and height)
+        const watermarkLogo = await loadImage('https://beajbloblive.blob.core.windows.net/beajdocuments/logo1.png');
+        ctx.globalAlpha = 0.15; // Less transparent
+        ctx.drawImage(watermarkLogo, physicalWidth / 2 - 150, physicalHeight / 2 - 75, 300, 150); // Adjusted for landscape
         ctx.globalAlpha = 1.0; // Reset transparency
 
         // Total section - position at end of table or with fixed offset from bottom
         // Calculate position based on table size
-        const tableBottom = tableTop + rowHeight + (rows.length * rowHeight) + 25;
-        const totalY = Math.min(tableBottom, physicalHeight - 70); // Don't let it overlap with footer
+        const tableBottom = tableTop + rowHeight + (rows.length * rowHeight) + 15;
+        const totalY = Math.min(tableBottom, physicalHeight - 50); // Don't let it overlap with footer
 
         ctx.font = 'bold 12px Garet';
         ctx.textAlign = 'right';
@@ -711,43 +709,42 @@ const generateInvoiceImage = async (userMobileNumber, registrationsSummary) => {
         ctx.fillText(`PKR ${totalAmount.toLocaleString()}`, physicalWidth - marginX, totalY);
         ctx.textAlign = 'left';
 
-        // Footer - fixed at bottom
-        const footerHeight = physicalHeight - 30;
+        const footerHeight = physicalHeight - 25;
 
-        // Draw footer background with diagonal cut
+        // Draw footer background with diagonal cut - adjusted for landscape
         ctx.fillStyle = '#DBDF10'; // Yellow green color
         ctx.beginPath();
         ctx.moveTo(0, footerHeight);
-        ctx.lineTo(physicalWidth / 2 + 20, footerHeight);
-        ctx.lineTo(physicalWidth / 2, footerHeight + 30);
-        ctx.lineTo(0, footerHeight + 30);
+        ctx.lineTo(physicalWidth / 2 + 50, footerHeight); // Wider cut for landscape
+        ctx.lineTo(physicalWidth / 2 + 30, footerHeight + 25);
+        ctx.lineTo(0, footerHeight + 25);
         ctx.closePath();
         ctx.fill();
 
         ctx.fillStyle = '#75C5D3'; // Light blue color
         ctx.beginPath();
-        ctx.moveTo(physicalWidth / 2 + 20, footerHeight);
+        ctx.moveTo(physicalWidth / 2 + 50, footerHeight);
         ctx.lineTo(physicalWidth, footerHeight);
-        ctx.lineTo(physicalWidth, footerHeight + 30);
-        ctx.lineTo(physicalWidth / 2, footerHeight + 30);
+        ctx.lineTo(physicalWidth, footerHeight + 25);
+        ctx.lineTo(physicalWidth / 2 + 30, footerHeight + 25);
         ctx.closePath();
         ctx.fill();
 
         // Footer text
         ctx.fillStyle = '#FFFFFF';
-        ctx.font = 'bold 12px Garet';
+        ctx.font = 'bold 11px Garet'; // Slightly smaller font
 
         // Phone icon placeholder and number
-        ctx.fillText(`☎ +92 332 5551465`, marginX + 15, footerHeight + 20);
+        ctx.fillText(`☎ ${userMobileNumber}`, marginX + 10, footerHeight + 17);
 
         // Email icon placeholder and email
         ctx.textAlign = 'right';
         // Draw larger email icon
-        ctx.font = 'bold 18px Garet';
-        ctx.fillText('✉', physicalWidth - marginX - 8 - ctx.measureText('info@beaj.org').width, footerHeight + 20);
+        ctx.font = 'bold 16px Garet'; // Slightly smaller icon
+        ctx.fillText('✉', physicalWidth - marginX - 8 - ctx.measureText("info@beaj.org").width, footerHeight + 17);
         // Switch back to regular font for email text
-        ctx.font = 'bold 12px Garet';
-        ctx.fillText('info@beaj.org', physicalWidth - marginX - 40, footerHeight + 19.5);
+        ctx.font = 'bold 11px Garet';
+        ctx.fillText(`info@beaj.org`, physicalWidth - marginX - 35, footerHeight + 16.5);
         ctx.textAlign = 'left';
 
         // Reset scale for saving

@@ -39,6 +39,7 @@ const removeUser = async (phoneNumber) => {
     await waQuestionResponsesRepository.deleteByPhoneNumber(phoneNumber);
     await waActiveSessionRepository.deleteByPhoneNumber(phoneNumber);
     await waProfileRepository.deleteByPhoneNumber(phoneNumber);
+    await waPurchasedCoursesRepository.deleteByPhoneNumber(phoneNumber);
 
     await sendMessage(phoneNumber, "Your data has been removed. Please start again using the link provided.");
 };

@@ -38,6 +38,14 @@ const getAllByPhoneNumber = async (phoneNumber) => {
     });
 };
 
+const deleteByPhoneNumber = async (phoneNumber) => {
+    return await WA_PurchasedCourses.destroy({
+        where: {
+            phoneNumber: phoneNumber
+        }
+    });
+};
+
 const getPurchasedCoursesByPhoneNumber = async (phoneNumber) => {
     return await WA_PurchasedCourses.findAll({
         where: {
@@ -80,6 +88,7 @@ const updatePaymentStatusByProfileId = async (profileId, paymentStatus) => {
     });
 };
 
+
 export default {
     create,
     getAll,
@@ -91,5 +100,6 @@ export default {
     getPurchasedCount,
     getPurchasedCoursesByProfileId,
     getPurchasedCourseByPaymentStatus,
-    updatePaymentStatusByProfileId
+    updatePaymentStatusByProfileId,
+    deleteByPhoneNumber,
 };

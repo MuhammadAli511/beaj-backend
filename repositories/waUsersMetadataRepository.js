@@ -45,6 +45,14 @@ const deleteByPhoneNumber = async (phoneNumber) => {
     });
 };
 
+const deleteByProfileId = async (profileId) => {
+    return await WA_UsersMetadata.destroy({
+        where: {
+            profile_id: profileId
+        }
+    });
+};
+
 const assignTargetGroup = async (phoneNumber, profile_id, targetGroup) => {
     if (targetGroup == "None") {
         targetGroup = null;
@@ -219,6 +227,16 @@ const updateName = async (profileId, phoneNumber, name) => {
     });
 };
 
+const getProfileIds = async (phoneNumber) => {
+    const profileIds = await WA_UsersMetadata.findAll({
+        attributes: ['profile_id'],
+        where: { phoneNumber: phoneNumber }
+    });
+    return profileIds.map(profile => profile.dataValues.profile_id);
+};
+
+
+
 export default {
     create,
     getAll,
@@ -240,5 +258,7 @@ export default {
     updateFreeDemoEnded,
     updateClassLevel,
     getTotalRegistrationsSummary,
-    updateName
+    updateName,
+    getProfileIds,
+    deleteByProfileId
 };
