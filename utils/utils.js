@@ -75,7 +75,7 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
     const acceptableMessagesList = currentUserState.dataValues.acceptableMessages;
     const activityType = currentUserState.dataValues.activityType;
     if (acceptableMessagesList.includes("image") && messageType != "image") {
-        if (acceptableMessagesList.includes("cancel registration") && messageContent.toLowerCase() == "cancel registration") {
+        if (acceptableMessagesList.includes("start again") && messageContent.toLowerCase() == "start again") {
             return true;
         }
         await sendMessage(userMobileNumber, "Please send an image.");

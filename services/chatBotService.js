@@ -227,7 +227,7 @@ const webhookService = async (body, res) => {
 
                 if (
                     text_message_types.includes(message.type) &&
-                    messageContent.toLowerCase() == "cancel registration" &&
+                    messageContent.toLowerCase() == "start again" &&
                     (
                         currentUserState.dataValues.engagement_type == "Single Student Registration Complete" ||
                         currentUserState.dataValues.engagement_type == "Payment Details"
@@ -494,10 +494,14 @@ const webhookService = async (body, res) => {
                     (
                         messageContent.toLowerCase() == "class 1, 2 or 3" ||
                         messageContent.toLowerCase() == "class 4, 5 or 6" ||
-                        messageContent.toLowerCase() == "class 7 or 8"
+                        messageContent.toLowerCase() == "class 7 and above"
                     )
                 ) {
-                    await studentGenericClassConfirmation(profileId, userMobileNumber, messageContent);
+                    if (messageContent.toLowerCase() == "class 7 and above") {
+                        await studentSpecificClassConfirmation(profileId, userMobileNumber, messageContent);
+                    } else {
+                        await studentGenericClassConfirmation(profileId, userMobileNumber, messageContent);
+                    }
                     return;
                 }
 
@@ -529,8 +533,7 @@ const webhookService = async (body, res) => {
                         messageContent.toLowerCase() == "class 4" ||
                         messageContent.toLowerCase() == "class 5" ||
                         messageContent.toLowerCase() == "class 6" ||
-                        messageContent.toLowerCase() == "class 7" ||
-                        messageContent.toLowerCase() == "class 8"
+                        messageContent.toLowerCase() == "class 7 and above"
                     )
                 ) {
                     await studentSpecificClassConfirmation(profileId, userMobileNumber, messageContent);
@@ -558,7 +561,7 @@ const webhookService = async (body, res) => {
                 if (
                     text_message_types.includes(message.type) &&
                     (currentUserState.dataValues.engagement_type == "Single Student Registration Complete") &&
-                    messageContent.toLowerCase() == "continue to payment"
+                    messageContent.toLowerCase() == "go to payment"
                 ) {
                     await paymentDetails(profileId, userMobileNumber);
                     return;
