@@ -45,7 +45,15 @@ const deleteByPhoneNumber = async (phoneNumber) => {
     });
 };
 
-const assignTargetGroup = async (phoneNumber,profile_id, targetGroup) => {
+const deleteByProfileId = async (profileId) => {
+    return await WA_UsersMetadata.destroy({
+        where: {
+            profile_id: profileId
+        }
+    });
+};
+
+const assignTargetGroup = async (phoneNumber, profile_id, targetGroup) => {
     if (targetGroup == "None") {
         targetGroup = null;
     }
@@ -177,6 +185,58 @@ const updateFreeDemoEnded = async (profileId, phoneNumber) => {
     return user;
 };
 
+const updateClassLevel = async (profileId, phoneNumber, classLevel) => {
+    return await WA_UsersMetadata.update({
+        classLevel: classLevel
+    }, {
+        where: { profile_id: profileId, phoneNumber: phoneNumber }
+    });
+};
+
+const getTotalRegistrationsSummary = async (phoneNumber) => {
+    const count = await WA_UsersMetadata.count({
+        where: {
+            classLevel: {
+                [Sequelize.Op.not]: null
+            },
+            phoneNumber: phoneNumber
+        }
+    });
+
+    const registrations = await WA_UsersMetadata.findAll({
+        attributes: ['name', 'classLevel', 'profile_id', 'phoneNumber'],
+        where: {
+            classLevel: {
+                [Sequelize.Op.not]: null
+            },
+            phoneNumber: phoneNumber
+        }
+    });
+
+    return {
+        count,
+        registrations
+    };
+};
+
+const updateName = async (profileId, phoneNumber, name) => {
+    return await WA_UsersMetadata.update({
+        name: name
+    }, {
+        where: { profile_id: profileId, phoneNumber: phoneNumber }
+    });
+};
+
+const getProfileIds = async (phoneNumber) => {
+    const profileIds = await WA_UsersMetadata.findAll({
+        attributes: ['profile_id'],
+        where: { phoneNumber: phoneNumber }
+    });
+    return profileIds.map(profile => profile.dataValues.profile_id);
+};
+
+
+
 export default {
     create,
     getAll,
@@ -195,5 +255,10 @@ export default {
     updateSchoolName,
     updateCityName,
     updateFreeDemoStarted,
-    updateFreeDemoEnded
+    updateFreeDemoEnded,
+    updateClassLevel,
+    getTotalRegistrationsSummary,
+    updateName,
+    getProfileIds,
+    deleteByProfileId
 };

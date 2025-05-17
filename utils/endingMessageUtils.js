@@ -103,6 +103,9 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
         }
         let user = await waUsersMetadataRepository.getByProfileId(profileId);
         let checkRegistrationComplete = user.dataValues.userRegistrationComplete !== null;
+        if (checkRegistrationComplete == true && currentUserState.dataValues.persona != "school admin") {
+            checkRegistrationComplete = false;
+        }
         if (startingLesson.dataValues.activityAlias == "📕 *Story Time!*") {
             let final_map_image = "";
             let message = "Start questions and win your first gem! 💎\nسوالات شروع کریں اور اپنا پہلا gem جیتیں!";

@@ -93,6 +93,15 @@ const getCourseIdByName = async (courseName) => {
     return course.CourseId;
 };
 
+const getCourseCategoryIdByName = async (courseName) => {
+    const course = await Course.findOne({
+        where: {
+            CourseName: courseName
+        }
+    });
+    return course.CourseCategoryId;
+};
+
 const getCourseNameById = async (courseId) => {
     const course = await Course.findByPk(courseId);
     return course.CourseName;
@@ -131,5 +140,6 @@ export default {
     getCourseIdByName,
     getCourseNameById,
     getCourseByCourseName,
-    getByCourseIds
+    getByCourseIds,
+    getCourseCategoryIdByName
 };

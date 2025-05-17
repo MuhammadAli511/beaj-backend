@@ -1,5 +1,8 @@
 import WA_UserActivityLogs from '../models/WA_UserActivityLogs.js';
 import { Sequelize } from 'sequelize';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const create = async (data) => {
     const activityLog = new WA_UserActivityLogs(data);
@@ -10,7 +13,7 @@ const getAll = async () => {
     return await WA_UserActivityLogs.findAll();
 };
 
-const getByPhoneNumber = async (phoneNumber,botPhoneNumberId, limit = 15, offset = 0) => {
+const getByPhoneNumber = async (phoneNumber, botPhoneNumberId, limit = 15, offset = 0) => {
     return await WA_UserActivityLogs.findAll({
         where: {
             phoneNumber: phoneNumber,
@@ -82,6 +85,36 @@ const getLastMessageTime = async () => {
     return lastMessages;
 };
 
+const getStudentCoursePriceByFirstMessage = async (phoneNumber) => {
+    try {
+        const firstMessage = await WA_UserActivityLogs.findOne({
+            attributes: ['messageContent'],
+            where: {
+                phoneNumber: phoneNumber,
+                bot_phone_number_id: process.env.STUDENT_BOT_PHONE_NUMBER_ID
+            },
+            order: [
+                ['timestamp', 'ASC'],
+                ['id', 'ASC']
+            ]
+        });
+
+        if (!firstMessage) {
+            return 1500;
+        }
+
+        const messageContent = firstMessage.messageContent[0];
+
+        if (messageContent == 'Start Free Trial now!') {
+            return 1200;
+        } else {
+            return 1500;
+        }
+    } catch (error) {
+        console.error('Error in getStudentCoursePriceByFirstMessage:', error);
+        return 1500;
+    }
+};
 
 export default {
     create,
@@ -91,5 +124,6 @@ export default {
     getByPhoneNumberAndBotNumberId,
     deleteByPhoneNumber,
     getLastActiveUsers,
-    getLastMessageTime
+    getLastMessageTime,
+    getStudentCoursePriceByFirstMessage
 };
