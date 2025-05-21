@@ -278,6 +278,19 @@ const getByLessonIds = async (lessonIds) => {
     });
 };
 
+const getLessonsByCourseOrdered = async (courseId) => {
+  return await Lesson.findAll({
+    where: { courseId },
+    order: [
+      ['weekNumber', 'ASC'],
+      ['dayNumber', 'ASC'],
+      ['SequenceNumber', 'ASC'],
+    ],
+    raw: true, // optional, for plain objects
+  });
+};
+
+
 export default {
     totalLessonsRepository,
     create,
@@ -296,5 +309,6 @@ export default {
     getLessonIdsByCourseAndWeekAndActivityType,
     getActivityByLessonId,
     getByLessonIds,
-    getByLessonId
+    getByLessonId,
+    getLessonsByCourseOrdered,
 };

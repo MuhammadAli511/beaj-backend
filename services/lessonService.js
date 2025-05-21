@@ -3,6 +3,8 @@ import documentFileRepository from "../repositories/documentFileRepository.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import multipleChoiceQuestionRepository from "../repositories/multipleChoiceQuestionRepository.js";
 import multipleChoiceQuestionAnswerRepository from "../repositories/multipleChoiceQuestionAnswerRepository.js";
+import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
+import waPurchasedCoursesRepository from "../repositories/waPurchasedCoursesRepository.js";
 import prodSequelize from "../config/prodDB.js";
 
 const createLessonService = async (lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status) => {
@@ -292,7 +294,115 @@ const getLessonByCourseIdService = async (id) => {
     }
 };
 
+const testLessonService = async (profile_id, phoneNumber, lesson) => {
+  try {
+    const {
+      LessonId,
+      courseId,
+    //   courseCategoryId,
+      weekNumber,
+      dayNumber,
+      SequenceNumber,
+    } = lesson;
 
+    let obj ;
+        // Get all lessons from this course ordered by week -> day -> sequence
+    const lessons = await lessonRepository.getLessonsByCourseOrdered(courseId);
+
+    // Find current index
+    const currentIndex = lessons.findIndex(l => l.LessonId === LessonId);
+
+    if (currentIndex <= 0) {
+      obj = {
+        status: 'success',
+        previous_lesson_id: null,
+        message: 'start my course',
+      };
+    }
+
+    const previousLesson = lessons[currentIndex - 1];
+
+    // Check if in same week & day → start next activity
+    if (
+      previousLesson.weekNumber === weekNumber &&
+      previousLesson.dayNumber === dayNumber
+    ) {
+      obj=  {
+        status: 'success',
+        previous_lesson_id: previousLesson.LessonId,
+        message: 'start next activity',
+      };
+    }
+
+    // Check if previous was last in its group and current is first in new group
+    const prevGroup = lessons.filter(
+      l => l.weekNumber === previousLesson.weekNumber && l.dayNumber === previousLesson.dayNumber
+    );
+    const currGroup = lessons.filter(
+      l => l.weekNumber === weekNumber && l.dayNumber === dayNumber
+    );
+
+    const isPrevLastInGroup =
+      previousLesson.LessonId === prevGroup[prevGroup.length - 1].LessonId;
+    const isCurrFirstInGroup =
+      LessonId === currGroup[0].LessonId;
+
+    if (isPrevLastInGroup && isCurrFirstInGroup) {
+      obj = {
+        status: 'success',
+        previous_lesson_id: previousLesson.LessonId,
+        message: 'start next lesson',
+      };
+    }
+
+    // Handle progress + course purchase logic
+    if (previousLesson?.LessonId) {
+      const now = new Date();
+
+      // Delete previous purchases
+      await waPurchasedCoursesRepository.deleteByProfileId(profile_id, phoneNumber);
+      // Add new record
+      const newPurchase = await waPurchasedCoursesRepository.create({
+            phoneNumber,
+            courseId: previousLesson.courseId,
+            courseCategoryId: 70,
+            profile_id,
+            purchaseDate: now,
+            courseStartDate: now,
+            });
+        console.log('newPurchase: ', newPurchase);
+
+      // Update progress
+      const updateUserProgress = await waUserProgressRepository.updateTestUserProgress(profile_id, phoneNumber, {
+        engagement_type: 'Course Start',
+        currentCourseId: previousLesson.courseId,
+        currentWeek: previousLesson.weekNumber,
+        currentDay: previousLesson.dayNumber,
+        currentLessonId: previousLesson.LessonId,
+        currentLesson_sequence: previousLesson.SequenceNumber,
+        acceptableMessages: [obj.message],
+        questionNumber: null,
+        retryCounter: 0,
+        activityType: null,
+        lastUpdated: now,
+      });
+
+      console.log('updateUserProgress: ', updateUserProgress);
+
+      return obj;
+    }
+
+    // Fallback return
+    return {
+      status: 'success',
+      previous_lesson_id: previousLesson.LessonId,
+      message: '',
+    };
+  } catch (error) {
+    error.fileName = 'lessonService.js';
+    throw error;
+  }
+};
 
 export default {
     createLessonService,
@@ -302,5 +412,6 @@ export default {
     deleteLessonService,
     getLessonsByActivity,
     migrateLessonService,
-    getLessonByCourseIdService
+    getLessonByCourseIdService,
+    testLessonService
 };

@@ -39,7 +39,7 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
 
     if ((facilitator == 9 || facilitator == 10) || today >= comparisonDate) {
       if (flag_valid == 1 && module && facilitator) {
-        let arrayT1_List = [], ActivityCompletedCount = [];
+        let arrayT1_List = [], ActivityCompletedCount = [], arrayT1_List0 = [];
         let last_activityCompleted_l1 = [], last_activityCompleted_l2 = [], last_activityCompleted_l3 = [];
         await new_loadDataToGoogleSheets(
           arrayT1_List,
@@ -103,7 +103,28 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
               l3_entry.final_percentage_week4,
               null,
               null
-            ])
+            ]);
+             arrayT1_List0.push([
+              l1_entry.sr_no,
+              l1_entry.phoneNumber,
+              l1_entry.name,
+              l1_entry.final_percentage_week1,
+              l1_entry.final_percentage_week2,
+              l1_entry.final_percentage_week3,
+              l1_entry.final_percentage_week4,
+              null,
+              l2_entry.final_percentage_week1,
+              l2_entry.final_percentage_week2,
+              l2_entry.final_percentage_week3,
+              l2_entry.final_percentage_week4,
+              null,
+              l3_entry.final_percentage_week1,
+              l3_entry.final_percentage_week2,
+              l3_entry.final_percentage_week3,
+              l3_entry.final_percentage_week4,
+              null,
+              cohort
+            ]);
           }
 
           arrayT1_List = arrayT1_List.map(obj => Object.values(obj).map(value => value));
@@ -122,9 +143,9 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
           module_week,
         );
         if (module == "Week") {
-          if (arrayT1_List) {
-            console.log(arrayT1_List);
-            await generateCertificatesForEligibleStudents(arrayT1_List, 'weekly', targetGroup, cohort);
+          if (arrayT1_List0) {
+            console.log(arrayT1_List0);
+            await generateCertificatesForEligibleStudents(arrayT1_List0, 'weekly', targetGroup, cohort);
           }
         }
       }

@@ -22,6 +22,8 @@ router.post('/lastActiveUsers', beajFacilitatorsAuth, statsController.lastActive
 // POST api/stats/studentUserJourneyStats
 router.post('/studentUserJourneyStats', beajFacilitatorsAuth, statsController.studentUserJourneyStatsController);
 
+
+router.post('/studentTrialUserJourneyStats', beajFacilitatorsAuth, statsController.studentTrialUserJourneyStatsController);
 // Use error handler middleware
 router.use(errorHandler);
 

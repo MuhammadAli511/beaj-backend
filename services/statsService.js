@@ -104,6 +104,244 @@ const lastActiveUsersService = async (days, cohorts) => {
     }
 };
 
+const studentTrialUserJourneyStatsService = async (date) => {
+    try {
+        // Set default date if not provided
+        const filterDate = date || '2025-04-26 12:00:00';
+
+        const qry1 =   `SELECT
+                      CASE
+                        WHEN "messageContent"[1] = 'Start Free Trial now!' THEN 'Community'
+                        WHEN "messageContent"[1] = 'Start my Free Trial now!' THEN 'Social Media ads'
+                        ELSE 'Unknown'
+                      END AS source,
+                      COUNT(*) AS user_count
+                    FROM (
+                      SELECT DISTINCT ON (profile_id)
+                        profile_id,
+                        "messageContent"
+                      FROM wa_user_activity_logs
+                      WHERE profile_id IN (
+                        SELECT p.profile_id
+                        FROM wa_users_metadata m
+                        INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
+                        WHERE m."userClickedLink" > TIMESTAMP '${filterDate}'
+                        AND p.profile_type = 'student'
+                      )
+                      ORDER BY profile_id, timestamp ASC, id ASC
+                    ) first_messages
+                    GROUP BY source
+                    ORDER BY user_count DESC;`;
+
+
+         const qry2 = `WITH TargetGroup AS (
+                        SELECT 
+                            m."phoneNumber"
+                        FROM 
+                            "wa_users_metadata" m left join "wa_profiles" p on m."phoneNumber" = p."phone_number" and m."profile_id" = p."profile_id"
+                        WHERE 
+                            p."profile_type" = 'student'
+                    ),
+                    get_lessonIds AS (
+                        SELECT 
+                            "LessonId", 
+                            "weekNumber", 
+                        "dayNumber",
+                            "SequenceNumber" 
+                        FROM 
+                            "Lesson" 
+                        WHERE 
+                            "courseId" = 117 and "status" = 'Active'
+                    ),
+                    LessonWithMaxTimestamp AS (
+                        SELECT 
+                            l."phoneNumber",
+                            l."lessonId",
+                            l."endTime",
+                            ROW_NUMBER() OVER (
+                                PARTITION BY l."phoneNumber" 
+                                ORDER BY l."endTime" DESC
+                            ) AS row_num
+                        FROM 
+                            "wa_lessons_completed" l
+                        INNER JOIN 
+                            TargetGroup tg 
+                        ON 
+                            l."phoneNumber" = tg."phoneNumber"
+                        WHERE 
+                            l."completionStatus" = 'Completed'
+                            AND l."courseId" = 117
+                    ),
+                    LessonCompletionCounts AS (
+                        SELECT 
+                            lw."lessonId",
+                            COUNT(lw."phoneNumber") AS "completionCount"
+                        FROM 
+                            LessonWithMaxTimestamp lw
+                        WHERE 
+                            lw.row_num = 1
+                        GROUP BY 
+                            lw."lessonId"
+                    )
+                    SELECT 
+                        g."LessonId",
+                        COALESCE(lcc."completionCount", null) AS "total_students_completed"
+                    FROM 
+                        get_lessonIds g
+                    LEFT JOIN 
+                        LessonCompletionCounts lcc 
+                    ON 
+                        g."LessonId" = lcc."lessonId"
+                    ORDER BY 
+                        g."weekNumber",g."dayNumber",g."SequenceNumber";`
+
+        const qry3 = `WITH TargetGroup AS (
+        SELECT 
+            m."phoneNumber"
+        FROM 
+            "wa_users_metadata" m left join "wa_profiles" p on m."phoneNumber" = p."phone_number" and m."profile_id" = p."profile_id"
+        WHERE 
+            p."profile_type" = 'student'
+    ),
+    get_lessonIds AS (
+        SELECT 
+            "LessonId", 
+            "weekNumber", 
+        "dayNumber",
+            "SequenceNumber" 
+        FROM 
+            "Lesson" 
+        WHERE 
+            "courseId" = 113 and "status" = 'Active'
+    ),
+    LessonWithMaxTimestamp AS (
+        SELECT 
+            l."phoneNumber",
+            l."lessonId",
+            l."endTime",
+            ROW_NUMBER() OVER (
+                PARTITION BY l."phoneNumber" 
+                ORDER BY l."endTime" DESC
+            ) AS row_num
+        FROM 
+            "wa_lessons_completed" l
+        INNER JOIN 
+            TargetGroup tg 
+        ON 
+            l."phoneNumber" = tg."phoneNumber"
+        WHERE 
+            l."completionStatus" = 'Completed'
+            AND l."courseId" = 113
+    ),
+    LessonCompletionCounts AS (
+        SELECT 
+            lw."lessonId",
+            COUNT(lw."phoneNumber") AS "completionCount"
+        FROM 
+            LessonWithMaxTimestamp lw
+        WHERE 
+            lw.row_num = 1
+        GROUP BY 
+            lw."lessonId"
+    )
+    SELECT 
+        g."LessonId",
+        COALESCE(lcc."completionCount", null) AS "total_students_completed"
+    FROM 
+        get_lessonIds g
+    LEFT JOIN 
+        LessonCompletionCounts lcc 
+    ON 
+        g."LessonId" = lcc."lessonId"
+    ORDER BY 
+        g."weekNumber",g."dayNumber",g."SequenceNumber";`
+
+        const qry4 = `WITH lesson_data AS (
+                    SELECT 
+                        p."profile_id",
+                        CASE WHEN l."lessonId" = 2396 THEN 1 ELSE 0 END AS attempted_117,
+                        CASE WHEN l."lessonId" = 2392 THEN 1 ELSE 0 END AS attempted_113
+                    FROM "wa_profiles" p
+                    inner JOIN "wa_lessons_completed" l ON p."profile_id" = l."profile_id"
+                   -- inner join "wa_users_metadata" m on p."profile_id" = m."profile_id"
+                    WHERE 
+                        (l."lessonId" = 2396 OR l."lessonId" = 2392)
+                        AND p."profile_type" = 'student'
+                        -- AND m."userRegistrationComplete" IS NOT NULL
+                ),
+                aggregated AS (
+                    SELECT 
+                        "profile_id",
+                        MAX(attempted_117) AS attempted_117,
+                        MAX(attempted_113) AS attempted_113
+                    FROM lesson_data
+                    GROUP BY "profile_id"
+                )
+                SELECT
+                    COUNT(*) FILTER (WHERE attempted_117 = 1 AND attempted_113 = 0) AS course_117,
+                    COUNT(*) FILTER (WHERE attempted_117 = 0 AND attempted_113 = 1) AS course_113
+                    -- COUNT(*) FILTER (WHERE attempted_117 = 1 AND attempted_113 = 1) AS both_courses
+                FROM aggregated;
+                `;
+
+            const qry5 = `select "persona", count(*) from "wa_user_progress" u left join "wa_profiles" p 
+                          on u."profile_id" = p."profile_id" where p."profile_type" = 'student' and 
+                          (u."currentCourseId" = 117 or u."currentCourseId" = 113)
+                          group by "persona";
+                `;
+
+              const qry6 = `WITH lesson_data AS (
+                    SELECT 
+                        p."profile_id",
+                        CASE WHEN l."currentCourseId" = 117 THEN 1 ELSE 0 END AS attempted_117,
+                        CASE WHEN l."currentCourseId" = 113 THEN 1 ELSE 0 END AS attempted_113
+                    FROM "wa_profiles" p
+                    inner JOIN "wa_user_progress" l ON p."profile_id" = l."profile_id"
+                    inner join "wa_users_metadata" m on p."profile_id" = m."profile_id"
+                    WHERE 
+                        (l."currentCourseId" = 117 OR l."currentCourseId" = 113)
+                        AND p."profile_type" = 'student'
+                         AND m."userRegistrationComplete" IS NOT NULL
+                ),
+                aggregated AS (
+                    SELECT 
+                        "profile_id",
+                        MAX(attempted_117) AS attempted_117,
+                        MAX(attempted_113) AS attempted_113
+                    FROM lesson_data
+                    GROUP BY "profile_id"
+                )
+                SELECT
+                    COUNT(*) FILTER (WHERE attempted_117 = 1 AND attempted_113 = 0) AS course_117,
+                    COUNT(*) FILTER (WHERE attempted_117 = 0 AND attempted_113 = 1) AS course_113
+                    -- COUNT(*) FILTER (WHERE attempted_117 = 1 AND attempted_113 = 1) AS both_courses
+                FROM aggregated;
+                `;
+
+        // Execute all queries concurrently
+        const [userGroup, lastActivityLevel1, lastActivityLevel3,trialOpt, RegistrationType, CumulativeReg] = await Promise.all([
+            sequelize.query(qry1),
+            sequelize.query(qry2),
+            sequelize.query(qry3),
+            sequelize.query(qry4),
+            sequelize.query(qry5),
+            sequelize.query(qry6),
+        ]).then(results => results.map(result => result[0]));
+
+        return {
+            userGroup,
+            lastActivityLevel1,
+            lastActivityLevel3,
+            trialOpt,
+            RegistrationType,
+            CumulativeReg,
+        };
+    } catch (error) {
+        error.fileName = 'statsService.js';
+        throw error;
+    }
+};
+
 const studentUserJourneyStatsService = async (date) => {
     try {
         // Set default date if not provided
@@ -352,4 +590,5 @@ export default {
     dashboardCardsFunnelService,
     lastActiveUsersService,
     studentUserJourneyStatsService,
+    studentTrialUserJourneyStatsService
 };
