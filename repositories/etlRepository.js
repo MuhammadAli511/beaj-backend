@@ -1521,6 +1521,79 @@ WHERE m."targetGroup" = '${grp}'
     }
 };
 
+
+const getLastActivityCompleted_DropOff = async (course_id1) => {
+    try {
+        const qry = `WITH TargetGroup AS (
+    SELECT 
+        m."phoneNumber"
+    FROM 
+        "wa_users_metadata" m left join "wa_profiles" p on m."phoneNumber" = p."phone_number" and m."profile_id" = p."profile_id"
+    WHERE 
+        p."profile_type" = 'student'
+),
+get_lessonIds AS (
+    SELECT 
+        "LessonId", 
+        "weekNumber", 
+		"dayNumber",
+        "SequenceNumber" 
+    FROM 
+        "Lesson" 
+    WHERE 
+        "courseId" = ${course_id1} and "status" = 'Active'
+),
+LessonWithMaxTimestamp AS (
+    SELECT 
+        l."phoneNumber",
+        l."lessonId",
+        l."endTime",
+        ROW_NUMBER() OVER (
+            PARTITION BY l."phoneNumber" 
+            ORDER BY l."endTime" DESC
+        ) AS row_num
+    FROM 
+        "wa_lessons_completed" l
+    INNER JOIN 
+        TargetGroup tg 
+    ON 
+        l."phoneNumber" = tg."phoneNumber"
+    WHERE 
+        l."completionStatus" = 'Completed'
+        AND l."courseId" = ${course_id1}
+),
+LessonCompletionCounts AS (
+    SELECT 
+        lw."lessonId",
+        COUNT(lw."phoneNumber") AS "completionCount"
+    FROM 
+        LessonWithMaxTimestamp lw
+    WHERE 
+        lw.row_num = 1
+    GROUP BY 
+        lw."lessonId"
+)
+SELECT 
+    g."LessonId",
+    COALESCE(lcc."completionCount", null) AS "total_students_completed"
+FROM 
+    get_lessonIds g
+LEFT JOIN 
+    LessonCompletionCounts lcc 
+ON 
+    g."LessonId" = lcc."lessonId"
+ORDER BY 
+    g."weekNumber",g."dayNumber",g."SequenceNumber";`
+    const res = await sequelize.query(qry);
+     console.log(res[0]);
+        return res[0];
+    } catch (error) {
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
+};
+
 export default {
     getDataFromPostgres, getSuccessRate, getActivityTotalCount, getCompletedActivity, getLessonCompletion, getLastActivityCompleted, getWeeklyScore, getPhoneNumber_userNudges, getWeeklyScore_pilot, getCount_NotStartedActivity, getLessonCompletions, getActivity_Completions, getActivityNameCount,
+    getLastActivityCompleted_DropOff,
 };

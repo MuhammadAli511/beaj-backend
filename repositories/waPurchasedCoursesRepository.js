@@ -60,6 +60,15 @@ const getPurchasedCount = async () => {
     });
 };
 
+const deleteByProfileId = async (profile_id, phoneNumber) => {
+    return await WA_PurchasedCourses.destroy({
+        where: {
+            phoneNumber: phoneNumber,
+            profile_id: profile_id
+        }
+    });
+};
+
 export default {
     create,
     getAll,
@@ -69,5 +78,6 @@ export default {
     getAllByPhoneNumber,
     getPurchasedCoursesByPhoneNumber,
     getPurchasedCount,
-    getPurchasedCoursesByProfileId
+    getPurchasedCoursesByProfileId,
+    deleteByProfileId
 };
