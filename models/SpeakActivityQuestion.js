@@ -25,8 +25,16 @@ SpeakActivityQuestion.init({
     type: DataTypes.STRING,
     allowNull: true
   },
+  mediaFileMediaId: {
+    type: DataTypes.BIGINT,
+    allowNull: true
+  },
   mediaFileSecond: {
     type: DataTypes.STRING,
+    allowNull: true
+  },
+  mediaFileSecondMediaId: {
+    type: DataTypes.BIGINT,
     allowNull: true
   },
   questionNumber: {

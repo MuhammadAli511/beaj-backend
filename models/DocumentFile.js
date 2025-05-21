@@ -1,7 +1,7 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../config/sequelize.js';
 
-class DocumentFile extends Model {}
+class DocumentFile extends Model { }
 
 DocumentFile.init({
   id: {
@@ -27,12 +27,24 @@ DocumentFile.init({
     type: DataTypes.STRING,
     allowNull: true
   },
+  videoMediaId: {
+    type: DataTypes.BIGINT,
+    allowNull: true
+  },
   audio: {
     type: DataTypes.STRING,
     allowNull: true
   },
+  audioMediaId: {
+    type: DataTypes.BIGINT,
+    allowNull: true
+  },
   image: {
     type: DataTypes.STRING,
+    allowNull: true
+  },
+  imageMediaId: {
+    type: DataTypes.BIGINT,
     allowNull: true
   },
   mediaType: {
