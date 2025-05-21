@@ -58,11 +58,37 @@ const getCompletedCourseController = async (req, res, next) => {
     }
 };
 
+const updatePaymentStatusByProfileIdController = async (req, res, next) => {
+    try {
+        const profileId = req.body.profileId;
+        const paymentStatus = req.body.paymentStatus;
+        const result = await service.updatePaymentStatusByProfileIdService(profileId, paymentStatus);
+        res.status(200).send(result);
+    } catch (error) {
+        error.fileName = 'waPurchasedCoursesController.js';
+        next(error);
+    }
+};
+
+const getPurchasedCourseByPaymentStatusController = async (req, res, next) => {
+    try {
+        const paymentStatus = req.params.paymentStatus;
+        const result = await service.getPurchasedCourseByPaymentStatusService(paymentStatus);
+        res.status(200).send(result);
+    } catch (error) {
+        error.fileName = 'waPurchasedCoursesController.js';
+        next(error);
+    }
+};
+
+
 
 export default {
     getPurchasedCoursesByPhoneNumberController,
     getUnpurchasedCoursesByPhoneNumberController,
     purchaseCourseController,
     getCompletedCourseController,
-    getAllCoursesByPhoneNumberController
+    getAllCoursesByPhoneNumberController,
+    updatePaymentStatusByProfileIdController,
+    getPurchasedCourseByPaymentStatusController
 };

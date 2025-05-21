@@ -1,3 +1,5 @@
+import "./instrument.js";
+import * as Sentry from "@sentry/node"
 import express from 'express';
 import bodyParser from 'body-parser';
 import path from 'path';
@@ -25,6 +27,8 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api', routes)
+
+Sentry.setupExpressErrorHandler(app);
 
 sequelize.authenticate()
   .then(() => console.log('Database connected.'))

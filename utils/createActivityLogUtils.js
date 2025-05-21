@@ -91,6 +91,8 @@ const createActivityLog = async (
         activityType: activityType,
         retryCount: retryCount,
     });
+
+    return finalMessageContent;
 };
 
 export { createActivityLog };

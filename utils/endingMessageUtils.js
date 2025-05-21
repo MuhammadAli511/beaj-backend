@@ -114,8 +114,14 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             await sendMediaMessage(userMobileNumber, final_map_image, "image");
             await createActivityLog(userMobileNumber, "image", "outbound", final_map_image, null);
             await sleep(2000);
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start questions", "go to registration", "get help"]);
-            let buttonsArray = [{ id: 'start_questions', title: 'Start Questions' }, { id: 'go_to_registration', title: 'Go to Registration' }, { id: 'get_help', title: 'Get Help' }];
+            let buttonsArray = [];
+            if (checkRegistrationComplete == true) {
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start questions", "get help"]);
+                buttonsArray = [{ id: 'start_questions', title: 'Start Questions' }, { id: 'get_help', title: 'Get Help' }];
+            } else {
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start questions", "go to registration", "get help"]);
+                buttonsArray = [{ id: 'start_questions', title: 'Start Questions' }, { id: 'go_to_registration', title: 'Go to Registration' }, { id: 'get_help', title: 'Get Help' }];
+            }
             // Reply Buttons
             if (message == null) {
                 await sendButtonMessage(userMobileNumber, 'Start Questions!', buttonsArray);
@@ -136,8 +142,14 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             } else if (startingLesson.dataValues.activityAlias == "🧪 *Science Fun!*") {
                 finalTextMessage = scienceFunMessage;
             }
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "go to registration", "get help"]);
-            let buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'go_to_registration', title: 'Go to Registration' }, { id: 'get_help', title: 'Get Help' }];
+            let buttonsArray = [];
+            if (checkRegistrationComplete == true) {
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "get help"]);
+                buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'get_help', title: 'Get Help' }];
+            } else {
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "go to registration", "get help"]);
+                buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'go_to_registration', title: 'Go to Registration' }, { id: 'get_help', title: 'Get Help' }];
+            }
             // Reply Buttons
             if (message == null) {
                 await sendButtonMessage(userMobileNumber, finalTextMessage, buttonsArray);

@@ -104,11 +104,21 @@ const getCompletedCourseService = async (phoneNumber) => {
     return courses.filter(course => course.user_status === "completed");
 };
 
+const updatePaymentStatusByProfileIdService = async (profileId, paymentStatus) => {
+    return await waPurchasedCoursesRepository.updatePaymentStatusByProfileId(profileId, paymentStatus);
+};
+
+const getPurchasedCourseByPaymentStatusService = async (paymentStatus) => {
+    return await waPurchasedCoursesRepository.getPurchasedCourseByPaymentStatus(paymentStatus);
+};
+
 
 export default {
     getPurchasedCoursesByPhoneNumberService,
     getUnpurchasedCoursesByPhoneNumberService,
     purchaseCourseService,
     getCompletedCourseService,
-    getAllCoursesByPhoneNumberService
+    getAllCoursesByPhoneNumberService,
+    updatePaymentStatusByProfileIdService,
+    getPurchasedCourseByPaymentStatusService
 };

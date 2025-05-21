@@ -10,20 +10,33 @@ import waActiveSessionRepository from "../repositories/waActiveSessionRepository
 import waProfileRepository from "../repositories/waProfileRepository.js";
 import { removeUser, removeUserTillCourse, startCourseForUser, levelCourseStart, sendCourseLessonToTeacher, sendCourseLessonToKid } from "../utils/chatbotUtils.js";
 import {
-    demoCourseStart,
     greetingMessage,
+    greetingMessageLoop,
     kidsChooseClass,
     kidsChooseClassLoop,
+    demoCourseStart,
     endTrialTeachers,
-    talkToBeajRep,
-    greetingMessageLoop,
     confirmSchoolName,
     thankyouMessageSchoolOwner,
     getUserProfile,
     getSchoolName,
     getCityName,
-    readyToPay,
     thankyouMessageParent,
+    talkToBeajRep,
+    parentOrStudentSelection,
+    studentGenericClassInput,
+    studentSpecificClassInput,
+    paymentDetails,
+    paymentComplete,
+    singleStudentRegistationComplate,
+    studentNameInput,
+    studentNameConfirmation,
+    studentGenericClassConfirmation,
+    studentSpecificClassConfirmation,
+    schoolAdminConfirmation,
+    startOfFlow,
+    cancelRegistration,
+    confirmCancelRegistration
 } from "../utils/trialflowUtils.js";
 import { sendMessage, sendButtonMessage, retrieveMediaURL, sendMediaMessage } from "../utils/whatsappUtils.js";
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
@@ -125,14 +138,17 @@ const webhookService = async (body, res) => {
 
             // Wrap the webhook handling logic with the context containing the bot phone number ID
             await runWithContext({ botPhoneNumberId, profileId, userMobileNumber }, async () => {
+                let inboundUploadedImage = null;
+                let inboundUploadedAudio = null;
+                let inboundUploadedVideo = null;
                 if (message.type === "image") {
-                    createActivityLog(userMobileNumber, "image", "inbound", message, null);
+                    inboundUploadedImage = await createActivityLog(userMobileNumber, "image", "inbound", message, null);
                     messageContent = await retrieveMediaURL(message.image.id);
                 } else if (message.type === "audio") {
-                    createActivityLog(userMobileNumber, "audio", "inbound", message, null);
+                    inboundUploadedAudio = await createActivityLog(userMobileNumber, "audio", "inbound", message, null);
                     messageContent = await retrieveMediaURL(message.audio.id);
                 } else if (message.type === "video") {
-                    createActivityLog(userMobileNumber, "video", "inbound", message, null);
+                    inboundUploadedVideo = await createActivityLog(userMobileNumber, "video", "inbound", message, null);
                     messageContent = await retrieveMediaURL(message.video.id);
                 } else if (message.type === "text") {
                     messageContent = message.text?.body.toLowerCase().trim() || "";
@@ -166,7 +182,10 @@ const webhookService = async (body, res) => {
                     return;
                 }
 
-                if (text_message_types.includes(message.type) && (messageContent.toLowerCase() == "talk to beaj rep" || messageContent.toLowerCase() == "chat with beaj rep" || messageContent.toLowerCase() == "get help")) {
+                if (
+                    text_message_types.includes(message.type) &&
+                    (messageContent.toLowerCase() == "talk to beaj rep" || messageContent.toLowerCase() == "chat with beaj rep" || messageContent.toLowerCase() == "get help")
+                ) {
                     await talkToBeajRep(profileId, userMobileNumber);
                     return;
                 }
@@ -194,11 +213,66 @@ const webhookService = async (body, res) => {
 
                 if (
                     text_message_types.includes(message.type) &&
-                    (messageContent.toLowerCase() == "talk to beaj rep" || messageContent.toLowerCase() == "chat with beaj rep" || messageContent.toLowerCase() == "get help")
+                    (messageContent.toLowerCase() == "start again" || messageContent.toLowerCase() == "go to start") &&
+                    (
+                        currentUserState.dataValues.engagement_type == "School Admin Confirmation" ||
+                        currentUserState.dataValues.engagement_type == "Parent or Student" ||
+                        currentUserState.dataValues.engagement_type == "Thankyou Message - School Owner" ||
+                        currentUserState.dataValues.engagement_type == "Payment Complete"
+                    )
                 ) {
-                    await talkToBeajRep(profileId, userMobileNumber);
+                    await startOfFlow(profileId, userMobileNumber);
                     return;
                 }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    messageContent.toLowerCase() == "start again" &&
+                    (
+                        currentUserState.dataValues.engagement_type == "Single Student Registration Complete" ||
+                        currentUserState.dataValues.engagement_type == "Payment Details"
+                    )
+                ) {
+                    await confirmCancelRegistration(profileId, userMobileNumber, currentUserState.dataValues.engagement_type);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    messageContent.toLowerCase() == "yes" &&
+                    currentUserState.dataValues.engagement_type == "Cancel Registration Confirmation - Single Student Registration Complete"
+                ) {
+                    await cancelRegistration(profileId, userMobileNumber);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    messageContent.toLowerCase() == "no" &&
+                    currentUserState.dataValues.engagement_type == "Cancel Registration Confirmation - Single Student Registration Complete"
+                ) {
+                    await singleStudentRegistationComplate(profileId, userMobileNumber);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    messageContent.toLowerCase() == "yes" &&
+                    currentUserState.dataValues.engagement_type == "Cancel Registration Confirmation - Payment Details"
+                ) {
+                    await cancelRegistration(profileId, userMobileNumber);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    messageContent.toLowerCase() == "no" &&
+                    currentUserState.dataValues.engagement_type == "Cancel Registration Confirmation - Payment Details"
+                ) {
+                    await paymentDetails(profileId, userMobileNumber);
+                    return;
+                }
+
 
                 // DEMO COURSE
                 // Kids Summer Camp Trial
@@ -281,32 +355,31 @@ const webhookService = async (body, res) => {
                     (currentUserState.dataValues.engagement_type == "User Profile")
                 ) {
                     if (messageContent.toLowerCase() == "school admin") {
-                        let finalClickTimeMessage = new Date(currentUserMetadata.dataValues.userClickedLink.getTime()).toLocaleString('en-US', { timeZone: 'Asia/Karachi' });
-                        let notificationMessage = "🔔" + userMobileNumber + " clicked on 'School Admin'." + "\n\nUser Link Click Time: " + finalClickTimeMessage;
-                        await sendMessage("+923170729640", notificationMessage); // Ali
-                        await sendMessage("+923008400080", notificationMessage); // Semal
-                        await sendMessage("+12028123335", notificationMessage); // Zainab
-                        await sendMessage("+923365905444", notificationMessage); // Amna
-                        await sendMessage("+923196609478", notificationMessage); // Midhat
-                        await sendMessage("+923322097852", notificationMessage); // Midhat 2
-                        let prospectusPdf = "https://beajbloblive.blob.core.windows.net/beajdocuments/Student%20Summer%20Camp%20Prospectus.pdf";
-                        await sendMediaMessage(userMobileNumber, prospectusPdf, "pdf", "Student Summer Camp Prospectus");
-                        await sleep(8000);
-                        await waUserProgressRepository.updatePersona(profileId, userMobileNumber, "school admin");
-                        await getSchoolName(profileId, userMobileNumber);
+                        await schoolAdminConfirmation(profileId, userMobileNumber);
                     } else if (messageContent.toLowerCase() == "parent or student") {
-                        let flyerEnglish = "https://beajbloblive.blob.core.windows.net/beajdocuments/flyer_english.jpg";
-                        let flyerUrdu = "https://beajbloblive.blob.core.windows.net/beajdocuments/flyer_urdu.jpg";
-                        await sendMediaMessage(userMobileNumber, flyerEnglish, "image", null);
-                        await sleep(2000);
-                        await sendMediaMessage(userMobileNumber, flyerUrdu, "image", null);
-                        await sleep(2000);
-                        await waUserProgressRepository.updatePersona(profileId, userMobileNumber, "parent or student");
-                        await readyToPay(profileId, userMobileNumber);
+                        await parentOrStudentSelection(profileId, userMobileNumber);
                     } else {
                         return;
                     }
+                    return;
+                }
 
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "School Admin Confirmation")
+                ) {
+                    if (messageContent.toLowerCase() == "school admin") {
+                        let prospectusPdf = "https://beajbloblive.blob.core.windows.net/beajdocuments/Student%20Summer%20Camp%20Prospectus.pdf";
+                        await sendMediaMessage(userMobileNumber, prospectusPdf, "pdf", "Beaj Summer Camp Prospectus for Schools");
+                        await sleep(8000);
+                        await waUserProgressRepository.updatePersona(profileId, userMobileNumber, "school admin");
+                        await getSchoolName(profileId, userMobileNumber);
+                        return;
+                    } else if (messageContent.toLowerCase() == "parent or student") {
+                        await parentOrStudentSelection(profileId, userMobileNumber);
+                    } else {
+                        return;
+                    }
                     return;
                 }
 
@@ -340,20 +413,7 @@ const webhookService = async (body, res) => {
                     text_message_types.includes(message.type) &&
                     (currentUserState.dataValues.engagement_type == "City Name" || currentUserState.dataValues.engagement_type == "Confirm City Name")
                 ) {
-                    let finalClickTimeMessage = new Date(currentUserMetadata.dataValues.userClickedLink.getTime())
-                        .toLocaleString('en-US', { timeZone: 'Asia/Karachi' });
-                    let notificationMessage = "🔔" + userMobileNumber + " registered as a school admin."
-                        + "\n\nUser Link Click Time: " + finalClickTimeMessage
-                        + "\nCity Name: " + messageContent
-                        + "\nSchool Name: " + currentUserMetadata.dataValues.schoolName
-                        ;
                     await thankyouMessageSchoolOwner(profileId, userMobileNumber, messageContent);
-                    await sendMessage("+923170729640", notificationMessage); // Ali
-                    await sendMessage("+923008400080", notificationMessage); // Semal
-                    await sendMessage("+12028123335", notificationMessage); // Zainab
-                    await sendMessage("+923365905444", notificationMessage); // Amna
-                    await sendMessage("+923196609478", notificationMessage); // Midhat
-                    await sendMessage("+923322097852", notificationMessage); // Midhat 2
                     return;
                 }
 
@@ -371,27 +431,14 @@ const webhookService = async (body, res) => {
                     (messageContent.toLowerCase() == "ready to register" || messageContent.toLowerCase() == "ready for payment") &&
                     (currentUserState.dataValues.engagement_type == "Ready to Pay")
                 ) {
-                    let finalClickTimeMessage = new Date(currentUserMetadata.dataValues.userClickedLink.getTime())
-                        .toLocaleString('en-US', { timeZone: 'Asia/Karachi' });
-                    let notificationMessage = "🔔 "
-                        + userMobileNumber
-                        + " clicked on 'Ready for Payment'."
-                        + "\n\nPersona: "
-                        + currentUserState.dataValues.persona
-                        + "\nUser Link Click Time: "
-                        + finalClickTimeMessage
-                        ;
                     await thankyouMessageParent(profileId, userMobileNumber);
-                    await sendMessage("+923170729640", notificationMessage); // Ali
-                    await sendMessage("+923008400080", notificationMessage); // Semal
-                    await sendMessage("+12028123335", notificationMessage); // Zainab
-                    await sendMessage("+923365905444", notificationMessage); // Amna
-                    await sendMessage("+923196609478", notificationMessage); // Midhat
-                    await sendMessage("+923322097852", notificationMessage); // Midhat 2
                     return;
                 }
 
-                if (currentUserState.dataValues.engagement_type == "Thankyou Message") {
+                if (currentUserState.dataValues.engagement_type == "Thankyou Message - Parent" ||
+                    currentUserState.dataValues.engagement_type == "Thankyou Message - School Owner" ||
+                    currentUserState.dataValues.engagement_type == "Thankyou Message"
+                ) {
                     if (messageContent.toLowerCase() == "get another trial") {
                         if (botPhoneNumberId == studentBotPhoneNumberId) {
                             await kidsChooseClassLoop(profileId, userMobileNumber);
@@ -404,6 +451,155 @@ const webhookService = async (body, res) => {
                         return;
                     }
                 }
+
+                // Multi User Registration
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Parent or Student") &&
+                    (messageContent.toLowerCase() == "register on whatsapp")
+                ) {
+                    await studentNameInput(profileId, userMobileNumber);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Student Name Input")
+                ) {
+                    await studentNameConfirmation(profileId, userMobileNumber, messageContent);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Student Name Confirmation") &&
+                    (messageContent.toLowerCase() == "no" || messageContent.toLowerCase() == "no, type again")
+                ) {
+                    await studentNameInput(profileId, userMobileNumber);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Student Name Confirmation") &&
+                    (messageContent.toLowerCase() == "yes")
+                ) {
+                    await studentGenericClassInput(profileId, userMobileNumber);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Student Generic Class Input") &&
+                    (
+                        messageContent.toLowerCase() == "class 1, 2 or 3" ||
+                        messageContent.toLowerCase() == "class 4, 5 or 6" ||
+                        messageContent.toLowerCase() == "class 7 and above"
+                    )
+                ) {
+                    if (messageContent.toLowerCase() == "class 7 and above") {
+                        await studentSpecificClassConfirmation(profileId, userMobileNumber, messageContent);
+                    } else {
+                        await studentGenericClassConfirmation(profileId, userMobileNumber, messageContent);
+                    }
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Student Generic Class Confirmation") &&
+                    (messageContent.toLowerCase() == "no" || messageContent.toLowerCase() == "no, choose again")
+                ) {
+                    await studentGenericClassInput(profileId, userMobileNumber);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Student Generic Class Confirmation") &&
+                    (messageContent.toLowerCase() == "yes")
+                ) {
+                    await studentSpecificClassInput(profileId, userMobileNumber, currentUserMetadata.dataValues.classLevel);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Student Specific Class Input") &&
+                    (
+                        messageContent.toLowerCase() == "class 1" ||
+                        messageContent.toLowerCase() == "class 2" ||
+                        messageContent.toLowerCase() == "class 3" ||
+                        messageContent.toLowerCase() == "class 4" ||
+                        messageContent.toLowerCase() == "class 5" ||
+                        messageContent.toLowerCase() == "class 6" ||
+                        messageContent.toLowerCase() == "class 7 and above"
+                    )
+                ) {
+                    await studentSpecificClassConfirmation(profileId, userMobileNumber, messageContent);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Student Specific Class Confirmation") &&
+                    (messageContent.toLowerCase() == "no")
+                ) {
+                    await studentSpecificClassInput(profileId, userMobileNumber, currentUserMetadata.dataValues.classLevel);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Student Specific Class Confirmation") &&
+                    (messageContent.toLowerCase() == "yes")
+                ) {
+                    await singleStudentRegistationComplate(profileId, userMobileNumber);
+                    return;
+                }
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Single Student Registration Complete") &&
+                    messageContent.toLowerCase() == "go to payment"
+                ) {
+                    await paymentDetails(profileId, userMobileNumber);
+                    return;
+                }
+
+
+                if (
+                    text_message_types.includes(message.type) &&
+                    (currentUserState.dataValues.engagement_type == "Single Student Registration Complete") &&
+                    (messageContent.toLowerCase() == "register new student")
+                ) {
+                    const profile_type = "student";
+                    let profile = await waProfileRepository.create({ phone_number: userMobileNumber, bot_phone_number_id: botPhoneNumberId, profile_type: profile_type });
+                    profileId = profile.dataValues.profile_id;
+                    await waUsersMetadataRepository.create({ profile_id: profileId, phoneNumber: userMobileNumber, userClickedLink: new Date() });
+                    await waActiveSessionRepository.updateCurrentProfileIdOnPhoneNumber(userMobileNumber, profileId, botPhoneNumberId);
+                    await waUserProgressRepository.create({ profile_id: profileId, phoneNumber: userMobileNumber, engagement_type: "Greeting Message", lastUpdated: new Date(), persona: "parent or student" });
+                    await studentNameInput(profileId, userMobileNumber);
+                    return;
+                }
+
+                if (
+                    (message.type == "image") &&
+                    (currentUserState.dataValues.engagement_type == "Payment Details")
+                ) {
+                    await paymentComplete(profileId, userMobileNumber, inboundUploadedImage);
+                    return;
+                } else if (
+                    (message.type != "image") &&
+                    (currentUserState.dataValues.engagement_type == "Payment Details")
+                ) {
+                    await sendButtonMessage(userMobileNumber, "Please send us a screenshot of your payment or click on Chat with Beaj Rep to talk to us.", [{ id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }]);
+                    return;
+                }
+
+
+
+
 
                 // Teacher Training Trial
                 if (

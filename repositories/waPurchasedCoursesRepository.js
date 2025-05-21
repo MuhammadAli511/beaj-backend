@@ -1,4 +1,5 @@
 import WA_PurchasedCourses from '../models/WA_PurchasedCourses.js';
+import { Op } from 'sequelize';
 
 const create = async (data) => {
     const purchasedCourse = new WA_PurchasedCourses(data);
@@ -37,6 +38,14 @@ const getAllByPhoneNumber = async (phoneNumber) => {
     });
 };
 
+const deleteByPhoneNumber = async (phoneNumber) => {
+    return await WA_PurchasedCourses.destroy({
+        where: {
+            phoneNumber: phoneNumber
+        }
+    });
+};
+
 const getPurchasedCoursesByPhoneNumber = async (phoneNumber) => {
     return await WA_PurchasedCourses.findAll({
         where: {
@@ -60,14 +69,25 @@ const getPurchasedCount = async () => {
     });
 };
 
-const deleteByProfileId = async (profile_id, phoneNumber) => {
-    return await WA_PurchasedCourses.destroy({
+const getPurchasedCourseByPaymentStatus = async (paymentStatus) => {
+    return await WA_PurchasedCourses.findAll({
         where: {
-            phoneNumber: phoneNumber,
-            profile_id: profile_id
+            paymentStatus: paymentStatus,
+            courseStartDate: {
+                [Op.gt]: new Date('2025-04-26')
+            }
         }
     });
 };
+
+const updatePaymentStatusByProfileId = async (profileId, paymentStatus) => {
+    return await WA_PurchasedCourses.update({
+        paymentStatus: paymentStatus
+    }, {
+        where: { profile_id: profileId }
+    });
+};
+
 
 export default {
     create,
@@ -79,5 +99,7 @@ export default {
     getPurchasedCoursesByPhoneNumber,
     getPurchasedCount,
     getPurchasedCoursesByProfileId,
-    deleteByProfileId
+    getPurchasedCourseByPaymentStatus,
+    updatePaymentStatusByProfileId,
+    deleteByPhoneNumber,
 };
