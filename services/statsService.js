@@ -109,7 +109,7 @@ const studentTrialUserJourneyStatsService = async (date) => {
         // Set default date if not provided
         const filterDate = date || '2025-04-26 12:00:00';
 
-        const qry1 =   `SELECT
+        const qry1 = `SELECT
                       CASE
                         WHEN "messageContent"[1] = 'Start Free Trial now!' THEN 'Community'
                         WHEN "messageContent"[1] = 'Start my Free Trial now!' THEN 'Social Media ads'
@@ -134,7 +134,7 @@ const studentTrialUserJourneyStatsService = async (date) => {
                     ORDER BY user_count DESC;`;
 
 
-         const qry2 = `WITH TargetGroup AS (
+        const qry2 = `WITH TargetGroup AS (
                         SELECT 
                             m."phoneNumber"
                         FROM 
@@ -284,13 +284,13 @@ const studentTrialUserJourneyStatsService = async (date) => {
                 FROM aggregated;
                 `;
 
-            const qry5 = `select "persona", count(*) from "wa_user_progress" u left join "wa_profiles" p 
+        const qry5 = `select "persona", count(*) from "wa_user_progress" u left join "wa_profiles" p 
                           on u."profile_id" = p."profile_id" where p."profile_type" = 'student' and 
                           (u."currentCourseId" = 117 or u."currentCourseId" = 113)
                           group by "persona";
                 `;
 
-              const qry6 = `WITH lesson_data AS (
+        const qry6 = `WITH lesson_data AS (
                     SELECT 
                         p."profile_id",
                         CASE WHEN l."currentCourseId" = 117 THEN 1 ELSE 0 END AS attempted_117,
@@ -319,7 +319,7 @@ const studentTrialUserJourneyStatsService = async (date) => {
                 `;
 
         // Execute all queries concurrently
-        const [userGroup, lastActivityLevel1, lastActivityLevel3,trialOpt, RegistrationType, CumulativeReg] = await Promise.all([
+        const [userGroup, lastActivityLevel1, lastActivityLevel3, trialOpt, RegistrationType, CumulativeReg] = await Promise.all([
             sequelize.query(qry1),
             sequelize.query(qry2),
             sequelize.query(qry3),
@@ -460,8 +460,8 @@ const studentUserJourneyStatsService = async (date) => {
               COALESCE(utc.started_113, 0) AS level3_trial_starts,
               COALESCE(utc.started_117, 0) AS level1_trial_starts,
               CASE
-                WHEN fm.first_message_content = 'Start Free Trial now!' THEN 'Community'
-                WHEN fm.first_message_content = 'Start my Free Trial now!' THEN 'Social Media ads'
+                WHEN LOWER(fm.first_message_content) = LOWER('Start Free Trial now!') THEN 'Community'
+                WHEN LOWER(fm.first_message_content) = LOWER('Start my Free Trial now!') THEN 'Social Media ads'
                 ELSE 'Unknown'
               END AS source,
               lm.last_message_content,
