@@ -111,8 +111,8 @@ const studentTrialUserJourneyStatsService = async (date) => {
 
         const qry1 = `SELECT
                       CASE
-                        WHEN "messageContent"[1] = 'Start Free Trial now!' THEN 'Community'
-                        WHEN "messageContent"[1] = 'Start my Free Trial now!' THEN 'Social Media ads'
+                        WHEN LOWER("messageContent"[1]) = LOWER('Start Free Trial now!') THEN 'Community'
+                        WHEN LOWER("messageContent"[1]) = LOWER('Start my Free Trial now!') THEN 'Social Media ads'
                         ELSE 'Unknown'
                       END AS source,
                       COUNT(*) AS user_count
