@@ -70,6 +70,10 @@ WA_UsersMetadata.init({
         type: DataTypes.TEXT,
         allowNull: true,
     },
+    rollout: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    }
 }, {
     sequelize,
     modelName: 'WA_UsersMetadata',
