@@ -17,8 +17,16 @@ MultipleChoiceQuestionAnswer.init({
     type: DataTypes.STRING,
     allowNull: true
   },
+  AnswerImageMediaId: {
+    type: DataTypes.BIGINT,
+    allowNull: true
+  },
   AnswerAudioUrl: {
     type: DataTypes.STRING,
+    allowNull: true
+  },
+  AnswerAudioMediaId: {
+    type: DataTypes.BIGINT,
     allowNull: true
   },
   IsCorrect: {
@@ -33,8 +41,16 @@ MultipleChoiceQuestionAnswer.init({
     type: DataTypes.STRING,
     allowNull: true
   },
+  CustomAnswerFeedbackImageMediaId: {
+    type: DataTypes.BIGINT,
+    allowNull: true
+  },
   CustomAnswerFeedbackAudio: {
     type: DataTypes.STRING,
+    allowNull: true
+  },
+  CustomAnswerFeedbackAudioMediaId: {
+    type: DataTypes.BIGINT,
     allowNull: true
   },
   MultipleChoiceQuestionId: {
