@@ -91,6 +91,6 @@ async function runETLProcess(scheduleTime) {
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
   if (process.env.ENVIRONMENT != 'DEV') {
-    // startETLProcess();
+    startETLProcess();
   }
 });
