@@ -2,10 +2,14 @@ import axios from "axios";
 import { getBotPhoneNumberIdForRequest } from './requestContext.js';
 import DocumentFile from '../models/DocumentFile.js';
 import SpeakActivityQuestion from '../models/SpeakActivityQuestion.js';
+import MultipleChoiceQuestion from '../models/MultipleChoiceQuestion.js';
+import MultipleChoiceQuestionAnswer from '../models/MultipleChoiceQuestionAnswer.js';
 
 const modelToMediaIdField = {
     "DocumentFile": DocumentFile,
-    "SpeakActivityQuestion": SpeakActivityQuestion
+    "SpeakActivityQuestion": SpeakActivityQuestion,
+    "MultipleChoiceQuestion": MultipleChoiceQuestion,
+    "MultipleChoiceQuestionAnswer": MultipleChoiceQuestionAnswer
 };
 
 const whatsappToken = process.env.WHATSAPP_TOKEN;
