@@ -116,16 +116,16 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             await sleep(2000);
             let buttonsArray = [];
             if (checkRegistrationComplete == true) {
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start questions", "get help"]);
-                buttonsArray = [{ id: 'start_questions', title: 'Start Questions' }, { id: 'get_help', title: 'Get Help' }];
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start questions", "chat with beaj rep"]);
+                buttonsArray = [{ id: 'start_questions', title: 'Start Questions' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
             } else {
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start questions", "go to registration", "get help"]);
-                buttonsArray = [{ id: 'start_questions', title: 'Start Questions' }, { id: 'go_to_registration', title: 'Go to Registration' }, { id: 'get_help', title: 'Get Help' }];
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start questions", "skip trial", "chat with beaj rep"]);
+                buttonsArray = [{ id: 'start_questions', title: 'Start Questions' }, { id: 'skip_trial', title: 'Skip Trial' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
             }
             // Reply Buttons
             if (message == null) {
                 await sendButtonMessage(userMobileNumber, 'Start Questions!', buttonsArray);
-                await createActivityLog(userMobileNumber, "template", "outbound", "Start Questions or Go to Registration or Get Help", null);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Start Questions or Skip Trial or Chat with Beaj Rep", null);
             } else {
                 await sendButtonMessage(userMobileNumber, message, buttonsArray);
                 await createActivityLog(userMobileNumber, "template", "outbound", message, null);
@@ -144,16 +144,16 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             }
             let buttonsArray = [];
             if (checkRegistrationComplete == true) {
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "get help"]);
-                buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'get_help', title: 'Get Help' }];
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "chat with beaj rep"]);
+                buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
             } else {
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "go to registration", "get help"]);
-                buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'go_to_registration', title: 'Go to Registration' }, { id: 'get_help', title: 'Get Help' }];
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "skip trial", "chat with beaj rep"]);
+                buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'skip_trial', title: 'Skip Trial' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
             }
             // Reply Buttons
             if (message == null) {
                 await sendButtonMessage(userMobileNumber, finalTextMessage, buttonsArray);
-                await createActivityLog(userMobileNumber, "template", "outbound", "Next Activity or Go to Registration or Get Help", null);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Next Activity or Skip Trial or Chat with Beaj Rep", null);
             } else {
                 await sendButtonMessage(userMobileNumber, message, buttonsArray);
                 await createActivityLog(userMobileNumber, "template", "outbound", message, null);
@@ -195,14 +195,14 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             return;
         } else if (checkRegistrationComplete == false && lessonLast == false) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "go to registration", "get help"]);
-            let buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'go_to_registration', title: 'Go to Registration' }, { id: 'get_help', title: 'Get Help' }];
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "skip trial", "chat with beaj rep"]);
+            let buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'skip_trial', title: 'Skip Trial' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
 
 
             // Reply Buttons
             if (message == null) {
                 await sendButtonMessage(userMobileNumber, 'Challenge Complete! 💪🏽', buttonsArray);
-                await createActivityLog(userMobileNumber, "template", "outbound", "Next Activity or Go to Registration or Get Help", null);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Next Activity or Skip Trial or Chat with Beaj Rep", null);
             } else {
                 await sendButtonMessage(userMobileNumber, message, buttonsArray);
                 await createActivityLog(userMobileNumber, "template", "outbound", message, null);
@@ -211,13 +211,13 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             return;
         } else if (checkRegistrationComplete == true && lessonLast == false) {
             // Update acceptable messages list for the user
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "get help"]);
-            let buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'get_help', title: 'Get Help' }];
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "chat with beaj rep"]);
+            let buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
 
             // Reply Buttons
             if (message == null) {
                 await sendButtonMessage(userMobileNumber, 'Challenge Complete! 💪🏽', buttonsArray);
-                await createActivityLog(userMobileNumber, "template", "outbound", "Next Activity or Get Help", null);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Next Activity or Chat with Beaj Rep", null);
             } else {
                 await sendButtonMessage(userMobileNumber, message, buttonsArray);
                 await createActivityLog(userMobileNumber, "template", "outbound", message, null);

@@ -300,12 +300,15 @@ const webhookService = async (body, res) => {
                     (
                         messageContent.toLowerCase() == "end now" ||
                         messageContent.toLowerCase() == "go to registration" ||
-                        messageContent.toLowerCase() == "register now"
+                        messageContent.toLowerCase() == "register now" ||
+                        messageContent.toLowerCase() == "skip trial"
                     ) &&
-                    (currentUserState.dataValues.engagement_type == "Free Trial - Teachers" ||
+                    (
+                        currentUserState.dataValues.engagement_type == "Free Trial - Teachers" ||
                         currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" ||
                         currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3" ||
-                        currentUserState.dataValues.engagement_type == "Greeting Message - Kids"
+                        currentUserState.dataValues.engagement_type == "Greeting Message - Kids" ||
+                        currentUserState.dataValues.engagement_type == "Choose Class"
                     )
                 ) {
                     if (botPhoneNumberId == studentBotPhoneNumberId) {
