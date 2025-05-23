@@ -90,10 +90,10 @@ const getLessonByCourseIdController = async (req, res, next) => {
 
 const testLessonController = async (req, res, next) => {
     try {
-        const { profile_id, phoneNumber, lesson } = req.body;
+        const { phoneNumber, lesson } = req.body;
         // console.log("phoneNumber", phoneNumber);
-        const result = await service.testLessonService(profile_id, phoneNumber, lesson);
-         console.log("result", result);
+        const result = await service.testLessonService(phoneNumber, lesson);
+        //  console.log("result", result);
         res.status(200).send({ message: "Lesson copied successfully", result });
     } catch (error) {
         error.fileName = 'lessonController.js';

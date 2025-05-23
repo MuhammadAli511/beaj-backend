@@ -5,7 +5,9 @@ import multipleChoiceQuestionRepository from "../repositories/multipleChoiceQues
 import multipleChoiceQuestionAnswerRepository from "../repositories/multipleChoiceQuestionAnswerRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
 import waPurchasedCoursesRepository from "../repositories/waPurchasedCoursesRepository.js";
+import waUserMetaRepository from "../repositories/waUsersMetadataRepository.js";
 import prodSequelize from "../config/prodDB.js";
+import courseRepository from "../repositories/courseRepository.js";
 
 const createLessonService = async (lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status) => {
     try {
@@ -294,7 +296,7 @@ const getLessonByCourseIdService = async (id) => {
     }
 };
 
-const testLessonService = async (profile_id, phoneNumber, lesson) => {
+const testLessonService = async (phoneNumber, lesson) => {
   try {
     const {
       LessonId,
@@ -360,20 +362,26 @@ const testLessonService = async (profile_id, phoneNumber, lesson) => {
       const now = new Date();
 
       // Delete previous purchases
-      await waPurchasedCoursesRepository.deleteByProfileId(profile_id, phoneNumber);
+      await waPurchasedCoursesRepository.deleteByPhoneNumber(phoneNumber);
+
+      const waUserMeta = await waUserMetaRepository.getByPhoneNumber(phoneNumber);
+
+      const courseCateg = await courseRepository.getById(previousLesson.courseId);
+
+    //   console.log(courseCateg.CourseCategoryId);
       // Add new record
       const newPurchase = await waPurchasedCoursesRepository.create({
             phoneNumber,
             courseId: previousLesson.courseId,
-            courseCategoryId: 70,
-            profile_id,
+            courseCategoryId: courseCateg.CourseCategoryId,
+            profile_id: waUserMeta.profile_id,
             purchaseDate: now,
             courseStartDate: now,
             });
-        console.log('newPurchase: ', newPurchase);
+        // console.log('newPurchase: ', newPurchase);
 
       // Update progress
-      const updateUserProgress = await waUserProgressRepository.updateTestUserProgress(profile_id, phoneNumber, {
+      const updateUserProgress = await waUserProgressRepository.updateTestUserProgress(phoneNumber, {
         engagement_type: 'Course Start',
         currentCourseId: previousLesson.courseId,
         currentWeek: previousLesson.weekNumber,
@@ -387,7 +395,7 @@ const testLessonService = async (profile_id, phoneNumber, lesson) => {
         lastUpdated: now,
       });
 
-      console.log('updateUserProgress: ', updateUserProgress);
+    //   console.log('updateUserProgress: ', updateUserProgress);
 
       return obj;
     }
