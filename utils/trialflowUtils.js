@@ -249,7 +249,7 @@ const getUserProfile = async (profileId, userMobileNumber) => {
     const userProfileMessage = "Are you a parent/student or school admin?\n\nکیا آپ والدین/سٹوڈنٹ ہیں یا اسکول چلاتے ہیں؟";
     await sendButtonMessage(userMobileNumber, userProfileMessage, [{ id: 'parent_student', title: 'Parent or Student' }, { id: 'school_admin', title: 'School Admin' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", userProfileMessage, null);
-    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["parent or student", "school admin"]);
+    await waUserProgressRepository.update(profileId, userMobileNumber, null, null, null, null, null, null, null, null, ["parent or student", "school admin"]);
     return;
 };
 

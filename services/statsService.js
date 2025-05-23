@@ -193,7 +193,7 @@ const studentTrialUserJourneyStatsService = async (date) => {
             ORDER BY 
                 cl."weekNumber", cl."dayNumber", cl."SequenceNumber";`
 
-                    const qry3 = `WITH students AS (
+        const qry3 = `WITH students AS (
                 SELECT 
                     m."phoneNumber",
                     m."profile_id"
@@ -326,75 +326,9 @@ const studentUserJourneyStatsService = async (date) => {
         // Set default date if not provided
         const filterDate = date || '2025-04-26 12:00:00';
 
-        // Query 1: Get user data with joins and trial starts information
+        // Final optimized Query 1: Further micro-optimizations
         const userDataQuery = `
-            WITH ordered_logs AS (
-              SELECT
-                profile_id,
-                id,
-                timestamp,
-                "messageDirection",
-                "messageContent",
-                "courseId",
-                LEAD("courseId") OVER (
-                  PARTITION BY profile_id
-                  ORDER BY timestamp, id
-                ) AS next_course_id
-              FROM wa_user_activity_logs
-              -- Add filter here to reduce the dataset early
-              WHERE profile_id IN (
-                SELECT p.profile_id
-                FROM wa_users_metadata m
-                INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
-                WHERE m."userClickedLink" > TIMESTAMP '${filterDate}'
-                AND p.profile_type = 'student'
-              )
-            ),
-            
-            user_trial_counts AS (
-              SELECT
-                profile_id,
-                SUM(CASE WHEN next_course_id = 113 THEN 1 ELSE 0 END) AS started_113,
-                SUM(CASE WHEN next_course_id = 117 THEN 1 ELSE 0 END) AS started_117
-              FROM ordered_logs
-              WHERE
-                "messageDirection" = 'inbound'
-                AND "messageContent"[1] = 'start free trial'
-              GROUP BY profile_id
-            ),
-            
-            first_messages AS (
-              SELECT DISTINCT ON (profile_id)
-                profile_id,
-                "messageContent"[1] AS first_message_content
-              FROM wa_user_activity_logs
-              WHERE profile_id IN (
-                SELECT p.profile_id
-                FROM wa_users_metadata m
-                INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
-                WHERE m."userClickedLink" > TIMESTAMP '${filterDate}'
-                AND p.profile_type = 'student'
-              )
-              ORDER BY profile_id, timestamp ASC, id ASC
-            ),
-            
-            last_messages AS (
-              SELECT DISTINCT ON (profile_id)
-                profile_id,
-                "messageContent" AS last_message_content,
-                timestamp AS last_message_timestamp
-              FROM wa_user_activity_logs
-              WHERE profile_id IN (
-                SELECT p.profile_id
-                FROM wa_users_metadata m
-                INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
-                WHERE m."userClickedLink" > TIMESTAMP '${filterDate}'
-                AND p.profile_type = 'student'
-              )
-              ORDER BY profile_id, timestamp DESC, id DESC
-            ),
-            
-            filtered_users AS (
+            WITH base_filtered_users AS (
               SELECT 
                 m."phoneNumber",
                 m.name,
@@ -406,26 +340,86 @@ const studentUserJourneyStatsService = async (date) => {
                 m."schoolName",
                 m."targetGroup", 
                 m.cohort,
-                m."profile_id"
+                m."profile_id",
+                p.phone_number, 
+                p.profile_type, 
+                p.created_at
               FROM wa_users_metadata m
+              INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
               WHERE m."userClickedLink" > TIMESTAMP '${filterDate}'
+              AND p.profile_type = 'student'
+            ),
+            
+            activity_aggregated AS (
+              SELECT 
+                wal.profile_id,
+                wal.timestamp,
+                wal.id,
+                wal."messageDirection",
+                wal."messageContent",
+                wal."courseId",
+                -- Calculate next course for trial detection
+                LEAD(wal."courseId") OVER (
+                  PARTITION BY wal.profile_id 
+                  ORDER BY wal.timestamp, wal.id
+                ) AS next_course_id,
+                -- Get first and last messages efficiently
+                FIRST_VALUE(wal."messageContent"[1]) OVER (
+                  PARTITION BY wal.profile_id 
+                  ORDER BY wal.timestamp ASC, wal.id ASC 
+                  ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+                ) AS first_message_content,
+                FIRST_VALUE(wal."messageContent") OVER (
+                  PARTITION BY wal.profile_id 
+                  ORDER BY wal.timestamp DESC, wal.id DESC 
+                  ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+                ) AS last_message_content,
+                FIRST_VALUE(wal.timestamp) OVER (
+                  PARTITION BY wal.profile_id 
+                  ORDER BY wal.timestamp DESC, wal.id DESC 
+                  ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+                ) AS last_message_timestamp
+              FROM base_filtered_users bfu
+              INNER JOIN wa_user_activity_logs wal ON bfu.profile_id = wal.profile_id
+            ),
+            
+            trial_counts AS (
+              SELECT 
+                profile_id,
+                SUM(CASE 
+                  WHEN "messageDirection" = 'inbound' 
+                  AND "messageContent"[1] = 'start free trial'
+                  AND next_course_id = 113 
+                  THEN 1 ELSE 0 
+                END) AS level3_trial_starts,
+                SUM(CASE 
+                  WHEN "messageDirection" = 'inbound' 
+                  AND "messageContent"[1] = 'start free trial'
+                  AND next_course_id = 117 
+                  THEN 1 ELSE 0 
+                END) AS level1_trial_starts,
+                MIN(first_message_content) AS first_message_content,
+                MAX(last_message_content) AS last_message_content,
+                MAX(last_message_timestamp) AS last_message_timestamp
+              FROM activity_aggregated
+              GROUP BY profile_id
             )
             
             SELECT
-              fu."phoneNumber",
-              fu.name,
-              fu.city,
-              fu."userClickedLink",
-              fu."freeDemoStarted",
-              fu."freeDemoEnded",
-              fu."userRegistrationComplete",
-              fu."schoolName",
-              fu."targetGroup", 
-              fu.cohort,
-              p.profile_id, 
-              p.phone_number, 
-              p.profile_type, 
-              p.created_at,
+              bfu."phoneNumber",
+              bfu.name,
+              bfu.city,
+              bfu."userClickedLink",
+              bfu."freeDemoStarted",
+              bfu."freeDemoEnded",
+              bfu."userRegistrationComplete",
+              bfu."schoolName",
+              bfu."targetGroup", 
+              bfu.cohort,
+              bfu.profile_id, 
+              bfu.phone_number, 
+              bfu.profile_type, 
+              bfu.created_at,
               wup.persona,
               wup.engagement_type, 
               wup."currentCourseId", 
@@ -436,100 +430,110 @@ const studentUserJourneyStatsService = async (date) => {
               wup."activityType",
               wup."questionNumber",
               wup."acceptableMessages",
-              COALESCE(utc.started_113, 0) AS level3_trial_starts,
-              COALESCE(utc.started_117, 0) AS level1_trial_starts,
+              COALESCE(tc.level3_trial_starts, 0) AS level3_trial_starts,
+              COALESCE(tc.level1_trial_starts, 0) AS level1_trial_starts,
               CASE
-                WHEN LOWER(fm.first_message_content) = LOWER('Start Free Trial now!') THEN 'Community'
-                WHEN LOWER(fm.first_message_content) = LOWER('Start my Free Trial now!') THEN 'Social Media ads'
+                WHEN LOWER(tc.first_message_content) = LOWER('Start Free Trial now!') THEN 'Community'
+                WHEN LOWER(tc.first_message_content) = LOWER('Start my Free Trial now!') THEN 'Social Media ads'
                 ELSE 'Unknown'
               END AS source,
-              lm.last_message_content,
-              lm.last_message_timestamp
-            FROM filtered_users fu
-            INNER JOIN wa_profiles p
-              ON fu."profile_id" = p.profile_id
-            INNER JOIN wa_user_progress wup
-              ON p.profile_id = wup.profile_id
-            LEFT JOIN user_trial_counts utc
-              ON utc.profile_id = fu."profile_id"
-            LEFT JOIN first_messages fm
-              ON fm.profile_id = p.profile_id
-            LEFT JOIN last_messages lm
-              ON lm.profile_id = p.profile_id
-            WHERE p.profile_type = 'student'
-            ORDER BY fu."phoneNumber"
+              tc.last_message_content,
+              tc.last_message_timestamp
+            FROM base_filtered_users bfu
+            INNER JOIN wa_user_progress wup ON bfu.profile_id = wup.profile_id
+            LEFT JOIN trial_counts tc ON bfu.profile_id = tc.profile_id
+            ORDER BY bfu."phoneNumber"
         `;
 
-        // Query 2: Get statistics for each stage of the journey - adding filter subquery to improve performance
+        // Further optimized Query 2: Use EXISTS for better performance
         const statsQuery = `
-            WITH filtered_users AS (
-                SELECT m."profile_id"
-                FROM wa_users_metadata m
-                INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
-                WHERE m."userClickedLink" > TIMESTAMP '${filterDate}'
-                AND p.profile_type = 'student'
-            )
-            
-            SELECT 'Clicked Link' AS stage, COUNT(*) as count
+            SELECT 'Clicked Link' AS stage, 
+                   COUNT(*) as count
             FROM wa_users_metadata m
-            INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
-            INNER JOIN wa_user_progress wup ON p."profile_id" = wup."profile_id"
-            WHERE m."profile_id" IN (SELECT "profile_id" FROM filtered_users)
+            WHERE m."userClickedLink" > TIMESTAMP '${filterDate}'
             AND m."userClickedLink" IS NOT NULL
+            AND EXISTS (
+              SELECT 1 FROM wa_profiles p 
+              WHERE p.profile_id = m.profile_id 
+              AND p.profile_type = 'student'
+            )
+            AND EXISTS (
+              SELECT 1 FROM wa_user_progress wup 
+              WHERE wup.profile_id = m.profile_id
+            )
 
             UNION ALL
 
-            SELECT 'Demo Started' AS stage, COUNT(*) as count
+            SELECT 'Demo Started' AS stage, 
+                   COUNT(*) as count
             FROM wa_users_metadata m
-            INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
-            INNER JOIN wa_user_progress wup ON p."profile_id" = wup."profile_id"
-            WHERE m."profile_id" IN (SELECT "profile_id" FROM filtered_users)
+            WHERE m."userClickedLink" > TIMESTAMP '${filterDate}'
             AND m."freeDemoStarted" IS NOT NULL
+            AND EXISTS (
+              SELECT 1 FROM wa_profiles p 
+              WHERE p.profile_id = m.profile_id 
+              AND p.profile_type = 'student'
+            )
+            AND EXISTS (
+              SELECT 1 FROM wa_user_progress wup 
+              WHERE wup.profile_id = m.profile_id
+            )
 
             UNION ALL
 
-            SELECT 'Demo Ended' AS stage, COUNT(*) as count
+            SELECT 'Demo Ended' AS stage, 
+                   COUNT(*) as count
             FROM wa_users_metadata m
-            INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
-            INNER JOIN wa_user_progress wup ON p."profile_id" = wup."profile_id"
-            WHERE m."profile_id" IN (SELECT "profile_id" FROM filtered_users)
+            WHERE m."userClickedLink" > TIMESTAMP '${filterDate}'
             AND m."freeDemoEnded" IS NOT NULL
+            AND EXISTS (
+              SELECT 1 FROM wa_profiles p 
+              WHERE p.profile_id = m.profile_id 
+              AND p.profile_type = 'student'
+            )
+            AND EXISTS (
+              SELECT 1 FROM wa_user_progress wup 
+              WHERE wup.profile_id = m.profile_id
+            )
 
             UNION ALL
 
-            SELECT 'Registration Completed' AS stage, COUNT(*) as count
+            SELECT 'Registration Completed' AS stage, 
+                   COUNT(*) as count
             FROM wa_users_metadata m
-            INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
-            INNER JOIN wa_user_progress wup ON p."profile_id" = wup."profile_id"
-            WHERE m."profile_id" IN (SELECT "profile_id" FROM filtered_users)
+            WHERE m."userClickedLink" > TIMESTAMP '${filterDate}'
             AND m."userRegistrationComplete" IS NOT NULL
+            AND EXISTS (
+              SELECT 1 FROM wa_profiles p 
+              WHERE p.profile_id = m.profile_id 
+              AND p.profile_type = 'student'
+            )
+            AND EXISTS (
+              SELECT 1 FROM wa_user_progress wup 
+              WHERE wup.profile_id = m.profile_id
+            )
         `;
 
-        // Graph query - fixed duplicate condition and made date consistent with filterDate
+        // Optimized Query 3: Use EXISTS for graph query  
         const graphQuery = `
-            WITH daily_stats AS (
-                SELECT 
-                    DATE(m."userClickedLink") AS date,
-                    COUNT(DISTINCT m."phoneNumber") AS clicked_count,
-                    COUNT(DISTINCT CASE WHEN m."userRegistrationComplete" IS NOT NULL THEN m."phoneNumber" END) AS registered_count
-                FROM wa_users_metadata m
-                INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
-                WHERE 
-                    m."userClickedLink" >= TIMESTAMP '${filterDate}'
-                    AND p.profile_type = 'student'
-                GROUP BY DATE(m."userClickedLink")
-                ORDER BY date
-            )
-            
             SELECT 
-                date,
-                clicked_count,
-                registered_count,
+                DATE(m."userClickedLink") AS date,
+                COUNT(DISTINCT m."phoneNumber") AS clicked_count,
+                COUNT(DISTINCT CASE WHEN m."userRegistrationComplete" IS NOT NULL THEN m."phoneNumber" END) AS registered_count,
                 CASE 
-                    WHEN clicked_count > 0 THEN ROUND((registered_count::numeric / clicked_count) * 100, 2)
+                    WHEN COUNT(DISTINCT m."phoneNumber") > 0 
+                    THEN ROUND((COUNT(DISTINCT CASE WHEN m."userRegistrationComplete" IS NOT NULL THEN m."phoneNumber" END)::numeric / COUNT(DISTINCT m."phoneNumber")) * 100, 2)
                     ELSE 0
                 END AS conversion_percentage
-            FROM daily_stats;
+            FROM wa_users_metadata m
+            WHERE m."userClickedLink" >= TIMESTAMP '${filterDate}'
+            AND EXISTS (
+              SELECT 1 FROM wa_profiles p 
+              WHERE p.profile_id = m.profile_id 
+              AND p.profile_type = 'student'
+            )
+            GROUP BY DATE(m."userClickedLink")
+            ORDER BY date
         `;
 
         // Execute all queries concurrently
