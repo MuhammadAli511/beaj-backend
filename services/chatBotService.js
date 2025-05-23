@@ -300,12 +300,15 @@ const webhookService = async (body, res) => {
                     (
                         messageContent.toLowerCase() == "end now" ||
                         messageContent.toLowerCase() == "go to registration" ||
-                        messageContent.toLowerCase() == "register now"
+                        messageContent.toLowerCase() == "register now" ||
+                        messageContent.toLowerCase() == "skip trial"
                     ) &&
-                    (currentUserState.dataValues.engagement_type == "Free Trial - Teachers" ||
+                    (
+                        currentUserState.dataValues.engagement_type == "Free Trial - Teachers" ||
                         currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" ||
                         currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3" ||
-                        currentUserState.dataValues.engagement_type == "Greeting Message - Kids"
+                        currentUserState.dataValues.engagement_type == "Greeting Message - Kids" ||
+                        currentUserState.dataValues.engagement_type == "Choose Class"
                     )
                 ) {
                     if (botPhoneNumberId == studentBotPhoneNumberId) {
@@ -369,8 +372,8 @@ const webhookService = async (body, res) => {
                     (currentUserState.dataValues.engagement_type == "School Admin Confirmation")
                 ) {
                     if (messageContent.toLowerCase() == "school admin") {
-                        let prospectusPdf = "https://beajbloblive.blob.core.windows.net/beajdocuments/Student%20Summer%20Camp%20Prospectus.pdf";
-                        await sendMediaMessage(userMobileNumber, prospectusPdf, "pdf", "Beaj Summer Camp Prospectus for Schools");
+                        let prospectusPdf = "https://beajbloblive.blob.core.windows.net/beajdocuments/Summer%20Camp%20Prospectus%20for%20Schools2.pdf";
+                        await sendMediaMessage(userMobileNumber, prospectusPdf, "pdf", "Summer Camp Prospectus for Schools");
                         await sleep(8000);
                         await waUserProgressRepository.updatePersona(profileId, userMobileNumber, "school admin");
                         await getSchoolName(profileId, userMobileNumber);
