@@ -134,138 +134,134 @@ const studentTrialUserJourneyStatsService = async (date) => {
                     ORDER BY user_count DESC;`;
 
 
-        const qry2 = `WITH TargetGroup AS (
-                        SELECT 
-                            m."phoneNumber"
-                        FROM 
-                            "wa_users_metadata" m left join "wa_profiles" p on m."phoneNumber" = p."phone_number" and m."profile_id" = p."profile_id"
-                        WHERE 
-                            p."profile_type" = 'student'
-                    ),
-                    get_lessonIds AS (
-                        SELECT 
-                            "LessonId", 
-                            "weekNumber", 
-                        "dayNumber",
-                            "SequenceNumber" 
-                        FROM 
-                            "Lesson" 
-                        WHERE 
-                            "courseId" = 117 and "status" = 'Active'
-                    ),
-                    LessonWithMaxTimestamp AS (
-                        SELECT 
-                            l."phoneNumber",
-                            l."lessonId",
-                            l."endTime",
-                            ROW_NUMBER() OVER (
-                                PARTITION BY l."phoneNumber" 
-                                ORDER BY l."endTime" DESC
-                            ) AS row_num
-                        FROM 
-                            "wa_lessons_completed" l
-                        INNER JOIN 
-                            TargetGroup tg 
-                        ON 
-                            l."phoneNumber" = tg."phoneNumber"
-                        WHERE 
-                            l."completionStatus" = 'Completed'
-                            AND l."courseId" = 117
-                    ),
-                    LessonCompletionCounts AS (
-                        SELECT 
-                            lw."lessonId",
-                            COUNT(lw."phoneNumber") AS "completionCount"
-                        FROM 
-                            LessonWithMaxTimestamp lw
-                        WHERE 
-                            lw.row_num = 1
-                        GROUP BY 
-                            lw."lessonId"
-                    )
-                    SELECT 
-                        g."LessonId",
-                        COALESCE(lcc."completionCount", null) AS "total_students_completed"
-                    FROM 
-                        get_lessonIds g
-                    LEFT JOIN 
-                        LessonCompletionCounts lcc 
-                    ON 
-                        g."LessonId" = lcc."lessonId"
-                    ORDER BY 
-                        g."weekNumber",g."dayNumber",g."SequenceNumber";`
+        const qry2 = `WITH students AS (
+                SELECT 
+                    m."phoneNumber",
+                    m."profile_id"
+                FROM 
+                    "wa_users_metadata" m
+                INNER JOIN 
+                    "wa_profiles" p 
+                    ON m."phoneNumber" = p."phone_number" AND m."profile_id" = p."profile_id"
+                WHERE 
+                    p."profile_type" = 'student'
+            ),
+            course_lessons AS (
+                SELECT 
+                    "LessonId", 
+                    "activity",
+                    "activityAlias",
+                    "weekNumber", 
+                    "dayNumber", 
+                    "SequenceNumber"
+                FROM 
+                    "Lesson"
+                WHERE 
+                    "courseId" = 117
+                    AND "status" = 'Active'
+            ),
+            student_progress AS (
+                SELECT 
+                    up."phoneNumber",
+                    up."currentLessonId"
+                FROM 
+                    "wa_user_progress" up
+                INNER JOIN 
+                    students s 
+                    ON up."phoneNumber" = s."phoneNumber"
+            ),
+            progress_counts AS (
+                SELECT 
+                    sp."currentLessonId" AS "LessonId",
+                    COUNT(*) AS "student_count"
+                FROM 
+                    student_progress sp
+                GROUP BY 
+                    sp."currentLessonId"
+            )
+            SELECT 
+                cl."LessonId",
+                cl."activity",
+                cl."activityAlias",
+                CONCAT(cl."LessonId", ' (', cl."activity", ')') AS "lesson",
+                COALESCE(pc."student_count", 0) AS "count"
+            FROM 
+                course_lessons cl
+            LEFT JOIN 
+                progress_counts pc 
+                ON cl."LessonId" = pc."LessonId"
+            ORDER BY 
+                cl."weekNumber", cl."dayNumber", cl."SequenceNumber";`
 
-        const qry3 = `WITH TargetGroup AS (
-        SELECT 
-            m."phoneNumber"
-        FROM 
-            "wa_users_metadata" m left join "wa_profiles" p on m."phoneNumber" = p."phone_number" and m."profile_id" = p."profile_id"
-        WHERE 
-            p."profile_type" = 'student'
-    ),
-    get_lessonIds AS (
-        SELECT 
-            "LessonId", 
-            "weekNumber", 
-        "dayNumber",
-            "SequenceNumber" 
-        FROM 
-            "Lesson" 
-        WHERE 
-            "courseId" = 113 and "status" = 'Active'
-    ),
-    LessonWithMaxTimestamp AS (
-        SELECT 
-            l."phoneNumber",
-            l."lessonId",
-            l."endTime",
-            ROW_NUMBER() OVER (
-                PARTITION BY l."phoneNumber" 
-                ORDER BY l."endTime" DESC
-            ) AS row_num
-        FROM 
-            "wa_lessons_completed" l
-        INNER JOIN 
-            TargetGroup tg 
-        ON 
-            l."phoneNumber" = tg."phoneNumber"
-        WHERE 
-            l."completionStatus" = 'Completed'
-            AND l."courseId" = 113
-    ),
-    LessonCompletionCounts AS (
-        SELECT 
-            lw."lessonId",
-            COUNT(lw."phoneNumber") AS "completionCount"
-        FROM 
-            LessonWithMaxTimestamp lw
-        WHERE 
-            lw.row_num = 1
-        GROUP BY 
-            lw."lessonId"
-    )
-    SELECT 
-        g."LessonId",
-        COALESCE(lcc."completionCount", null) AS "total_students_completed"
-    FROM 
-        get_lessonIds g
-    LEFT JOIN 
-        LessonCompletionCounts lcc 
-    ON 
-        g."LessonId" = lcc."lessonId"
-    ORDER BY 
-        g."weekNumber",g."dayNumber",g."SequenceNumber";`
+                    const qry3 = `WITH students AS (
+                SELECT 
+                    m."phoneNumber",
+                    m."profile_id"
+                FROM 
+                    "wa_users_metadata" m
+                INNER JOIN 
+                    "wa_profiles" p 
+                    ON m."phoneNumber" = p."phone_number" AND m."profile_id" = p."profile_id"
+                WHERE 
+                    p."profile_type" = 'student'
+            ),
+            course_lessons AS (
+                SELECT 
+                    "LessonId", 
+                    "activity",
+                    "activityAlias",
+                    "weekNumber", 
+                    "dayNumber", 
+                    "SequenceNumber"
+                FROM 
+                    "Lesson"
+                WHERE 
+                    "courseId" = 113
+                    AND "status" = 'Active'
+            ),
+            student_progress AS (
+                SELECT 
+                    up."phoneNumber",
+                    up."currentLessonId"
+                FROM 
+                    "wa_user_progress" up
+                INNER JOIN 
+                    students s 
+                    ON up."phoneNumber" = s."phoneNumber"
+            ),
+            progress_counts AS (
+                SELECT 
+                    sp."currentLessonId" AS "LessonId",
+                    COUNT(*) AS "student_count"
+                FROM 
+                    student_progress sp
+                GROUP BY 
+                    sp."currentLessonId"
+            )
+            SELECT 
+                cl."LessonId",
+                cl."activity",
+                cl."activityAlias",
+                CONCAT(cl."LessonId", ' (', cl."activity", ')') AS "lesson",
+                COALESCE(pc."student_count", 0) AS "count"
+            FROM 
+                course_lessons cl
+            LEFT JOIN 
+                progress_counts pc 
+                ON cl."LessonId" = pc."LessonId"
+            ORDER BY 
+                cl."weekNumber", cl."dayNumber", cl."SequenceNumber";`
 
         const qry4 = `WITH lesson_data AS (
                     SELECT 
                         p."profile_id",
-                        CASE WHEN l."lessonId" = 2396 THEN 1 ELSE 0 END AS attempted_117,
-                        CASE WHEN l."lessonId" = 2392 THEN 1 ELSE 0 END AS attempted_113
+                        CASE WHEN l."courseId" = 117 THEN 1 ELSE 0 END AS attempted_117,
+                        CASE WHEN l."courseId" = 113 THEN 1 ELSE 0 END AS attempted_113
                     FROM "wa_profiles" p
                     inner JOIN "wa_lessons_completed" l ON p."profile_id" = l."profile_id"
                    -- inner join "wa_users_metadata" m on p."profile_id" = m."profile_id"
                     WHERE 
-                        (l."lessonId" = 2396 OR l."lessonId" = 2392)
+                        (l."courseId" = 117 OR l."courseId" = 113)
                         AND p."profile_type" = 'student'
                         -- AND m."userRegistrationComplete" IS NOT NULL
                 ),
@@ -279,8 +275,8 @@ const studentTrialUserJourneyStatsService = async (date) => {
                 )
                 SELECT
                     COUNT(*) FILTER (WHERE attempted_117 = 1 AND attempted_113 = 0) AS course_117,
-                    COUNT(*) FILTER (WHERE attempted_117 = 0 AND attempted_113 = 1) AS course_113
-                    -- COUNT(*) FILTER (WHERE attempted_117 = 1 AND attempted_113 = 1) AS both_courses
+                    COUNT(*) FILTER (WHERE attempted_117 = 0 AND attempted_113 = 1) AS course_113,
+                    COUNT(*) FILTER (WHERE attempted_117 = 1 AND attempted_113 = 1) AS both_courses
                 FROM aggregated;
                 `;
 
@@ -290,32 +286,15 @@ const studentTrialUserJourneyStatsService = async (date) => {
                           group by "persona";
                 `;
 
-        const qry6 = `WITH lesson_data AS (
-                    SELECT 
-                        p."profile_id",
-                        CASE WHEN l."currentCourseId" = 117 THEN 1 ELSE 0 END AS attempted_117,
-                        CASE WHEN l."currentCourseId" = 113 THEN 1 ELSE 0 END AS attempted_113
-                    FROM "wa_profiles" p
-                    inner JOIN "wa_user_progress" l ON p."profile_id" = l."profile_id"
-                    inner join "wa_users_metadata" m on p."profile_id" = m."profile_id"
-                    WHERE 
-                        (l."currentCourseId" = 117 OR l."currentCourseId" = 113)
-                        AND p."profile_type" = 'student'
-                         AND m."userRegistrationComplete" IS NOT NULL
-                ),
-                aggregated AS (
-                    SELECT 
-                        "profile_id",
-                        MAX(attempted_117) AS attempted_117,
-                        MAX(attempted_113) AS attempted_113
-                    FROM lesson_data
-                    GROUP BY "profile_id"
-                )
-                SELECT
-                    COUNT(*) FILTER (WHERE attempted_117 = 1 AND attempted_113 = 0) AS course_117,
-                    COUNT(*) FILTER (WHERE attempted_117 = 0 AND attempted_113 = 1) AS course_113
-                    -- COUNT(*) FILTER (WHERE attempted_117 = 1 AND attempted_113 = 1) AS both_courses
-                FROM aggregated;
+        const qry6 = `
+                select m."classLevel", count(*) from "wa_users_metadata" m inner join
+                "wa_profiles" p on m."profile_id" = p."profile_id" where p."profile_type" = 'student'
+                AND m."userRegistrationComplete" IS NOT NULL group by m."classLevel" ORDER BY 
+                    CASE 
+                        WHEN m."classLevel" IS NULL THEN 999
+                        WHEN m."classLevel" ~ 'class [0-9]+' THEN CAST(SUBSTRING(m."classLevel" FROM '[0-9]+') AS INT)
+                        ELSE 998 
+                    END;
                 `;
 
         // Execute all queries concurrently
