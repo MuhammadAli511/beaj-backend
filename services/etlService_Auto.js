@@ -123,7 +123,8 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
               l3_entry.final_percentage_week3,
               l3_entry.final_percentage_week4,
               null,
-              cohort
+              cohort,
+              targetGroup,
             ]);
           }
 
@@ -145,7 +146,7 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
         if (module == "Week") {
           if (arrayT1_List0) {
             console.log(arrayT1_List0);
-            await generateCertificatesForEligibleStudents(arrayT1_List0, 'weekly', targetGroup, cohort);
+            await generateCertificatesForEligibleStudents(arrayT1_List0, 'cumulative');
           }
         }
       }

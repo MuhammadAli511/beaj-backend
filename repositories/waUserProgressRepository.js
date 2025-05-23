@@ -130,11 +130,10 @@ const updatePersona = async (profileId, phoneNumber, persona) => {
     });
 };
 
-const updateTestUserProgress = async (profile_id, phoneNumber, data) => {
+const updateTestUserProgress = async (phoneNumber, data) => {
    return await WA_UserProgress.update(data, {
     where: { 
-        phoneNumber: phoneNumber, 
-        profile_id: profile_id
+        phoneNumber: phoneNumber
      }
   });
 };
