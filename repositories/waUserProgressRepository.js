@@ -130,6 +130,14 @@ const updatePersona = async (profileId, phoneNumber, persona) => {
     });
 };
 
+const updateTestUserProgress = async (phoneNumber, data) => {
+   return await WA_UserProgress.update(data, {
+    where: { 
+        phoneNumber: phoneNumber
+     }
+  });
+};
+
 export default {
     create,
     getByPhoneNumber,
@@ -142,5 +150,6 @@ export default {
     updateRetryCounter,
     updateQuestionNumberRetryCounterActivityType,
     updateEngagementType,
-    updatePersona
+    updatePersona,
+    updateTestUserProgress
 };

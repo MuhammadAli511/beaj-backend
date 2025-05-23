@@ -34,6 +34,9 @@ router.get('/getByCourseId/:courseId', beajEmployeesAuth, lessonController.getLe
 // POST api/lesson/migrateLesson
 router.post('/migrateLesson', beajEmployeesAuth, lessonController.migrateLessonController);
 
+router.post('/testLesson', beajEmployeesAuth, lessonController.testLessonController);
+
+
 // Use error handler middleware
 router.use(errorHandler);
 

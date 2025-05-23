@@ -88,6 +88,19 @@ const getLessonByCourseIdController = async (req, res, next) => {
     }
 };
 
+const testLessonController = async (req, res, next) => {
+    try {
+        const { phoneNumber, lesson } = req.body;
+        // console.log("phoneNumber", phoneNumber);
+        const result = await service.testLessonService(phoneNumber, lesson);
+        //  console.log("result", result);
+        res.status(200).send({ message: "Lesson copied successfully", result });
+    } catch (error) {
+        error.fileName = 'lessonController.js';
+        next(error);
+    }
+};
+
 export default {
     createLessonController,
     getAllLessonController,
@@ -96,5 +109,6 @@ export default {
     deleteLessonController,
     getLessonsByActivityController,
     migrateLessonController,
-    getLessonByCourseIdController
+    getLessonByCourseIdController,
+    testLessonController,
 };

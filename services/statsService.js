@@ -104,6 +104,223 @@ const lastActiveUsersService = async (days, cohorts) => {
     }
 };
 
+const studentTrialUserJourneyStatsService = async (date) => {
+    try {
+        // Set default date if not provided
+        const filterDate = date || '2025-04-26 12:00:00';
+
+        const qry1 = `SELECT
+                      CASE
+                        WHEN LOWER("messageContent"[1]) = LOWER('Start Free Trial now!') THEN 'Community'
+                        WHEN LOWER("messageContent"[1]) = LOWER('Start my Free Trial now!') THEN 'Social Media ads'
+                        ELSE 'Unknown'
+                      END AS source,
+                      COUNT(*) AS user_count
+                    FROM (
+                      SELECT DISTINCT ON (profile_id)
+                        profile_id,
+                        "messageContent"
+                      FROM wa_user_activity_logs
+                      WHERE profile_id IN (
+                        SELECT p.profile_id
+                        FROM wa_users_metadata m
+                        INNER JOIN wa_profiles p ON m."profile_id" = p.profile_id
+                        WHERE m."userClickedLink" > TIMESTAMP '${filterDate}'
+                        AND p.profile_type = 'student'
+                      )
+                      ORDER BY profile_id, timestamp ASC, id ASC
+                    ) first_messages
+                    GROUP BY source
+                    ORDER BY user_count DESC;`;
+
+
+        const qry2 = `WITH students AS (
+                SELECT 
+                    m."phoneNumber",
+                    m."profile_id"
+                FROM 
+                    "wa_users_metadata" m
+                INNER JOIN 
+                    "wa_profiles" p 
+                    ON m."phoneNumber" = p."phone_number" AND m."profile_id" = p."profile_id"
+                WHERE 
+                    p."profile_type" = 'student'
+            ),
+            course_lessons AS (
+                SELECT 
+                    "LessonId", 
+                    "activity",
+                    "activityAlias",
+                    "weekNumber", 
+                    "dayNumber", 
+                    "SequenceNumber"
+                FROM 
+                    "Lesson"
+                WHERE 
+                    "courseId" = 117
+                    AND "status" = 'Active'
+            ),
+            student_progress AS (
+                SELECT 
+                    up."phoneNumber",
+                    up."currentLessonId"
+                FROM 
+                    "wa_user_progress" up
+                INNER JOIN 
+                    students s 
+                    ON up."phoneNumber" = s."phoneNumber"
+            ),
+            progress_counts AS (
+                SELECT 
+                    sp."currentLessonId" AS "LessonId",
+                    COUNT(*) AS "student_count"
+                FROM 
+                    student_progress sp
+                GROUP BY 
+                    sp."currentLessonId"
+            )
+            SELECT 
+                cl."LessonId",
+                cl."activity",
+                cl."activityAlias",
+                CONCAT(cl."LessonId", ' (', cl."activity", ')') AS "lesson",
+                COALESCE(pc."student_count", 0) AS "count"
+            FROM 
+                course_lessons cl
+            LEFT JOIN 
+                progress_counts pc 
+                ON cl."LessonId" = pc."LessonId"
+            ORDER BY 
+                cl."weekNumber", cl."dayNumber", cl."SequenceNumber";`
+
+                    const qry3 = `WITH students AS (
+                SELECT 
+                    m."phoneNumber",
+                    m."profile_id"
+                FROM 
+                    "wa_users_metadata" m
+                INNER JOIN 
+                    "wa_profiles" p 
+                    ON m."phoneNumber" = p."phone_number" AND m."profile_id" = p."profile_id"
+                WHERE 
+                    p."profile_type" = 'student'
+            ),
+            course_lessons AS (
+                SELECT 
+                    "LessonId", 
+                    "activity",
+                    "activityAlias",
+                    "weekNumber", 
+                    "dayNumber", 
+                    "SequenceNumber"
+                FROM 
+                    "Lesson"
+                WHERE 
+                    "courseId" = 113
+                    AND "status" = 'Active'
+            ),
+            student_progress AS (
+                SELECT 
+                    up."phoneNumber",
+                    up."currentLessonId"
+                FROM 
+                    "wa_user_progress" up
+                INNER JOIN 
+                    students s 
+                    ON up."phoneNumber" = s."phoneNumber"
+            ),
+            progress_counts AS (
+                SELECT 
+                    sp."currentLessonId" AS "LessonId",
+                    COUNT(*) AS "student_count"
+                FROM 
+                    student_progress sp
+                GROUP BY 
+                    sp."currentLessonId"
+            )
+            SELECT 
+                cl."LessonId",
+                cl."activity",
+                cl."activityAlias",
+                CONCAT(cl."LessonId", ' (', cl."activity", ')') AS "lesson",
+                COALESCE(pc."student_count", 0) AS "count"
+            FROM 
+                course_lessons cl
+            LEFT JOIN 
+                progress_counts pc 
+                ON cl."LessonId" = pc."LessonId"
+            ORDER BY 
+                cl."weekNumber", cl."dayNumber", cl."SequenceNumber";`
+
+        const qry4 = `WITH lesson_data AS (
+                    SELECT 
+                        p."profile_id",
+                        CASE WHEN l."courseId" = 117 THEN 1 ELSE 0 END AS attempted_117,
+                        CASE WHEN l."courseId" = 113 THEN 1 ELSE 0 END AS attempted_113
+                    FROM "wa_profiles" p
+                    inner JOIN "wa_lessons_completed" l ON p."profile_id" = l."profile_id"
+                   -- inner join "wa_users_metadata" m on p."profile_id" = m."profile_id"
+                    WHERE 
+                        (l."courseId" = 117 OR l."courseId" = 113)
+                        AND p."profile_type" = 'student'
+                        -- AND m."userRegistrationComplete" IS NOT NULL
+                ),
+                aggregated AS (
+                    SELECT 
+                        "profile_id",
+                        MAX(attempted_117) AS attempted_117,
+                        MAX(attempted_113) AS attempted_113
+                    FROM lesson_data
+                    GROUP BY "profile_id"
+                )
+                SELECT
+                    COUNT(*) FILTER (WHERE attempted_117 = 1 AND attempted_113 = 0) AS course_117,
+                    COUNT(*) FILTER (WHERE attempted_117 = 0 AND attempted_113 = 1) AS course_113,
+                    COUNT(*) FILTER (WHERE attempted_117 = 1 AND attempted_113 = 1) AS both_courses
+                FROM aggregated;
+                `;
+
+        const qry5 = `select "persona", count(*) from "wa_user_progress" u left join "wa_profiles" p 
+                          on u."profile_id" = p."profile_id" where p."profile_type" = 'student' and 
+                          (u."currentCourseId" = 117 or u."currentCourseId" = 113)
+                          group by "persona";
+                `;
+
+        const qry6 = `
+                select m."classLevel", count(*) from "wa_users_metadata" m inner join
+                "wa_profiles" p on m."profile_id" = p."profile_id" where p."profile_type" = 'student'
+                AND m."userRegistrationComplete" IS NOT NULL group by m."classLevel" ORDER BY 
+                    CASE 
+                        WHEN m."classLevel" IS NULL THEN 999
+                        WHEN m."classLevel" ~ 'class [0-9]+' THEN CAST(SUBSTRING(m."classLevel" FROM '[0-9]+') AS INT)
+                        ELSE 998 
+                    END;
+                `;
+
+        // Execute all queries concurrently
+        const [userGroup, lastActivityLevel1, lastActivityLevel3, trialOpt, RegistrationType, CumulativeReg] = await Promise.all([
+            sequelize.query(qry1),
+            sequelize.query(qry2),
+            sequelize.query(qry3),
+            sequelize.query(qry4),
+            sequelize.query(qry5),
+            sequelize.query(qry6),
+        ]).then(results => results.map(result => result[0]));
+
+        return {
+            userGroup,
+            lastActivityLevel1,
+            lastActivityLevel3,
+            trialOpt,
+            RegistrationType,
+            CumulativeReg,
+        };
+    } catch (error) {
+        error.fileName = 'statsService.js';
+        throw error;
+    }
+};
+
 const studentUserJourneyStatsService = async (date) => {
     try {
         // Set default date if not provided
@@ -222,8 +439,8 @@ const studentUserJourneyStatsService = async (date) => {
               COALESCE(utc.started_113, 0) AS level3_trial_starts,
               COALESCE(utc.started_117, 0) AS level1_trial_starts,
               CASE
-                WHEN fm.first_message_content = 'Start Free Trial now!' THEN 'Community'
-                WHEN fm.first_message_content = 'Start my Free Trial now!' THEN 'Social Media ads'
+                WHEN LOWER(fm.first_message_content) = LOWER('Start Free Trial now!') THEN 'Community'
+                WHEN LOWER(fm.first_message_content) = LOWER('Start my Free Trial now!') THEN 'Social Media ads'
                 ELSE 'Unknown'
               END AS source,
               lm.last_message_content,
@@ -352,4 +569,5 @@ export default {
     dashboardCardsFunnelService,
     lastActiveUsersService,
     studentUserJourneyStatsService,
+    studentTrialUserJourneyStatsService
 };

@@ -42,9 +42,22 @@ const studentUserJourneyStatsController = async (req, res, next) => {
     }
 };
 
+const studentTrialUserJourneyStatsController = async (req, res, next) => {
+    try {
+        const { date } = req.body;
+        const userJourneyStats = await service.studentTrialUserJourneyStatsService(date);
+        res.status(200).send(userJourneyStats);
+    } catch (error) {
+        error.fileName = 'statsController.js';
+        next(error);
+    }
+};
+
 export default {
     totalContentStatsController,
     dashboardCardsFunnelController,
     lastActiveUsersController,
-    studentUserJourneyStatsController
+    studentUserJourneyStatsController,
+    studentTrialUserJourneyStatsController,
+
 };
