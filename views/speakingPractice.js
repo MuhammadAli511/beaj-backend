@@ -35,7 +35,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                 await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstSpeakingPracticeQuestion.dataValues.questionNumber);
 
                 // Send question media file
-                await sendMediaMessage(userMobileNumber, firstSpeakingPracticeQuestion.dataValues.mediaFile, 'audio');
+                await sendMediaMessage(userMobileNumber, firstSpeakingPracticeQuestion.dataValues.mediaFile, 'audio', null, 0, "SpeakActivityQuestion", firstSpeakingPracticeQuestion.dataValues.id, firstSpeakingPracticeQuestion.dataValues.mediaFileMediaId);
                 await createActivityLog(userMobileNumber, "audio", "outbound", firstSpeakingPracticeQuestion.dataValues.mediaFile, null);
 
                 // Update acceptable messages list for the user
@@ -85,7 +85,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                     await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextSpeakingPracticeQuestion.dataValues.questionNumber);
 
                     // Send question media file
-                    await sendMediaMessage(userMobileNumber, nextSpeakingPracticeQuestion.dataValues.mediaFile, 'audio');
+                    await sendMediaMessage(userMobileNumber, nextSpeakingPracticeQuestion.dataValues.mediaFile, 'audio', null, 0, "SpeakActivityQuestion", nextSpeakingPracticeQuestion.dataValues.id, nextSpeakingPracticeQuestion.dataValues.mediaFileMediaId);
                     await createActivityLog(userMobileNumber, "audio", "outbound", nextSpeakingPracticeQuestion.dataValues.mediaFile, null);
                 } else {
                     const pronunciationAssessments = await waQuestionResponsesRepository.getAllJsonFeedbacksForProfileIdAndLessonId(profileId, currentUserState.dataValues.currentLessonId);
@@ -93,7 +93,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
 
                     // Media message
                     if (imageUrl) {
-                        await sendMediaMessage(userMobileNumber, imageUrl, 'image');
+                        await sendMediaMessage(userMobileNumber, imageUrl, 'image', null, 0, "SpeakActivityQuestion", currentSpeakingPracticeQuestion.dataValues.id, currentSpeakingPracticeQuestion.dataValues.imageMediaId);
                         await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
                         await sleep(5000);
                     }
@@ -116,7 +116,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                             modelResponse += word.Word + (word === mispronouncedWords[mispronouncedWords.length - 1] ? "" : "...");
                         }
                         correctedAudio = await AIServices.openaiTextToSpeechAndUpload(modelResponse);
-                        await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
+                        await sendMediaMessage(userMobileNumber, correctedAudio, 'audio', null, 0, "SpeakActivityQuestion", currentSpeakingPracticeQuestion.dataValues.id, currentSpeakingPracticeQuestion.dataValues.audioMediaId);
                         await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
                         await sleep(5000);
                     }
@@ -148,7 +148,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                 await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstSpeakingPracticeQuestion.dataValues.questionNumber);
 
                 // Send question media file
-                await sendMediaMessage(userMobileNumber, firstSpeakingPracticeQuestion.dataValues.mediaFile, 'audio');
+                await sendMediaMessage(userMobileNumber, firstSpeakingPracticeQuestion.dataValues.mediaFile, 'audio', null, 0, "SpeakActivityQuestion", firstSpeakingPracticeQuestion.dataValues.id, firstSpeakingPracticeQuestion.dataValues.mediaFileMediaId);
                 await createActivityLog(userMobileNumber, "audio", "outbound", firstSpeakingPracticeQuestion.dataValues.mediaFile, null);
 
                 // Update acceptable messages list for the user
@@ -198,7 +198,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                     await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextSpeakingPracticeQuestion.dataValues.questionNumber);
 
                     // Send question media file
-                    await sendMediaMessage(userMobileNumber, nextSpeakingPracticeQuestion.dataValues.mediaFile, 'audio');
+                    await sendMediaMessage(userMobileNumber, nextSpeakingPracticeQuestion.dataValues.mediaFile, 'audio', null, 0, "SpeakActivityQuestion", nextSpeakingPracticeQuestion.dataValues.id, nextSpeakingPracticeQuestion.dataValues.mediaFileMediaId);
                     await createActivityLog(userMobileNumber, "audio", "outbound", nextSpeakingPracticeQuestion.dataValues.mediaFile, null);
                 } else {
                     const pronunciationAssessments = await waQuestionResponsesRepository.getAllJsonFeedbacksForProfileIdAndLessonId(profileId, currentUserState.dataValues.currentLessonId);
@@ -206,7 +206,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
 
                     // Media message
                     if (imageUrl) {
-                        await sendMediaMessage(userMobileNumber, imageUrl, 'image');
+                        await sendMediaMessage(userMobileNumber, imageUrl, 'image', null, 0, "SpeakActivityQuestion", currentSpeakingPracticeQuestion.dataValues.id, currentSpeakingPracticeQuestion.dataValues.imageMediaId);
                         await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
                         await sleep(5000);
                     }
@@ -229,7 +229,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                             modelResponse += word.Word + (word === mispronouncedWords[mispronouncedWords.length - 1] ? "" : "...");
                         }
                         correctedAudio = await AIServices.openaiTextToSpeechAndUpload(modelResponse);
-                        await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
+                        await sendMediaMessage(userMobileNumber, correctedAudio, 'audio', null, 0, "SpeakActivityQuestion", currentSpeakingPracticeQuestion.dataValues.id, currentSpeakingPracticeQuestion.dataValues.audioMediaId);
                         await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
                         await sleep(5000);
                     }

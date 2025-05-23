@@ -147,12 +147,12 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                         await createActivityLog(userMobileNumber, "text", "outbound", customFeedbackText, null);
                     }
                     if (customFeedbackImage) {
-                        await sendMediaMessage(userMobileNumber, customFeedbackImage, 'image');
+                        await sendMediaMessage(userMobileNumber, customFeedbackImage, 'image', null, 0, "MultipleChoiceQuestion", currentMCQsQuestion.dataValues.id, currentMCQsQuestion.dataValues.imageMediaId);
                         await createActivityLog(userMobileNumber, "image", "outbound", customFeedbackImage, null);
                         await sleep(2000);
                     }
                     if (customFeedbackAudio) {
-                        await sendMediaMessage(userMobileNumber, customFeedbackAudio, 'audio');
+                        await sendMediaMessage(userMobileNumber, customFeedbackAudio, 'audio', null, 0, "MultipleChoiceQuestion", currentMCQsQuestion.dataValues.id, currentMCQsQuestion.dataValues.audioMediaId);
                         await createActivityLog(userMobileNumber, "audio", "outbound", customFeedbackAudio, null);
                         await sleep(5000);
                     }
@@ -377,7 +377,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                     // If both image and text are available, send image with caption
                     if (customFeedbackImage && customFeedbackText) {
                         customFeedbackText = customFeedbackText.replace(/\\n/g, '\n');
-                        await sendMediaMessage(userMobileNumber, customFeedbackImage, 'image', customFeedbackText);
+                        await sendMediaMessage(userMobileNumber, customFeedbackImage, 'image', customFeedbackText, 0, "MultipleChoiceQuestion", currentMCQsQuestion.dataValues.id, currentMCQsQuestion.dataValues.imageMediaId);
                         await createActivityLog(userMobileNumber, "image", "outbound", customFeedbackImage, customFeedbackText);
                         await sleep(2000);
                     } else {
@@ -388,7 +388,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                             await createActivityLog(userMobileNumber, "text", "outbound", customFeedbackText, null);
                         }
                         if (customFeedbackImage) {
-                            await sendMediaMessage(userMobileNumber, customFeedbackImage, 'image');
+                            await sendMediaMessage(userMobileNumber, customFeedbackImage, 'image', null, 0, "MultipleChoiceQuestion", currentMCQsQuestion.dataValues.id, currentMCQsQuestion.dataValues.imageMediaId);
                             await createActivityLog(userMobileNumber, "image", "outbound", customFeedbackImage, null);
                             await sleep(2000);
                         }
@@ -396,7 +396,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
 
                     // Send audio if it exists
                     if (customFeedbackAudio) {
-                        await sendMediaMessage(userMobileNumber, customFeedbackAudio, 'audio');
+                        await sendMediaMessage(userMobileNumber, customFeedbackAudio, 'audio', null, 0, "MultipleChoiceQuestion", currentMCQsQuestion.dataValues.id, currentMCQsQuestion.dataValues.audioMediaId);
                         await createActivityLog(userMobileNumber, "audio", "outbound", customFeedbackAudio, null);
                         await sleep(5000);
                     }

@@ -21,12 +21,24 @@ MultipleChoiceQuestion.init({
     type: DataTypes.STRING,
     allowNull: true
   },
+  QuestionImageMediaId: {
+    type: DataTypes.BIGINT,
+    allowNull: true
+  },
   QuestionAudioUrl: {
     type: DataTypes.STRING,
     allowNull: true
   },
+  QuestionAudioMediaId: {
+    type: DataTypes.BIGINT,
+    allowNull: true
+  },
   QuestionVideoUrl: {
     type: DataTypes.STRING,
+    allowNull: true
+  },
+  QuestionVideoMediaId: {
+    type: DataTypes.BIGINT,
     allowNull: true
   },
   QuestionNumber: {

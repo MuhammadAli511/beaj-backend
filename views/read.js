@@ -35,7 +35,7 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
                 let videoURL = documentFile[0].dataValues.video;
 
                 // Media message
-                await sendMediaMessage(userMobileNumber, videoURL, 'video');
+                await sendMediaMessage(userMobileNumber, videoURL, 'video', null, 0, "DocumentFile", documentFile[0].dataValues.id, documentFile[0].dataValues.videoMediaId);
                 await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
 
                 // Update acceptable messages list for the user
@@ -70,7 +70,7 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
 
                 if (imageUrl) {
                     // Media message
-                    await sendMediaMessage(userMobileNumber, imageUrl, 'image', "You said: " + userTranscription);
+                    await sendMediaMessage(userMobileNumber, imageUrl, 'image', "You said: " + userTranscription, 0, "SpeakActivityQuestion", currentSpeakingPracticeQuestion.dataValues.id, currentSpeakingPracticeQuestion.dataValues.imageMediaId);
                     await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null, "You said: " + userTranscription);
                     await sleep(5000);
                 }
@@ -125,7 +125,7 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
                 if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                     instructionMessage += "\n\nOR\n\n" + "Type “next” to skip";
                 }
-                await sendMediaMessage(userMobileNumber, videoURL, 'video', instructionMessage);
+                await sendMediaMessage(userMobileNumber, videoURL, 'video', instructionMessage, 0, "DocumentFile", documentFile[0].dataValues.id, documentFile[0].dataValues.videoMediaId);
                 await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
 
                 // Update acceptable messages list for the user
@@ -151,7 +151,7 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
 
                 if (imageUrl) {
                     // Media message
-                    await sendMediaMessage(userMobileNumber, imageUrl, 'image', "You said: " + userTranscription);
+                    await sendMediaMessage(userMobileNumber, imageUrl, 'image', "You said: " + userTranscription, 0, "SpeakActivityQuestion", currentSpeakingPracticeQuestion.dataValues.id, currentSpeakingPracticeQuestion.dataValues.imageMediaId);
                     await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null, "You said: " + userTranscription);
                     await sleep(5000);
                 }

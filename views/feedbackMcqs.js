@@ -2,10 +2,9 @@ import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepo
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
 import { sendMessage, sendButtonMessage } from "../utils/whatsappUtils.js";
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
-import { sendMediaMessage } from "../utils/whatsappUtils.js";
 import { endingMessage } from "../utils/endingMessageUtils.js";
 import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRepository.js";
-import { sleep, convertNumberToEmoji, removeHTMLTags } from "../utils/utils.js";
+import { removeHTMLTags } from "../utils/utils.js";
 import multipleChoiceQuestionRepository from "../repositories/multipleChoiceQuestionRepository.js";
 import multipleChoiceQuestionAnswerRepository from "../repositories/multipleChoiceQuestionAnswerRepository.js";
 

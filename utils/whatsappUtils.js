@@ -1,5 +1,12 @@
 import axios from "axios";
 import { getBotPhoneNumberIdForRequest } from './requestContext.js';
+import DocumentFile from '../models/DocumentFile.js';
+import SpeakActivityQuestion from '../models/SpeakActivityQuestion.js';
+
+const modelToMediaIdField = {
+    "DocumentFile": DocumentFile,
+    "SpeakActivityQuestion": SpeakActivityQuestion
+};
 
 const whatsappToken = process.env.WHATSAPP_TOKEN;
 
@@ -82,8 +89,13 @@ const retrieveMediaURL = async (mediaId, retryAttempt = 0) => {
 };
 
 // Function to save or update media ID in the database
-const saveMediaIdToDatabase = async (model, recordId, mediaType, mediaId) => {
+const saveMediaIdToDatabase = async (modelName, recordId, mediaType, mediaId) => {
     try {
+        const model = modelToMediaIdField[modelName];
+        if (!model) {
+            console.log(`Model ${modelName} not found in modelToMediaIdField`);
+            return false;
+        }
         const record = await model.findByPk(recordId);
 
         if (!record) {
@@ -240,7 +252,7 @@ const uploadMediaAndGetId = async (mediaUrl, mediaType) => {
     }
 };
 
-const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, retryAttempt = 0, model = null, recordId = null, mediaId = null) => {
+const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, retryAttempt = 0, modelName = null, recordId = null, mediaId = null) => {
     const phoneNumberId = getBotPhoneNumberIdForRequest();
     const MAX_RETRIES = 17;
 
@@ -317,12 +329,12 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, ret
         console.log(logger);
 
         // If model and recordId are provided, create/update the media ID
-        if (model && recordId) {
+        if (modelName && recordId) {
             // Upload the media to get a new ID
             const uploadResult = await uploadMediaAndGetId(mediaUrl, mediaType);
             if (uploadResult.success) {
                 // Save the new media ID to the database
-                await saveMediaIdToDatabase(model, recordId, mediaType, uploadResult.mediaId);
+                await saveMediaIdToDatabase(modelName, recordId, mediaType, uploadResult.mediaId);
             } else {
                 console.log(`Failed to upload media and get ID: ${uploadResult.error}`);
             }
@@ -336,7 +348,7 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, ret
             const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
             console.log(`Retrying after ${waitTimeSeconds} seconds...`);
             await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
-            return sendMediaMessage(to, mediaUrl, mediaType, captionText, retryAttempt + 1, model, recordId, mediaId);
+            return sendMediaMessage(to, mediaUrl, mediaType, captionText, retryAttempt + 1, modelName, recordId, mediaId);
         } else {
             console.log(`Max retries reached. Giving up on media message to ${to} from ${phoneNumberId}.`);
             console.log("Final error:", errData ? errData : error.message);
@@ -345,7 +357,7 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, ret
     }
 };
 
-const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, imageUrl = null, videoUrl = null, model = null, recordId = null, imageMediaId = null, videoMediaId = null) => {
+const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, imageUrl = null, videoUrl = null, modelName = null, recordId = null, imageMediaId = null, videoMediaId = null) => {
     const phoneNumberId = getBotPhoneNumberIdForRequest();
     const MAX_RETRIES = 17;
 
@@ -473,20 +485,20 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
         console.log(logger);
 
         // If model and recordId are provided and we sent with a URL, create/update the media ID
-        if (model && recordId) {
+        if (modelName && recordId) {
             if (imageUrl) {
                 // Upload the image to get a new ID
                 const uploadResult = await uploadMediaAndGetId(imageUrl, 'image');
                 if (uploadResult.success) {
                     // Save the new media ID to the database
-                    await saveMediaIdToDatabase(model, recordId, 'image', uploadResult.mediaId);
+                    await saveMediaIdToDatabase(modelName, recordId, 'image', uploadResult.mediaId);
                 }
             } else if (videoUrl) {
                 // Upload the video to get a new ID
                 const uploadResult = await uploadMediaAndGetId(videoUrl, 'video');
                 if (uploadResult.success) {
                     // Save the new media ID to the database
-                    await saveMediaIdToDatabase(model, recordId, 'video', uploadResult.mediaId);
+                    await saveMediaIdToDatabase(modelName, recordId, 'video', uploadResult.mediaId);
                 }
             }
         }
@@ -500,9 +512,9 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
             console.log(`Retrying after ${waitTimeSeconds} seconds...`);
             await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
             if (imageUrl) {
-                return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, imageUrl, null, model, recordId, imageMediaId);
+                return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, imageUrl, null, modelName, recordId, imageMediaId);
             } else if (videoUrl) {
-                return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, null, videoUrl, model, recordId, null, videoMediaId);
+                return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, null, videoUrl, modelName, recordId, null, videoMediaId);
             } else {
                 return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1);
             }

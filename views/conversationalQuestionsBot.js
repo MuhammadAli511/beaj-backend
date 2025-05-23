@@ -35,7 +35,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                 await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstConversationBotQuestion.dataValues.questionNumber);
 
                 // Send question media file
-                await sendMediaMessage(userMobileNumber, firstConversationBotQuestion.dataValues.mediaFile, 'audio');
+                await sendMediaMessage(userMobileNumber, firstConversationBotQuestion.dataValues.mediaFile, 'audio', null, 0, "SpeakActivityQuestion", firstConversationBotQuestion.dataValues.id, firstConversationBotQuestion.dataValues.audioMediaId);
                 await createActivityLog(userMobileNumber, "audio", "outbound", firstConversationBotQuestion.dataValues.mediaFile, null);
 
                 // Update acceptable messages list for the user
@@ -79,7 +79,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         openaiFeedbackAudio = await AIServices.openaiTextToSpeechAndUpload(openaiFeedbackTranscript);
 
                         // Media message
-                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
+                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio', null, 0, "SpeakActivityQuestion", currentConversationBotQuestion.dataValues.id, currentConversationBotQuestion.dataValues.audioMediaId);
                         await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
                         await sleep(5000);
 
@@ -106,7 +106,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         }
 
                         // Media message
-                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
+                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio', null, 0, "SpeakActivityQuestion", currentConversationBotQuestion.dataValues.id, currentConversationBotQuestion.dataValues.audioMediaId);
                         await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
                         await sleep(5000);
                     }
@@ -165,7 +165,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                 await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstConversationBotQuestion.dataValues.questionNumber);
 
                 // Send question media file
-                await sendMediaMessage(userMobileNumber, firstConversationBotQuestion.dataValues.mediaFile, 'audio');
+                await sendMediaMessage(userMobileNumber, firstConversationBotQuestion.dataValues.mediaFile, 'audio', null, 0, "SpeakActivityQuestion", firstConversationBotQuestion.dataValues.id, firstConversationBotQuestion.dataValues.audioMediaId);
                 await createActivityLog(userMobileNumber, "audio", "outbound", firstConversationBotQuestion.dataValues.mediaFile, null);
 
                 // Update acceptable messages list for the user
@@ -209,7 +209,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         openaiFeedbackAudio = await AIServices.openaiTextToSpeechAndUpload(openaiFeedbackTranscript);
 
                         // Media message
-                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
+                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio', null, 0, "SpeakActivityQuestion", currentConversationBotQuestion.dataValues.id, currentConversationBotQuestion.dataValues.audioMediaId);
                         await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
                         await sleep(5000);
 
@@ -236,7 +236,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         }
 
                         // Media message
-                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
+                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio', null, 0, "SpeakActivityQuestion", currentConversationBotQuestion.dataValues.id, currentConversationBotQuestion.dataValues.audioMediaId);
                         await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
                         await sleep(5000);
                     }
