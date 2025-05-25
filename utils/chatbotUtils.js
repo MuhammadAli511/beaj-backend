@@ -163,7 +163,6 @@ const startCourseForUser = async (profileId, userMobileNumber, numbers_to_ignore
     const courseName = nextCourse.dataValues.courseName.split("-");
     const level = courseName[0].trim();
 
-    // Send course_bot_introduction_message
     let intro_message = "Assalam o Alaikum 👋\n\nWelcome to Beaj Self Development Course for Teachers " + level + "!";
     if (level == "Level 1") {
         intro_message += "\n\nMa'am Zainab Qureshi, Ma'am Fizza Hasan and Ma'am Sameen Shahid will be your instructors.";

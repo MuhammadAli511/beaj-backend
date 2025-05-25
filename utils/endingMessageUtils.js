@@ -94,14 +94,13 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
         }
     }
     else if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
-        // Key = SHELL_IMAGE and GEM_IMAGE
-        const shellImage = await waConstantsRepository.getByKey("SHELL_IMAGE");
-        const gemImage = await waConstantsRepository.getByKey("GEM_IMAGE");
-        let trialCompleteImage = "";
+        const shellImageObject = await waConstantsRepository.getByKey("SHELL_IMAGE");
+        const gemImageObject = await waConstantsRepository.getByKey("GEM_IMAGE");
+        let trialCompleteobject = null;
         if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
-            trialCompleteImage = gemImage.dataValues.constantValue;
+            trialCompleteobject = gemImageObject;
         } else if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1") {
-            trialCompleteImage = shellImage.dataValues.constantValue;
+            trialCompleteobject = shellImageObject;
         }
         let user = await waUsersMetadataRepository.getByProfileId(profileId);
         let checkRegistrationComplete = user.dataValues.userRegistrationComplete !== null;
@@ -174,12 +173,12 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
 
             let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔\n\nIf you are interested in registration, click on Register Now 👇\nاگر آپ ریجسٹریشن میں دلچسپی رکھتے ہیں، تو ‘Register Now’ پر کلک کریں۔`;
             if (message == null) {
-                await sendButtonMessage(userMobileNumber, trialCompleteMessage, buttonsArray, 0, trialCompleteImage, null, "WA_Constants", trialCompleteImage.dataValues.id, trialCompleteImage.dataValues.constantMediaId, "constantMediaId");
+                await sendButtonMessage(userMobileNumber, trialCompleteMessage, buttonsArray, 0, trialCompleteobject.dataValues.constantValue, null, "WA_Constants", trialCompleteobject.dataValues.id, trialCompleteobject.dataValues.constantMediaId, null, "constantMediaId");
                 await createActivityLog(userMobileNumber, "template", "outbound", "get another trial or register", null);
             } else {
                 message += "\n\n" + trialCompleteMessage;
-                await sendButtonMessage(userMobileNumber, trialCompleteMessage, buttonsArray, 0, trialCompleteImage, null, "WA_Constants", trialCompleteImage.dataValues.id, trialCompleteImage.dataValues.constantMediaId, "constantMediaId");
-                await createActivityLog(userMobileNumber, "template", "outbound", trialCompleteMessage, null);
+                await sendButtonMessage(userMobileNumber, message, buttonsArray, 0, trialCompleteobject.dataValues.constantValue, null, "WA_Constants", trialCompleteobject.dataValues.id, trialCompleteobject.dataValues.constantMediaId, null, "constantMediaId");
+                await createActivityLog(userMobileNumber, "template", "outbound", message, null);
             }
 
             return;
@@ -190,12 +189,12 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
 
             let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔\n\n`;
             if (message == null) {
-                await sendButtonMessage(userMobileNumber, trialCompleteMessage, buttonsArray, 0, trialCompleteImage, null, "WA_Constants", trialCompleteImage.dataValues.id, trialCompleteImage.dataValues.constantMediaId, "constantMediaId");
+                await sendButtonMessage(userMobileNumber, trialCompleteMessage, buttonsArray, 0, trialCompleteobject.dataValues.constantValue, null, "WA_Constants", trialCompleteobject.dataValues.id, trialCompleteobject.dataValues.constantMediaId, null, "constantMediaId");
                 await createActivityLog(userMobileNumber, "template", "outbound", "get another trial or register", null);
             } else {
                 message += "\n\n" + trialCompleteMessage;
-                await sendButtonMessage(userMobileNumber, trialCompleteMessage, buttonsArray, 0, trialCompleteImage, null, "WA_Constants", trialCompleteImage.dataValues.id, trialCompleteImage.dataValues.constantMediaId, "constantMediaId");
-                await createActivityLog(userMobileNumber, "template", "outbound", trialCompleteMessage, null);
+                await sendButtonMessage(userMobileNumber, message, buttonsArray, 0, trialCompleteobject.dataValues.constantValue, null, "WA_Constants", trialCompleteobject.dataValues.id, trialCompleteobject.dataValues.constantMediaId, null, "constantMediaId");
+                await createActivityLog(userMobileNumber, "template", "outbound", message, null);
             }
 
             return;
