@@ -93,7 +93,7 @@ const retrieveMediaURL = async (mediaId, retryAttempt = 0) => {
 };
 
 // Function to save or update media ID in the database
-const saveMediaIdToDatabase = async (modelName, recordId, mediaType, mediaId) => {
+const saveMediaIdToDatabase = async (modelName, recordId, mediaType, mediaId, fieldName) => {
     try {
         const model = modelToMediaIdField[modelName];
         if (!model) {
@@ -107,12 +107,8 @@ const saveMediaIdToDatabase = async (modelName, recordId, mediaType, mediaId) =>
             return false;
         }
 
-        // Create a field name based on the media type (e.g., imageMediaId, videoMediaId)
-        const mediaIdField = `${mediaType}MediaId`;
-
-        // Update the record with the new media ID
-        await record.update({ [mediaIdField]: mediaId });
-        console.log(`Updated ${mediaIdField} for ${model.tableName} record ${recordId}`);
+        await record.update({ [fieldName]: mediaId });
+        console.log(`Updated ${fieldName} for ${model.tableName} record ${recordId}`);
         return true;
     } catch (error) {
         console.log(`Error updating media ID in database: ${error.message}`);
@@ -218,7 +214,7 @@ const uploadMediaAndGetId = async (mediaUrl, mediaType) => {
         });
 
         // Get file extension from URL or default based on mediaType
-        let fileExtension = '.jpg';
+        let fileExtension = '';
         if (mediaUrl.includes('.')) {
             const urlParts = mediaUrl.split('.');
             fileExtension = '.' + urlParts[urlParts.length - 1].split('?')[0];
@@ -256,7 +252,7 @@ const uploadMediaAndGetId = async (mediaUrl, mediaType) => {
     }
 };
 
-const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, retryAttempt = 0, modelName = null, recordId = null, mediaId = null) => {
+const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, retryAttempt = 0, modelName = null, recordId = null, mediaId = null, feildName = null) => {
     const phoneNumberId = getBotPhoneNumberIdForRequest();
     const MAX_RETRIES = 17;
 
@@ -338,7 +334,7 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, ret
             const uploadResult = await uploadMediaAndGetId(mediaUrl, mediaType);
             if (uploadResult.success) {
                 // Save the new media ID to the database
-                await saveMediaIdToDatabase(modelName, recordId, mediaType, uploadResult.mediaId);
+                await saveMediaIdToDatabase(modelName, recordId, mediaType, uploadResult.mediaId, feildName);
             } else {
                 console.log(`Failed to upload media and get ID: ${uploadResult.error}`);
             }
@@ -352,7 +348,7 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, ret
             const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
             console.log(`Retrying after ${waitTimeSeconds} seconds...`);
             await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
-            return sendMediaMessage(to, mediaUrl, mediaType, captionText, retryAttempt + 1, modelName, recordId, mediaId);
+            return sendMediaMessage(to, mediaUrl, mediaType, captionText, retryAttempt + 1, modelName, recordId, mediaId, feildName);
         } else {
             console.log(`Max retries reached. Giving up on media message to ${to} from ${phoneNumberId}.`);
             console.log("Final error:", errData ? errData : error.message);
@@ -361,7 +357,7 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, ret
     }
 };
 
-const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, imageUrl = null, videoUrl = null, modelName = null, recordId = null, imageMediaId = null, videoMediaId = null) => {
+const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, imageUrl = null, videoUrl = null, modelName = null, recordId = null, imageMediaId = null, videoMediaId = null, feildName = null) => {
     const phoneNumberId = getBotPhoneNumberIdForRequest();
     const MAX_RETRIES = 17;
 
@@ -495,14 +491,14 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
                 const uploadResult = await uploadMediaAndGetId(imageUrl, 'image');
                 if (uploadResult.success) {
                     // Save the new media ID to the database
-                    await saveMediaIdToDatabase(modelName, recordId, 'image', uploadResult.mediaId);
+                    await saveMediaIdToDatabase(modelName, recordId, 'image', uploadResult.mediaId, feildName);
                 }
             } else if (videoUrl) {
                 // Upload the video to get a new ID
                 const uploadResult = await uploadMediaAndGetId(videoUrl, 'video');
                 if (uploadResult.success) {
                     // Save the new media ID to the database
-                    await saveMediaIdToDatabase(modelName, recordId, 'video', uploadResult.mediaId);
+                    await saveMediaIdToDatabase(modelName, recordId, 'video', uploadResult.mediaId, feildName);
                 }
             }
         }
@@ -516,9 +512,9 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
             console.log(`Retrying after ${waitTimeSeconds} seconds...`);
             await new Promise((resolve) => setTimeout(resolve, waitTimeSeconds * 1000));
             if (imageUrl) {
-                return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, imageUrl, null, modelName, recordId, imageMediaId);
+                return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, imageUrl, null, modelName, recordId, imageMediaId, null, feildName);
             } else if (videoUrl) {
-                return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, null, videoUrl, modelName, recordId, null, videoMediaId);
+                return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1, null, videoUrl, modelName, recordId, null, videoMediaId, feildName);
             } else {
                 return sendButtonMessage(to, bodyText, buttonOptions, retryAttempt + 1);
             }

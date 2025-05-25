@@ -35,7 +35,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstConversationalMonologueBotQuestion.dataValues.questionNumber);
 
                 // Send question media file
-                await sendMediaMessage(userMobileNumber, firstConversationalMonologueBotQuestion.dataValues.mediaFile, 'video', null, 0, "SpeakActivityQuestion", firstConversationalMonologueBotQuestion.dataValues.id, firstConversationalMonologueBotQuestion.dataValues.videoMediaId);
+                await sendMediaMessage(userMobileNumber, firstConversationalMonologueBotQuestion.dataValues.mediaFile, 'video', null, 0, "SpeakActivityQuestion", firstConversationalMonologueBotQuestion.dataValues.id, firstConversationalMonologueBotQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
                 await createActivityLog(userMobileNumber, "video", "outbound", firstConversationalMonologueBotQuestion.dataValues.mediaFile, null);
 
                 // Update acceptable messages list for the user
@@ -66,7 +66,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
 
                 // Media message
                 if (imageUrl) {
-                    await sendMediaMessage(userMobileNumber, imageUrl, 'image', null, 0, "SpeakActivityQuestion", currentConversationalMonologueBotQuestion.dataValues.id, currentConversationalMonologueBotQuestion.dataValues.imageMediaId);
+                    await sendMediaMessage(userMobileNumber, imageUrl, 'image');
                     await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
                     await sleep(5000);
                 }
@@ -78,7 +78,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                         modelResponse += word.Word + (word === mispronouncedWords[mispronouncedWords.length - 1] ? "" : "...");
                     }
                     correctedAudio = await AIServices.openaiTextToSpeechAndUpload(modelResponse);
-                    await sendMediaMessage(userMobileNumber, correctedAudio, 'audio', null, 0, "SpeakActivityQuestion", currentConversationalMonologueBotQuestion.dataValues.id, currentConversationalMonologueBotQuestion.dataValues.audioMediaId);
+                    await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
                     await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
                     await sleep(5000);
                 }
@@ -112,7 +112,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                     await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextConversationalMonologueBotQuestion.dataValues.questionNumber);
 
                     // Send question media file
-                    await sendMediaMessage(userMobileNumber, nextConversationalMonologueBotQuestion.dataValues.mediaFile, 'video', null, 0, "SpeakActivityQuestion", nextConversationalMonologueBotQuestion.dataValues.id, nextConversationalMonologueBotQuestion.dataValues.videoMediaId);
+                    await sendMediaMessage(userMobileNumber, nextConversationalMonologueBotQuestion.dataValues.mediaFile, 'video', null, 0, "SpeakActivityQuestion", nextConversationalMonologueBotQuestion.dataValues.id, nextConversationalMonologueBotQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
                     await createActivityLog(userMobileNumber, "video", "outbound", nextConversationalMonologueBotQuestion.dataValues.mediaFile, null);
                 } else {
                     // Reset Question Number, Retry Counter, and Activity Type
@@ -141,7 +141,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstConversationalMonologueBotQuestion.dataValues.questionNumber);
 
                 // Send question media file
-                await sendMediaMessage(userMobileNumber, firstConversationalMonologueBotQuestion.dataValues.mediaFile, 'video', null, 0, "SpeakActivityQuestion", firstConversationalMonologueBotQuestion.dataValues.id, firstConversationalMonologueBotQuestion.dataValues.videoMediaId);
+                await sendMediaMessage(userMobileNumber, firstConversationalMonologueBotQuestion.dataValues.mediaFile, 'video', null, 0, "SpeakActivityQuestion", firstConversationalMonologueBotQuestion.dataValues.id, firstConversationalMonologueBotQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
                 await createActivityLog(userMobileNumber, "video", "outbound", firstConversationalMonologueBotQuestion.dataValues.mediaFile, null);
 
                 // Update acceptable messages list for the user
@@ -172,7 +172,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
 
                 // Media message
                 if (imageUrl) {
-                    await sendMediaMessage(userMobileNumber, imageUrl, 'image', null, 0, "SpeakActivityQuestion", currentConversationalMonologueBotQuestion.dataValues.id, currentConversationalMonologueBotQuestion.dataValues.imageMediaId);
+                    await sendMediaMessage(userMobileNumber, imageUrl, 'image');
                     await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
                     await sleep(5000);
                 }
@@ -184,7 +184,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                         modelResponse += word.Word + (word === mispronouncedWords[mispronouncedWords.length - 1] ? "" : "...");
                     }
                     correctedAudio = await AIServices.openaiTextToSpeechAndUpload(modelResponse);
-                    await sendMediaMessage(userMobileNumber, correctedAudio, 'audio', null, 0, "SpeakActivityQuestion", currentConversationalMonologueBotQuestion.dataValues.id, currentConversationalMonologueBotQuestion.dataValues.audioMediaId);
+                    await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
                     await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
                     await sleep(5000);
                 }
@@ -218,7 +218,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                     await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextConversationalMonologueBotQuestion.dataValues.questionNumber);
 
                     // Send question media file
-                    await sendMediaMessage(userMobileNumber, nextConversationalMonologueBotQuestion.dataValues.mediaFile, 'video', null, 0, "SpeakActivityQuestion", nextConversationalMonologueBotQuestion.dataValues.id, nextConversationalMonologueBotQuestion.dataValues.videoMediaId);
+                    await sendMediaMessage(userMobileNumber, nextConversationalMonologueBotQuestion.dataValues.mediaFile, 'video', null, 0, "SpeakActivityQuestion", nextConversationalMonologueBotQuestion.dataValues.id, nextConversationalMonologueBotQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
                     await createActivityLog(userMobileNumber, "video", "outbound", nextConversationalMonologueBotQuestion.dataValues.mediaFile, null);
                 } else {
                     // Reset Question Number, Retry Counter, and Activity Type

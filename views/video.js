@@ -25,7 +25,7 @@ const videoView = async (profileId, userMobileNumber, currentUserState, starting
             let videoURL = documentFile[0].dataValues.video;
 
             // Media message
-            await sendMediaMessage(userMobileNumber, videoURL, 'video', lessonMessage, 0, "DocumentFile", documentFile[0].dataValues.id, documentFile[0].dataValues.videoMediaId);
+            await sendMediaMessage(userMobileNumber, videoURL, 'video', lessonMessage, 0, "DocumentFile", documentFile[0].dataValues.id, documentFile[0].dataValues.videoMediaId, "videoMediaId");
             await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null, lessonMessage);
 
             // Sleep
@@ -49,7 +49,7 @@ const videoView = async (profileId, userMobileNumber, currentUserState, starting
             let videoURL = documentFile[0].dataValues.video;
 
             // Media message
-            await sendMediaMessage(userMobileNumber, videoURL, 'video', null, 0, "DocumentFile", documentFile[0].dataValues.id, documentFile[0].dataValues.videoMediaId);
+            await sendMediaMessage(userMobileNumber, videoURL, 'video', null, 0, "DocumentFile", documentFile[0].dataValues.id, documentFile[0].dataValues.videoMediaId, "videoMediaId");
             await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
 
             // Sleep
