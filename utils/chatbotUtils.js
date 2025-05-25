@@ -7,6 +7,7 @@ import courseRepository from "../repositories/courseRepository.js";
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRepository.js";
 import waPurchasedCoursesRepository from '../repositories/waPurchasedCoursesRepository.js';
+import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import lessonRepository from "../repositories/lessonRepository.js";
 import { sendMessage, sendMediaMessage, sendButtonMessage } from "./whatsappUtils.js";
 import { createActivityLog } from "./createActivityLogUtils.js";
@@ -172,10 +173,9 @@ const startCourseForUser = async (profileId, userMobileNumber, numbers_to_ignore
 
 
     if (level == "Level 1") {
-        // Send demo_video
-        const demoVideoLink = "https://beajbloblive.blob.core.windows.net/beajdocuments/demovideo6.mp4";
-        await sendMediaMessage(userMobileNumber, demoVideoLink, 'video');
-        await createActivityLog(userMobileNumber, "video", "outbound", demoVideoLink, null);
+        const demoVideo = await waConstantsRepository.getByKey("DEMO_VIDEO");
+        await sendMediaMessage(userMobileNumber, demoVideo.dataValues.constantValue, 'video', null, 0, "WA_Constants", demoVideo.dataValues.id, demoVideo.dataValues.constantMediaId, "constantMediaId");
+        await createActivityLog(userMobileNumber, "video", "outbound", demoVideo.dataValues.constantValue, null);
         await sleep(12000);
     }
 

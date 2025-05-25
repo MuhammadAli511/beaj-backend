@@ -12,6 +12,7 @@ import { sleep } from "../utils/utils.js";
 import AIServices from "../utils/AIServices.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import { question_bot_prompt, wrapup_prompt } from "../utils/prompts.js";
+import waConstantsRepository from "../repositories/waConstantsRepository.js";
 
 const conversationalQuestionsBotView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
@@ -100,13 +101,15 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         initialFeedbackResponse = openaiFeedbackTranscript;
 
                         if (openaiFeedbackTranscript.toLowerCase().includes("can be improved")) {
-                            openaiFeedbackAudio = "https://beajbloblive.blob.core.windows.net/beajdocuments/better.mp3";
+                            const betterAudio = await waConstantsRepository.getByKey("BETTER_AUDIO");
+                            openaiFeedbackAudio = betterAudio.dataValues.constantValue;
                         } else if (openaiFeedbackTranscript.toLowerCase().includes("it was great")) {
-                            openaiFeedbackAudio = "https://beajbloblive.blob.core.windows.net/beajdocuments/ok.mp3";
+                            const okAudio = await waConstantsRepository.getByKey("OK_AUDIO");
+                            openaiFeedbackAudio = okAudio.dataValues.constantValue;
                         }
 
                         // Media message
-                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
+                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio', null, 0, "WA_Constants", openaiFeedbackAudio.dataValues.id, openaiFeedbackAudio.dataValues.constantMediaId, "constantMediaId");
                         await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
                         await sleep(5000);
                     }
@@ -230,13 +233,15 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         initialFeedbackResponse = openaiFeedbackTranscript;
 
                         if (openaiFeedbackTranscript.toLowerCase().includes("can be improved")) {
-                            openaiFeedbackAudio = "https://beajbloblive.blob.core.windows.net/beajdocuments/better.mp3";
+                            const betterAudio = await waConstantsRepository.getByKey("BETTER_AUDIO");
+                            openaiFeedbackAudio = betterAudio.dataValues.constantValue;
                         } else if (openaiFeedbackTranscript.toLowerCase().includes("it was great")) {
-                            openaiFeedbackAudio = "https://beajbloblive.blob.core.windows.net/beajdocuments/ok.mp3";
+                            const okAudio = await waConstantsRepository.getByKey("OK_AUDIO");
+                            openaiFeedbackAudio = okAudio.dataValues.constantValue;
                         }
 
                         // Media message
-                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
+                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio', null, 0, "WA_Constants", openaiFeedbackAudio.dataValues.id, openaiFeedbackAudio.dataValues.constantMediaId, "constantMediaId");
                         await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
                         await sleep(5000);
                     }

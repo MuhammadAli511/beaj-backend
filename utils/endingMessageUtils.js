@@ -8,6 +8,7 @@ import courseRepository from "../repositories/courseRepository.js";
 import { weekEndScoreCalculation } from "./chatbotUtils.js";
 import { weekEndImage } from "./imageGenerationUtils.js";
 import { sleep } from "./utils.js";
+import waConstantsRepository from "../repositories/waConstantsRepository.js";
 
 
 const getDayEndingMessage = (dayNumber) => {
@@ -93,26 +94,31 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
         }
     }
     else if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
-        let shell_image = "https://beajbloblive.blob.core.windows.net/beajdocuments/level1_shell_image.jpeg"; // Level 1
-        let gem_image = "https://beajbloblive.blob.core.windows.net/beajdocuments/level3_gem_image.jpeg"; // Level 3
+        // Key = SHELL_IMAGE and GEM_IMAGE
+        const shellImage = await waConstantsRepository.getByKey("SHELL_IMAGE");
+        const gemImage = await waConstantsRepository.getByKey("GEM_IMAGE");
         let trialCompleteImage = "";
         if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
-            trialCompleteImage = gem_image;
+            trialCompleteImage = gemImage.dataValues.constantValue;
         } else if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1") {
-            trialCompleteImage = shell_image;
+            trialCompleteImage = shellImage.dataValues.constantValue;
         }
         let user = await waUsersMetadataRepository.getByProfileId(profileId);
         let checkRegistrationComplete = user.dataValues.userRegistrationComplete !== null;
         if (startingLesson.dataValues.activityAlias == "📕 *Story Time!*") {
             let final_map_image = "";
+            const level1Map = await waConstantsRepository.getByKey("LEVEL_1_MAP");
+            const level3Map = await waConstantsRepository.getByKey("LEVEL_3_MAP");
             let message = "Start questions and win your first gem! 💎\nسوالات شروع کریں اور اپنا پہلا gem جیتیں!";
             if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1") {
-                final_map_image = "https://beajbloblive.blob.core.windows.net/beajdocuments/level1_map.jpeg";
+                final_map_image = level1Map.dataValues.constantValue;
+                await sendMediaMessage(userMobileNumber, final_map_image, "image", null, 0, "WA_Constants", level1Map.dataValues.id, level1Map.dataValues.constantMediaId, "constantMediaId");
+                await createActivityLog(userMobileNumber, "image", "outbound", final_map_image, null);
             } else if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
-                final_map_image = "https://beajbloblive.blob.core.windows.net/beajdocuments/level3_map.jpeg";
+                final_map_image = level3Map.dataValues.constantValue;
+                await sendMediaMessage(userMobileNumber, final_map_image, "image", null, 0, "WA_Constants", level3Map.dataValues.id, level3Map.dataValues.constantMediaId, "constantMediaId");
+                await createActivityLog(userMobileNumber, "image", "outbound", final_map_image, null);
             }
-            await sendMediaMessage(userMobileNumber, final_map_image, "image");
-            await createActivityLog(userMobileNumber, "image", "outbound", final_map_image, null);
             await sleep(2000);
             let buttonsArray = [];
             if (checkRegistrationComplete == true) {
@@ -168,11 +174,11 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
 
             let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔\n\nIf you are interested in registration, click on Register Now 👇\nاگر آپ ریجسٹریشن میں دلچسپی رکھتے ہیں، تو ‘Register Now’ پر کلک کریں۔`;
             if (message == null) {
-                await sendButtonMessage(userMobileNumber, trialCompleteMessage, buttonsArray, 0, trialCompleteImage);
+                await sendButtonMessage(userMobileNumber, trialCompleteMessage, buttonsArray, 0, trialCompleteImage, null, "WA_Constants", trialCompleteImage.dataValues.id, trialCompleteImage.dataValues.constantMediaId, "constantMediaId");
                 await createActivityLog(userMobileNumber, "template", "outbound", "get another trial or register", null);
             } else {
                 message += "\n\n" + trialCompleteMessage;
-                await sendButtonMessage(userMobileNumber, trialCompleteMessage, buttonsArray, 0, trialCompleteImage);
+                await sendButtonMessage(userMobileNumber, trialCompleteMessage, buttonsArray, 0, trialCompleteImage, null, "WA_Constants", trialCompleteImage.dataValues.id, trialCompleteImage.dataValues.constantMediaId, "constantMediaId");
                 await createActivityLog(userMobileNumber, "template", "outbound", trialCompleteMessage, null);
             }
 
@@ -184,11 +190,11 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
 
             let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔\n\n`;
             if (message == null) {
-                await sendButtonMessage(userMobileNumber, trialCompleteMessage, buttonsArray, 0, trialCompleteImage);
+                await sendButtonMessage(userMobileNumber, trialCompleteMessage, buttonsArray, 0, trialCompleteImage, null, "WA_Constants", trialCompleteImage.dataValues.id, trialCompleteImage.dataValues.constantMediaId, "constantMediaId");
                 await createActivityLog(userMobileNumber, "template", "outbound", "get another trial or register", null);
             } else {
                 message += "\n\n" + trialCompleteMessage;
-                await sendButtonMessage(userMobileNumber, trialCompleteMessage, buttonsArray, 0, trialCompleteImage);
+                await sendButtonMessage(userMobileNumber, trialCompleteMessage, buttonsArray, 0, trialCompleteImage, null, "WA_Constants", trialCompleteImage.dataValues.id, trialCompleteImage.dataValues.constantMediaId, "constantMediaId");
                 await createActivityLog(userMobileNumber, "template", "outbound", trialCompleteMessage, null);
             }
 
@@ -284,13 +290,14 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             }
 
             if (lessonNumber == 24 && strippedCourseName == "Level 3") {
-                const fizza_level3 = "https://beajbloblive.blob.core.windows.net/beajdocuments/Fizza_Level3.mp4";
-                await sendMediaMessage(userMobileNumber, fizza_level3, 'video', null);
-                await createActivityLog(userMobileNumber, "video", "outbound", fizza_level3, null);
+                const fizza_level3 = await waConstantsRepository.getByKey("FIZZA_LEVEL_3");
+                await sendMediaMessage(userMobileNumber, fizza_level3.dataValues.constantValue, 'video', null, 0, "WA_Constants", fizza_level3.dataValues.id, fizza_level3.dataValues.constantMediaId, "constantMediaId");
+                await createActivityLog(userMobileNumber, "video", "outbound", fizza_level3.dataValues.constantValue, null);
                 await sleep(12000);
                 let endingMessageLevel3 = "🎓 This brings us to the end of Beaj Education's Self Development Course! \n\nPlease note: \n\n📳 A Beaj team member will call you in the next few weeks for a short phone survey. Please pick up and share your valuable feedback.\n\n🏆 You will recieve your certificate within one week.\n\n🎁 Winners of the Lucky Draw will be announced after May 10th!\n\nPlease do not forget to join our Teacher Leaders community. Links to the community have been shared in your class groups.\n\nWe thank you for your time and dedication and hope your learning journey continues!\n\nBest wishes,\nTeam Beaj"
-                let endingImageLevel3 = "https://beajbloblive.blob.core.windows.net/beajdocuments/level3_ender_beaj.jpeg";
-                await sendMediaMessage(userMobileNumber, endingImageLevel3, 'image', endingMessageLevel3);
+                const level3Ender = await waConstantsRepository.getByKey("LEVEL_3_ENDER");
+                let endingImageLevel3 = level3Ender.dataValues.constantValue;
+                await sendMediaMessage(userMobileNumber, endingImageLevel3, 'image', endingMessageLevel3, 0, "WA_Constants", level3Ender.dataValues.id, level3Ender.dataValues.constantMediaId, "constantMediaId");
                 await createActivityLog(userMobileNumber, "image", "outbound", endingImageLevel3, null, endingMessageLevel3);
             }
 
@@ -313,9 +320,9 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             await sleep(4000);
 
             if (lessonNumber == 24 && strippedCourseName == "Level 3") {
-                const congratsImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/congratulations.jpeg";
-                await sendMediaMessage(userMobileNumber, congratsImage, 'image', null);
-                await createActivityLog(userMobileNumber, "image", "outbound", congratsImage, null);
+                const congratsImage = await waConstantsRepository.getByKey("LEVEL_3_CONGRATULATIONS");
+                await sendMediaMessage(userMobileNumber, congratsImage.dataValues.constantValue, 'image', null, 0, "WA_Constants", congratsImage.dataValues.id, congratsImage.dataValues.constantMediaId, "constantMediaId");
+                await createActivityLog(userMobileNumber, "image", "outbound", congratsImage.dataValues.constantValue, null);
                 await sleep(5000);
             } else {
                 await sendButtonMessage(userMobileNumber, 'Are you ready to start your next lesson?', [{ id: 'start_next_lesson', title: 'Start Next Lesson' }]);

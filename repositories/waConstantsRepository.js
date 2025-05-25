@@ -19,7 +19,7 @@ const getAll = async () => {
 const getByKey = async (key) => {
     return await WA_Constants.findOne({
         where: { key: key },
-        attributes: ['constantValue']
+        attributes: ['constantValue', 'id', 'constantMediaId']
     });
 };
 

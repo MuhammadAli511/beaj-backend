@@ -4,12 +4,14 @@ import DocumentFile from '../models/DocumentFile.js';
 import SpeakActivityQuestion from '../models/SpeakActivityQuestion.js';
 import MultipleChoiceQuestion from '../models/MultipleChoiceQuestion.js';
 import MultipleChoiceQuestionAnswer from '../models/MultipleChoiceQuestionAnswer.js';
+import WA_Constants from '../models/WA_Constants.js';
 
 const modelToMediaIdField = {
     "DocumentFile": DocumentFile,
     "SpeakActivityQuestion": SpeakActivityQuestion,
     "MultipleChoiceQuestion": MultipleChoiceQuestion,
-    "MultipleChoiceQuestionAnswer": MultipleChoiceQuestionAnswer
+    "MultipleChoiceQuestionAnswer": MultipleChoiceQuestionAnswer,
+    "WA_Constants": WA_Constants
 };
 
 const whatsappToken = process.env.WHATSAPP_TOKEN;

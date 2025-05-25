@@ -372,9 +372,9 @@ const webhookService = async (body, res) => {
                     (currentUserState.dataValues.engagement_type == "School Admin Confirmation")
                 ) {
                     if (messageContent.toLowerCase() == "school admin") {
-                        let prospectusPdf = "https://beajbloblive.blob.core.windows.net/beajdocuments/Summer%20Camp%20Prospectus%20for%20Schools2.pdf";
-                        await sendMediaMessage(userMobileNumber, prospectusPdf, "pdf", "Summer Camp Prospectus for Schools");
-                        await sleep(8000);
+                        let prospectusPdf = await waConstantsRepository.getByKey("SUMMER_CAMP_PROSPECTUS_PDF");
+                        await sendMediaMessage(userMobileNumber, prospectusPdf.dataValues.constantValue, "pdf", "Summer Camp Prospectus for Schools", 0, "WA_Constants", prospectusPdf.dataValues.id, prospectusPdf.dataValues.constantMediaId, "constantMediaId");
+                        await sleep(4000);
                         await waUserProgressRepository.updatePersona(profileId, userMobileNumber, "school admin");
                         await getSchoolName(profileId, userMobileNumber);
                         return;
