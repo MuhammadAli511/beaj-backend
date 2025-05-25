@@ -18,6 +18,10 @@ WA_Constants.init({
         type: DataTypes.TEXT,
         allowNull: false,
     },
+    constantMediaId: {
+        type: DataTypes.BIGINT,
+        allowNull: true,
+    },
     category: {
         type: DataTypes.TEXT,
         allowNull: true,
