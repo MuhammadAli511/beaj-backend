@@ -215,18 +215,71 @@ const uploadMediaAndGetId = async (mediaUrl, mediaType) => {
 
         // Get file extension from URL or default based on mediaType
         let fileExtension = '';
+        let mimeType = '';
+
         if (mediaUrl.includes('.')) {
             const urlParts = mediaUrl.split('.');
-            fileExtension = '.' + urlParts[urlParts.length - 1].split('?')[0];
-        } else {
-            if (mediaType === 'video') fileExtension = '.mp4';
-            if (mediaType === 'audio') fileExtension = '.mp3';
-            if (mediaType === 'pdf') fileExtension = '.pdf';
+            fileExtension = '.' + urlParts[urlParts.length - 1].split('?')[0].toLowerCase();
+        }
+
+        // Set MIME type and extension based on media type and file extension
+        if (mediaType === 'image') {
+            if (fileExtension === '.png') {
+                mimeType = 'image/png';
+            } else if (fileExtension === '.webp') {
+                mimeType = 'image/webp';
+            } else {
+                mimeType = 'image/jpeg';
+                fileExtension = fileExtension || '.jpg';
+            }
+        } else if (mediaType === 'video') {
+            if (fileExtension === '.3gpp' || fileExtension === '.3gp') {
+                mimeType = 'video/3gpp';
+            } else {
+                mimeType = 'video/mp4';
+                fileExtension = fileExtension || '.mp4';
+            }
+        } else if (mediaType === 'audio') {
+            if (fileExtension === '.aac') {
+                mimeType = 'audio/aac';
+            } else if (fileExtension === '.mp4' || fileExtension === '.m4a') {
+                mimeType = 'audio/mp4';
+            } else if (fileExtension === '.amr') {
+                mimeType = 'audio/amr';
+            } else if (fileExtension === '.ogg') {
+                mimeType = 'audio/ogg';
+            } else if (fileExtension === '.opus') {
+                mimeType = 'audio/opus';
+            } else {
+                mimeType = 'audio/mpeg';
+                fileExtension = fileExtension || '.mp3';
+            }
+        } else if (mediaType === 'pdf' || mediaType === 'document') {
+            if (fileExtension === '.pdf') {
+                mimeType = 'application/pdf';
+            } else if (fileExtension === '.doc') {
+                mimeType = 'application/msword';
+            } else if (fileExtension === '.docx') {
+                mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+            } else if (fileExtension === '.ppt') {
+                mimeType = 'application/vnd.ms-powerpoint';
+            } else if (fileExtension === '.pptx') {
+                mimeType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+            } else if (fileExtension === '.xls') {
+                mimeType = 'application/vnd.ms-excel';
+            } else if (fileExtension === '.xlsx') {
+                mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+            } else if (fileExtension === '.txt') {
+                mimeType = 'text/plain';
+            } else {
+                mimeType = 'application/pdf';
+                fileExtension = fileExtension || '.pdf';
+            }
         }
 
         // Prepare form data for media upload
         const formData = new FormData();
-        const blob = new Blob([mediaResponse.data]);
+        const blob = new Blob([mediaResponse.data], { type: mimeType });
         formData.append('file', blob, `media${fileExtension}`);
         formData.append('messaging_product', 'whatsapp');
         formData.append('type', mediaType === 'pdf' ? 'document' : mediaType);
@@ -330,10 +383,8 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, ret
 
         // If model and recordId are provided, create/update the media ID
         if (modelName && recordId) {
-            // Upload the media to get a new ID
             const uploadResult = await uploadMediaAndGetId(mediaUrl, mediaType);
             if (uploadResult.success) {
-                // Save the new media ID to the database
                 await saveMediaIdToDatabase(modelName, recordId, mediaType, uploadResult.mediaId, feildName);
             } else {
                 console.log(`Failed to upload media and get ID: ${uploadResult.error}`);
@@ -487,17 +538,14 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
         // If model and recordId are provided and we sent with a URL, create/update the media ID
         if (modelName && recordId) {
             if (imageUrl) {
-                // Upload the image to get a new ID
                 const uploadResult = await uploadMediaAndGetId(imageUrl, 'image');
                 if (uploadResult.success) {
-                    // Save the new media ID to the database
                     await saveMediaIdToDatabase(modelName, recordId, 'image', uploadResult.mediaId, feildName);
                 }
             } else if (videoUrl) {
                 // Upload the video to get a new ID
                 const uploadResult = await uploadMediaAndGetId(videoUrl, 'video');
                 if (uploadResult.success) {
-                    // Save the new media ID to the database
                     await saveMediaIdToDatabase(modelName, recordId, 'video', uploadResult.mediaId, feildName);
                 }
             }

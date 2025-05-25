@@ -29,7 +29,7 @@ const videoView = async (profileId, userMobileNumber, currentUserState, starting
             await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null, lessonMessage);
 
             // Sleep
-            await sleep(12000);
+            await sleep(5000);
         }
         else if (persona == 'kid') {
             // Lesson Started Record
@@ -53,7 +53,7 @@ const videoView = async (profileId, userMobileNumber, currentUserState, starting
             await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
 
             // Sleep
-            await sleep(12000);
+            await sleep(5000);
         }
         return;
     } catch (error) {
