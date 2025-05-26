@@ -123,7 +123,7 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
                 const lessonText = startingLesson.dataValues.text;
                 let instructionMessage = "Send us a voice message of you reading this passage:\n\n" + lessonText;
                 if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
-                    instructionMessage += "\n\nOR\n\n" + "Type “next” to skip";
+                    instructionMessage += "\n\nOR\n\n" + "Type *next* to skip this activity!";
                 }
                 await sendMediaMessage(userMobileNumber, videoURL, 'video', instructionMessage, 0, "DocumentFile", documentFile[0].dataValues.id, documentFile[0].dataValues.videoMediaId, "videoMediaId");
                 await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
