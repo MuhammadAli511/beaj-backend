@@ -2,6 +2,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { createCanvas, registerFont, loadImage } from 'canvas';
 import azureBlobStorage from './azureBlobStorage.js';
+import waUserActivityLogsRepository from '../repositories/waUserActivityLogsRepository.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -642,8 +643,8 @@ const generateInvoiceImage = async (userMobileNumber, registrationsSummary) => {
 
         // Get total registrations and prepare rows
         const totalRegistrations = registrationsSummary.count;
-        let perCoursePrice = 1500; // Default price
-        if (totalRegistrations > 1) {
+        let perCoursePrice = await waUserActivityLogsRepository.getStudentCoursePriceByFirstMessage(userMobileNumber);
+        if (totalRegistrations > 1 && perCoursePrice == 1500) {
             perCoursePrice = 1200; // Discounted price for multiple registrations
         }
 

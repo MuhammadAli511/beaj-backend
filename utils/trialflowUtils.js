@@ -37,7 +37,15 @@ const greetingMessage = async (profileId, userMobileNumber, persona) => {
     if (persona == "kids") {
         await sendMessage(userMobileNumber, greetingMessageText);
         await createActivityLog(userMobileNumber, "text", "outbound", greetingMessageText, null);
-        const flyer = await waConstantsRepository.getByKey("COMBINED_FLYER");
+        const combined_flyer = await waConstantsRepository.getByKey("COMBINED_FLYER");
+        const urdu_flyer = await waConstantsRepository.getByKey("URDU_FLYER");
+        const first_message = await waUserActivityLogsRepository.getStudentCoursePriceByFirstMessage(userMobileNumber);
+        let flyer = null;
+        if (first_message == 750) {
+            flyer = urdu_flyer;
+        } else {
+            flyer = combined_flyer;
+        }
         await sendMediaMessage(userMobileNumber, flyer.dataValues.constantValue, "image", null, 0, "WA_Constants", flyer.dataValues.id, flyer.dataValues.constantMediaId, "constantMediaId");
         await sleep(2000);
         let videoCaption = "Why should you choose Beaj Education? Here is a message from our founder.\n\nآپ کو بیج ایجوکیشن کیوں چُننا چاہیے؟ — بیج ایجوکیشن کی سربراہ کا پیغام۔";
@@ -296,7 +304,15 @@ const readyToPay = async (profileId, userMobileNumber) => {
 const parentOrStudentSelection = async (profileId, userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Parent or Student");
     await waUserProgressRepository.updatePersona(profileId, userMobileNumber, "parent or student");
-    const flyer = await waConstantsRepository.getByKey("COMBINED_FLYER");
+    const combined_flyer = await waConstantsRepository.getByKey("COMBINED_FLYER");
+    const urdu_flyer = await waConstantsRepository.getByKey("URDU_FLYER");
+    const first_message = await waUserActivityLogsRepository.getStudentCoursePriceByFirstMessage(userMobileNumber);
+    let flyer = null;
+    if (first_message == 750) {
+        flyer = urdu_flyer;
+    } else {
+        flyer = combined_flyer;
+    }
     await sendMediaMessage(userMobileNumber, flyer.dataValues.constantValue, "image", null, 0, "WA_Constants", flyer.dataValues.id, flyer.dataValues.constantMediaId, "constantMediaId");
     await sleep(1000);
     const introAudio = await waConstantsRepository.getByKey("REGISTRATION_INTRO_AUDIO");
@@ -458,7 +474,7 @@ const paymentDetails = async (profileId, userMobileNumber) => {
     const registrationsSummary = await getTotalRegistrationsSummaryForUnpaidUsers(userMobileNumber);
     const totalRegistrations = registrationsSummary.count;
     let perCoursePrice = await waUserActivityLogsRepository.getStudentCoursePriceByFirstMessage(userMobileNumber);
-    if (totalRegistrations > 1) {
+    if (totalRegistrations > 1 && perCoursePrice == 1500) {
         perCoursePrice = 1200;
     }
     const totalPrice = totalRegistrations * perCoursePrice;
@@ -536,7 +552,7 @@ const cancelRegistration = async (profileId, userMobileNumber) => {
     Scenarios:
     1) When does it happen: After completing information as a parent (Message content: Start Again)
         What to do: Send to start of the flow and preserve the data for the user and the persona will be selected as parent and user can come back and register another student
-
+ 
     2) When does it happen: After sending bank details (Message content: Start Again)
         What to do: Send to start of the flow and preserve the data for the user and the persona will be selected as parent and user can come back and register another student
     */

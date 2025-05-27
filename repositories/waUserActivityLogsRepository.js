@@ -107,6 +107,8 @@ const getStudentCoursePriceByFirstMessage = async (phoneNumber) => {
 
         if (messageContent == 'Start Free Trial now!') {
             return 1200;
+        } else if (messageContent == 'سٹارٹ فری ٹرائل') {
+            return 750;
         } else {
             return 1500;
         }

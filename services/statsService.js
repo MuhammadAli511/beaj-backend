@@ -114,7 +114,8 @@ const studentTrialUserJourneyStatsService = async (date) => {
                         WHEN LOWER("messageContent"[1]) = LOWER('Start Free Trial now!') THEN 'Community'
                         WHEN LOWER("messageContent"[1]) = LOWER('Start my Free Trial now!') THEN 'Social Media ads'
                         WHEN LOWER("messageContent"[1]) = LOWER('Start my FREE Demo! (Click send)') THEN 'Flyer'
-                        WHEN LOWER("messageContent"[1]) = LOWER('Click send to start Free Demo! standee') THEN 'Standee'
+                        WHEN LOWER("messageContent"[1]) = LOWER('Click send to start Free Demo!') THEN 'Standee'
+                        WHEN LOWER("messageContent"[1]) = LOWER('سٹارٹ فری ٹرائل') THEN 'Urdu Flyer'
                         ELSE 'Unknown'
                       END AS source,
                       COUNT(*) AS user_count
@@ -438,7 +439,8 @@ const studentUserJourneyStatsService = async (date) => {
                 WHEN LOWER(tc.first_message_content) = LOWER('Start Free Trial now!') THEN 'Community'
                 WHEN LOWER(tc.first_message_content) = LOWER('Start my Free Trial now!') THEN 'Social Media ads'
                 WHEN LOWER(tc.first_message_content) = LOWER('Start my FREE Demo! (Click send)') THEN 'Flyer'
-                WHEN LOWER(tc.first_message_content) = LOWER('Click send to start Free Demo! standee') THEN 'Standee'
+                WHEN LOWER(tc.first_message_content) = LOWER('Click send to start Free Demo!') THEN 'Standee'
+                WHEN LOWER(tc.first_message_content) = LOWER('سٹارٹ فری ٹرائل') THEN 'Urdu Flyer'
                 ELSE 'Unknown'
               END AS source,
               tc.last_message_content,
