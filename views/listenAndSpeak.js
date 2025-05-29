@@ -351,7 +351,7 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                     }
                     // If user response is incorrect
                     else {
-                        if (retryCounter !== 2) {
+                        if (retryCounter !== 1) {
                             // Update retry counter
                             await waUserProgressRepository.updateRetryCounter(profileId, userMobileNumber, currentUserState.dataValues.retryCounter + 1);
 
@@ -360,7 +360,7 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                             await sendMessage(userMobileNumber, wrongMessage);
                             await createActivityLog(userMobileNumber, "text", "outbound", wrongMessage, null);
                             return;
-                        } else if (retryCounter == 2) {
+                        } else if (retryCounter == 1) {
                             // Reset retry counter
                             await waUserProgressRepository.updateRetryCounter(profileId, userMobileNumber, 0);
 
