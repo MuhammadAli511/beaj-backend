@@ -340,7 +340,7 @@ const thankyouMessageParent = async (profileId, userMobileNumber) => {
 
 const talkToBeajRep = async (profileId, userMobileNumber) => {
     const user = await waUserProgressRepository.getByProfileId(profileId);
-    if (user.dataValues.persona == "school admin") {
+    if (user && user.dataValues.persona == "school admin") {
         await sendContactCardMessage(userMobileNumber, najiaContactData);
     } else {
         await sendContactCardMessage(userMobileNumber, amnaContactData);

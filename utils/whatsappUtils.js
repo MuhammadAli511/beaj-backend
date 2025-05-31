@@ -18,7 +18,7 @@ const whatsappToken = process.env.WHATSAPP_TOKEN;
 
 const sendMessage = async (to, body, retryAttempt = 0) => {
     const phoneNumberId = getBotPhoneNumberIdForRequest();
-    const MAX_RETRIES = 17;
+    const MAX_RETRIES = 13;
 
     try {
         await axios.post(
@@ -39,7 +39,7 @@ const sendMessage = async (to, body, retryAttempt = 0) => {
         console.log(logger);
     } catch (error) {
         const errData = error.response ? error.response.data : null;
-        console.log(`Error sending message (from ${phoneNumberId}). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
+        console.log(`Error sending message (from ${phoneNumberId}). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}, message content: ${body}`);
 
         if (retryAttempt < MAX_RETRIES) {
             const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
@@ -55,7 +55,7 @@ const sendMessage = async (to, body, retryAttempt = 0) => {
 
 
 const retrieveMediaURL = async (mediaId, retryAttempt = 0) => {
-    const MAX_RETRIES = 17;
+    const MAX_RETRIES = 13;
 
     try {
         const mediaResponse = await axios.get(
@@ -121,7 +121,7 @@ const saveMediaIdToDatabase = async (modelName, recordId, mediaType, mediaId, fi
 // Function to send media using ID directly
 const sendMediaMessageWithId = async (to, mediaId, mediaType, captionText = null, retryAttempt = 0) => {
     const phoneNumberId = getBotPhoneNumberIdForRequest();
-    const MAX_RETRIES = 17;
+    const MAX_RETRIES = 13;
 
     try {
         let requestBody;
@@ -309,7 +309,7 @@ const uploadMediaAndGetId = async (mediaUrl, mediaType) => {
 
 const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, retryAttempt = 0, modelName = null, recordId = null, mediaId = null, feildName = null) => {
     const phoneNumberId = getBotPhoneNumberIdForRequest();
-    const MAX_RETRIES = 17;
+    const MAX_RETRIES = 13;
 
     // Case 3: If media ID exists and is not expired, try using it first
     if (mediaId) {
@@ -396,7 +396,7 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, ret
         return true;
     } catch (error) {
         const errData = error.response ? error.response.data : null;
-        console.log(`Error sending media message (from ${phoneNumberId}). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
+        console.log(`Error sending media message (from ${phoneNumberId}). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}, media type: ${mediaType}, media URL: ${mediaUrl}`);
         if (retryAttempt < MAX_RETRIES) {
             const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
             console.log(`Retrying after ${waitTimeSeconds} seconds...`);
@@ -412,7 +412,7 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, ret
 
 const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, imageUrl = null, videoUrl = null, modelName = null, recordId = null, imageMediaId = null, videoMediaId = null, feildName = null) => {
     const phoneNumberId = getBotPhoneNumberIdForRequest();
-    const MAX_RETRIES = 17;
+    const MAX_RETRIES = 13;
 
     try {
         let interactivePayload = {
@@ -556,7 +556,7 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
         return true;
     } catch (error) {
         const errData = error.response ? error.response.data : null;
-        console.log(`Error sending button message (from ${phoneNumberId}). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}`);
+        console.log(`Error sending button message (from ${phoneNumberId}). Attempt ${retryAttempt + 1} of ${MAX_RETRIES}, Button body text: ${bodyText}`);
         if (retryAttempt < MAX_RETRIES) {
             const waitTimeSeconds = retryAttempt === 0 ? 1 : Math.min(retryAttempt * 4, 60);
             console.log(`Retrying after ${waitTimeSeconds} seconds...`);
@@ -578,7 +578,7 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
 
 const sendContactCardMessage = async (to, contactData, retryAttempt = 0) => {
     const phoneNumberId = getBotPhoneNumberIdForRequest();
-    const MAX_RETRIES = 17;
+    const MAX_RETRIES = 13;
 
     try {
         await axios.post(
