@@ -16,7 +16,7 @@ export const runWithContext = (context, fn) => {
             console.error('No userMobileNumber in context');
             return null;
         }
-        const validIds = ["316915674839342", "410117285518514", "608292759037444"]
+        const validIds = ["316915674839342", "410117285518514", "608292759037444", "630734623462388"]
         if (!validIds.includes(context.botPhoneNumberId)) {
             console.error('Invalid botPhoneNumberId in context');
             return null;

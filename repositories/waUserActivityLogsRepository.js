@@ -118,6 +118,50 @@ const getStudentCoursePriceByFirstMessage = async (phoneNumber) => {
     }
 };
 
+const getMarketingBotChatHistory = async (phoneNumber) => {
+    let previousMessages = [];
+    const messages = await WA_UserActivityLogs.findAll({
+        where: {
+            phoneNumber: phoneNumber,
+            bot_phone_number_id: process.env.MARKETING_BOT_PHONE_NUMBER_ID
+        },
+        order: [
+            ['timestamp', 'ASC']
+        ]
+    });
+
+    // If more than 50 inbound messages in the past hour, then return null
+    const oneHourAgo = new Date(Date.now() - 1 * 60 * 60 * 1000);
+    const inboundMessagesInPastHour = await WA_UserActivityLogs.count({
+        where: {
+            phoneNumber: phoneNumber,
+            bot_phone_number_id: process.env.MARKETING_BOT_PHONE_NUMBER_ID,
+            messageDirection: "inbound",
+            timestamp: {
+                [Sequelize.Op.gte]: oneHourAgo
+            }
+        }
+    });
+    if (inboundMessagesInPastHour > 50) {
+        return null;
+    }
+
+    messages.forEach(message => {
+        if (message.messageDirection == "inbound") {
+            previousMessages.push({
+                role: "user",
+                content: message.messageContent[0]
+            });
+        } else {
+            previousMessages.push({
+                role: "assistant",
+                content: message.messageContent[0]
+            });
+        }
+    });
+    return previousMessages;
+};
+
 export default {
     create,
     getAll,
@@ -127,5 +171,6 @@ export default {
     deleteByPhoneNumber,
     getLastActiveUsers,
     getLastMessageTime,
-    getStudentCoursePriceByFirstMessage
+    getStudentCoursePriceByFirstMessage,
+    getMarketingBotChatHistory
 };

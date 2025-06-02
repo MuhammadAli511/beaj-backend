@@ -16,6 +16,7 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { ElevenLabsClient } from "elevenlabs";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { marketing_bot_prompt } from "./prompts.js";
 
 dotenv.config();
 ffmpeg.setFfmpegPath(ffmpegPath);
@@ -778,6 +779,30 @@ async function openaiCustomFeedback(userTranscript, modelPrompt) {
     }
 }
 
+async function marketingBotResponse(previousMessages) {
+    const marketingBotPrompt = await marketing_bot_prompt();
+    previousMessages.unshift({
+        role: "system",
+        content: marketingBotPrompt
+    });
+    try {
+        const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
+        const apiKey = process.env.AZURE_OPENAI_API_KEY;
+        const apiVersion = "2025-01-01-preview";
+        const deployment = "gpt-4.1-mini";
+
+        const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
+        const result = await client.chat.completions.create({
+            messages: previousMessages,
+            model: "",
+        });
+
+        return result.choices[0].message.content;
+    } catch {
+        return "Sorry, I am not able to respond to your question.";
+    }
+}
+
 export default {
     azureSpeechToText,
     azurePronunciationAssessment,
@@ -790,6 +815,7 @@ export default {
     elevenLabsSpeechToText,
     geminiFeedback,
     geminiCustomFeedback,
-    openaiTextToSpeechAndUpload
+    openaiTextToSpeechAndUpload,
+    marketingBotResponse
 };
 
