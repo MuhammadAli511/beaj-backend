@@ -89,7 +89,7 @@ const weekEndImage = async (score, week) => {
     }
 };
 
-const createAndUploadScoreImage = async (pronunciationAssessment) => {
+const createAndUploadScoreImage = async (pronunciationAssessment, threshold) => {
     try {
         if (pronunciationAssessment === undefined || pronunciationAssessment == [] || pronunciationAssessment == null) {
             return null;
@@ -103,9 +103,9 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
         const mispronouncedWordsList = pronunciationAssessment.words.filter(word =>
             word && word.PronunciationAssessment &&
             (word.PronunciationAssessment.ErrorType == "Mispronunciation" ||
-                word.PronunciationAssessment.AccuracyScore < 70)
+                word.PronunciationAssessment.AccuracyScore < threshold)
         );
-        if (mispronouncedWordsList.length == 0 && accuracyScoreNumber > 70) {
+        if (mispronouncedWordsList.length == 0 && accuracyScoreNumber > threshold) {
             accuracyScoreNumber = 100;
         }
 
@@ -221,7 +221,7 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
                 cursorY += lineHeight; // Move to the next line
             }
 
-            if (errorType == 'Mispronunciation' || wordAccuracyScore < 70) {
+            if (errorType == 'Mispronunciation' || wordAccuracyScore < threshold) {
                 // Highlight mispronounced words in yellow
                 ctx.fillStyle = '#FFD700'; // Yellow
                 ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
@@ -274,7 +274,7 @@ const createAndUploadScoreImage = async (pronunciationAssessment) => {
     }
 };
 
-const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
+const createAndUploadMonologueScoreImage = async (pronunciationAssessment, threshold) => {
     try {
         if (pronunciationAssessment === undefined || pronunciationAssessment == [] || pronunciationAssessment == null) {
             return null;
@@ -287,9 +287,9 @@ const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
         const mispronouncedWordsList = pronunciationAssessment.words.filter(word =>
             word && word.PronunciationAssessment &&
             (word.PronunciationAssessment.ErrorType == "Mispronunciation" ||
-                word.PronunciationAssessment.AccuracyScore < 70)
+                word.PronunciationAssessment.AccuracyScore < threshold)
         );
-        if (mispronouncedWordsList.length == 0 && accuracyScoreNumber > 70) {
+        if (mispronouncedWordsList.length == 0 && accuracyScoreNumber > threshold) {
             accuracyScoreNumber = 100;
         }
 
@@ -380,7 +380,7 @@ const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
                 cursorY += lineHeight; // Move to the next line
             }
 
-            if (errorType == 'Mispronunciation' || wordAccuracyScore < 70) {
+            if (errorType == 'Mispronunciation' || wordAccuracyScore < threshold) {
                 // Highlight mispronounced words in yellow
                 ctx.fillStyle = '#FFD700'; // Yellow
                 ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
@@ -419,7 +419,7 @@ const createAndUploadMonologueScoreImage = async (pronunciationAssessment) => {
     }
 };
 
-const createAndUploadSpeakingPracticeScoreImage = async (pronunciationAssessments) => {
+const createAndUploadSpeakingPracticeScoreImage = async (pronunciationAssessments, threshold) => {
     try {
         if (pronunciationAssessments === undefined || pronunciationAssessments == [] || pronunciationAssessments == null) {
             return null;
@@ -525,7 +525,7 @@ const createAndUploadSpeakingPracticeScoreImage = async (pronunciationAssessment
                 cursorY += lineHeight; // Move to the next line
             }
 
-            if (errorType == 'Mispronunciation' || wordAccuracyScore < 70) {
+            if (errorType == 'Mispronunciation' || wordAccuracyScore < threshold) {
                 // Highlight mispronounced words in yellow
                 ctx.fillStyle = '#FFD700'; // Yellow
                 ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);

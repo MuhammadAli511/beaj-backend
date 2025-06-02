@@ -66,7 +66,7 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
                 // Extract user transcription from words
                 const userTranscription = extractTranscript(pronunciationAssessment);
 
-                const imageUrl = await createAndUploadScoreImage(pronunciationAssessment);
+                const imageUrl = await createAndUploadScoreImage(pronunciationAssessment, 70);
 
                 if (imageUrl) {
                     // Media message
@@ -147,7 +147,7 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
                 // Extract user transcription from words
                 const userTranscription = extractTranscript(pronunciationAssessment);
 
-                const imageUrl = await createAndUploadScoreImage(pronunciationAssessment);
+                const imageUrl = await createAndUploadScoreImage(pronunciationAssessment, 80);
 
                 if (imageUrl) {
                     // Media message

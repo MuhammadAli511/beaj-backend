@@ -109,7 +109,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         }
 
                         // Media message
-                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio', null, 0, "WA_Constants", openaiFeedbackAudio.dataValues.id, openaiFeedbackAudio.dataValues.constantMediaId, "constantMediaId");
+                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
                         await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
                         await sleep(5000);
                     }
@@ -241,7 +241,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         }
 
                         // Media message
-                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio', null, 0, "WA_Constants", openaiFeedbackAudio.dataValues.id, openaiFeedbackAudio.dataValues.constantMediaId, "constantMediaId");
+                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
                         await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
                         await sleep(5000);
                     }

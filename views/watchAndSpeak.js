@@ -97,7 +97,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                     const userTranscription = extractTranscript(pronunciationAssessment);
 
                     // Generate pronunciation assessment message
-                    const imageUrl = await createAndUploadScoreImage(pronunciationAssessment);
+                    const imageUrl = await createAndUploadScoreImage(pronunciationAssessment, 70);
 
                     if (imageUrl) {
                         // Media message
@@ -175,7 +175,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                 const userTranscription = extractTranscript(pronunciationAssessment);
 
                 // Generate pronunciation assessment message
-                const imageUrl = await createAndUploadScoreImage(pronunciationAssessment);
+                const imageUrl = await createAndUploadScoreImage(pronunciationAssessment, 70);
 
                 if (imageUrl) {
                     // Media message
@@ -335,7 +335,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                     const userTranscription = extractTranscript(pronunciationAssessment);
 
                     // Generate pronunciation assessment message
-                    const imageUrl = await createAndUploadScoreImage(pronunciationAssessment);
+                    const imageUrl = await createAndUploadScoreImage(pronunciationAssessment, 80);
 
                     if (imageUrl) {
                         // Media message
@@ -416,7 +416,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                 const userTranscription = extractTranscript(pronunciationAssessment);
 
                 // Generate pronunciation assessment message
-                const imageUrl = await createAndUploadScoreImage(pronunciationAssessment);
+                const imageUrl = await createAndUploadScoreImage(pronunciationAssessment, 80);
 
                 if (imageUrl) {
                     // Media message

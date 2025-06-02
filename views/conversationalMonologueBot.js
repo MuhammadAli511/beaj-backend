@@ -62,7 +62,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 const mispronouncedWords = extractMispronouncedWords(pronunciationAssessment);
 
                 // Generate pronunciation assessment message
-                const imageUrl = await createAndUploadMonologueScoreImage(pronunciationAssessment);
+                const imageUrl = await createAndUploadMonologueScoreImage(pronunciationAssessment, 70);
 
                 // Media message
                 if (imageUrl) {
@@ -168,7 +168,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 const mispronouncedWords = extractMispronouncedWords(pronunciationAssessment);
 
                 // Generate pronunciation assessment message
-                const imageUrl = await createAndUploadMonologueScoreImage(pronunciationAssessment);
+                const imageUrl = await createAndUploadMonologueScoreImage(pronunciationAssessment, 80);
 
                 // Media message
                 if (imageUrl) {

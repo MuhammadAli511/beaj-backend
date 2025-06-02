@@ -89,7 +89,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                     await createActivityLog(userMobileNumber, "audio", "outbound", nextSpeakingPracticeQuestion.dataValues.mediaFile, null);
                 } else {
                     const pronunciationAssessments = await waQuestionResponsesRepository.getAllJsonFeedbacksForProfileIdAndLessonId(profileId, currentUserState.dataValues.currentLessonId);
-                    const imageUrl = await createAndUploadSpeakingPracticeScoreImage(pronunciationAssessments);
+                    const imageUrl = await createAndUploadSpeakingPracticeScoreImage(pronunciationAssessments, 70);
 
                     // Media message
                     if (imageUrl) {
@@ -202,7 +202,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                     await createActivityLog(userMobileNumber, "audio", "outbound", nextSpeakingPracticeQuestion.dataValues.mediaFile, null);
                 } else {
                     const pronunciationAssessments = await waQuestionResponsesRepository.getAllJsonFeedbacksForProfileIdAndLessonId(profileId, currentUserState.dataValues.currentLessonId);
-                    const imageUrl = await createAndUploadSpeakingPracticeScoreImage(pronunciationAssessments);
+                    const imageUrl = await createAndUploadSpeakingPracticeScoreImage(pronunciationAssessments, 80);
 
                     // Media message
                     if (imageUrl) {
