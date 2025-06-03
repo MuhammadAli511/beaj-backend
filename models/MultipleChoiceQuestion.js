@@ -10,7 +10,7 @@ MultipleChoiceQuestion.init({
     autoIncrement: true
   },
   QuestionType: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: false
   },
   QuestionText: {
@@ -18,7 +18,7 @@ MultipleChoiceQuestion.init({
     allowNull: false
   },
   QuestionImageUrl: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   QuestionImageMediaId: {
@@ -26,7 +26,7 @@ MultipleChoiceQuestion.init({
     allowNull: true
   },
   QuestionAudioUrl: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   QuestionAudioMediaId: {
@@ -34,7 +34,7 @@ MultipleChoiceQuestion.init({
     allowNull: true
   },
   QuestionVideoUrl: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   QuestionVideoMediaId: {
@@ -56,7 +56,7 @@ MultipleChoiceQuestion.init({
     onDelete: 'RESTRICT'
   },
   OptionsType: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: false
   }
 }, {

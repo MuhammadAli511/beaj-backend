@@ -1,7 +1,7 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../config/sequelize.js';
 
-class CourseWeek extends Model {}
+class CourseWeek extends Model { }
 
 CourseWeek.init({
   id: {
@@ -14,7 +14,7 @@ CourseWeek.init({
     allowNull: false
   },
   image: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   description: {

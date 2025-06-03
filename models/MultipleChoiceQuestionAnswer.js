@@ -14,7 +14,7 @@ MultipleChoiceQuestionAnswer.init({
     allowNull: false
   },
   AnswerImageUrl: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   AnswerImageMediaId: {
@@ -22,7 +22,7 @@ MultipleChoiceQuestionAnswer.init({
     allowNull: true
   },
   AnswerAudioUrl: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   AnswerAudioMediaId: {
@@ -38,7 +38,7 @@ MultipleChoiceQuestionAnswer.init({
     allowNull: true
   },
   CustomAnswerFeedbackImage: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   CustomAnswerFeedbackImageMediaId: {
@@ -46,7 +46,7 @@ MultipleChoiceQuestionAnswer.init({
     allowNull: true
   },
   CustomAnswerFeedbackAudio: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   CustomAnswerFeedbackAudioMediaId: {

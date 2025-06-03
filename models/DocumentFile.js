@@ -20,11 +20,11 @@ DocumentFile.init({
     onDelete: 'RESTRICT'
   },
   language: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: false
   },
   video: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   videoMediaId: {
@@ -32,7 +32,7 @@ DocumentFile.init({
     allowNull: true
   },
   audio: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   audioMediaId: {
@@ -40,7 +40,7 @@ DocumentFile.init({
     allowNull: true
   },
   image: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   imageMediaId: {
@@ -48,7 +48,7 @@ DocumentFile.init({
     allowNull: true
   },
   mediaType: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: false
   }
 }, {

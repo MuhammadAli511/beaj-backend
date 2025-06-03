@@ -22,7 +22,7 @@ SpeakActivityQuestion.init({
     allowNull: true
   },
   mediaFile: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   mediaFileMediaId: {
@@ -30,7 +30,7 @@ SpeakActivityQuestion.init({
     allowNull: true
   },
   mediaFileSecond: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   mediaFileSecondMediaId: {
@@ -41,6 +41,30 @@ SpeakActivityQuestion.init({
     type: DataTypes.INTEGER,
     allowNull: false,
     defaultValue: 0
+  },
+  customFeedbackText: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  customFeedbackImage: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  customFeedbackAudio: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  customFeedbackImageMediaId: {
+    type: DataTypes.BIGINT,
+    allowNull: true
+  },
+  customFeedbackAudioMediaId: {
+    type: DataTypes.BIGINT,
+    allowNull: true
+  },
+  difficultyLevel: {
+    type: DataTypes.TEXT,
+    allowNull: false
   }
 }, {
   sequelize,

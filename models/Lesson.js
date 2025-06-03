@@ -10,7 +10,7 @@ Lesson.init({
     autoIncrement: true
   },
   lessonType: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: false
   },
   dayNumber: {
@@ -18,11 +18,11 @@ Lesson.init({
     allowNull: false
   },
   activity: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: false
   },
   activityAlias: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: false
   },
   weekNumber: {
@@ -40,16 +40,26 @@ Lesson.init({
       model: 'Courses',
       key: 'CourseId'
     },
-    onUpdate: 'CASCADE',
-    onDelete: 'RESTRICT'
   },
   SequenceNumber: {
     type: DataTypes.INTEGER,
     allowNull: false
   },
   status: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: false
+  },
+  textInstruction: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  audioInstructionUrl: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  audioInstructionMediaId: {
+    type: DataTypes.BIGINT,
+    allowNull: true
   },
   createdAt: {
     type: DataTypes.DATE,

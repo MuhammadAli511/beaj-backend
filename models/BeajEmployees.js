@@ -11,34 +11,34 @@ BeajEmployees.init({
         allowNull: false
     },
     first_name: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: true
     },
     last_name: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: true
     },
     date_registered: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: true
     },
     email: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: true
     },
     password: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: true
     },
     role: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: true,
         validate: {
             isIn: [['employee', 'admin']]
         }
     },
     profile_picture: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: true
     },
 }, {

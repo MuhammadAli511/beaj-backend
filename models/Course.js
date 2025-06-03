@@ -10,7 +10,7 @@ Course.init({
     autoIncrement: true
   },
   CourseName: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: false
   },
   CoursePrice: {

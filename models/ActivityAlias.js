@@ -10,7 +10,7 @@ ActivityAlias.init({
         autoIncrement: true
     },
     Alias: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: false
     }
 }, {

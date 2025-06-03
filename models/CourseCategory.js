@@ -10,11 +10,11 @@ CourseCategory.init({
     autoIncrement: true
   },
   CourseCategoryName: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: false
   },
   image: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: false
   },
   CategorySequenceNum: {
