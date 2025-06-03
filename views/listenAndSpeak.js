@@ -64,7 +64,7 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 const currentListenAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                 const answersArray = currentListenAndSpeakQuestion.dataValues.answer;
                 let prompt = answersArray[0];
-                let recognizedText = await AIServices.openaiSpeechToTextWithPrompt(messageContent.data, prompt);
+                let recognizedText = await AIServices.azureOpenAISpeechToTextWithPrompt(messageContent.data, prompt);
                 if (recognizedText) {
                     // Checking if user response is correct or not
 
@@ -274,7 +274,7 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 const currentListenAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                 const answersArray = currentListenAndSpeakQuestion.dataValues.answer;
                 let prompt = answersArray[0];
-                let recognizedText = await AIServices.openaiSpeechToTextWithPrompt(messageContent.data, prompt);
+                let recognizedText = await AIServices.azureOpenAISpeechToTextWithPrompt(messageContent.data, prompt);
                 if (recognizedText) {
                     // Checking if user response is correct or not
 

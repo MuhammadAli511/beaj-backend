@@ -12,7 +12,7 @@ const createAudioChatService = async (prompt, userAudioFile) => {
         const userFileUrl = await azure_blob.uploadToBlobStorage(userAudioFile);
         startTime = performance.now();
         const audioBuffer = userAudioFile.buffer;
-        const transcription = await AIServices.openaiSpeechToText(audioBuffer);
+        const transcription = await AIServices.azureOpenAISpeechToText(audioBuffer);
         endTime = performance.now();
         userSpeechToTextTime = (endTime - startTime).toFixed(2) / 1000;
 
