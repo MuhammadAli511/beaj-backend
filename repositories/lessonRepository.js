@@ -5,7 +5,7 @@ const totalLessonsRepository = async () => {
     return await Lesson.count();
 };
 
-const create = async (lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status) => {
+const create = async (lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status, textInstruction, audioInstructionUrl) => {
     const lesson = new Lesson({
         lessonType: lessonType,
         dayNumber: dayNumber,
@@ -15,7 +15,9 @@ const create = async (lessonType, dayNumber, activity, activityAlias, weekNumber
         text: text,
         courseId: courseId,
         SequenceNumber: sequenceNumber,
-        status: status
+        status: status,
+        textInstruction: textInstruction,
+        audioInstructionUrl: audioInstructionUrl
     });
     const result = await lesson.save();
     return result;
@@ -65,7 +67,7 @@ const getByCourseActivity = async (course, activity) => {
 };
 
 
-const update = async (id, lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status) => {
+const update = async (id, lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status, textInstruction, audioInstructionUrl) => {
     const lesson = await Lesson.findByPk(id);
     lesson.lessonType = lessonType;
     lesson.dayNumber = dayNumber;
@@ -76,6 +78,8 @@ const update = async (id, lessonType, dayNumber, activity, activityAlias, weekNu
     lesson.courseId = courseId;
     lesson.SequenceNumber = sequenceNumber;
     lesson.status = status;
+    lesson.textInstruction = textInstruction;
+    lesson.audioInstructionUrl = audioInstructionUrl;
     await lesson.save();
     return lesson;
 };
@@ -279,15 +283,15 @@ const getByLessonIds = async (lessonIds) => {
 };
 
 const getLessonsByCourseOrdered = async (courseId) => {
-  return await Lesson.findAll({
-    where: { courseId },
-    order: [
-      ['weekNumber', 'ASC'],
-      ['dayNumber', 'ASC'],
-      ['SequenceNumber', 'ASC'],
-    ],
-    raw: true, // optional, for plain objects
-  });
+    return await Lesson.findAll({
+        where: { courseId },
+        order: [
+            ['weekNumber', 'ASC'],
+            ['dayNumber', 'ASC'],
+            ['SequenceNumber', 'ASC'],
+        ],
+        raw: true, // optional, for plain objects
+    });
 };
 
 

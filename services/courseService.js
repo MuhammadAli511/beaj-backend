@@ -5,7 +5,6 @@ import documentFileRepository from "../repositories/documentFileRepository.js";
 import multipleChoiceQuestionRepository from "../repositories/multipleChoiceQuestionRepository.js";
 import multipleChoiceQuestionAnswerRepository from "../repositories/multipleChoiceQuestionAnswerRepository.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
-import Course from "../models/Course.js";
 
 const createCourseService = async (courseName, coursePrice, courseWeeks, courseCategoryId, status, sequenceNumber, courseDescription, courseStartDate) => {
     try {
@@ -95,7 +94,7 @@ const duplicateCourseService = async (id) => {
         // Create new lessons
         for (let i = 0; i < lessons.length; i++) {
             const lesson = lessons[i].dataValues;
-            const newLesson = await lessonRepository.create(lesson.lessonType, lesson.dayNumber, lesson.activity, lesson.activityAlias, lesson.weekNumber, lesson.text, newCourse.CourseId, lesson.SequenceNumber, lesson.status);
+            const newLesson = await lessonRepository.create(lesson.lessonType, lesson.dayNumber, lesson.activity, lesson.activityAlias, lesson.weekNumber, lesson.text, newCourse.CourseId, lesson.SequenceNumber, lesson.status, lesson.textInstruction, lesson.audioInstructionUrl);
 
             if (lesson.activity == 'listenAndSpeak' || lesson.activity == 'watchAndSpeak' || lesson.activity == 'watchAndAudio' || lesson.activity == 'watchAndImage' || lesson.activity == 'conversationalQuestionsBot' || lesson.activity == 'conversationalMonologueBot' || lesson.activity == 'conversationalAgencyBot' || lesson.activity == 'speakingPractice' || lesson.activity == 'feedbackAudio') {
                 // SPEAK ACTIVITY QUESTIONS
@@ -104,7 +103,7 @@ const duplicateCourseService = async (id) => {
                 // Create new speak activity questions
                 for (let j = 0; j < speakActivityQuestions.length; j++) {
                     const speakActivityQuestion = speakActivityQuestions[j].dataValues;
-                    await speakActivityQuestionRepository.create(speakActivityQuestion.question, speakActivityQuestion.mediaFile, speakActivityQuestion.mediaFileSecond, speakActivityQuestion.answer, newLesson.LessonId, speakActivityQuestion.questionNumber);
+                    await speakActivityQuestionRepository.create(speakActivityQuestion.question, speakActivityQuestion.mediaFile, speakActivityQuestion.mediaFileSecond, speakActivityQuestion.answer, newLesson.LessonId, speakActivityQuestion.questionNumber, speakActivityQuestion.difficultyLevel, speakActivityQuestion.customFeedbackText, speakActivityQuestion.customFeedbackImage, speakActivityQuestion.customFeedbackAudio);
                 }
             } else if (lesson.activity == 'mcqs' || lesson.activity == 'feedbackMcqs') {
                 // MULTIPLE CHOICE QUESTIONS

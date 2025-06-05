@@ -311,13 +311,13 @@ const testLessonService = async (phoneNumber, lesson) => {
             SequenceNumber,
         } = lesson;
 
-        let obj;
+        let lessonObj;
         const lessons = await lessonRepository.getLessonsByCourseOrdered(courseId);
 
         const currentIndex = lessons.findIndex(l => l.LessonId === LessonId);
 
         if (currentIndex <= 0) {
-            obj = {
+            lessonObj = {
                 status: 'success',
                 previous_lesson_id: null,
                 message: 'start my course',
@@ -330,7 +330,7 @@ const testLessonService = async (phoneNumber, lesson) => {
             previousLesson.weekNumber === weekNumber &&
             previousLesson.dayNumber === dayNumber
         ) {
-            obj = {
+            lessonObj = {
                 status: 'success',
                 previous_lesson_id: previousLesson.LessonId,
                 message: 'start next activity',
@@ -351,7 +351,7 @@ const testLessonService = async (phoneNumber, lesson) => {
             LessonId === currGroup[0].LessonId;
 
         if (isPrevLastInGroup && isCurrFirstInGroup) {
-            obj = {
+            lessonObj = {
                 status: 'success',
                 previous_lesson_id: previousLesson.LessonId,
                 message: 'start next lesson',
@@ -387,14 +387,14 @@ const testLessonService = async (phoneNumber, lesson) => {
                 currentDay: previousLesson.dayNumber,
                 currentLessonId: previousLesson.LessonId,
                 currentLesson_sequence: previousLesson.SequenceNumber,
-                acceptableMessages: [obj.message],
+                acceptableMessages: [lessonObj.message],
                 questionNumber: null,
                 retryCounter: 0,
                 activityType: null,
                 lastUpdated: now,
             });
 
-            return obj;
+            return lessonObj;
         }
 
         // Fallback return
