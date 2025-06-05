@@ -8,10 +8,12 @@ import waPurchasedCoursesRepository from "../repositories/waPurchasedCoursesRepo
 import waUserMetaRepository from "../repositories/waUsersMetadataRepository.js";
 import prodSequelize from "../config/prodDB.js";
 import courseRepository from "../repositories/courseRepository.js";
+import azure_blob from "../utils/azureBlobStorage.js";
 
-const createLessonService = async (lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status) => {
+const createLessonService = async (lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status, textInstruction, audioInstruction) => {
     try {
-        const lesson = await lessonRepository.create(lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status);
+        const audioInstructionUrl = audioInstruction ? await azure_blob.uploadToBlobStorage(audioInstruction) : null;
+        const lesson = await lessonRepository.create(lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status, textInstruction, audioInstructionUrl);
         return lesson;
     } catch (error) {
         error.fileName = 'lessonService.js';
@@ -55,9 +57,10 @@ const getLessonByIdService = async (id) => {
     }
 };
 
-const updateLessonService = async (id, lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status) => {
+const updateLessonService = async (id, lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status, textInstruction, audioInstruction) => {
     try {
-        const lesson = await lessonRepository.update(id, lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status);
+        const audioInstructionUrl = audioInstruction ? await azure_blob.uploadToBlobStorage(audioInstruction) : null;
+        const lesson = await lessonRepository.update(id, lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status, textInstruction, audioInstructionUrl);
         return lesson;
     } catch (error) {
         error.fileName = 'lessonService.js';
@@ -91,7 +94,7 @@ const getLessonsByActivity = async (course, activity) => {
         const lessons = await lessonRepository.getByCourseActivity(course, activity);
         const lessonIds = lessons.map(lesson => lesson.LessonId);
 
-        if (activity == 'listenAndSpeak' || activity == 'watchAndSpeak' || activity == 'watchAndAudio' || activity == 'watchAndImage' || activity == 'conversationalQuestionsBot' || activity == 'conversationalMonologueBot' || activity == 'conversationalAgencyBot' || activity == 'speakingPractice' || activity == 'feedbackAudio' ) {
+        if (activity == 'listenAndSpeak' || activity == 'watchAndSpeak' || activity == 'watchAndAudio' || activity == 'watchAndImage' || activity == 'conversationalQuestionsBot' || activity == 'conversationalMonologueBot' || activity == 'conversationalAgencyBot' || activity == 'speakingPractice' || activity == 'feedbackAudio') {
             const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonIds(lessonIds);
             const lessonsWithFiles = lessons.map(lesson => {
                 return {
@@ -115,8 +118,8 @@ const getLessonsByActivity = async (course, activity) => {
                 };
             });
             return lessonsWithQuestions;
-        } 
-else {
+        }
+        else {
             const documentFiles = await documentFileRepository.getByLessonIds(lessonIds);
             const lessonsWithFiles = lessons.map(lesson => {
                 return {
@@ -144,9 +147,9 @@ const migrateLessonService = async (lessonId, courseId) => {
             const [newLesson] = await prodSequelize.query(
                 `INSERT INTO "Lesson" 
                     ("lessonType", "dayNumber", "activity", "activityAlias", "weekNumber", "text", 
-                    "courseId", "SequenceNumber", "status") 
+                    "courseId", "SequenceNumber", "status", "textInstruction", "audioInstructionUrl", "audioInstructionMediaId") 
                     VALUES (:lessonType, :dayNumber, :activity, :activityAlias, :weekNumber, :text, 
-                    :courseId, :SequenceNumber, :status) 
+                    :courseId, :SequenceNumber, :status, :textInstruction, :audioInstructionUrl, :audioInstructionMediaId) 
                     RETURNING *`,
                 {
                     replacements: {
@@ -159,6 +162,9 @@ const migrateLessonService = async (lessonId, courseId) => {
                         courseId: courseId,
                         SequenceNumber: lesson.SequenceNumber,
                         status: lesson.status,
+                        textInstruction: lesson.textInstruction,
+                        audioInstructionUrl: lesson.audioInstructionUrl,
+                        audioInstructionMediaId: lesson.audioInstructionMediaId
                     },
                     type: prodSequelize.QueryTypes.INSERT,
                     transaction,
@@ -189,7 +195,7 @@ const migrateLessonService = async (lessonId, courseId) => {
                     );
                 }));
 
-            } else if (['mcqs','feedbackMcqs'].includes(lesson.activity)) {
+            } else if (['mcqs', 'feedbackMcqs'].includes(lesson.activity)) {
                 const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonId(lesson.LessonId);
 
                 await Promise.all(multipleChoiceQuestions.map(async question => {
@@ -269,7 +275,6 @@ const migrateLessonService = async (lessonId, courseId) => {
                 ));
             }
 
-            // Commit the transaction after successful operations
             await transaction.commit();
             return newLesson[0];
 
@@ -297,119 +302,111 @@ const getLessonByCourseIdService = async (id) => {
 };
 
 const testLessonService = async (phoneNumber, lesson) => {
-  try {
-    const {
-      LessonId,
-      courseId,
-    //   courseCategoryId,
-      weekNumber,
-      dayNumber,
-      SequenceNumber,
-    } = lesson;
+    try {
+        const {
+            LessonId,
+            courseId,
+            weekNumber,
+            dayNumber,
+            SequenceNumber,
+        } = lesson;
 
-    let obj ;
-        // Get all lessons from this course ordered by week -> day -> sequence
-    const lessons = await lessonRepository.getLessonsByCourseOrdered(courseId);
+        let obj;
+        const lessons = await lessonRepository.getLessonsByCourseOrdered(courseId);
 
-    // Find current index
-    const currentIndex = lessons.findIndex(l => l.LessonId === LessonId);
+        const currentIndex = lessons.findIndex(l => l.LessonId === LessonId);
 
-    if (currentIndex <= 0) {
-      obj = {
-        status: 'success',
-        previous_lesson_id: null,
-        message: 'start my course',
-      };
-    }
+        if (currentIndex <= 0) {
+            obj = {
+                status: 'success',
+                previous_lesson_id: null,
+                message: 'start my course',
+            };
+        }
 
-    const previousLesson = lessons[currentIndex - 1];
+        const previousLesson = lessons[currentIndex - 1];
 
-    // Check if in same week & day → start next activity
-    if (
-      previousLesson.weekNumber === weekNumber &&
-      previousLesson.dayNumber === dayNumber
-    ) {
-      obj=  {
-        status: 'success',
-        previous_lesson_id: previousLesson.LessonId,
-        message: 'start next activity',
-      };
-    }
+        if (
+            previousLesson.weekNumber === weekNumber &&
+            previousLesson.dayNumber === dayNumber
+        ) {
+            obj = {
+                status: 'success',
+                previous_lesson_id: previousLesson.LessonId,
+                message: 'start next activity',
+            };
+        }
 
-    // Check if previous was last in its group and current is first in new group
-    const prevGroup = lessons.filter(
-      l => l.weekNumber === previousLesson.weekNumber && l.dayNumber === previousLesson.dayNumber
-    );
-    const currGroup = lessons.filter(
-      l => l.weekNumber === weekNumber && l.dayNumber === dayNumber
-    );
+        // Check if previous was last in its group and current is first in new group
+        const prevGroup = lessons.filter(
+            l => l.weekNumber === previousLesson.weekNumber && l.dayNumber === previousLesson.dayNumber
+        );
+        const currGroup = lessons.filter(
+            l => l.weekNumber === weekNumber && l.dayNumber === dayNumber
+        );
 
-    const isPrevLastInGroup =
-      previousLesson.LessonId === prevGroup[prevGroup.length - 1].LessonId;
-    const isCurrFirstInGroup =
-      LessonId === currGroup[0].LessonId;
+        const isPrevLastInGroup =
+            previousLesson.LessonId === prevGroup[prevGroup.length - 1].LessonId;
+        const isCurrFirstInGroup =
+            LessonId === currGroup[0].LessonId;
 
-    if (isPrevLastInGroup && isCurrFirstInGroup) {
-      obj = {
-        status: 'success',
-        previous_lesson_id: previousLesson.LessonId,
-        message: 'start next lesson',
-      };
-    }
+        if (isPrevLastInGroup && isCurrFirstInGroup) {
+            obj = {
+                status: 'success',
+                previous_lesson_id: previousLesson.LessonId,
+                message: 'start next lesson',
+            };
+        }
 
-    // Handle progress + course purchase logic
-    if (previousLesson?.LessonId) {
-      const now = new Date();
+        // Handle progress + course purchase logic
+        if (previousLesson?.LessonId) {
+            const now = new Date();
 
-      // Delete previous purchases
-      await waPurchasedCoursesRepository.deleteByPhoneNumber(phoneNumber);
+            // Delete previous purchases
+            await waPurchasedCoursesRepository.deleteByPhoneNumber(phoneNumber);
 
-      const waUserMeta = await waUserMetaRepository.getByPhoneNumber(phoneNumber);
+            const waUserMeta = await waUserMetaRepository.getByPhoneNumber(phoneNumber);
 
-      const courseCateg = await courseRepository.getById(previousLesson.courseId);
+            const courseCateg = await courseRepository.getById(previousLesson.courseId);
 
-    //   console.log(courseCateg.CourseCategoryId);
-      // Add new record
-      const newPurchase = await waPurchasedCoursesRepository.create({
-            phoneNumber,
-            courseId: previousLesson.courseId,
-            courseCategoryId: courseCateg.CourseCategoryId,
-            profile_id: waUserMeta.profile_id,
-            purchaseDate: now,
-            courseStartDate: now,
+            // Add new record
+            await waPurchasedCoursesRepository.create({
+                phoneNumber,
+                courseId: previousLesson.courseId,
+                courseCategoryId: courseCateg.CourseCategoryId,
+                profile_id: waUserMeta.profile_id,
+                purchaseDate: now,
+                courseStartDate: now,
             });
-        // console.log('newPurchase: ', newPurchase);
 
-      // Update progress
-      const updateUserProgress = await waUserProgressRepository.updateTestUserProgress(phoneNumber, {
-        engagement_type: 'Course Start',
-        currentCourseId: previousLesson.courseId,
-        currentWeek: previousLesson.weekNumber,
-        currentDay: previousLesson.dayNumber,
-        currentLessonId: previousLesson.LessonId,
-        currentLesson_sequence: previousLesson.SequenceNumber,
-        acceptableMessages: [obj.message],
-        questionNumber: null,
-        retryCounter: 0,
-        activityType: null,
-        lastUpdated: now,
-      });
+            // Update progress
+            await waUserProgressRepository.updateTestUserProgress(phoneNumber, {
+                engagement_type: 'Course Start',
+                currentCourseId: previousLesson.courseId,
+                currentWeek: previousLesson.weekNumber,
+                currentDay: previousLesson.dayNumber,
+                currentLessonId: previousLesson.LessonId,
+                currentLesson_sequence: previousLesson.SequenceNumber,
+                acceptableMessages: [obj.message],
+                questionNumber: null,
+                retryCounter: 0,
+                activityType: null,
+                lastUpdated: now,
+            });
 
-    //   console.log('updateUserProgress: ', updateUserProgress);
+            return obj;
+        }
 
-      return obj;
+        // Fallback return
+        return {
+            status: 'success',
+            previous_lesson_id: previousLesson.LessonId,
+            message: '',
+        };
+    } catch (error) {
+        error.fileName = 'lessonService.js';
+        throw error;
     }
-
-    // Fallback return
-    return {
-      status: 'success',
-      previous_lesson_id: previousLesson.LessonId,
-      message: '',
-    };
-  } catch (error) {
-    error.fileName = 'lessonService.js';
-    throw error;
-  }
 };
 
 export default {
