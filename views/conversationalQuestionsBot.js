@@ -71,9 +71,9 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         initialFeedbackResponse = openaiFeedbackTranscript;
 
                         // Extract corrected version of the answer
-                        const correctedVersion = openaiFeedbackTranscript.match(/\[IMPROVED\](.*?)\[\/IMPROVED\]/);
+                        const correctedVersion = openaiFeedbackTranscript.match(/\<IMPROVED\>(.*?)\<\/IMPROVED\>/);
                         if (correctedVersion) {
-                            openaiFeedbackTranscript = openaiFeedbackTranscript.replace(/\[IMPROVED\](.*?)\[\/IMPROVED\]/, '');
+                            openaiFeedbackTranscript = openaiFeedbackTranscript.replace(/\<IMPROVED\>(.*?)\<\/IMPROVED\>/, '');
                         }
 
                         // ElevenLabs Text to Speech
@@ -91,10 +91,9 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                             await createActivityLog(userMobileNumber, "text", "outbound", correctMessage, null);
                         }
                     } else {
-                        let finalMessages = null;
                         let latestBotResponse = await waQuestionResponsesRepository.getLatestBotResponse(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
-                        let improvedVersion = latestBotResponse.match(/\[IMPROVED\](.*?)\[\/IMPROVED\]/);
-                        let userResponse = "[USER_RESPONSE]" + recognizedText + "[/USER_RESPONSE]\n\n\n" + improvedVersion + "[/IMPROVED]";
+                        let improvedVersion = latestBotResponse.match(/\<IMPROVED\>(.*?)\<\/IMPROVED\>/);
+                        let userResponse = "<USER_RESPONSE>" + recognizedText + "<\/USER_RESPONSE>\n\n\n" + improvedVersion + "<\/IMPROVED>";
 
                         // OpenAI Feedback
                         openaiFeedbackTranscript = await AIServices.openaiCustomFeedback(await wrapup_prompt(), userResponse);
@@ -203,9 +202,9 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         initialFeedbackResponse = openaiFeedbackTranscript;
 
                         // Extract corrected version of the answer
-                        const correctedVersion = openaiFeedbackTranscript.match(/\[IMPROVED\](.*?)\[\/IMPROVED\]/);
+                        const correctedVersion = openaiFeedbackTranscript.match(/\<IMPROVED\>(.*?)\<\/IMPROVED\>/);
                         if (correctedVersion) {
-                            openaiFeedbackTranscript = openaiFeedbackTranscript.replace(/\[IMPROVED\](.*?)\[\/IMPROVED\]/, '');
+                            openaiFeedbackTranscript = openaiFeedbackTranscript.replace(/\<IMPROVED\>(.*?)\<\/IMPROVED\>/, '');
                         }
 
                         // ElevenLabs Text to Speech
@@ -223,10 +222,9 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                             await createActivityLog(userMobileNumber, "text", "outbound", correctMessage, null);
                         }
                     } else {
-                        let finalMessages = null;
                         let latestBotResponse = await waQuestionResponsesRepository.getLatestBotResponse(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
-                        let improvedVersion = latestBotResponse.match(/\[IMPROVED\](.*?)\[\/IMPROVED\]/);
-                        let userResponse = "[USER_RESPONSE]" + recognizedText + "[/USER_RESPONSE]\n\n\n" + improvedVersion + "[/IMPROVED]";
+                        let improvedVersion = latestBotResponse.match(/\<IMPROVED\>(.*?)\<\/IMPROVED\>/);
+                        let userResponse = "<USER_RESPONSE>" + recognizedText + "<\/USER_RESPONSE>\n\n\n" + improvedVersion + "<\/IMPROVED>";
 
                         // OpenAI Feedback
                         openaiFeedbackTranscript = await AIServices.openaiCustomFeedback(await wrapup_prompt(), userResponse);
@@ -234,16 +232,16 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
 
                         if (openaiFeedbackTranscript.toLowerCase().includes("can be improved")) {
                             const betterAudio = await waConstantsRepository.getByKey("BETTER_AUDIO");
-                            openaiFeedbackAudio = betterAudio.dataValues.constantValue;
-                        } else if (openaiFeedbackTranscript.toLowerCase().includes("it was great")) {
+                            openaiFeedbackAudio = betterAudio;
+                        } else {
                             const okAudio = await waConstantsRepository.getByKey("OK_AUDIO");
-                            openaiFeedbackAudio = okAudio.dataValues.constantValue;
+                            openaiFeedbackAudio = okAudio;
                         }
 
                         // Media message
-                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
-                        await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
-                        await sleep(5000);
+                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio.dataValues.constantValue, 'audio', null, 0, "WA_Constants", openaiFeedbackAudio.dataValues.id, openaiFeedbackAudio.dataValues.constantMediaId, "constantMediaId");
+                        await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio.dataValues.constantValue, null);
+                        await sleep(2000);
                     }
 
                     // Save user response to the database
