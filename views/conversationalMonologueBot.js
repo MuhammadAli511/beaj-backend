@@ -46,7 +46,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 const currentConversationalMonologueBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
                 // Extract user transcription
-                const userTranscription = await AIServices.openaiSpeechToText(messageContent.data);
+                const userTranscription = await AIServices.azureOpenAISpeechToText(messageContent.data);
 
                 let disclaimerAndUserTranscriptionMessage = "This chatbot's speech-to-text may not recognize proper nouns accurately or may skip some words—please bear with us while we improve it.";
 
@@ -152,7 +152,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 const currentConversationalMonologueBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
                 // Extract user transcription
-                const userTranscription = await AIServices.openaiSpeechToText(messageContent.data);
+                const userTranscription = await AIServices.azureOpenAISpeechToText(messageContent.data);
 
                 let disclaimerAndUserTranscriptionMessage = "This chatbot's speech-to-text may not recognize proper nouns accurately or may skip some words—please bear with us while we improve it.";
 
