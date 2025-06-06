@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
 import { sleep, removeHTMLTags } from "../utils/utils.js";
+import { sendButtonMessage } from "../utils/whatsappUtils.js";
 
 
 const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
@@ -58,22 +59,62 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                 const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
                 const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
                 const submissionDate = new Date();
-                await waQuestionResponsesRepository.create(
+
+                const existingAudioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(
                     profileId,
-                    userMobileNumber,
-                    currentUserState.dataValues.currentLessonId,
                     currentWatchAndSpeakQuestion.dataValues.id,
-                    activity,
-                    startingLesson.dataValues.activityAlias,
-                    null,
-                    [userAudioFileUrl],
-                    null,
-                    null,
-                    null,
-                    null,
-                    1,
-                    submissionDate
+                    currentUserState.dataValues.currentLessonId
                 );
+
+                if (existingAudioUrl) {
+                    // Update existing record with new audio
+                    await waQuestionResponsesRepository.updateReplace(
+                        profileId,
+                        userMobileNumber,
+                        currentUserState.dataValues.currentLessonId,
+                        currentWatchAndSpeakQuestion.dataValues.id,
+                        activity,
+                        startingLesson.dataValues.activityAlias,
+                        null,
+                        [userAudioFileUrl],
+                        null,
+                        null,
+                        null,
+                        null,
+                        1,
+                        submissionDate
+                    );
+                } else {
+                    // Create new record if none exists
+                    await waQuestionResponsesRepository.create(
+                        profileId,
+                        userMobileNumber,
+                        currentUserState.dataValues.currentLessonId,
+                        currentWatchAndSpeakQuestion.dataValues.id,
+                        activity,
+                        startingLesson.dataValues.activityAlias,
+                        null,
+                        [userAudioFileUrl],
+                        null,
+                        null,
+                        null,
+                        null,
+                        1,
+                        submissionDate
+                    );
+                }
+
+                await sendButtonMessage(userMobileNumber, "Submit response? 🧐", [{ id: "yes", title: "Yes" }, { id: "no", title: "No, try again" }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Submit response? 🧐", null);
+
+                // Update acceptable messages list for the user
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no", "no, try again"]);
+                await sleep(2000);
+                return;
+            }
+            else if (messageContent == 'yes') {
+                // Get the current Watch And Speak question
+                const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
                 const nextWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                 if (nextWatchAndSpeakQuestion) {
@@ -83,6 +124,9 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                     // Send question media file
                     await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video', null, 0, "SpeakActivityQuestion", nextWatchAndSpeakQuestion.dataValues.id, nextWatchAndSpeakQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
                     await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
+
+                    // Update acceptable messages list for the user
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
                 } else {
                     // Reset Question Number, Retry Counter, and Activity Type
                     await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
@@ -90,6 +134,16 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                     // ENDING MESSAGE
                     await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
                 }
+                return;
+            }
+            else if (messageContent == 'no, try again' || messageContent == 'no') {
+                // Send message to try again
+                await sendMessage(userMobileNumber, "Okay record your voice message again.");
+                await createActivityLog(userMobileNumber, "text", "outbound", "Okay record your voice message again.", null);
+
+                // Update acceptable messages list for the user
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                return;
             }
         }
         else if (persona == 'kid') {
@@ -135,22 +189,62 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                 const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
                 const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
                 const submissionDate = new Date();
-                await waQuestionResponsesRepository.create(
+
+                const existingAudioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(
                     profileId,
-                    userMobileNumber,
-                    currentUserState.dataValues.currentLessonId,
                     currentWatchAndSpeakQuestion.dataValues.id,
-                    activity,
-                    startingLesson.dataValues.activityAlias,
-                    null,
-                    [userAudioFileUrl],
-                    null,
-                    null,
-                    null,
-                    null,
-                    1,
-                    submissionDate
+                    currentUserState.dataValues.currentLessonId
                 );
+
+                if (existingAudioUrl) {
+                    // Update existing record with new audio
+                    await waQuestionResponsesRepository.updateReplace(
+                        profileId,
+                        userMobileNumber,
+                        currentUserState.dataValues.currentLessonId,
+                        currentWatchAndSpeakQuestion.dataValues.id,
+                        activity,
+                        startingLesson.dataValues.activityAlias,
+                        null,
+                        [userAudioFileUrl],
+                        null,
+                        null,
+                        null,
+                        null,
+                        1,
+                        submissionDate
+                    );
+                } else {
+                    // Create new record if none exists
+                    await waQuestionResponsesRepository.create(
+                        profileId,
+                        userMobileNumber,
+                        currentUserState.dataValues.currentLessonId,
+                        currentWatchAndSpeakQuestion.dataValues.id,
+                        activity,
+                        startingLesson.dataValues.activityAlias,
+                        null,
+                        [userAudioFileUrl],
+                        null,
+                        null,
+                        null,
+                        null,
+                        1,
+                        submissionDate
+                    );
+                }
+
+                await sendButtonMessage(userMobileNumber, "Submit response? 🧐", [{ id: "yes", title: "Yes" }, { id: "no", title: "No, try again" }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Submit response? 🧐", null);
+
+                // Update acceptable messages list for the user
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no", "no, try again"]);
+                await sleep(2000);
+                return;
+            }
+            else if (messageContent == 'yes') {
+                // Get the current Watch And Speak question
+                const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
                 const nextWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                 if (nextWatchAndSpeakQuestion) {
@@ -160,6 +254,9 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                     // Send question media file
                     await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, 'video', null, 0, "SpeakActivityQuestion", nextWatchAndSpeakQuestion.dataValues.id, nextWatchAndSpeakQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
                     await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
+
+                    // Update acceptable messages list for the user
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
                 } else {
                     // Reset Question Number, Retry Counter, and Activity Type
                     await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
@@ -167,6 +264,16 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                     // ENDING MESSAGE
                     await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
                 }
+                return;
+            }
+            else if (messageContent == 'no, try again' || messageContent == 'no') {
+                // Send message to try again
+                await sendMessage(userMobileNumber, "Okay record your voice message again.");
+                await createActivityLog(userMobileNumber, "text", "outbound", "Okay record your voice message again.", null);
+
+                // Update acceptable messages list for the user
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                return;
             }
         }
         return;

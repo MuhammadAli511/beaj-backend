@@ -1,6 +1,6 @@
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
-import { sendMessage } from "../utils/whatsappUtils.js";
+import { sendMessage, sendButtonMessage } from "../utils/whatsappUtils.js";
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
 import { sendMediaMessage } from "../utils/whatsappUtils.js";
 import { endingMessage } from "../utils/endingMessageUtils.js";
@@ -65,23 +65,62 @@ const feedbackAudioView = async (profileId, userMobileNumber, currentUserState, 
                 // Save user response to the database
                 const submissionDate = new Date();
                 const retryCounter = currentUserState.dataValues.retryCounter;
-                // User first attempt
-                await waQuestionResponsesRepository.create(
+
+                const existingAudioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(
                     profileId,
-                    userMobileNumber,
-                    currentUserState.dataValues.currentLessonId,
                     currentListenAndSpeakQuestion.dataValues.id,
-                    activity,
-                    startingLesson.dataValues.activityAlias,
-                    null,
-                    [userAudioFileUrl],
-                    null,
-                    null,
-                    null,
-                    null,
-                    retryCounter + 1,
-                    submissionDate
+                    currentUserState.dataValues.currentLessonId
                 );
+
+                if (existingAudioUrl) {
+                    // Update existing record with new audio
+                    await waQuestionResponsesRepository.updateReplace(
+                        profileId,
+                        userMobileNumber,
+                        currentUserState.dataValues.currentLessonId,
+                        currentListenAndSpeakQuestion.dataValues.id,
+                        activity,
+                        startingLesson.dataValues.activityAlias,
+                        null,
+                        [userAudioFileUrl],
+                        null,
+                        null,
+                        null,
+                        null,
+                        retryCounter + 1,
+                        submissionDate
+                    );
+                } else {
+                    // Create new record if none exists
+                    await waQuestionResponsesRepository.create(
+                        profileId,
+                        userMobileNumber,
+                        currentUserState.dataValues.currentLessonId,
+                        currentListenAndSpeakQuestion.dataValues.id,
+                        activity,
+                        startingLesson.dataValues.activityAlias,
+                        null,
+                        [userAudioFileUrl],
+                        null,
+                        null,
+                        null,
+                        null,
+                        retryCounter + 1,
+                        submissionDate
+                    );
+                }
+
+                await sendButtonMessage(userMobileNumber, "Submit response? 🧐", [{ id: "yes", title: "Yes" }, { id: "no", title: "No, try again" }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Submit response? 🧐", null);
+
+                // Update acceptable messages list for the user
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no", "no, try again"]);
+                await sleep(2000);
+                return;
+            }
+            else if (messageContent == 'yes') {
+                // Get the current Listen and Speak question
+                const currentListenAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
                 const nextListenAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                 if (nextListenAndSpeakQuestion) {
@@ -102,7 +141,16 @@ const feedbackAudioView = async (profileId, userMobileNumber, currentUserState, 
                     // ENDING MESSAGE
                     await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
                 }
+                return;
+            }
+            else if (messageContent == 'no, try again' || messageContent == 'no') {
+                // Send message to try again
+                await sendMessage(userMobileNumber, "Okay record your voice message again.");
+                await createActivityLog(userMobileNumber, "text", "outbound", "Okay record your voice message again.", null);
 
+                // Update acceptable messages list for the user
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                return;
             }
         }
         return;
