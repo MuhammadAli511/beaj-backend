@@ -1,13 +1,13 @@
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import lessonRepository from "../repositories/lessonRepository.js";
-import { sendMediaMessage, sendButtonMessage, sendMessage } from "./whatsappUtils.js";
+import { sendMediaMessage, sendButtonMessage } from "./whatsappUtils.js";
 import { createActivityLog } from "./createActivityLogUtils.js";
 import waUsersMetadataRepository from "../repositories/waUsersMetadataRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
 import courseRepository from "../repositories/courseRepository.js";
 import { weekEndScoreCalculation } from "./chatbotUtils.js";
 import { weekEndImage } from "./imageGenerationUtils.js";
-import { sleep } from "./utils.js";
+import { sleep, getDaysPerWeek, getTotalLessonsForCourse } from "./utils.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 
 
@@ -54,7 +54,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
     if (currentUserState.dataValues.engagement_type == "Free Trial - Teachers") {
         let user = await waUsersMetadataRepository.getByProfileId(profileId);
         let checkRegistrationComplete = user.dataValues.userRegistrationComplete !== null;
-        if (checkRegistrationComplete == false && lessonLast == true) {
+        if (!checkRegistrationComplete && lessonLast) {
             // Update acceptable messages list for the user
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial", "register"]);
 
@@ -63,7 +63,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             await createActivityLog(userMobileNumber, "template", "outbound", "get another trial or register", null);
 
             return;
-        } else if (checkRegistrationComplete == true && lessonLast == true) {
+        } else if (checkRegistrationComplete && lessonLast) {
             // Update acceptable messages list for the user
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial"]);
 
@@ -73,7 +73,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             await createActivityLog(userMobileNumber, "template", "outbound", "get another trial", null);
 
             return;
-        } else if (checkRegistrationComplete == false && lessonLast == false) {
+        } else if (!checkRegistrationComplete && !lessonLast) {
             // Update acceptable messages list for the user
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next activity", "end now"]);
 
@@ -82,7 +82,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity or End Now", null);
 
             return;
-        } else if (checkRegistrationComplete == true && lessonLast == false) {
+        } else if (checkRegistrationComplete && !lessonLast) {
             // Update acceptable messages list for the user
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next activity", "end now"]);
 
@@ -120,7 +120,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             }
             await sleep(2000);
             let buttonsArray = [];
-            if (checkRegistrationComplete == true) {
+            if (checkRegistrationComplete) {
                 await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start questions", "chat with beaj rep"]);
                 buttonsArray = [{ id: 'start_questions', title: 'Start Questions' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
             } else {
@@ -148,7 +148,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
                 finalTextMessage = scienceFunMessage;
             }
             let buttonsArray = [];
-            if (checkRegistrationComplete == true) {
+            if (checkRegistrationComplete) {
                 await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "chat with beaj rep"]);
                 buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
             } else {
@@ -166,7 +166,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             return;
         }
 
-        if (checkRegistrationComplete == false && lessonLast == true) {
+        if (!checkRegistrationComplete && lessonLast) {
             // Update acceptable messages list for the user
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial", "register now"]);
             let buttonsArray = [{ id: 'register_now', title: 'Register Now' }, { id: 'get_another_trial', title: 'Get Another Trial' }];
@@ -182,7 +182,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             }
 
             return;
-        } else if (checkRegistrationComplete == true && lessonLast == true) {
+        } else if (checkRegistrationComplete && lessonLast) {
             // Update acceptable messages list for the user
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial"]);
             let buttonsArray = [{ id: 'get_another_trial', title: 'Get Another Trial' }];
@@ -198,7 +198,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             }
 
             return;
-        } else if (checkRegistrationComplete == false && lessonLast == false) {
+        } else if (!checkRegistrationComplete && !lessonLast) {
             // Update acceptable messages list for the user
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "skip trial", "chat with beaj rep"]);
             let buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'skip_trial', title: 'Skip Trial' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
@@ -214,7 +214,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             }
 
             return;
-        } else if (checkRegistrationComplete == true && lessonLast == false) {
+        } else if (checkRegistrationComplete && !lessonLast) {
             // Update acceptable messages list for the user
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "chat with beaj rep"]);
             let buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
@@ -239,21 +239,23 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             const courseName = await courseRepository.getCourseNameById(currentUserState.currentCourseId);
             const strippedCourseName = courseName.split("-")[0].trim();
             // Lesson Number
-            const lessonNumber = (startingLesson.dataValues.weekNumber - 1) * 6 + startingLesson.dataValues.dayNumber;
+            const daysPerWeek = await getDaysPerWeek(profileId);
+            const totalLessons = await getTotalLessonsForCourse(profileId);
+            const lessonNumber = (startingLesson.dataValues.weekNumber - 1) * daysPerWeek + startingLesson.dataValues.dayNumber;
 
             let goldBarCaption = "";
 
             // Lesson Complete Message
             let lessonCompleteMessage = "";
-            if (lessonNumber == 24 && strippedCourseName == "Level 3") {
+            if (lessonNumber == totalLessons && strippedCourseName == "Level 3") {
                 lessonCompleteMessage = "You have completed all 3 levels of the Beaj Self-Development Course! 🌟";
             } else {
-                lessonCompleteMessage = "You have completed *" + lessonNumber + " out of 24* lessons in " + strippedCourseName + "!⭐️";
+                lessonCompleteMessage = "You have completed *" + lessonNumber + " out of " + totalLessons + "* lessons in " + strippedCourseName + "!⭐️";
             }
             goldBarCaption = lessonCompleteMessage;
 
             // Day Ending Message
-            if (startingLesson.dataValues.dayNumber >= 1 && startingLesson.dataValues.dayNumber <= 5) {
+            if (startingLesson.dataValues.dayNumber >= 1 && startingLesson.dataValues.dayNumber <= (daysPerWeek - 1)) {
                 const dayEndingMessage = getDayEndingMessage(startingLesson.dataValues.dayNumber);
                 goldBarCaption += "\n\n" + dayEndingMessage;
             }
@@ -264,7 +266,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             const imageTag = "lesson_complete_image_lesson_" + lessonNumber.toString() + "_" + smallCourseName;
             let fileExtnesion = ".jpg";
             let lessonCompleteImage = "";
-            if (lessonNumber == 24 && strippedCourseName == "Level 3") {
+            if (lessonNumber == totalLessons && strippedCourseName == "Level 3") {
                 lessonCompleteImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/course_end_gold_bars" + fileExtnesion;
             } else {
                 lessonCompleteImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/" + imageTag + fileExtnesion;
@@ -275,7 +277,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             await sleep(5000);
 
             // Week end score image
-            if (startingLesson.dataValues.dayNumber == 6) {
+            if (startingLesson.dataValues.dayNumber == daysPerWeek) {
                 let weekMessage = ""
                 if (strippedCourseName == "Level 3") {
                     weekMessage = "Thank You for staying with us till the end! 👍🏽";
@@ -288,7 +290,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
                 await sleep(5000);
             }
 
-            if (lessonNumber == 24 && strippedCourseName == "Level 3") {
+            if (lessonNumber == totalLessons && strippedCourseName == "Level 3") {
                 const fizza_level3 = await waConstantsRepository.getByKey("FIZZA_LEVEL_3");
                 await sendMediaMessage(userMobileNumber, fizza_level3.dataValues.constantValue, 'video', null, 0, "WA_Constants", fizza_level3.dataValues.id, fizza_level3.dataValues.constantMediaId, "constantMediaId");
                 await createActivityLog(userMobileNumber, "video", "outbound", fizza_level3.dataValues.constantValue, null);
@@ -301,7 +303,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             }
 
             // Feedback Message
-            if (lessonNumber != 24 && lessonNumber != 3) {
+            if (lessonNumber != totalLessons && lessonNumber != 3) {
                 const randomNumber = Math.floor(Math.random() * 100) + 1;
                 if (randomNumber >= 75) {
                     let cleanedAlias = startingLesson.dataValues.activityAlias.replace(/\?/g, '');
@@ -318,7 +320,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             // Sleep
             await sleep(4000);
 
-            if (lessonNumber == 24 && strippedCourseName == "Level 3") {
+            if (lessonNumber == totalLessons && strippedCourseName == "Level 3") {
                 const congratsImage = await waConstantsRepository.getByKey("LEVEL_3_CONGRATULATIONS");
                 await sendMediaMessage(userMobileNumber, congratsImage.dataValues.constantValue, 'image', null, 0, "WA_Constants", congratsImage.dataValues.id, congratsImage.dataValues.constantMediaId, "constantMediaId");
                 await createActivityLog(userMobileNumber, "image", "outbound", congratsImage.dataValues.constantValue, null);

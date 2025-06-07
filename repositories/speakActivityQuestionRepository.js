@@ -1,14 +1,18 @@
 import SpeakActivityQuestion from "../models/SpeakActivityQuestion.js";
 import Sequelize from 'sequelize';
 
-const create = async (question, mediaUrl, mediaUrlSecond, answer, lessonId, questionNumber) => {
+const create = async (question, mediaUrl, mediaUrlSecond, answer, lessonId, questionNumber, difficultyLevel, customFeedbackText, customFeedbackImageUrl, customFeedbackAudioUrl) => {
     const speakActivityQuestion = new SpeakActivityQuestion({
         question: question,
         mediaFile: mediaUrl,
         mediaFileSecond: mediaUrlSecond,
         answer: answer,
         lessonId: lessonId,
-        questionNumber: questionNumber
+        questionNumber: questionNumber,
+        difficultyLevel: difficultyLevel,
+        customFeedbackText: customFeedbackText,
+        customFeedbackImage: customFeedbackImageUrl,
+        customFeedbackAudio: customFeedbackAudioUrl
     });
     return await speakActivityQuestion.save();
 };
@@ -21,14 +25,18 @@ const getById = async (id) => {
     return await SpeakActivityQuestion.findByPk(id);
 };
 
-const update = async (id, question, mediaUrl, mediaUrlSecond, answer, lessonId, questionNumber) => {
+const update = async (id, question, mediaUrl, mediaUrlSecond, answer, lessonId, questionNumber, difficultyLevel, customFeedbackText, customFeedbackImageUrl, customFeedbackAudioUrl) => {
     return await SpeakActivityQuestion.update({
         question: question,
         mediaFile: mediaUrl,
         mediaFileSecond: mediaUrlSecond,
         answer: answer,
         lessonId: lessonId,
-        questionNumber: questionNumber
+        questionNumber: questionNumber,
+        difficultyLevel: difficultyLevel,
+        customFeedbackText: customFeedbackText,
+        customFeedbackImage: customFeedbackImageUrl,
+        customFeedbackAudio: customFeedbackAudioUrl
     }, {
         where: {
             id: id

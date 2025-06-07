@@ -561,7 +561,11 @@ const getAudioUrlForProfileIdAndQuestionIdAndLessonId = async (profileId, questi
         }
     });
 
-    return response.dataValues.submittedUserAudio[0];
+    if (response) {
+        return response.dataValues.submittedUserAudio[0];
+    } else {
+        return null;
+    }
 };
 
 

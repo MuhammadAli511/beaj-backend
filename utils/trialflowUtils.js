@@ -50,7 +50,7 @@ const greetingMessage = async (profileId, userMobileNumber, persona) => {
         await sleep(2000);
         let videoCaption = "Why should you choose Beaj Education? Here is a message from our founder.\n\nآپ کو بیج ایجوکیشن کیوں چُننا چاہیے؟ — بیج ایجوکیشن کی سربراہ کا پیغام۔";
         let whyBeaj = await waConstantsRepository.getByKey("WHY_BEAJ");
-        if (userRegistrationComplete == true) {
+        if (userRegistrationComplete) {
             await sendButtonMessage(userMobileNumber, videoCaption, [{ id: 'start_free_trial', title: 'Start Free Trial' }], 0, null, whyBeaj.dataValues.constantValue, "WA_Constants", whyBeaj.dataValues.id, null, whyBeaj.dataValues.constantMediaId, "constantMediaId");
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start free trial", "chat with beaj rep"]);
         } else {
@@ -80,7 +80,7 @@ const startOfFlow = async (profileId, userMobileNumber) => {
     await createActivityLog(userMobileNumber, "text", "outbound", greetingMessageText, null);
     let videoCaption = "Why should you choose Beaj Education? Here is a message from our founder.\n\nآپ کو بیج ایجوکیشن کیوں چُننا چاہیے؟ — بیج ایجوکیشن کی سربراہ کا پیغام۔";
     let whyBeaj = await waConstantsRepository.getByKey("WHY_BEAJ");
-    if (userRegistrationComplete == true) {
+    if (userRegistrationComplete) {
         await sendButtonMessage(userMobileNumber, videoCaption, [{ id: 'start_free_trial', title: 'Start Free Trial' }], 0, null, whyBeaj.dataValues.constantValue, "WA_Constants", whyBeaj.dataValues.id, null, whyBeaj.dataValues.constantMediaId, "constantMediaId");
         await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start free trial"]);
     } else {
@@ -97,7 +97,6 @@ const greetingMessageLoop = async (profileId, userMobileNumber) => {
     await sendButtonMessage(userMobileNumber, greetingMessageText, [{ id: 'start', title: 'Start' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", greetingMessageText, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start"]);
-    return;
 };
 
 const kidsChooseClass = async (profileId, userMobileNumber) => {
@@ -107,7 +106,6 @@ const kidsChooseClass = async (profileId, userMobileNumber) => {
     await sendButtonMessage(userMobileNumber, chooseClassMessage, [{ id: 'kids_summer_camp_class_1_or_2', title: 'Class 1 or 2' }, { id: 'kids_summer_camp_class_5_or_6', title: 'Class 3 to 6' }, { id: 'skip_trial', title: 'Skip Trial' }], 0, null, summerIntroVideo.dataValues.constantValue, "WA_Constants", summerIntroVideo.dataValues.id, null, summerIntroVideo.dataValues.constantMediaId, "constantMediaId");
     await createActivityLog(userMobileNumber, "template", "outbound", chooseClassMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["class 1 or 2", "class 3 to 6", "skip trial"]);
-    return;
 };
 
 const kidsConfirmClass = async (profileId, userMobileNumber, messageContent) => {
@@ -125,7 +123,6 @@ const kidsConfirmClass = async (profileId, userMobileNumber, messageContent) => 
     await sendButtonMessage(userMobileNumber, confirmClassMessage, [{ id: 'start_free_trial', title: 'Start Free Trial' }, { id: 'no_choose_again', title: 'No, Choose Again' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", confirmClassMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start free trial", "no, choose again"]);
-    return;
 };
 
 const kidsChooseClassLoop = async (profileId, userMobileNumber) => {
@@ -134,7 +131,6 @@ const kidsChooseClassLoop = async (profileId, userMobileNumber) => {
     await sendButtonMessage(userMobileNumber, chooseClassMessage, [{ id: 'kids_summer_camp_class_1_or_2', title: 'Class 1 or 2' }, { id: 'kids_summer_camp_class_5_or_6', title: 'Class 3 to 6' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", chooseClassMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["class 1 or 2", "class 3 to 6"]);
-    return;
 };
 
 const demoCourseStart = async (profileId, userMobileNumber, startingLesson, courseName) => {
@@ -168,15 +164,11 @@ const demoCourseStart = async (profileId, userMobileNumber, startingLesson, cour
         message = "Great! Let's start your free trial! 🤩 Here is your first lesson.";
         await sendMessage(userMobileNumber, message);
         await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-        return;
     } else if (courseName == "Free Trial - Kids - Level 1" || courseName == "Free Trial - Kids - Level 3") {
-        // message = `Great! 💥 Let's Start!\nزبردست! شروع کرتے ہیں!\n\nComplete the trial and win your first reward! 🏅\n ہر قدم پر انعام جیتیں!`;
         message = `Great! 💥 Let's Start!\nزبردست! شروع کرتے ہیں!`;
         await sendMessage(userMobileNumber, message);
         await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-        return;
     }
-
 };
 
 const endTrialTeachers = async (profileId, userMobileNumber) => {
@@ -196,7 +188,6 @@ const endTrialTeachers = async (profileId, userMobileNumber) => {
     } else {
         await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial", "register"]);
     }
-    return;
 };
 
 const endTrialKids = async (profileId, userMobileNumber) => {
@@ -215,7 +206,6 @@ const endTrialKids = async (profileId, userMobileNumber) => {
     } else {
         await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial", "camp registration"]);
     }
-    return;
 };
 
 const getSchoolName = async (profileId, userMobileNumber) => {
@@ -224,7 +214,6 @@ const getSchoolName = async (profileId, userMobileNumber) => {
     await sendMessage(userMobileNumber, schoolInputMessage);
     await createActivityLog(userMobileNumber, "text", "outbound", schoolInputMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["text"]);
-    return;
 };
 
 const confirmSchoolName = async (profileId, userMobileNumber, messageContent) => {
@@ -234,7 +223,6 @@ const confirmSchoolName = async (profileId, userMobileNumber, messageContent) =>
     await sendButtonMessage(userMobileNumber, confirmSchoolNameMessage, [{ id: 'yes', title: 'Yes' }, { id: 'no', title: 'No' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", confirmSchoolNameMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no"]);
-    return;
 };
 
 const getCityName = async (profileId, userMobileNumber) => {
@@ -243,7 +231,6 @@ const getCityName = async (profileId, userMobileNumber) => {
     await sendMessage(userMobileNumber, cityInputMessage);
     await createActivityLog(userMobileNumber, "text", "outbound", cityInputMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["text"]);
-    return;
 };
 
 const confirmCityName = async (profileId, userMobileNumber, messageContent) => {
@@ -253,7 +240,6 @@ const confirmCityName = async (profileId, userMobileNumber, messageContent) => {
     await sendButtonMessage(userMobileNumber, confirmCityNameMessage, [{ id: 'yes', title: 'Yes' }, { id: 'no', title: 'No' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", confirmCityNameMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no"]);
-    return;
 };
 
 const getUserProfile = async (profileId, userMobileNumber) => {
@@ -262,7 +248,6 @@ const getUserProfile = async (profileId, userMobileNumber) => {
     await sendButtonMessage(userMobileNumber, userProfileMessage, [{ id: 'parent_student', title: 'Parent or Student' }, { id: 'school_admin', title: 'School Admin' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", userProfileMessage, null);
     await waUserProgressRepository.update(profileId, userMobileNumber, null, null, null, null, null, null, null, null, ["parent or student", "school admin"]);
-    return;
 };
 
 const schoolAdminConfirmation = async (profileId, userMobileNumber) => {
@@ -274,7 +259,6 @@ const schoolAdminConfirmation = async (profileId, userMobileNumber) => {
     await sendButtonMessage(userMobileNumber, selectOptionMessage, [{ id: 'school_admin', title: 'School Admin' }, { id: 'parent_or_student', title: 'Parent or Student' }, { id: 'start_again', title: 'Start Again' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", selectOptionMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["parent or student", "school admin", "start again"]);
-    return;
 };
 
 const thankyouMessageSchoolOwner = async (profileId, userMobileNumber, messageContent) => {
@@ -288,7 +272,6 @@ const thankyouMessageSchoolOwner = async (profileId, userMobileNumber, messageCo
     await waUsersMetadataRepository.update(profileId, userMobileNumber, {
         userRegistrationComplete: new Date()
     });
-    return;
 };
 
 
@@ -298,7 +281,6 @@ const readyToPay = async (profileId, userMobileNumber) => {
     await sendButtonMessage(userMobileNumber, readyToPayMessage, [{ id: 'ready_for_payment', title: 'Ready for Payment' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }, { id: 'get_another_trial', title: 'Get Another Trial' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", readyToPayMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["ready for payment", "chat with beaj rep", "get another trial"]);
-    return;
 };
 
 const parentOrStudentSelection = async (profileId, userMobileNumber) => {
@@ -322,7 +304,6 @@ const parentOrStudentSelection = async (profileId, userMobileNumber) => {
     await sendButtonMessage(userMobileNumber, selectOptionMessage, [{ id: 'register_on_whatsapp', title: 'Register on Whatsapp' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }, { id: 'start_again', title: 'Start Again' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", selectOptionMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["register on whatsapp", "chat with beaj rep", "start again"]);
-    return;
 };
 
 const thankyouMessageParent = async (profileId, userMobileNumber) => {
@@ -335,7 +316,6 @@ const thankyouMessageParent = async (profileId, userMobileNumber) => {
     await waUsersMetadataRepository.update(profileId, userMobileNumber, {
         userRegistrationComplete: new Date()
     });
-    return;
 };
 
 const talkToBeajRep = async (profileId, userMobileNumber) => {
@@ -349,7 +329,6 @@ const talkToBeajRep = async (profileId, userMobileNumber) => {
     let contactCardMessage = `👆Click on the Message button to chat with a Beaj Representative.\nبیج کے نمائندے سے بات کرنے کے لیئے "Message" بٹن پر کلک کریں۔`;
     await sendMessage(userMobileNumber, contactCardMessage);
     await createActivityLog(userMobileNumber, "text", "outbound", contactCardMessage, null);
-    return;
 };
 
 // Multi user registration
@@ -362,7 +341,6 @@ const studentNameInput = async (profileId, userMobileNumber) => {
     await sendMessage(userMobileNumber, studentNameInputMessage);
     await createActivityLog(userMobileNumber, "text", "outbound", studentNameInputMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["text"]);
-    return;
 };
 
 const studentNameConfirmation = async (profileId, userMobileNumber, messageContent) => {
@@ -372,7 +350,6 @@ const studentNameConfirmation = async (profileId, userMobileNumber, messageConte
     await sendButtonMessage(userMobileNumber, studentNameConfirmationMessage, [{ id: 'yes', title: 'Yes' }, { id: 'no', title: 'No' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", studentNameConfirmationMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no"]);
-    return;
 };
 
 const studentGenericClassInput = async (profileId, userMobileNumber) => {
@@ -384,7 +361,6 @@ const studentGenericClassInput = async (profileId, userMobileNumber) => {
     await sendButtonMessage(userMobileNumber, studentClassInputMessage, [{ id: 'class_1_or_2_or_3', title: 'Class 1, 2 or 3' }, { id: 'class_4_or_5_or_6', title: 'Class 4, 5 or 6' }, { id: 'class_7_and_above', title: 'Class 7 and above' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", studentClassInputMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["class 1, 2 or 3", "class 4, 5 or 6", "class 7 and above"]);
-    return;
 };
 
 const studentGenericClassConfirmation = async (profileId, userMobileNumber, messageContent) => {
@@ -394,7 +370,6 @@ const studentGenericClassConfirmation = async (profileId, userMobileNumber, mess
     await sendButtonMessage(userMobileNumber, studentClassConfirmationMessage, [{ id: 'yes', title: 'Yes' }, { id: 'no', title: 'No' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", studentClassConfirmationMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no"]);
-    return;
 };
 
 const studentSpecificClassInput = async (profileId, userMobileNumber, genericClass) => {
@@ -411,7 +386,6 @@ const studentSpecificClassInput = async (profileId, userMobileNumber, genericCla
         await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["class 7", "class 8"]);
     }
     await createActivityLog(userMobileNumber, "template", "outbound", studentClassInputMessage, null);
-    return;
 };
 
 const studentSpecificClassConfirmation = async (profileId, userMobileNumber, messageContent) => {
@@ -421,7 +395,6 @@ const studentSpecificClassConfirmation = async (profileId, userMobileNumber, mes
     await sendButtonMessage(userMobileNumber, studentClassConfirmationMessage, [{ id: 'yes', title: 'Yes' }, { id: 'no', title: 'No' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", studentClassConfirmationMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no"]);
-    return;
 };
 
 const singleStudentRegistationComplate = async (profileId, userMobileNumber) => {
@@ -456,7 +429,6 @@ const singleStudentRegistationComplate = async (profileId, userMobileNumber) => 
     await sendButtonMessage(userMobileNumber, totalRegistrationsSummaryMessage, [{ id: 'register_new_student', title: 'Register New Student' }, { id: 'go_to_payment', title: 'Go to Payment' }, { id: 'start_again', title: 'Start Again' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", totalRegistrationsSummaryMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["register new student", "go to payment", "start again"]);
-    return;
 };
 
 const getTotalRegistrationsSummaryForUnpaidUsers = async (userMobileNumber) => {
@@ -501,7 +473,6 @@ const paymentDetails = async (profileId, userMobileNumber) => {
     await sendMessage(userMobileNumber, screenshotMessage);
     await createActivityLog(userMobileNumber, "text", "outbound", screenshotMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["image", "chat with beaj rep", "start again"]);
-    return;
 };
 
 const paymentComplete = async (profileId, userMobileNumber, paymentProof) => {
@@ -542,7 +513,6 @@ const paymentComplete = async (profileId, userMobileNumber, paymentProof) => {
     await sendButtonMessage(userMobileNumber, thankYouMessage, [{ id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }, { id: 'go_to_start', title: 'Go to Start' }], 0, parentThankyouImage.dataValues.constantValue, null, "WA_Constants", parentThankyouImage.dataValues.id, parentThankyouImage.dataValues.constantMediaId, null, "constantMediaId");
     await createActivityLog(userMobileNumber, "template", "outbound", thankYouMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["chat with beaj rep", "go to start"]);
-    return;
 };
 
 
@@ -597,7 +567,6 @@ const confirmCancelRegistration = async (profileId, userMobileNumber, engagement
     await sendButtonMessage(userMobileNumber, confirmCancelRegistrationMessage, [{ id: 'yes', title: 'Yes' }, { id: 'no', title: 'No' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", confirmCancelRegistrationMessage, null);
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no"]);
-    return;
 };
 
 

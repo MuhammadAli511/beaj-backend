@@ -21,6 +21,9 @@ import { marketing_bot_prompt } from "./prompts.js";
 dotenv.config();
 ffmpeg.setFfmpegPath(ffmpegPath);
 
+const writeFile = promisify(fs.writeFile);
+const unlink = promisify(fs.unlink);
+
 async function uploadAudioToAzure(audioData) {
     // Generate a unique file name with timestamp and UUID
     const timestamp = format(new Date(), "yyyyMMddHHmmssSSS");
@@ -113,8 +116,7 @@ async function elevenLabsSpeechToText(audioBuffer) {
     }
 }
 
-
-function convertOggToWav(oggBuffer) {
+async function convertOggToWav(oggBuffer) {
     return new Promise((resolve, reject) => {
         const oggStream = new PassThrough();
         oggStream.end(oggBuffer);
@@ -135,8 +137,46 @@ function convertOggToWav(oggBuffer) {
     });
 }
 
-const writeFile = promisify(fs.writeFile);
-const unlink = promisify(fs.unlink);
+async function azureOpenAISpeechToText(audioBuffer) {
+    try {
+        const endpoint = process.env.AZURE_OPENAI_ENDPOINT_2;
+        const apiKey = process.env.AZURE_OPENAI_API_KEY_2;
+        const apiVersion = "2025-03-01-preview";
+        const deployment = "gpt-4o-transcribe";
+
+        const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
+        const result = await client.audio.transcriptions.create({
+            file: fs.createReadStream(tempFilePath),
+            model: deployment,
+            language: 'en',
+        });
+
+        return result.choices[0].message.content;
+    } catch {
+        return await openaiSpeechToText(audioBuffer);
+    }
+};
+
+async function azureOpenAISpeechToTextWithPrompt(audioBuffer, prompt) {
+    try {
+        const endpoint = process.env.AZURE_OPENAI_ENDPOINT_2;
+        const apiKey = process.env.AZURE_OPENAI_API_KEY_2;
+        const apiVersion = "2025-03-01-preview";
+        const deployment = "gpt-4o-transcribe";
+
+        const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
+        const result = await client.audio.transcriptions.create({
+            file: fs.createReadStream(tempFilePath),
+            model: deployment,
+            language: 'en',
+            prompt: prompt
+        });
+
+        return result.choices[0].message.content;
+    } catch {
+        return await openaiSpeechToTextWithPrompt(audioBuffer, prompt);
+    }
+};
 
 async function openaiSpeechToText(audioBuffer) {
     const openai = new OpenAI(process.env.OPENAI_API_KEY);
@@ -149,7 +189,7 @@ async function openaiSpeechToText(audioBuffer) {
 
         const transcription = await openai.audio.transcriptions.create({
             file: fs.createReadStream(tempFilePath),
-            model: "whisper-1",
+            model: "gpt-4o-transcribe",
             language: 'en'
         });
         return transcription.text;
@@ -169,13 +209,40 @@ async function openaiSpeechToTextWithPrompt(audioBuffer, prompt) {
 
         const transcription = await openai.audio.transcriptions.create({
             file: fs.createReadStream(tempFilePath),
-            model: "whisper-1",
+            model: "gpt-4o-transcribe",
             language: 'en',
             prompt: prompt
         });
         return transcription.text;
     } finally {
         await unlink(tempFilePath);
+    }
+};
+
+async function azureOpenAITextToSpeechAndUpload(text) {
+    try {
+        const endpoint = process.env.AZURE_OPENAI_ENDPOINT_2;
+        const apiKey = process.env.AZURE_OPENAI_API_KEY_2;
+        const apiVersion = "2025-03-01-preview";
+        const deployment = "gpt-4o-mini-tts";
+
+        const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
+
+        const mp3 = await client.audio.speech.create({
+            model: deployment,
+            voice: "nova",
+            input: text,
+            instructions: "Use British pronunciation for English and speak in a slow speed, not too fast"
+        });
+
+        const buffer = Buffer.from(await mp3.arrayBuffer());
+        const tempFileName = `temp-${uuidv4()}.mp3`;
+        const tempFilePath = join(tmpdir(), tempFileName);
+        await writeFile(tempFilePath, buffer);
+        const audioUrl = await uploadAudioToAzure(buffer);
+        return audioUrl;
+    } catch (error) {
+        return await openaiTextToSpeechAndUpload(text);
     }
 };
 
@@ -697,10 +764,10 @@ async function azureSpeakingAssessment(audioBuffer, topic) {
 
 async function openaiFeedback(previousMessages) {
     try {
-        const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
-        const apiKey = process.env.AZURE_OPENAI_API_KEY;
+        const endpoint = process.env.AZURE_OPENAI_ENDPOINT_2;
+        const apiKey = process.env.AZURE_OPENAI_API_KEY_2;
         const apiVersion = "2025-01-01-preview";
-        const deployment = "gpt-4o-mini";
+        const deployment = "gpt-4.1-nano";
 
         const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
         const result = await client.chat.completions.create({
@@ -713,7 +780,6 @@ async function openaiFeedback(previousMessages) {
         return await geminiFeedback(previousMessages);
     }
 }
-
 
 async function geminiFeedback(previousMessages) {
     let userTranscript = previousMessages[previousMessages.length - 1].content;
@@ -759,10 +825,10 @@ async function geminiCustomFeedback(userTranscript, modelPrompt) {
 
 async function openaiCustomFeedback(userTranscript, modelPrompt) {
     try {
-        const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
-        const apiKey = process.env.AZURE_OPENAI_API_KEY;
+        const endpoint = process.env.AZURE_OPENAI_ENDPOINT_2;
+        const apiKey = process.env.AZURE_OPENAI_API_KEY_2;
         const apiVersion = "2025-01-01-preview";
-        const deployment = "gpt-4o-mini";
+        const deployment = "gpt-4.1-nano";
 
         const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
         const result = await client.chat.completions.create({
@@ -816,6 +882,9 @@ export default {
     geminiFeedback,
     geminiCustomFeedback,
     openaiTextToSpeechAndUpload,
-    marketingBotResponse
+    marketingBotResponse,
+    azureOpenAISpeechToText,
+    azureOpenAISpeechToTextWithPrompt,
+    azureOpenAITextToSpeechAndUpload
 };
 

@@ -3,10 +3,12 @@ import AIServices from '../utils/AIServices.js';
 import parseAnswers from '../utils/parseAnswers.js';
 import speakActivityQuestionRepository from '../repositories/speakActivityQuestionRepository.js';
 
-const createSpeakActivityQuestionService = async (question, mediaFile, mediaFileSecond, answer, lessonId, questionNumber, activityType) => {
+const createSpeakActivityQuestionService = async (question, mediaFile, mediaFileSecond, answer, lessonId, questionNumber, activityType, difficultyLevel, customFeedbackText, customFeedbackImage, customFeedbackAudio) => {
     try {
         let mediaUrl = null;
         let mediaUrlSecond = null;
+        let customFeedbackImageUrl = null;
+        let customFeedbackAudioUrl = null;
         if (mediaFile && typeof mediaFile === 'object') {
             mediaUrl = await azure_blob.uploadToBlobStorage(mediaFile);
         } else {
@@ -25,6 +27,12 @@ const createSpeakActivityQuestionService = async (question, mediaFile, mediaFile
         if (mediaFileSecond && typeof mediaFileSecond === 'object') {
             mediaUrlSecond = await azure_blob.uploadToBlobStorage(mediaFileSecond);
         }
+        if (customFeedbackImage && typeof customFeedbackImage === 'object') {
+            customFeedbackImageUrl = await azure_blob.uploadToBlobStorage(customFeedbackImage);
+        }
+        if (customFeedbackAudio && typeof customFeedbackAudio === 'object') {
+            customFeedbackAudioUrl = await azure_blob.uploadToBlobStorage(customFeedbackAudio);
+        }
 
         // Use a regex to correctly handle double-quoted answers with commas inside
         let answerArray = [];
@@ -38,7 +46,11 @@ const createSpeakActivityQuestionService = async (question, mediaFile, mediaFile
             mediaUrlSecond,
             answerArray,
             lessonId,
-            questionNumber
+            questionNumber,
+            difficultyLevel,
+            customFeedbackText,
+            customFeedbackImageUrl,
+            customFeedbackAudioUrl
         );
 
         return speakActivityQuestion;
@@ -48,10 +60,12 @@ const createSpeakActivityQuestionService = async (question, mediaFile, mediaFile
     }
 };
 
-const updateSpeakActivityQuestionService = async (id, question, mediaFile, mediaFileSecond, answer, lessonId, questionNumber, activityType) => {
+const updateSpeakActivityQuestionService = async (id, question, mediaFile, mediaFileSecond, answer, lessonId, questionNumber, activityType, difficultyLevel, customFeedbackText, customFeedbackImage, customFeedbackAudio) => {
     try {
         let mediaUrl = null;
         let mediaUrlSecond = null;
+        let customFeedbackImageUrl = null;
+        let customFeedbackAudioUrl = null;
         if (mediaFile && typeof mediaFile === 'object') {
             mediaUrl = await azure_blob.uploadToBlobStorage(mediaFile);
         } else if (typeof mediaFile === 'string' && mediaFile.trim() != "" && activityType != 'conversationalAgencyBot' && activityType != 'conversationalQuestionsBot') {
@@ -75,6 +89,17 @@ const updateSpeakActivityQuestionService = async (id, question, mediaFile, media
             mediaUrlSecond = mediaFileSecond;
         }
 
+        if (customFeedbackImage && typeof customFeedbackImage === 'object') {
+            customFeedbackImageUrl = await azure_blob.uploadToBlobStorage(customFeedbackImage);
+        } else if (typeof customFeedbackImage === 'string' && customFeedbackImage.trim() != "") {
+            customFeedbackImageUrl = customFeedbackImage;
+        }
+        if (customFeedbackAudio && typeof customFeedbackAudio === 'object') {
+            customFeedbackAudioUrl = await azure_blob.uploadToBlobStorage(customFeedbackAudio);
+        } else if (typeof customFeedbackAudio === 'string' && customFeedbackAudio.trim() != "") {
+            customFeedbackAudioUrl = customFeedbackAudio;
+        }
+
         const answerArray = parseAnswers(answer);
 
         const speakActivityQuestion = await speakActivityQuestionRepository.update(
@@ -84,7 +109,11 @@ const updateSpeakActivityQuestionService = async (id, question, mediaFile, media
             mediaUrlSecond,
             answerArray,
             lessonId,
-            questionNumber
+            questionNumber,
+            difficultyLevel,
+            customFeedbackText,
+            customFeedbackImageUrl,
+            customFeedbackAudioUrl
         );
 
         return speakActivityQuestion;

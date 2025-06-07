@@ -1,5 +1,6 @@
 import { sendButtonMessage, sendMessage } from "./whatsappUtils.js";
 import { createActivityLog } from "./createActivityLogUtils.js";
+import waProfileRepository from "../repositories/waProfileRepository.js";
 
 
 const sleep = (ms) => {
@@ -11,16 +12,12 @@ const removeHTMLTags = (text) => {
 };
 
 const extractTranscript = (results) => {
-    if (!results || !results.words) {
+    if (!results?.words) {
         return "";
     }
 
     const words = Object.values(results.words);
-    const transcriptWords = words.filter(word =>
-        word &&
-        word.PronunciationAssessment &&
-        word.PronunciationAssessment.ErrorType !== 'Omission'
-    );
+    const transcriptWords = words.filter(word => word?.PronunciationAssessment?.ErrorType !== 'Omission');
 
     const transcript = transcriptWords.map(word => word.Word).join(" ");
 
@@ -33,7 +30,7 @@ const extractTranscript = (results) => {
 };
 
 const extractMispronouncedWords = (results) => {
-    if (!results || !results.words) {
+    if (!results?.words) {
         return [];
     }
 
@@ -161,6 +158,17 @@ const getAcceptableMessagesList = async (activityType) => {
     }
 };
 
+const getDaysPerWeek = async (profileId) => {
+    const profile = await waProfileRepository.getByProfileId(profileId);
+    return profile.dataValues.profile_type === 'teacher' ? 6 : 5;
+};
+
+const getTotalLessonsForCourse = async (profileId) => {
+    const daysPerWeek = await getDaysPerWeek(profileId);
+    return 4 * daysPerWeek;
+};
+
+
 
 export {
     sleep,
@@ -170,5 +178,7 @@ export {
     getAudioBufferFromAudioFileUrl,
     convertNumberToEmoji,
     checkUserMessageAndAcceptableMessages,
-    getAcceptableMessagesList
+    getAcceptableMessagesList,
+    getDaysPerWeek,
+    getTotalLessonsForCourse
 };

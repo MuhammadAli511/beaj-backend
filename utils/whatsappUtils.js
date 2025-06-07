@@ -5,13 +5,15 @@ import SpeakActivityQuestion from '../models/SpeakActivityQuestion.js';
 import MultipleChoiceQuestion from '../models/MultipleChoiceQuestion.js';
 import MultipleChoiceQuestionAnswer from '../models/MultipleChoiceQuestionAnswer.js';
 import WA_Constants from '../models/WA_Constants.js';
+import Lesson from "../models/Lesson.js";
 
 const modelToMediaIdField = {
     "DocumentFile": DocumentFile,
     "SpeakActivityQuestion": SpeakActivityQuestion,
     "MultipleChoiceQuestion": MultipleChoiceQuestion,
     "MultipleChoiceQuestionAnswer": MultipleChoiceQuestionAnswer,
-    "WA_Constants": WA_Constants
+    "WA_Constants": WA_Constants,
+    "Lesson": Lesson
 };
 
 const whatsappToken = process.env.WHATSAPP_TOKEN;
@@ -48,7 +50,7 @@ const sendMessage = async (to, body, retryAttempt = 0) => {
             return sendMessage(to, body, retryAttempt + 1);
         } else {
             console.log(`Max retries reached. Giving up on message to ${to} from ${phoneNumberId}.`);
-            console.log("Final error:", errData ? errData : error.message);
+            console.log("Final error:", errData ?? error.message);
         }
     }
 };
@@ -88,7 +90,7 @@ const retrieveMediaURL = async (mediaId, retryAttempt = 0) => {
             return retrieveMediaURL(mediaId, retryAttempt + 1);
         } else {
             console.log(`Max retries reached. Giving up on media retrieval for ${mediaId}.`);
-            console.log("Final error:", errData ? errData : error.message);
+            console.log("Final error:", errData ?? error.message);
         }
 
     }
@@ -199,7 +201,7 @@ const sendMediaMessageWithId = async (to, mediaId, mediaType, captionText = null
             return sendMediaMessageWithId(to, mediaId, mediaType, captionText, retryAttempt + 1);
         } else {
             console.log(`Max retries reached. Giving up on media message to ${to} from ${phoneNumberId}.`);
-            console.log("Final error:", errData ? errData : error.message);
+            console.log("Final error:", errData ?? error.message);
             return { success: false, error: errData || error.message };
         }
     }
@@ -404,7 +406,7 @@ const sendMediaMessage = async (to, mediaUrl, mediaType, captionText = null, ret
             return sendMediaMessage(to, mediaUrl, mediaType, captionText, retryAttempt + 1, modelName, recordId, mediaId, feildName);
         } else {
             console.log(`Max retries reached. Giving up on media message to ${to} from ${phoneNumberId}.`);
-            console.log("Final error:", errData ? errData : error.message);
+            console.log("Final error:", errData ?? error.message);
             return false;
         }
     }
@@ -570,7 +572,7 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
             }
         } else {
             console.log(`Max retries reached. Giving up on button message to ${to} from ${phoneNumberId}.`);
-            console.log("Final error:", errData ? errData : error.message);
+            console.log("Final error:", errData ?? error.message);
             return false;
         }
     }
@@ -609,7 +611,7 @@ const sendContactCardMessage = async (to, contactData, retryAttempt = 0) => {
             return sendContactCardMessage(to, contactData, retryAttempt + 1);
         } else {
             console.log(`Max retries reached. Giving up on contact card to ${to} from ${phoneNumberId}.`);
-            console.log("Final error:", errData ? errData : error.message);
+            console.log("Final error:", errData ?? error.message);
         }
     }
 };
