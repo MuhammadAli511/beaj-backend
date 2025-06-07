@@ -94,17 +94,17 @@ const getNextCourse = async (userProfileId) => {
     const startedCourses = await waLessonsCompletedRepository.getUniqueStartedCoursesByProfileId(userProfileId);
     const notCompletedPurchasedCourse = purchaseCourses.filter(course => !startedCourses.includes(course.dataValues.courseId));
     if (notCompletedPurchasedCourse.length > 0) {
-        for (let i = 0; i < notCompletedPurchasedCourse.length; i++) {
-            for (let j = 0; j < courses.length; j++) {
-                if (notCompletedPurchasedCourse[i].dataValues.courseId === courses[j].dataValues.CourseId) {
-                    notCompletedPurchasedCourse[i].dataValues.sequenceNumber = courses[j].dataValues.SequenceNumber;
-                    notCompletedPurchasedCourse[i].dataValues.courseStartDate = courses[j].dataValues.courseStartDate;
-                    notCompletedPurchasedCourse[i].dataValues.courseName = courses[j].dataValues.CourseName;
+        for (const purchasedCourse of notCompletedPurchasedCourse) {
+            for (const course of courses) {
+                if (purchasedCourse.dataValues.courseId === course.dataValues.CourseId) {
+                    purchasedCourse.dataValues.sequenceNumber = course.dataValues.SequenceNumber;
+                    purchasedCourse.dataValues.courseStartDate = course.dataValues.courseStartDate;
+                    purchasedCourse.dataValues.courseName = course.dataValues.CourseName;
                     break;
                 }
             }
         }
-        const sortedNotCompletedPurchasedCourse = notCompletedPurchasedCourse.sort((a, b) => a.dataValues.sequenceNumber - b.dataValues.sequenceNumber);
+        const sortedNotCompletedPurchasedCourse = notCompletedPurchasedCourse.toSorted((a, b) => a.dataValues.sequenceNumber - b.dataValues.sequenceNumber);
         const nextCourse = sortedNotCompletedPurchasedCourse[0];
         return nextCourse;
     }
@@ -185,7 +185,6 @@ const startCourseForUser = async (profileId, userMobileNumber, numbers_to_ignore
 
     // Update acceptable messages list for the user
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start"]);
-    return;
 };
 
 const levelCourseStart = async (profileId, userMobileNumber, startingLesson, courseId) => {
@@ -212,7 +211,6 @@ const levelCourseStart = async (profileId, userMobileNumber, startingLesson, cou
     // Text Message
     await sendMessage(userMobileNumber, "Great! Let's start " + level + "! 🤩");
     await createActivityLog(userMobileNumber, "text", "outbound", "Great! Let's start " + level + "! 🤩", null);
-    return;
 };
 
 const sendCourseLessonToTeacher = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent) => {

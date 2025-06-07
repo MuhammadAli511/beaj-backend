@@ -7,9 +7,7 @@ import axios from 'axios';
 const webhookController = async (req, res, next) => {
     try {
         if (
-            req.body.entry &&
-            req.body.entry[0].changes &&
-            req.body.entry[0].changes[0].value.messages &&
+            req.body.entry?.[0]?.changes?.[0]?.value?.messages &&
             req.body.entry[0].changes[0].value.statuses == undefined
         ) {
             const message = req.body.entry[0].changes[0].value.messages[0];
