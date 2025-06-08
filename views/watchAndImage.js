@@ -1,9 +1,8 @@
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
-import { sendMessage } from "../utils/whatsappUtils.js";
+import { sendMessage, sendMediaMessage } from "../utils/whatsappUtils.js";
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
-import { sendMediaMessage } from "../utils/whatsappUtils.js";
 import { endingMessage } from "../utils/endingMessageUtils.js";
 import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRepository.js";
 import { format } from "date-fns";
@@ -19,9 +18,21 @@ const watchAndImageView = async (profileId, userMobileNumber, currentUserState, 
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
+                let defaultTextInstruction = "Watch the videos. Then send an image response.";
+                const lessonTextInstruction = startingLesson.dataValues.textInstruction;
+                let finalTextInstruction = defaultTextInstruction;
+                if (lessonTextInstruction != null && lessonTextInstruction != "") {
+                    finalTextInstruction = lessonTextInstruction.replace(/\\n/g, '\n');
+                }
+                const lessonAudioInstruction = startingLesson.dataValues.audioInstructionUrl;
+                if (lessonAudioInstruction != null && lessonAudioInstruction != "") {
+                    await sendMediaMessage(userMobileNumber, lessonAudioInstruction, 'audio', null, 0, "Lesson", startingLesson.dataValues.LessonId, startingLesson.dataValues.audioInstructionMediaId, "audioInstructionMediaId");
+                    await createActivityLog(userMobileNumber, "audio", "outbound", lessonAudioInstruction, null);
+                }
+
                 // Send lesson message
-                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\n\nWatch the videos. Then send an image response.";
+                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n');;
+                lessonMessage += "\n\n" + finalTextInstruction;
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
@@ -87,9 +98,21 @@ const watchAndImageView = async (profileId, userMobileNumber, currentUserState, 
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
+                let defaultTextInstruction = "Watch the videos. Then send an image response.";
+                const lessonTextInstruction = startingLesson.dataValues.textInstruction;
+                let finalTextInstruction = defaultTextInstruction;
+                if (lessonTextInstruction != null && lessonTextInstruction != "") {
+                    finalTextInstruction = lessonTextInstruction.replace(/\\n/g, '\n');
+                }
+                const lessonAudioInstruction = startingLesson.dataValues.audioInstructionUrl;
+                if (lessonAudioInstruction != null && lessonAudioInstruction != "") {
+                    await sendMediaMessage(userMobileNumber, lessonAudioInstruction, 'audio', null, 0, "Lesson", startingLesson.dataValues.LessonId, startingLesson.dataValues.audioInstructionMediaId, "audioInstructionMediaId");
+                    await createActivityLog(userMobileNumber, "audio", "outbound", lessonAudioInstruction, null);
+                }
+
                 // Send lesson message
-                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\n\nWatch the videos. Then send an image response.";
+                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n');;
+                lessonMessage += "\n\n" + finalTextInstruction;
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 

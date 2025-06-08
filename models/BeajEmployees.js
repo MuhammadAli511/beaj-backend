@@ -33,9 +33,6 @@ BeajEmployees.init({
     role: {
         type: DataTypes.TEXT,
         allowNull: true,
-        validate: {
-            isIn: [['employee', 'admin']]
-        }
     },
     profile_picture: {
         type: DataTypes.TEXT,

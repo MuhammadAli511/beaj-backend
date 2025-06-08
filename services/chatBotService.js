@@ -126,6 +126,8 @@ const webhookService = async (body, res) => {
                     profile_type = "student";
                 } else if (botPhoneNumberId == marketingBotPhoneNumberId) {
                     profile_type = "marketing";
+                } else {
+                    throw new Error(`Unhandled botPhoneNumberId ${botPhoneNumberId}`);
                 }
                 let profile = await waProfileRepository.create({
                     phone_number: userMobileNumber,

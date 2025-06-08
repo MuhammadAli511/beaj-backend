@@ -1,17 +1,15 @@
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
-import { sendMessage, sendButtonMessage } from "../utils/whatsappUtils.js";
+import { sendMessage, sendButtonMessage, sendMediaMessage } from "../utils/whatsappUtils.js";
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
-import { sendMediaMessage } from "../utils/whatsappUtils.js";
 import { endingMessage } from "../utils/endingMessageUtils.js";
 import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRepository.js";
 import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
-import { sleep } from "../utils/utils.js";
+import { sleep, extractMispronouncedWords } from "../utils/utils.js";
 import AIServices from "../utils/AIServices.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
-import { extractMispronouncedWords } from "../utils/utils.js";
 import { createAndUploadMonologueScoreImage } from "../utils/imageGenerationUtils.js";
 
 const conversationalMonologueBotView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
@@ -22,9 +20,21 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
+                let defaultTextInstruction = "Watch the video 👇🏽 and practice speaking by sending a voice message.💬";
+                const lessonTextInstruction = startingLesson.dataValues.textInstruction;
+                let finalTextInstruction = defaultTextInstruction;
+                if (lessonTextInstruction != null && lessonTextInstruction != "") {
+                    finalTextInstruction = lessonTextInstruction.replace(/\\n/g, '\n');
+                }
+                const lessonAudioInstruction = startingLesson.dataValues.audioInstructionUrl;
+                if (lessonAudioInstruction != null && lessonAudioInstruction != "") {
+                    await sendMediaMessage(userMobileNumber, lessonAudioInstruction, 'audio', null, 0, "Lesson", startingLesson.dataValues.LessonId, startingLesson.dataValues.audioInstructionMediaId, "audioInstructionMediaId");
+                    await createActivityLog(userMobileNumber, "audio", "outbound", lessonAudioInstruction, null);
+                }
+
                 // Send lesson message
-                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\n\nWatch the video 👇🏽 and practice speaking by sending a voice message.💬";
+                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n');;
+                lessonMessage += "\n\n" + finalTextInstruction;
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
@@ -207,9 +217,21 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
+                let defaultTextInstruction = "Watch the video 👇🏽 and practice speaking by sending a voice message.💬";
+                const lessonTextInstruction = startingLesson.dataValues.textInstruction;
+                let finalTextInstruction = defaultTextInstruction;
+                if (lessonTextInstruction != null && lessonTextInstruction != "") {
+                    finalTextInstruction = lessonTextInstruction.replace(/\\n/g, '\n');
+                }
+                const lessonAudioInstruction = startingLesson.dataValues.audioInstructionUrl;
+                if (lessonAudioInstruction != null && lessonAudioInstruction != "") {
+                    await sendMediaMessage(userMobileNumber, lessonAudioInstruction, 'audio', null, 0, "Lesson", startingLesson.dataValues.LessonId, startingLesson.dataValues.audioInstructionMediaId, "audioInstructionMediaId");
+                    await createActivityLog(userMobileNumber, "audio", "outbound", lessonAudioInstruction, null);
+                }
+
                 // Send lesson message
-                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\n\nWatch the video 👇🏽 and practice speaking by sending a voice message.💬";
+                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n');;
+                lessonMessage += "\n\n" + finalTextInstruction;
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 

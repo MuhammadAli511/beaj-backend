@@ -7,10 +7,6 @@ const sleep = (ms) => {
     return new Promise(resolve => setTimeout(resolve, ms));
 };
 
-const removeHTMLTags = (text) => {
-    return text.replace(/<[^>]*>?/gm, '');
-};
-
 const extractTranscript = (results) => {
     if (!results?.words) {
         return "";
@@ -172,7 +168,6 @@ const getTotalLessonsForCourse = async (profileId) => {
 
 export {
     sleep,
-    removeHTMLTags,
     extractTranscript,
     extractMispronouncedWords,
     getAudioBufferFromAudioFileUrl,
