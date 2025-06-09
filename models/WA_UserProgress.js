@@ -40,6 +40,10 @@ WA_UserProgress.init({
         type: DataTypes.INTEGER,
         allowNull: true,
     },
+    currentDifficultyLevel: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
     activityType: {
         type: DataTypes.TEXT,
         allowNull: true,
