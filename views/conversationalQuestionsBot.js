@@ -7,7 +7,7 @@ import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRe
 import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
-import { sleep } from "../utils/utils.js";
+import { sleep, getAudioBufferFromAudioFileUrl } from "../utils/utils.js";
 import AIServices from "../utils/AIServices.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import { question_bot_prompt, wrapup_prompt } from "../utils/prompts.js";
@@ -120,12 +120,15 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
             else if (messageContent == 'yes') {
                 // Get the current Conversation Bot question
                 const currentConversationBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
-
-                // Get the uploaded audio
                 const audioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(profileId, currentConversationBotQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
 
+                if (!audioUrl) {
+                    await sendMessage(userMobileNumber, "Audio not found. Please try recording again.");
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                    return;
+                }
+
                 // Get audio buffer for processing
-                const { getAudioBufferFromAudioFileUrl } = await import("../utils/utils.js");
                 const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
 
                 // OpenAI Speech to Text
@@ -346,7 +349,6 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                 const audioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(profileId, currentConversationBotQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
 
                 // Get audio buffer for processing
-                const { getAudioBufferFromAudioFileUrl } = await import("../utils/utils.js");
                 const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
 
                 // OpenAI Speech to Text
@@ -401,17 +403,18 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         openaiFeedbackTranscript = await AIServices.openaiCustomFeedback(await wrapup_prompt(), userResponse);
                         initialFeedbackResponse = openaiFeedbackTranscript;
 
+                        let hardcodedFeedbackAudio = null;
                         if (openaiFeedbackTranscript.toLowerCase().includes("can be improved")) {
                             const betterAudio = await waConstantsRepository.getByKey("BETTER_AUDIO");
-                            openaiFeedbackAudio = betterAudio;
+                            hardcodedFeedbackAudio = betterAudio;
                         } else {
                             const okAudio = await waConstantsRepository.getByKey("OK_AUDIO");
-                            openaiFeedbackAudio = okAudio;
+                            hardcodedFeedbackAudio = okAudio;
                         }
 
                         // Media message
-                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio.dataValues.constantValue, 'audio', null, 0, "WA_Constants", openaiFeedbackAudio.dataValues.id, openaiFeedbackAudio.dataValues.constantMediaId, "constantMediaId");
-                        await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio.dataValues.constantValue, null);
+                        await sendMediaMessage(userMobileNumber, hardcodedFeedbackAudio.dataValues.constantValue, 'audio', null, 0, "WA_Constants", hardcodedFeedbackAudio.dataValues.id, hardcodedFeedbackAudio.dataValues.constantMediaId, "constantMediaId");
+                        await createActivityLog(userMobileNumber, "audio", "outbound", hardcodedFeedbackAudio.dataValues.constantValue, null);
                         await sleep(2000);
                     }
 
@@ -427,7 +430,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         [recognizedText],
                         [audioUrl],
                         [initialFeedbackResponse],
-                        [openaiFeedbackAudio],
+                        null,
                         null,
                         null,
                         1,

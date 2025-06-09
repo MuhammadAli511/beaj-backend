@@ -286,7 +286,7 @@ const watchAndSpeakScoreForList = async (profileId, phoneNumber, lessonIdList) =
     let maxScore = 0;
 
     // Mapping through the results to extract, calculate and sum the score data
-    const individualScores = submittedFeedbackJson.map(response => {
+    submittedFeedbackJson.map(response => {
         const jsonArray = response.get('submittedFeedbackJson'); // Get the JSON array
 
         // Directly access the first element in the JSON array if it exists
@@ -341,7 +341,7 @@ const readScoreForList = async (profileId, phoneNumber, lessonIdList) => {
     let maxScore = 0;
 
     // Mapping through the results to extract, calculate and sum the score data
-    const individualScores = submittedFeedbackJson.map(response => {
+    submittedFeedbackJson.map(response => {
         const jsonArray = response.get('submittedFeedbackJson'); // Get the JSON array
 
         // Directly access the first element in the JSON array if it exists
@@ -396,7 +396,7 @@ const monologueScoreForList = async (profileId, phoneNumber, lessonIdList) => {
     let maxScore = 0;
 
     // Mapping through the results to extract, calculate and sum the score data
-    const individualScores = submittedFeedbackJson.map(response => {
+    submittedFeedbackJson.map(response => {
         const jsonArray = response.get('submittedFeedbackJson'); // Get the JSON array
 
         // Directly access the first element in the JSON array if it exists

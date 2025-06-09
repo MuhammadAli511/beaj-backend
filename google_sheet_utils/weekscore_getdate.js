@@ -1,17 +1,16 @@
-import getDataFromPostgres1 from "../repositories/etl_weeklyScoreRepository.js";
-import getDataActivityComplete1 from "../repositories/etl_weeklyScoreRepository.js";
+import etlWeeklyScoreRepository from "../repositories/etl_weeklyScoreRepository.js";
 import { weekEndScoreCalculation } from "../utils/chatbotUtils.js";
 const getWeeklyDate = async (grp, courseid) => {
   try {
-    const phone_list = await getDataFromPostgres1.getDataFromPostgres(grp);
+    const phone_list = await etlWeeklyScoreRepository.getDataFromPostgres(grp);
     const phoneNumbers = phone_list.map((item) => item.phoneNumber);
     const currentDate1 = new Date();
     const currentDate = currentDate1.toISOString().split("T")[0];
-    var scoreCount = [],
+    let scoreCount = [],
       totalcount = [];
     if (currentDate >= "2024-11-11") {
       const activity_total =
-        await getDataActivityComplete1.getDataActivityComplete(
+        await etlWeeklyScoreRepository.getDataActivityComplete(
           "2024-11-17",
           grp,
           courseid,
@@ -45,7 +44,7 @@ const getWeeklyDate = async (grp, courseid) => {
     }
     if (currentDate >= "2024-11-18") {
       const activity_total =
-        await getDataActivityComplete1.getDataActivityComplete(
+        await etlWeeklyScoreRepository.getDataActivityComplete(
           "2024-11-24",
           grp,
           courseid,
@@ -74,7 +73,7 @@ const getWeeklyDate = async (grp, courseid) => {
 
     if (currentDate >= "2024-11-25") {
       const activity_total =
-        await getDataActivityComplete1.getDataActivityComplete(
+        await etlWeeklyScoreRepository.getDataActivityComplete(
           "2024-12-01",
           grp,
           courseid,
@@ -103,7 +102,7 @@ const getWeeklyDate = async (grp, courseid) => {
 
     if (currentDate >= "2024-12-02") {
       const activity_total =
-        await getDataActivityComplete1.getDataActivityComplete(
+        await etlWeeklyScoreRepository.getDataActivityComplete(
           "2024-12-08",
           grp,
           courseid,

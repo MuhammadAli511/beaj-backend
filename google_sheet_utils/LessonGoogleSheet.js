@@ -1,4 +1,4 @@
-import { google, tasks_v1 } from "googleapis";
+import { google } from "googleapis";
 import { readFile } from 'fs/promises';
 
 const creds = JSON.parse(
@@ -23,8 +23,8 @@ const lesson_loadDataToGoogleSheets = async (
     const spreadsheetId = "1Nat0B3coOFoIeF_aO-vY-KHuqQxtjLYKx5lNPFBJndg";
 
     for (let i = 1; i <= 2; i++) {
-      var sheet_name = `Pilot T${i}-Lesson!`;
-      let pilot_lesson = pilot_t1_lesson[i - 1];
+      let sheet_name = `Pilot T${i}-Lesson!`;
+      let pilot_lesson;
       if (i == 1) {
         pilot_lesson = pilot_t1_lesson[i - 1];
       }

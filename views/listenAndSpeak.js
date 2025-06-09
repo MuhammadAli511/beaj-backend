@@ -7,7 +7,7 @@ import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRe
 import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
-import { sleep, convertNumberToEmoji } from "../utils/utils.js";
+import { sleep, convertNumberToEmoji, difficultyLevelCalculation, getAudioBufferFromAudioFileUrl } from "../utils/utils.js";
 import AIServices from "../utils/AIServices.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 
@@ -18,6 +18,12 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
             if (currentUserState.dataValues.questionNumber === null) {
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
+
+                // Difficulty Level Calculation
+                const difficultyLevelCalculationResult = await difficultyLevelCalculation(profileId, userMobileNumber, currentUserState, messageContent);
+                if (!difficultyLevelCalculationResult) {
+                    return;
+                }
 
                 let defaultTextInstruction = "Listen to the audio question and send your answer as a voice message.💬";
                 const lessonTextInstruction = startingLesson.dataValues.textInstruction;
@@ -132,7 +138,6 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 const audioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(profileId, currentListenAndSpeakQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
 
                 // Get audio buffer for processing
-                const { getAudioBufferFromAudioFileUrl } = await import("../utils/utils.js");
                 const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
 
                 const answersArray = currentListenAndSpeakQuestion.dataValues.answer;
@@ -301,6 +306,12 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
+                // Difficulty Level Calculation
+                const difficultyLevelCalculationResult = await difficultyLevelCalculation(profileId, userMobileNumber, currentUserState, messageContent);
+                if (!difficultyLevelCalculationResult) {
+                    return;
+                }
+
                 let defaultTextInstruction = "Listen to the audio question and send your answer as a voice message.💬";
                 const lessonTextInstruction = startingLesson.dataValues.textInstruction;
                 let finalTextInstruction = defaultTextInstruction;
@@ -429,7 +440,6 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 const audioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(profileId, currentListenAndSpeakQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
 
                 // Get audio buffer for processing
-                const { getAudioBufferFromAudioFileUrl } = await import("../utils/utils.js");
                 const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
 
                 const answersArray = currentListenAndSpeakQuestion.dataValues.answer;

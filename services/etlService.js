@@ -26,7 +26,7 @@ const runCumulativeSheets = async () => {
   let array_Lesson_List2 = await getWeeklyActivityCompleted1.getLessonCompletions(courseId_l10, courseId_l20, courseId_l30, 'T2');
   array_Lesson_List2 = array_Lesson_List2.map(obj => Object.values(obj).map(value => value));
 
-  var array_Lesson_List = array_Lesson_List1.concat(array_Lesson_List2);
+  let array_Lesson_List = array_Lesson_List1.concat(array_Lesson_List2);
 
 
   let array_activity_List1 = await getWeeklyActivityCompleted1.getActivity_Completions(courseId_l1, courseId_l2, courseId_l3, 'T1');
@@ -35,7 +35,7 @@ const runCumulativeSheets = async () => {
   let array_activity_List2 = await getWeeklyActivityCompleted1.getActivity_Completions(courseId_l10, courseId_l20, courseId_l30, 'T2');
   array_activity_List2 = array_activity_List2.map(obj => Object.values(obj).map(value => value));
 
-  var array_activity_List = array_activity_List1.concat(array_activity_List2);
+  let array_activity_List = array_activity_List1.concat(array_activity_List2);
 
   let weekly_score_l1_list = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l1, 'T1');
   let weekly_score_l2_list = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l2, 'T1');
@@ -369,8 +369,6 @@ const runCumulativeSheets = async () => {
 
 const runETL = async () => {
   try {
-    const t1 = 'T1';
-    const t2 = 'T2';
     const t1_l1_courseId = 98;
     const t2_l1_courseId = 99;
     const t1_l2_courseId = 104;
@@ -381,11 +379,9 @@ const runETL = async () => {
     const funnel_count = await T1Repository.getDashboardStats();
     const funnel = await googleSheetStats(funnel_count);
 
-    var activityCnt1 = [], total_actvity1 = [];
-    var activityCnt2 = [], total_actvity2 = [];
+    let activityCnt1 = [], total_actvity1 = [];
+    let activityCnt2 = [], total_actvity2 = [];
 
-    // const t1_l1_courseId = await courseId_gSheet("T1-Level 1 activity");
-    // const t2_l1_courseId = await courseId_gSheet("T2-Level 1 activity");
 
     const totalActivity_list1 = await etlRepository.getActivityTotalCount(t1_l1_courseId, t1_l2_courseId);
     const totalActivity_list2 = await etlRepository.getActivityTotalCount(t2_l1_courseId, t2_l2_courseId);
@@ -506,7 +502,6 @@ const runETL = async () => {
     let lessonMap1 = [], lessonMap2 = [];
 
     for (const entry of lesson_completed_list1) {
-      ``
       lessonMap1.push([
         entry.week1,
         entry.week2,
@@ -552,20 +547,10 @@ const runETL = async () => {
     arrayOfT1Lesson_level_Pilot.push([]);
     arrayOfT1Lesson_Pilot.push(arrayOfT1Lesson_level_Pilot);
 
-
-    // let pilot_t1_w1_weekly_Score_l1 = await etlRepository.getWeeklyScore(t1_l1_courseId,"T1", 4);
-    // let pilot_t2_w1_weekly_Score_l1 = await etlRepository.getWeeklyScore(t2_l1_courseId,"T2", 4);
-
-    // pilot_t1_w1_weekly_Score_l1 = pilot_t1_w1_weekly_Score_l1.map(entry => entry.final_percentage).map(value => [value]);
-    // pilot_t2_w1_weekly_Score_l1 = pilot_t2_w1_weekly_Score_l1.map(entry => entry.final_percentage).map(value => [value]);
-
     let pilot_t1_w1_weekly_Score = await etlRepository.getWeeklyScore(t1_l1_courseId, "T1", 'Pilot');
     let pilot_t2_w1_weekly_Score = await etlRepository.getWeeklyScore(t2_l1_courseId, "T2", 'Pilot');
     let pilot_t1_w1_weekly_Score1 = await etlRepository.getWeeklyScore(t1_l2_courseId, "T1", 'Pilot');
     let pilot_t2_w1_weekly_Score1 = await etlRepository.getWeeklyScore(t2_l2_courseId, "T2", 'Pilot');
-
-    // let pilot_t1_l2_w2 = await etlRepository.getWeeklyScore_pilot(104,"T1",1);
-    // pilot_t1_l2_w2 = pilot_t1_l2_w2.map(entry => entry.final_percentage).map(value => [value]);
 
     pilot_t1_w1_weekly_Score1 = pilot_t1_w1_weekly_Score1.map((entry) => [
       // entry.phoneNumber,
@@ -581,8 +566,6 @@ const runETL = async () => {
       entry.final_percentage_week3,
       entry.final_percentage_week4,
     ]);
-
-    // let pilot_t2_w1_weekly_Score = await etlRepository.getWeeklyScore(t2_l2_courseId,"T2");
 
     pilot_t1_w1_weekly_Score = pilot_t1_w1_weekly_Score.map((entry) => [
       // entry.phoneNumber,

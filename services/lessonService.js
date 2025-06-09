@@ -59,7 +59,12 @@ const getLessonByIdService = async (id) => {
 
 const updateLessonService = async (id, lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status, textInstruction, audioInstruction) => {
     try {
-        const audioInstructionUrl = audioInstruction ? await azure_blob.uploadToBlobStorage(audioInstruction) : null;
+        let audioInstructionUrl = null;
+        if (audioInstruction && typeof audioInstruction === 'object') {
+            audioInstructionUrl = await azure_blob.uploadToBlobStorage(audioInstruction);
+        } else if (typeof audioInstruction === 'string' && audioInstruction.trim() !== '') {
+            audioInstructionUrl = audioInstruction;
+        }
         const lesson = await lessonRepository.update(id, lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status, textInstruction, audioInstructionUrl);
         return lesson;
     } catch (error) {
@@ -147,9 +152,9 @@ const migrateLessonService = async (lessonId, courseId) => {
             const [newLesson] = await prodSequelize.query(
                 `INSERT INTO "Lesson" 
                     ("lessonType", "dayNumber", "activity", "activityAlias", "weekNumber", "text", 
-                    "courseId", "SequenceNumber", "status", "textInstruction", "audioInstructionUrl", "audioInstructionMediaId") 
+                    "courseId", "SequenceNumber", "status", "textInstruction", "audioInstructionUrl", "audioInstructionMediaId", "customFeedbackText", "customFeedbackImage", "customFeedbackAudio", "customFeedbackImageMediaId", "customFeedbackAudioMediaId", "difficultyLevel") 
                     VALUES (:lessonType, :dayNumber, :activity, :activityAlias, :weekNumber, :text, 
-                    :courseId, :SequenceNumber, :status, :textInstruction, :audioInstructionUrl, :audioInstructionMediaId) 
+                    :courseId, :SequenceNumber, :status, :textInstruction, :audioInstructionUrl, :audioInstructionMediaId, :customFeedbackText, :customFeedbackImage, :customFeedbackAudio, :customFeedbackImageMediaId, :customFeedbackAudioMediaId, :difficultyLevel) 
                     RETURNING *`,
                 {
                     replacements: {
@@ -164,7 +169,13 @@ const migrateLessonService = async (lessonId, courseId) => {
                         status: lesson.status,
                         textInstruction: lesson.textInstruction,
                         audioInstructionUrl: lesson.audioInstructionUrl,
-                        audioInstructionMediaId: lesson.audioInstructionMediaId
+                        audioInstructionMediaId: lesson.audioInstructionMediaId,
+                        customFeedbackText: lesson.customFeedbackText,
+                        customFeedbackImage: lesson.customFeedbackImage,
+                        customFeedbackAudio: lesson.customFeedbackAudio,
+                        customFeedbackImageMediaId: lesson.customFeedbackImageMediaId,
+                        customFeedbackAudioMediaId: lesson.customFeedbackAudioMediaId,
+                        difficultyLevel: lesson.difficultyLevel
                     },
                     type: prodSequelize.QueryTypes.INSERT,
                     transaction,

@@ -42,9 +42,6 @@ const createFeedback = async (
         dayNumber: dayNumber,
         activityType: activityType,
     });
-
-    return;
-
 };
 
 export { createFeedback };

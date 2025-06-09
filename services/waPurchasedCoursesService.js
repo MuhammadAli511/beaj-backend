@@ -61,7 +61,14 @@ const getUnpurchasedCoursesByPhoneNumberService = async (phoneNumber) => {
     const allCourses = await courseRepository.getAll();
     const courses = allCourses.map(course => {
         const purchasedCourse = purchasedCourses.find(purchasedCourse => purchasedCourse.courseId === course.CourseId);
-        const userStatus = purchasedCourse ? purchasedCourse.courseEndDate ? "completed" : "purchased" : "unpurchased";
+        let userStatus = "unpurchased";
+        if (purchasedCourse) {
+            if (purchasedCourse.courseEndDate) {
+                userStatus = "completed";
+            } else {
+                userStatus = "purchased";
+            }
+        }
         return {
             ...course.dataValues,
             user_status: userStatus
@@ -95,7 +102,16 @@ const getCompletedCourseService = async (phoneNumber) => {
     const allCourses = await courseRepository.getAll();
     const courses = allCourses.map(course => {
         const purchasedCourse = purchasedCourses.find(purchasedCourse => purchasedCourse.courseId === course.CourseId);
-        const userStatus = purchasedCourse ? purchasedCourse.courseEndDate ? "completed" : "purchased" : "unpurchased";
+        let userStatus;
+        if (purchasedCourse) {
+            if (purchasedCourse.courseEndDate) {
+                userStatus = "completed";
+            } else {
+                userStatus = "purchased";
+            }
+        } else {
+            userStatus = "unpurchased";
+        }
         return {
             ...course.dataValues,
             user_status: userStatus

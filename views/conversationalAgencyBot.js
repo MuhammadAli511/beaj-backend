@@ -7,7 +7,7 @@ import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRe
 import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
-import { sleep } from "../utils/utils.js";
+import { sleep, getAudioBufferFromAudioFileUrl } from "../utils/utils.js";
 import AIServices from "../utils/AIServices.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 
@@ -130,7 +130,6 @@ const conversationalAgencyBotView = async (profileId, userMobileNumber, currentU
                 const audioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(profileId, currentConversationalAgencyBotQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
 
                 // Get audio buffer for processing
-                const { getAudioBufferFromAudioFileUrl } = await import("../utils/utils.js");
                 const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
 
                 let waitingMessage = "Please wait for an answer...";
@@ -433,7 +432,6 @@ const conversationalAgencyBotView = async (profileId, userMobileNumber, currentU
                 const audioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(profileId, currentConversationalAgencyBotQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
 
                 // Get audio buffer for processing
-                const { getAudioBufferFromAudioFileUrl } = await import("../utils/utils.js");
                 const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
 
                 let waitingMessage = "Please wait for an answer...";

@@ -1,5 +1,4 @@
 import sequelize from "../config/sequelize.js";
-import waPurchasedCoursesRepository from '../repositories/waPurchasedCoursesRepository.js';
 import waUsersMetadataRepository from '../repositories/waUsersMetadataRepository.js';
 
 

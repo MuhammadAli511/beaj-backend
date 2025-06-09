@@ -139,6 +139,17 @@ const updateTestUserProgress = async (phoneNumber, data) => {
     });
 };
 
+const updateDifficultyLevel = async (profileId, phoneNumber, difficultyLevel) => {
+    return await WA_UserProgress.update({
+        difficultyLevel: difficultyLevel
+    }, {
+        where: {
+            phoneNumber: phoneNumber,
+            profile_id: profileId,
+        }
+    });
+};
+
 export default {
     create,
     getByPhoneNumber,
@@ -152,5 +163,6 @@ export default {
     updateQuestionNumberRetryCounterActivityType,
     updateEngagementType,
     updatePersona,
-    updateTestUserProgress
+    updateTestUserProgress,
+    updateDifficultyLevel
 };

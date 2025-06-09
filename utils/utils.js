@@ -1,6 +1,8 @@
 import { sendButtonMessage, sendMessage } from "./whatsappUtils.js";
 import { createActivityLog } from "./createActivityLogUtils.js";
 import waProfileRepository from "../repositories/waProfileRepository.js";
+import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
+import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
 
 
 const sleep = (ms) => {
@@ -164,6 +166,25 @@ const getTotalLessonsForCourse = async (profileId) => {
     return 4 * daysPerWeek;
 };
 
+const difficultyLevelCalculation = async (profileId, userMobileNumber, currentUserState, messageContent) => {
+    if (messageContent != 'easy' && messageContent != 'hard') {
+        const difficultyLevelExists = await speakActivityQuestionRepository.checkIfDifficultyLevelExists(currentUserState.dataValues.currentLessonId);
+        if (difficultyLevelExists) {
+            await sendButtonMessage(userMobileNumber, "Select Difficulty Level", [{ id: "easy", title: "Easy" }, { id: "hard", title: "Hard" }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Select Difficulty Level", null);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["easy", "hard"]);
+            return false;
+        } else {
+            await waUserProgressRepository.updateDifficultyLevel(profileId, userMobileNumber, null);
+        }
+    } else if (messageContent == 'easy') {
+        await waUserProgressRepository.updateDifficultyLevel(profileId, userMobileNumber, 'easy');
+    } else if (messageContent == 'hard') {
+        await waUserProgressRepository.updateDifficultyLevel(profileId, userMobileNumber, 'hard');
+    }
+    return true;
+};
+
 
 
 export {
@@ -175,5 +196,6 @@ export {
     checkUserMessageAndAcceptableMessages,
     getAcceptableMessagesList,
     getDaysPerWeek,
-    getTotalLessonsForCourse
+    getTotalLessonsForCourse,
+    difficultyLevelCalculation
 };

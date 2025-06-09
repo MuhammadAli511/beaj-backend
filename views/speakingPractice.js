@@ -7,7 +7,7 @@ import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRe
 import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
-import { sleep, extractMispronouncedWords } from "../utils/utils.js";
+import { sleep, extractMispronouncedWords, getAudioBufferFromAudioFileUrl } from "../utils/utils.js";
 import AIServices from "../utils/AIServices.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import { createAndUploadSpeakingPracticeScoreImage } from "../utils/imageGenerationUtils.js";
@@ -122,7 +122,6 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                 const audioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(profileId, currentSpeakingPracticeQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
 
                 // Get audio buffer for processing
-                const { getAudioBufferFromAudioFileUrl } = await import("../utils/utils.js");
                 const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
 
                 // Extract user transcription
@@ -326,7 +325,6 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                 const audioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(profileId, currentSpeakingPracticeQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
 
                 // Get audio buffer for processing
-                const { getAudioBufferFromAudioFileUrl } = await import("../utils/utils.js");
                 const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
 
                 // Extract user transcription

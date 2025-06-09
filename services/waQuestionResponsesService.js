@@ -120,7 +120,6 @@ const getFeedbackMcqsStatisticsService = async () => {
     }
 
     // Get unique lesson IDs and question IDs
-    const lessonIds = [...new Set(feedbackResponses.map(response => response.lessonId))];
     const questionIds = [...new Set(feedbackResponses.map(response => response.questionId))];
 
     // Get questions and answer options

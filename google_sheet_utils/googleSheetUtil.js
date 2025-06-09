@@ -1,4 +1,4 @@
-import { google, tasks_v1 } from "googleapis";
+import { google } from "googleapis";
 import { readFile } from 'fs/promises';
 
 const creds = JSON.parse(
@@ -46,7 +46,7 @@ const loadDataToGoogleSheets = async (
         values: funnel,
       },
     });
-    
+
     await sheets.spreadsheets.values.update({
       auth: authClient,
       spreadsheetId,

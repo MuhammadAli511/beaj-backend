@@ -61,6 +61,18 @@ const getCurrentSpeakActivityQuestion = async (lessonId, questionNumber) => {
     });
 };
 
+const checkIfDifficultyLevelExists = async (lessonId) => {
+    const speakActivityQuestion = await SpeakActivityQuestion.findOne({
+        where: {
+            lessonId: lessonId,
+            difficultyLevel: {
+                [Sequelize.Op.ne]: null
+            }
+        }
+    });
+    return speakActivityQuestion;
+};
+
 const getNextSpeakActivityQuestion = async (lessonId, questionNumber, difficultyLevel = null) => {
     if (!questionNumber) {
         return await SpeakActivityQuestion.findOne({
@@ -139,5 +151,6 @@ export default {
     getByLessonIds,
     getByLessonId,
     deleteByLessonId,
-    getTotalQuestionsByLessonId
+    getTotalQuestionsByLessonId,
+    checkIfDifficultyLevelExists
 };

@@ -427,7 +427,7 @@ async function azurePronunciationAssessment(audioBuffer, referenceText) {
             recognizer.recognizing = function (s, e) { };
 
             recognizer.recognized = function (s, e) {
-                var pronunciation_result = sdk.PronunciationAssessmentResult.fromResult(
+                let pronunciation_result = sdk.PronunciationAssessmentResult.fromResult(
                     e.result
                 );
 
@@ -460,7 +460,7 @@ async function azurePronunciationAssessment(audioBuffer, referenceText) {
 
             recognizer.canceled = function (s, e) {
                 if (e.reason === sdk.CancellationReason.Error) {
-                    var str = `(cancel) Reason: ${sdk.CancellationReason[e.reason]}: ${e.errorDetails
+                    let str = `(cancel) Reason: ${sdk.CancellationReason[e.reason]}: ${e.errorDetails
                         }`;
                 }
                 recognizer.stopContinuousRecognitionAsync();
@@ -658,7 +658,7 @@ async function azureSpeakingAssessment(audioBuffer, topic) {
             let results = [];
 
             recognizer.recognized = function (s, e) {
-                var jo = JSON.parse(e.result.properties.getProperty(sdk.PropertyId.SpeechServiceResponse_JsonResult));
+                let jo = JSON.parse(e.result.properties.getProperty(sdk.PropertyId.SpeechServiceResponse_JsonResult));
                 if (jo.DisplayText != ".") {
                     recognizedText += jo.DisplayText + " ";
                 }
@@ -682,9 +682,9 @@ async function azureSpeakingAssessment(audioBuffer, topic) {
 
                     let validResultsCount = 0;
                     // Process all results except the last one for pronunciation assessment
-                    for (let i = 0; i < results.length; i++) {
-                        if (results[i]?.NBest?.[0]?.PronunciationAssessment) {
-                            const currentAssessment = results[i].NBest[0].PronunciationAssessment;
+                    for (const result of results) {
+                        if (result?.NBest?.[0]?.PronunciationAssessment) {
+                            const currentAssessment = result.NBest[0].PronunciationAssessment;
 
                             // Accumulate scores
                             finalOutput.pronunciationAssessment.AccuracyScore += currentAssessment.AccuracyScore;
@@ -696,7 +696,7 @@ async function azureSpeakingAssessment(audioBuffer, topic) {
                             validResultsCount++;
 
                             // Process words
-                            const wordsList = results[i].NBest[0].Words;
+                            const wordsList = result.NBest[0].Words;
                             for (const word of wordsList) {
                                 finalOutput.words[word.Word] = {
                                     Word: word.Word,
@@ -707,8 +707,8 @@ async function azureSpeakingAssessment(audioBuffer, topic) {
                         }
 
                         // Check for content assessment in the current chunk
-                        if (results[i]?.NBest?.[0]?.ContentAssessment) {
-                            finalOutput.contentAssessment = results[i].NBest[0].ContentAssessment;
+                        if (result?.NBest?.[0]?.ContentAssessment) {
+                            finalOutput.contentAssessment = result.NBest[0].ContentAssessment;
                         }
                     }
 
@@ -739,7 +739,7 @@ async function azureSpeakingAssessment(audioBuffer, topic) {
 
             recognizer.canceled = function (s, e) {
                 if (e.reason === sdk.CancellationReason.Error) {
-                    var str = `(cancel) Reason: ${sdk.CancellationReason[e.reason]}: ${e.errorDetails
+                    let str = `(cancel) Reason: ${sdk.CancellationReason[e.reason]}: ${e.errorDetails
                         }`;
                 }
                 recognizer.stopContinuousRecognitionAsync();

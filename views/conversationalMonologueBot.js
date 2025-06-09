@@ -7,7 +7,7 @@ import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRe
 import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
-import { sleep, extractMispronouncedWords } from "../utils/utils.js";
+import { sleep, extractMispronouncedWords, getAudioBufferFromAudioFileUrl } from "../utils/utils.js";
 import AIServices from "../utils/AIServices.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import { createAndUploadMonologueScoreImage } from "../utils/imageGenerationUtils.js";
@@ -18,7 +18,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
         if (persona == 'teacher') {
             if (currentUserState.dataValues.questionNumber === null) {
                 // Lesson Started Record
-                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
+                await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.dataValues.currentCourseId, 'Started', new Date(), profileId);
 
                 let defaultTextInstruction = "Watch the video 👇🏽 and practice speaking by sending a voice message.💬";
                 const lessonTextInstruction = startingLesson.dataValues.textInstruction;
@@ -122,7 +122,6 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 const audioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(profileId, currentConversationalMonologueBotQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
 
                 // Get audio buffer for processing
-                const { getAudioBufferFromAudioFileUrl } = await import("../utils/utils.js");
                 const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
 
                 // Extract user transcription
@@ -319,7 +318,6 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 const audioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(profileId, currentConversationalMonologueBotQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
 
                 // Get audio buffer for processing
-                const { getAudioBufferFromAudioFileUrl } = await import("../utils/utils.js");
                 const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
 
                 // Extract user transcription

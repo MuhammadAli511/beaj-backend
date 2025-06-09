@@ -3,7 +3,6 @@ import { readFile } from 'fs/promises';
 import fs from 'fs';
 import path from 'path';
 import { createCanvas, loadImage } from 'canvas';
-import { PassThrough } from "stream";
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -55,7 +54,6 @@ const new_loadDataToGoogleSheets = async (
 
     const authClient = await auth.getClient();
     const spreadsheetId = "1wAzQ21EL9ELMK-Isb9_jGnpM7RcneYvqt0UD0GAhS1U";
-    const fac_arr = [19, 20, 43, 44, 17, 18, 41, 42];
     arrayLevels_List = capitalizeNames(arrayLevels_List);
 
     if (edit_flag == 1) {
@@ -459,7 +457,6 @@ const getColumnIndexWithPercentageValues = (arrayLevels_List, minValues, facilit
 
   // Predefined list of column indexes to check
   const columnIndexes = [3, 4, 5, 6, 8, 9, 10, 11, 13, 14, 15, 16];
-  const week_no = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4];
   const fac_arr = [];
 
   // Convert facilitator to number to ensure proper comparison
@@ -471,11 +468,11 @@ const getColumnIndexWithPercentageValues = (arrayLevels_List, minValues, facilit
     let count = 0;
 
     // Count percentage values in the current column
-    for (let row = 0; row < arrayLevels_List.length; row++) {
+    for (const element of arrayLevels_List) {
       if (
-        arrayLevels_List[row][col] &&
-        typeof arrayLevels_List[row][col] === "string" &&
-        arrayLevels_List[row][col].includes("%")
+        element[col] &&
+        typeof element[col] === "string" &&
+        element[col].includes("%")
       ) {
         count++;
       }
