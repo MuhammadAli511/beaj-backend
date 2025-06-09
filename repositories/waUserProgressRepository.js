@@ -105,11 +105,12 @@ const updateRetryCounter = async (profileId, phoneNumber, retryCounter) => {
     });
 };
 
-const updateQuestionNumberRetryCounterActivityType = async (profileId, phoneNumber, questionNumber, retryCounter, activityType) => {
+const updateQuestionNumberRetryCounterActivityType = async (profileId, phoneNumber, questionNumber, retryCounter, activityType, currentDifficultyLevel) => {
     return await WA_UserProgress.update({
         questionNumber: questionNumber,
         retryCounter: retryCounter,
         activityType: activityType,
+        currentDifficultyLevel: currentDifficultyLevel,
         lastUpdated: new Date()
     }, {
         where: {
@@ -131,11 +132,11 @@ const updatePersona = async (profileId, phoneNumber, persona) => {
 };
 
 const updateTestUserProgress = async (phoneNumber, data) => {
-   return await WA_UserProgress.update(data, {
-    where: { 
-        phoneNumber: phoneNumber
-     }
-  });
+    return await WA_UserProgress.update(data, {
+        where: {
+            phoneNumber: phoneNumber
+        }
+    });
 };
 
 export default {

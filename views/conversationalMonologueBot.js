@@ -39,7 +39,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
                 // Send first Conversational Monologue Bot question
-                const firstConversationalMonologueBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
+                const firstConversationalMonologueBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null, currentUserState.dataValues.currentDifficultyLevel);
 
                 // Update question number
                 await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstConversationalMonologueBotQuestion.dataValues.questionNumber);
@@ -182,7 +182,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                     submissionDate
                 );
 
-                const nextConversationalMonologueBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                const nextConversationalMonologueBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber, currentUserState.dataValues.currentDifficultyLevel);
                 if (nextConversationalMonologueBotQuestion) {
                     // Update question number
                     await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextConversationalMonologueBotQuestion.dataValues.questionNumber);
@@ -195,7 +195,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
                 } else {
                     // Reset Question Number, Retry Counter, and Activity Type
-                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
 
                     // ENDING MESSAGE
                     await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
@@ -236,7 +236,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
                 // Send first Conversational Monologue Bot question
-                const firstConversationalMonologueBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
+                const firstConversationalMonologueBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null, currentUserState.dataValues.currentDifficultyLevel);
 
                 // Update question number
                 await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstConversationalMonologueBotQuestion.dataValues.questionNumber);
@@ -379,7 +379,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                     submissionDate
                 );
 
-                const nextConversationalMonologueBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                const nextConversationalMonologueBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber, currentUserState.dataValues.currentDifficultyLevel);
                 if (nextConversationalMonologueBotQuestion) {
                     // Update question number
                     await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextConversationalMonologueBotQuestion.dataValues.questionNumber);
@@ -392,7 +392,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
                 } else {
                     // Reset Question Number, Retry Counter, and Activity Type
-                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
 
                     // ENDING MESSAGE
                     await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);

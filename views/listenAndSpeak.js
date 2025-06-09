@@ -40,7 +40,7 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
                 // Send first Listen and Speak question
-                const firstListenAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
+                const firstListenAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null, currentUserState.dataValues.currentDifficultyLevel);
 
                 // Update question number
                 await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstListenAndSpeakQuestion.dataValues.questionNumber);
@@ -230,7 +230,7 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                             await createActivityLog(userMobileNumber, "text", "outbound", wrongMessage, null);
                         }
                     }
-                    const nextListenAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                    const nextListenAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber, currentUserState.dataValues.currentDifficultyLevel);
                     if (nextListenAndSpeakQuestion) {
                         // Update question number
                         await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextListenAndSpeakQuestion.dataValues.questionNumber);
@@ -275,7 +275,7 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                         }
 
                         // Reset Question Number, Retry Counter, and Activity Type
-                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
+                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
 
                         // ENDING MESSAGE
                         await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
@@ -320,7 +320,7 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
                 // Send first Listen and Speak question
-                const firstListenAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
+                const firstListenAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null, currentUserState.dataValues.currentDifficultyLevel);
 
                 // Update question number
                 await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstListenAndSpeakQuestion.dataValues.questionNumber);
@@ -527,7 +527,7 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                             await createActivityLog(userMobileNumber, "text", "outbound", wrongMessage, null);
                         }
                     }
-                    const nextListenAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                    const nextListenAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber, currentUserState.dataValues.currentDifficultyLevel);
                     if (nextListenAndSpeakQuestion) {
                         // Update question number
                         await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextListenAndSpeakQuestion.dataValues.questionNumber);
@@ -577,7 +577,7 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                         }
 
                         // Reset Question Number, Retry Counter, and Activity Type
-                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
+                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
 
                         // ENDING MESSAGE
                         await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson, message);

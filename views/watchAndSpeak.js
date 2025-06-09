@@ -40,7 +40,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
                 // Send first Watch and Speak question
-                const firstWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
+                const firstWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null, currentUserState.dataValues.currentDifficultyLevel);
 
                 // Update question number
                 await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstWatchAndSpeakQuestion.dataValues.questionNumber);
@@ -166,7 +166,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                     submissionDate
                 );
 
-                const nextWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                const nextWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber, currentUserState.dataValues.currentDifficultyLevel);
                 if (nextWatchAndSpeakQuestion) {
                     // Update acceptable messages list for the user
                     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
@@ -189,7 +189,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
 
                     return;
                 } else {
-                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
 
                     // ENDING MESSAGE
                     await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
@@ -230,7 +230,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
                 // Send first Watch and Speak question
-                const firstWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
+                const firstWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null, currentUserState.dataValues.currentDifficultyLevel);
 
                 // Update question number
                 await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstWatchAndSpeakQuestion.dataValues.questionNumber);
@@ -362,7 +362,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                     submissionDate
                 );
 
-                const nextWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                const nextWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber, currentUserState.dataValues.currentDifficultyLevel);
                 if (nextWatchAndSpeakQuestion) {
                     // Update acceptable messages list for the user
                     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
@@ -388,7 +388,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                     }
                     return;
                 } else {
-                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
 
                     // ENDING MESSAGE
                     await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);

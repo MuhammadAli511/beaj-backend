@@ -39,7 +39,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
                 // Send first Speaking Practice question
-                const firstSpeakingPracticeQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
+                const firstSpeakingPracticeQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null, currentUserState.dataValues.currentDifficultyLevel);
 
                 // Update question number
                 await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstSpeakingPracticeQuestion.dataValues.questionNumber);
@@ -155,7 +155,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                     submissionDate
                 );
 
-                const nextSpeakingPracticeQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                const nextSpeakingPracticeQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber, currentUserState.dataValues.currentDifficultyLevel);
                 if (nextSpeakingPracticeQuestion) {
                     // Update question number
                     await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextSpeakingPracticeQuestion.dataValues.questionNumber);
@@ -202,7 +202,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
 
 
                     // Reset Question Number, Retry Counter, and Activity Type
-                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
 
                     // ENDING MESSAGE
                     await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
@@ -243,7 +243,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
                 // Send first Speaking Practice question
-                const firstSpeakingPracticeQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
+                const firstSpeakingPracticeQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null, currentUserState.dataValues.currentDifficultyLevel);
 
                 // Update question number
                 await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstSpeakingPracticeQuestion.dataValues.questionNumber);
@@ -359,7 +359,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                     submissionDate
                 );
 
-                const nextSpeakingPracticeQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                const nextSpeakingPracticeQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber, currentUserState.dataValues.currentDifficultyLevel);
                 if (nextSpeakingPracticeQuestion) {
                     // Update question number
                     await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextSpeakingPracticeQuestion.dataValues.questionNumber);
@@ -406,7 +406,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
 
 
                     // Reset Question Number, Retry Counter, and Activity Type
-                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
 
                     // ENDING MESSAGE
                     await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);

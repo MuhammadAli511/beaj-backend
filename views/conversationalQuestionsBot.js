@@ -41,7 +41,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
                 // Send Conversation Bot Question
-                const firstConversationBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
+                const firstConversationBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null, currentUserState.dataValues.currentDifficultyLevel);
 
                 // Update question number
                 await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstConversationBotQuestion.dataValues.questionNumber);
@@ -219,7 +219,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         return;
                     } else {
                         // Reset Question Number, Retry Counter, and Activity Type
-                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
+                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
 
                         // ENDING MESSAGE
                         await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
@@ -262,7 +262,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
                 // Send Conversation Bot Question
-                const firstConversationBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
+                const firstConversationBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null, currentUserState.dataValues.currentDifficultyLevel);
 
                 // Update question number
                 await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstConversationBotQuestion.dataValues.questionNumber);
@@ -440,7 +440,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         return;
                     } else {
                         // Reset Question Number, Retry Counter, and Activity Type
-                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
+                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
 
                         // ENDING MESSAGE
                         await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);

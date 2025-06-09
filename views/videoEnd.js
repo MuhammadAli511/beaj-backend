@@ -43,7 +43,7 @@ const videoEndView = async (profileId, userMobileNumber, currentUserState, start
             await sleep(5000);
 
             // Reset Question Number, Retry Counter, and Activity Type
-            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
+            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
 
             // Ending Message
             await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
@@ -79,7 +79,7 @@ const videoEndView = async (profileId, userMobileNumber, currentUserState, start
             await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
 
             // Reset Question Number, Retry Counter, and Activity Type
-            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
+            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
 
             // Sleep
             await sleep(5000);

@@ -61,11 +61,12 @@ const getCurrentSpeakActivityQuestion = async (lessonId, questionNumber) => {
     });
 };
 
-const getNextSpeakActivityQuestion = async (lessonId, questionNumber) => {
+const getNextSpeakActivityQuestion = async (lessonId, questionNumber, difficultyLevel = null) => {
     if (!questionNumber) {
         return await SpeakActivityQuestion.findOne({
             where: {
                 lessonId: lessonId,
+                difficultyLevel: difficultyLevel
             },
             order: [
                 ['questionNumber', 'ASC']
@@ -78,7 +79,8 @@ const getNextSpeakActivityQuestion = async (lessonId, questionNumber) => {
                 lessonId: lessonId,
                 questionNumber: {
                     [Sequelize.Op.gt]: questionNumber
-                }
+                },
+                difficultyLevel: difficultyLevel
             },
             order: [
                 ['questionNumber', 'ASC']

@@ -875,7 +875,8 @@ const webhookService = async (body, res) => {
                 // START MAIN COURSE
                 if (
                     text_message_types.includes(message.type) &&
-                    messageContent.toLowerCase().includes("start my course")
+                    (messageContent.toLowerCase().includes("start my course") ||
+                        messageContent.toLowerCase().includes("start next level"))
                 ) {
                     await startCourseForUser(profileId, userMobileNumber, numbers_to_ignore);
                     return;
@@ -939,7 +940,7 @@ const webhookService = async (body, res) => {
                     }
                 }
 
-                if (text_message_types.includes(message.type) && currentUserState.dataValues.activityType == "watchAndSpeak") {
+                if (text_message_types.includes(message.type)) {
                     const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
                     if (messageContent.toLowerCase().includes("yes") || messageContent.toLowerCase().includes("no")) {
                         if (currentUserState.dataValues.persona == "kid" || currentUserState.dataValues.persona == "parent or student" || currentUserState.dataValues.persona == "school admin") {
@@ -985,7 +986,7 @@ const webhookService = async (body, res) => {
                         let theStartingLesson = await lessonRepository.getByLessonId(currentUserState.dataValues.currentLessonId);
 
                         if (messageContent.toLowerCase().includes("next") && latestUserState.dataValues.activityType == "feedbackAudio") {
-                            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
+                            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
                             await endingMessage(profileId, userMobileNumber, currentUserState, theStartingLesson);
                         }
 
@@ -994,9 +995,9 @@ const webhookService = async (body, res) => {
                             const lessonNumberCheck = (currentUserState.dataValues.currentWeek - 1) * daysPerWeek + currentUserState.dataValues.currentDay;
                             const totalLessons = await getTotalLessonsForCourse(profileId);
                             if (lessonNumberCheck >= totalLessons) {
-                                await sendButtonMessage(userMobileNumber, 'You have completed all the lessons in this course. Click the button below to proceed', [{ id: 'start_my_course', title: 'Start my course' }]);
+                                await sendButtonMessage(userMobileNumber, 'You have completed all the lessons in this course. Click the button below to proceed', [{ id: 'start_next_level', title: 'Start Next Level' }]);
                                 await createActivityLog(userMobileNumber, "template", "outbound", "You have completed all the lessons in this course. Click the button below to proceed", null);
-                                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start my course"]);
+                                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next level"]);
                                 return;
                             }
                             await sendMessage(userMobileNumber, "Please wait for the next lesson to start.");

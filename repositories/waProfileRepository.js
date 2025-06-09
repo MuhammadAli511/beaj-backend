@@ -5,6 +5,10 @@ const create = async (data) => {
     return await profile.save();
 };
 
+const getByProfileId = async (profileId) => {
+    return await WA_Profile.findOne({ where: { profile_id: profileId } });
+};
+
 const deleteByPhoneNumber = async (phoneNumber) => {
     return await WA_Profile.destroy({ where: { phone_number: phoneNumber } });
 };
@@ -17,5 +21,6 @@ const deleteByProfileId = async (profileId) => {
 export default {
     create,
     deleteByPhoneNumber,
-    deleteByProfileId
+    deleteByProfileId,
+    getByProfileId
 };

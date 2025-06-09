@@ -108,7 +108,7 @@ const feedbackMcqsView = async (profileId, userMobileNumber, currentUserState, s
                     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["option a", "option b", "option c"]);
                 } else {
                     // Reset Question Number, Retry Counter, and Activity Type
-                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
 
                     // ENDING MESSAGE
                     await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
@@ -214,7 +214,7 @@ const feedbackMcqsView = async (profileId, userMobileNumber, currentUserState, s
                         await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["option a", "option b", "option c"]);
                     } else {
                         // Reset Question Number, Retry Counter, and Activity Type
-                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
+                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
 
                         // ENDING MESSAGE
                         await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
