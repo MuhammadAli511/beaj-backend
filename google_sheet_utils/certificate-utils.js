@@ -45,7 +45,7 @@ async function checkFolderStructure() {
 
       // Exact match - must have correct parent (if specified)
       const exactMatch = res.data.files.find(f => {
-        const hasCorrectParent = !parentId || (f.parents && f.parents.includes(parentId));
+        const hasCorrectParent = !parentId || (f?.parents?.includes(parentId));
         return hasCorrectParent && f.name === folderName;
       });
 
@@ -335,7 +335,6 @@ const updateTrackingSheet = async (spreadsheetId, sheetName, newStudents) => {
 
 const updateCohortInTrackingSheet = async (spreadsheetId, sheetName, phoneNumber, cohort) => {
   const sheets = await initializeSheets();
-  // const sheets = google.sheets({ version: 'v4', auth }); // Make sure `auth` is correctly imported
 
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId,
@@ -421,7 +420,7 @@ const generateCertificatesForEligibleStudents = async (
         console.log(`Processing certificate for ${name} (${phoneNumber})`);
         await processCertificate(name, studentCohort, studentTargetGroup);
 
-        newlyGeneratedStudents.push({ phoneNumber, name , cohort: studentCohort });
+        newlyGeneratedStudents.push({ phoneNumber, name, cohort: studentCohort });
         stats.newlyGenerated++;
       } catch (error) {
         console.error(`Error processing student: ${error.message}`);

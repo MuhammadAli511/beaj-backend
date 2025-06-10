@@ -137,7 +137,7 @@ const getUserMetadataTime = async () => {
 const getLessonCompletions = async (course_id1, course_id2, course_id3, grp) => {
     try {
 
-        var offsetT1 = 0;
+        let offsetT1 = 0;
 
         if (grp == 'T2') {
             const qryT1 = `
@@ -151,7 +151,6 @@ const getLessonCompletions = async (course_id1, course_id2, course_id3, grp) => 
                 offsetT1 = resT1[0][0].totalt1 || 0;
             } else {
                 console.log("No records found for targetGroup 'T1' and cohort not 'Pilot'.");
-                offsetT1 = 0;
             }
         }
 
@@ -364,7 +363,7 @@ ORDER BY
 const getActivity_Completions = async (course1_id, course2_id, course3_id, grp) => {
     try {
 
-        var offsetT1 = 0;
+        let offsetT1 = 0;
 
         if (grp == 'T2') {
             const qryT1 = `
@@ -378,7 +377,6 @@ const getActivity_Completions = async (course1_id, course2_id, course3_id, grp) 
                 offsetT1 = resT1[0][0].totalt1 || 0;
             } else {
                 console.log("No records found for targetGroup 'T1' and cohort not 'Pilot'.");
-                offsetT1 = 0;
             }
         }
 

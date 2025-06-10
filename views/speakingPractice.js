@@ -1,18 +1,16 @@
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
-import { sendMessage } from "../utils/whatsappUtils.js";
+import { sendMessage, sendButtonMessage, sendMediaMessage } from "../utils/whatsappUtils.js";
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
-import { sendMediaMessage } from "../utils/whatsappUtils.js";
 import { endingMessage } from "../utils/endingMessageUtils.js";
 import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRepository.js";
 import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
-import { sleep } from "../utils/utils.js";
+import { sleep, extractMispronouncedWords, getAudioBufferFromAudioFileUrl } from "../utils/utils.js";
 import AIServices from "../utils/AIServices.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import { createAndUploadSpeakingPracticeScoreImage } from "../utils/imageGenerationUtils.js";
-import { extractMispronouncedWords } from "../utils/utils.js";
 
 const speakingPracticeView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
@@ -23,13 +21,25 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
                 // Send lesson message
-                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\n\nListen to the audio and respond to the question by sending a voice message.💬";
+                let defaultTextInstruction = "Listen to the audio and respond to the question by sending a voice message.💬";
+                const lessonTextInstruction = startingLesson.dataValues.textInstruction;
+                let finalTextInstruction = defaultTextInstruction;
+                if (lessonTextInstruction != null && lessonTextInstruction != "") {
+                    finalTextInstruction = lessonTextInstruction.replace(/\\n/g, '\n');
+                }
+                const lessonAudioInstruction = startingLesson.dataValues.audioInstructionUrl;
+                if (lessonAudioInstruction != null && lessonAudioInstruction != "") {
+                    await sendMediaMessage(userMobileNumber, lessonAudioInstruction, 'audio', null, 0, "Lesson", startingLesson.dataValues.LessonId, startingLesson.dataValues.audioInstructionMediaId, "audioInstructionMediaId");
+                    await createActivityLog(userMobileNumber, "audio", "outbound", lessonAudioInstruction, null);
+                }
+
+                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n');;
+                lessonMessage += "\n\n" + finalTextInstruction;
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
                 // Send first Speaking Practice question
-                const firstSpeakingPracticeQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
+                const firstSpeakingPracticeQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null, currentUserState.dataValues.currentDifficultyLevel);
 
                 // Update question number
                 await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstSpeakingPracticeQuestion.dataValues.questionNumber);
@@ -45,8 +55,77 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                 // Get the current Speaking Practice question
                 const currentSpeakingPracticeQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
+                // Upload audio
+                const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
+                const uniqueID = uuidv4();
+                const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
+                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                const submissionDate = new Date();
+
+                const existingAudioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(
+                    profileId,
+                    currentSpeakingPracticeQuestion.dataValues.id,
+                    currentUserState.dataValues.currentLessonId
+                );
+
+                if (existingAudioUrl) {
+                    // Update existing record with new audio
+                    await waQuestionResponsesRepository.updateReplace(
+                        profileId,
+                        userMobileNumber,
+                        currentUserState.dataValues.currentLessonId,
+                        currentSpeakingPracticeQuestion.dataValues.id,
+                        activity,
+                        startingLesson.dataValues.activityAlias,
+                        null,
+                        [userAudioFileUrl],
+                        null,
+                        null,
+                        null,
+                        null,
+                        1,
+                        submissionDate
+                    );
+                } else {
+                    // Create new record if none exists
+                    await waQuestionResponsesRepository.create(
+                        profileId,
+                        userMobileNumber,
+                        currentUserState.dataValues.currentLessonId,
+                        currentSpeakingPracticeQuestion.dataValues.id,
+                        activity,
+                        startingLesson.dataValues.activityAlias,
+                        null,
+                        [userAudioFileUrl],
+                        null,
+                        null,
+                        null,
+                        null,
+                        1,
+                        submissionDate
+                    );
+                }
+
+                await sendButtonMessage(userMobileNumber, "Submit response? 🧐", [{ id: "yes", title: "Yes" }, { id: "no", title: "No, try again" }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Submit response? 🧐", null);
+
+                // Update acceptable messages list for the user
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no", "no, try again"]);
+                await sleep(2000);
+                return;
+            }
+            else if (messageContent == 'yes') {
+                // Get the current Speaking Practice question
+                const currentSpeakingPracticeQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+
+                // Get the uploaded audio
+                const audioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(profileId, currentSpeakingPracticeQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
+
+                // Get audio buffer for processing
+                const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
+
                 // Extract user transcription
-                const userTranscription = await AIServices.openaiSpeechToText(messageContent.data);
+                const userTranscription = await AIServices.azureOpenAISpeechToText(audioBuffer);
 
                 let disclaimerAndUserTranscriptionMessage = "This chatbot's speech-to-text may not recognize proper nouns accurately or may skip some words—please bear with us while we improve it.";
                 disclaimerAndUserTranscriptionMessage += "\n\nYou said: " + userTranscription;
@@ -54,15 +133,11 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                 await createActivityLog(userMobileNumber, "text", "outbound", disclaimerAndUserTranscriptionMessage, null);
 
                 // Azure Pronunciation Assessment
-                const pronunciationAssessment = await AIServices.azurePronunciationAssessment(messageContent.data, userTranscription);
+                const pronunciationAssessment = await AIServices.azurePronunciationAssessment(audioBuffer, userTranscription);
 
-                // Save user response to the database
-                const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
-                const uniqueID = uuidv4();
-                const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
-                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                // Update user response to the database with processing results
                 const submissionDate = new Date();
-                await waQuestionResponsesRepository.create(
+                await waQuestionResponsesRepository.updateReplace(
                     profileId,
                     userMobileNumber,
                     currentUserState.dataValues.currentLessonId,
@@ -70,7 +145,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                     activity,
                     startingLesson.dataValues.activityAlias,
                     [userTranscription],
-                    [userAudioFileUrl],
+                    [audioUrl],
                     null,
                     null,
                     [pronunciationAssessment],
@@ -79,7 +154,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                     submissionDate
                 );
 
-                const nextSpeakingPracticeQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                const nextSpeakingPracticeQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber, currentUserState.dataValues.currentDifficultyLevel);
                 if (nextSpeakingPracticeQuestion) {
                     // Update question number
                     await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextSpeakingPracticeQuestion.dataValues.questionNumber);
@@ -87,6 +162,9 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                     // Send question media file
                     await sendMediaMessage(userMobileNumber, nextSpeakingPracticeQuestion.dataValues.mediaFile, 'audio', null, 0, "SpeakActivityQuestion", nextSpeakingPracticeQuestion.dataValues.id, nextSpeakingPracticeQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
                     await createActivityLog(userMobileNumber, "audio", "outbound", nextSpeakingPracticeQuestion.dataValues.mediaFile, null);
+
+                    // Update acceptable messages list for the user
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
                 } else {
                     const pronunciationAssessments = await waQuestionResponsesRepository.getAllJsonFeedbacksForProfileIdAndLessonId(profileId, currentUserState.dataValues.currentLessonId);
                     const imageUrl = await createAndUploadSpeakingPracticeScoreImage(pronunciationAssessments, 70);
@@ -123,11 +201,21 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
 
 
                     // Reset Question Number, Retry Counter, and Activity Type
-                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
 
                     // ENDING MESSAGE
                     await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
                 }
+                return;
+            }
+            else if (messageContent == 'no, try again' || messageContent == 'no') {
+                // Send message to try again
+                await sendMessage(userMobileNumber, "Okay record your voice message again.");
+                await createActivityLog(userMobileNumber, "text", "outbound", "Okay record your voice message again.", null);
+
+                // Update acceptable messages list for the user
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                return;
             }
         }
         else if (persona == 'kid') {
@@ -136,13 +224,25 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
                 // Send lesson message
-                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                lessonMessage += "\n\nListen to the audio and respond to the question by sending a voice message.💬";
+                let defaultTextInstruction = "Listen to the audio and respond to the question by sending a voice message.💬";
+                const lessonTextInstruction = startingLesson.dataValues.textInstruction;
+                let finalTextInstruction = defaultTextInstruction;
+                if (lessonTextInstruction != null && lessonTextInstruction != "") {
+                    finalTextInstruction = lessonTextInstruction.replace(/\\n/g, '\n');
+                }
+                const lessonAudioInstruction = startingLesson.dataValues.audioInstructionUrl;
+                if (lessonAudioInstruction != null && lessonAudioInstruction != "") {
+                    await sendMediaMessage(userMobileNumber, lessonAudioInstruction, 'audio', null, 0, "Lesson", startingLesson.dataValues.LessonId, startingLesson.dataValues.audioInstructionMediaId, "audioInstructionMediaId");
+                    await createActivityLog(userMobileNumber, "audio", "outbound", lessonAudioInstruction, null);
+                }
+
+                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n');;
+                lessonMessage += "\n\n" + finalTextInstruction;
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
                 // Send first Speaking Practice question
-                const firstSpeakingPracticeQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null);
+                const firstSpeakingPracticeQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null, currentUserState.dataValues.currentDifficultyLevel);
 
                 // Update question number
                 await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstSpeakingPracticeQuestion.dataValues.questionNumber);
@@ -158,8 +258,77 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                 // Get the current Speaking Practice question
                 const currentSpeakingPracticeQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
+                // Upload audio
+                const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
+                const uniqueID = uuidv4();
+                const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
+                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                const submissionDate = new Date();
+
+                const existingAudioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(
+                    profileId,
+                    currentSpeakingPracticeQuestion.dataValues.id,
+                    currentUserState.dataValues.currentLessonId
+                );
+
+                if (existingAudioUrl) {
+                    // Update existing record with new audio
+                    await waQuestionResponsesRepository.updateReplace(
+                        profileId,
+                        userMobileNumber,
+                        currentUserState.dataValues.currentLessonId,
+                        currentSpeakingPracticeQuestion.dataValues.id,
+                        activity,
+                        startingLesson.dataValues.activityAlias,
+                        null,
+                        [userAudioFileUrl],
+                        null,
+                        null,
+                        null,
+                        null,
+                        1,
+                        submissionDate
+                    );
+                } else {
+                    // Create new record if none exists
+                    await waQuestionResponsesRepository.create(
+                        profileId,
+                        userMobileNumber,
+                        currentUserState.dataValues.currentLessonId,
+                        currentSpeakingPracticeQuestion.dataValues.id,
+                        activity,
+                        startingLesson.dataValues.activityAlias,
+                        null,
+                        [userAudioFileUrl],
+                        null,
+                        null,
+                        null,
+                        null,
+                        1,
+                        submissionDate
+                    );
+                }
+
+                await sendButtonMessage(userMobileNumber, "Submit response? 🧐", [{ id: "yes", title: "Yes" }, { id: "no", title: "No, try again" }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Submit response? 🧐", null);
+
+                // Update acceptable messages list for the user
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no", "no, try again"]);
+                await sleep(2000);
+                return;
+            }
+            else if (messageContent == 'yes') {
+                // Get the current Speaking Practice question
+                const currentSpeakingPracticeQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+
+                // Get the uploaded audio
+                const audioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(profileId, currentSpeakingPracticeQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
+
+                // Get audio buffer for processing
+                const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
+
                 // Extract user transcription
-                const userTranscription = await AIServices.openaiSpeechToText(messageContent.data);
+                const userTranscription = await AIServices.azureOpenAISpeechToText(audioBuffer);
 
                 let disclaimerAndUserTranscriptionMessage = "This chatbot's speech-to-text may not recognize proper nouns accurately or may skip some words—please bear with us while we improve it.";
                 disclaimerAndUserTranscriptionMessage += "\n\nYou said: " + userTranscription;
@@ -167,15 +336,11 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                 await createActivityLog(userMobileNumber, "text", "outbound", disclaimerAndUserTranscriptionMessage, null);
 
                 // Azure Pronunciation Assessment
-                const pronunciationAssessment = await AIServices.azurePronunciationAssessment(messageContent.data, userTranscription);
+                const pronunciationAssessment = await AIServices.azurePronunciationAssessment(audioBuffer, userTranscription);
 
-                // Save user response to the database
-                const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
-                const uniqueID = uuidv4();
-                const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
-                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                // Update user response to the database with processing results
                 const submissionDate = new Date();
-                await waQuestionResponsesRepository.create(
+                await waQuestionResponsesRepository.updateReplace(
                     profileId,
                     userMobileNumber,
                     currentUserState.dataValues.currentLessonId,
@@ -183,7 +348,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                     activity,
                     startingLesson.dataValues.activityAlias,
                     [userTranscription],
-                    [userAudioFileUrl],
+                    [audioUrl],
                     null,
                     null,
                     [pronunciationAssessment],
@@ -192,7 +357,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                     submissionDate
                 );
 
-                const nextSpeakingPracticeQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                const nextSpeakingPracticeQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber, currentUserState.dataValues.currentDifficultyLevel);
                 if (nextSpeakingPracticeQuestion) {
                     // Update question number
                     await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextSpeakingPracticeQuestion.dataValues.questionNumber);
@@ -200,6 +365,9 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                     // Send question media file
                     await sendMediaMessage(userMobileNumber, nextSpeakingPracticeQuestion.dataValues.mediaFile, 'audio', null, 0, "SpeakActivityQuestion", nextSpeakingPracticeQuestion.dataValues.id, nextSpeakingPracticeQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
                     await createActivityLog(userMobileNumber, "audio", "outbound", nextSpeakingPracticeQuestion.dataValues.mediaFile, null);
+
+                    // Update acceptable messages list for the user
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
                 } else {
                     const pronunciationAssessments = await waQuestionResponsesRepository.getAllJsonFeedbacksForProfileIdAndLessonId(profileId, currentUserState.dataValues.currentLessonId);
                     const imageUrl = await createAndUploadSpeakingPracticeScoreImage(pronunciationAssessments, 80);
@@ -236,11 +404,21 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
 
 
                     // Reset Question Number, Retry Counter, and Activity Type
-                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
 
                     // ENDING MESSAGE
                     await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
                 }
+                return;
+            }
+            else if (messageContent == 'no, try again' || messageContent == 'no') {
+                // Send message to try again
+                await sendMessage(userMobileNumber, "Okay record your voice message again.");
+                await createActivityLog(userMobileNumber, "text", "outbound", "Okay record your voice message again.", null);
+
+                // Update acceptable messages list for the user
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                return;
             }
         }
         return;

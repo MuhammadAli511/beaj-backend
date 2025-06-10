@@ -1,5 +1,4 @@
 import sequelize from "../config/sequelize.js";
-import { Op, Sequelize } from "sequelize";
 import WA_UsersMetadata from "../models/WA_UsersMetadata.js";
 
 const getDataFromPostgres = async () => {
@@ -1417,7 +1416,7 @@ const getActivityNameCount = async (course_id1, course_id2, course_id3, grp, coh
         let activities = res1[0].map(item => item.activity);
 
         const dynamicSumActivity = activities.map(activity => `COALESCE(sum(case when s."activity" = '${activity}' then 1 else null end), null) as "${activity}"`).join(",\n");
-        let qry2 = ``;
+        let qry2;
         if (cohort != '') {
             cohort = `m."cohort" = '${cohort}'`;
             qry2 = `
@@ -1584,8 +1583,8 @@ ON
     g."LessonId" = lcc."lessonId"
 ORDER BY 
     g."weekNumber",g."dayNumber",g."SequenceNumber";`
-    const res = await sequelize.query(qry);
-     console.log(res[0]);
+        const res = await sequelize.query(qry);
+        console.log(res[0]);
         return res[0];
     } catch (error) {
         error.fileName = "etlRepository.js";

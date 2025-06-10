@@ -44,7 +44,7 @@ import { sendMessage, sendButtonMessage, retrieveMediaURL, sendMediaMessage, sen
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
 import { createFeedback } from "../utils/createFeedbackUtils.js";
 import { endingMessage } from "../utils/endingMessageUtils.js";
-import { checkUserMessageAndAcceptableMessages, getAcceptableMessagesList, sleep } from "../utils/utils.js";
+import { checkUserMessageAndAcceptableMessages, getAcceptableMessagesList, sleep, getDaysPerWeek, getTotalLessonsForCourse } from "../utils/utils.js";
 import { runWithContext } from "../utils/requestContext.js";
 import { studentBotContactData, teacherBotContactData } from "../constants/contacts.js";
 dotenv.config();
@@ -101,9 +101,7 @@ const webhookService = async (body, res) => {
     try {
         res.sendStatus(200);
         if (
-            body.entry &&
-            body.entry[0].changes &&
-            body.entry[0].changes[0].value.messages &&
+            body.entry?.[0]?.changes?.[0]?.value?.messages &&
             body.entry[0].changes[0].value.statuses == undefined
         ) {
             const botPhoneNumberId = body.entry[0].changes[0].value.metadata.phone_number_id;
@@ -121,9 +119,16 @@ const webhookService = async (body, res) => {
                 profileId = activeSession.dataValues.profile_id;
                 userExists = true;
             } else {
-                const profile_type = botPhoneNumberId == teacherBotPhoneNumberId ? "teacher" :
-                    botPhoneNumberId == studentBotPhoneNumberId ? "student" :
-                        botPhoneNumberId == marketingBotPhoneNumberId ? "marketing" : "";
+                let profile_type = "";
+                if (botPhoneNumberId == teacherBotPhoneNumberId) {
+                    profile_type = "teacher";
+                } else if (botPhoneNumberId == studentBotPhoneNumberId) {
+                    profile_type = "student";
+                } else if (botPhoneNumberId == marketingBotPhoneNumberId) {
+                    profile_type = "marketing";
+                } else {
+                    throw new Error(`Unhandled botPhoneNumberId ${botPhoneNumberId}`);
+                }
                 let profile = await waProfileRepository.create({
                     phone_number: userMobileNumber,
                     bot_phone_number_id: botPhoneNumberId,
@@ -144,16 +149,14 @@ const webhookService = async (body, res) => {
             // Wrap the webhook handling logic with the context containing the bot phone number ID
             await runWithContext({ botPhoneNumberId, profileId, userMobileNumber }, async () => {
                 let inboundUploadedImage = null;
-                let inboundUploadedAudio = null;
-                let inboundUploadedVideo = null;
                 if (message.type === "image") {
                     inboundUploadedImage = await createActivityLog(userMobileNumber, "image", "inbound", message, null);
                     messageContent = await retrieveMediaURL(message.image.id);
                 } else if (message.type === "audio") {
-                    inboundUploadedAudio = await createActivityLog(userMobileNumber, "audio", "inbound", message, null);
+                    await createActivityLog(userMobileNumber, "audio", "inbound", message, null);
                     messageContent = await retrieveMediaURL(message.audio.id);
                 } else if (message.type === "video") {
-                    inboundUploadedVideo = await createActivityLog(userMobileNumber, "video", "inbound", message, null);
+                    await createActivityLog(userMobileNumber, "video", "inbound", message, null);
                     messageContent = await retrieveMediaURL(message.video.id);
                 } else if (message.type === "text") {
                     messageContent = message.text?.body.toLowerCase().trim() || "";
@@ -238,7 +241,7 @@ const webhookService = async (body, res) => {
 
                 // DEMO COURSE
                 // Step 1: If user does not exist
-                if (userExists == false) {
+                if (!userExists) {
                     if (botPhoneNumberId == studentBotPhoneNumberId) {
                         await greetingMessage(profileId, userMobileNumber, "kids");
                     } else {
@@ -872,7 +875,8 @@ const webhookService = async (body, res) => {
                 // START MAIN COURSE
                 if (
                     text_message_types.includes(message.type) &&
-                    messageContent.toLowerCase().includes("start my course")
+                    (messageContent.toLowerCase().includes("start my course") ||
+                        messageContent.toLowerCase().includes("start next level"))
                 ) {
                     await startCourseForUser(profileId, userMobileNumber, numbers_to_ignore);
                     return;
@@ -936,9 +940,9 @@ const webhookService = async (body, res) => {
                     }
                 }
 
-                if (text_message_types.includes(message.type) && currentUserState.dataValues.activityType == "watchAndSpeak") {
+                if (text_message_types.includes(message.type)) {
                     const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
-                    if (messageContent.toLowerCase().includes("yes") || messageContent.toLowerCase().includes("no")) {
+                    if (messageContent.toLowerCase().includes("yes") || messageContent.toLowerCase().includes("no") || messageContent.toLowerCase().includes("easy") || messageContent.toLowerCase().includes("hard")) {
                         if (currentUserState.dataValues.persona == "kid" || currentUserState.dataValues.persona == "parent or student" || currentUserState.dataValues.persona == "school admin") {
                             await sendCourseLessonToKid(profileId, userMobileNumber, currentUserState, currentLesson, messageType, messageContent);
                         } else {
@@ -982,17 +986,18 @@ const webhookService = async (body, res) => {
                         let theStartingLesson = await lessonRepository.getByLessonId(currentUserState.dataValues.currentLessonId);
 
                         if (messageContent.toLowerCase().includes("next") && latestUserState.dataValues.activityType == "feedbackAudio") {
-                            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
+                            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
                             await endingMessage(profileId, userMobileNumber, currentUserState, theStartingLesson);
                         }
 
                         if (!nextLesson) {
-                            // Check if current lesson
-                            const lessonNumberCheck = (currentUserState.dataValues.currentWeek - 1) * 6 + currentUserState.dataValues.currentDay;
-                            if (lessonNumberCheck >= 24) {
-                                await sendButtonMessage(userMobileNumber, 'You have completed all the lessons in this course. Click the button below to proceed', [{ id: 'start_my_course', title: 'Start my course' }]);
+                            const daysPerWeek = await getDaysPerWeek(profileId);
+                            const lessonNumberCheck = (currentUserState.dataValues.currentWeek - 1) * daysPerWeek + currentUserState.dataValues.currentDay;
+                            const totalLessons = await getTotalLessonsForCourse(profileId);
+                            if (lessonNumberCheck >= totalLessons) {
+                                await sendButtonMessage(userMobileNumber, 'You have completed all the lessons in this course. Click the button below to proceed', [{ id: 'start_next_level', title: 'Start Next Level' }]);
                                 await createActivityLog(userMobileNumber, "template", "outbound", "You have completed all the lessons in this course. Click the button below to proceed", null);
-                                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start my course"]);
+                                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next level"]);
                                 return;
                             }
                             await sendMessage(userMobileNumber, "Please wait for the next lesson to start.");
@@ -1001,50 +1006,53 @@ const webhookService = async (body, res) => {
                         }
 
                         // Daily blocking
-                        if (!numbers_to_ignore.includes(userMobileNumber)) {
-                            const course = await courseRepository.getById(
-                                currentUserState.dataValues.currentCourseId
-                            );
-                            const courseStartDate = new Date(course.dataValues.courseStartDate);
-                            const today = new Date();
+                        const daysPerWeek = await getDaysPerWeek(profileId);
+                        if (daysPerWeek == 5) {
+                            if (!numbers_to_ignore.includes(userMobileNumber)) {
+                                const course = await courseRepository.getById(
+                                    currentUserState.dataValues.currentCourseId
+                                );
+                                const courseStartDate = new Date(course.dataValues.courseStartDate);
+                                const today = new Date();
 
-                            // Calculate the number of days from the start date needed for the current day's content
-                            const lessonDayNumber = (nextLesson.dataValues.weekNumber - 1) * 6 + nextLesson.dataValues.dayNumber;
-                            const daysRequiredForCurrentLesson = lessonDayNumber - 1; // As before
+                                // Calculate the number of days from the start date needed for the current day's content
+                                const lessonDayNumber = (nextLesson.dataValues.weekNumber - 1) * daysPerWeek + nextLesson.dataValues.dayNumber;
+                                const daysRequiredForCurrentLesson = lessonDayNumber - 1; // As before
 
-                            // Add days to course start date, skipping Sundays
-                            let dayUnlockDate = new Date(courseStartDate);
-                            let daysAdded = 0;
+                                // Add days to course start date, skipping Sundays
+                                let dayUnlockDate = new Date(courseStartDate);
+                                let daysAdded = 0;
 
-                            while (daysAdded < daysRequiredForCurrentLesson) {
-                                dayUnlockDate.setDate(dayUnlockDate.getDate() + 1);
-                                if (dayUnlockDate.getDay() !== 0) {
-                                    daysAdded++;
+                                while (daysAdded < daysRequiredForCurrentLesson) {
+                                    dayUnlockDate.setDate(dayUnlockDate.getDate() + 1);
+                                    if (dayUnlockDate.getDay() !== 0) {
+                                        daysAdded++;
+                                    }
                                 }
-                            }
 
-                            // Extract year, month, and date for comparison
-                            const todayYear = today.getFullYear();
-                            const todayMonth = today.getMonth();
-                            const todayDate = today.getDate();
+                                // Extract year, month, and date for comparison
+                                const todayYear = today.getFullYear();
+                                const todayMonth = today.getMonth();
+                                const todayDate = today.getDate();
 
-                            const dayUnlockDateYear = dayUnlockDate.getFullYear();
-                            const dayUnlockDateMonth = dayUnlockDate.getMonth();
-                            const dayUnlockDateDate = dayUnlockDate.getDate();
+                                const dayUnlockDateYear = dayUnlockDate.getFullYear();
+                                const dayUnlockDateMonth = dayUnlockDate.getMonth();
+                                const dayUnlockDateDate = dayUnlockDate.getDate();
 
-                            // Check if today is before the unlock date
-                            if (
-                                todayYear < dayUnlockDateYear ||
-                                (todayYear == dayUnlockDateYear &&
-                                    todayMonth < dayUnlockDateMonth) ||
-                                (todayYear == dayUnlockDateYear &&
-                                    todayMonth == dayUnlockDateMonth &&
-                                    todayDate < dayUnlockDateDate)
-                            ) {
-                                const message = "Please wait for the next day's content to unlock.";
-                                await sendMessage(userMobileNumber, message);
-                                await createActivityLog(userMobileNumber, "text", "outbound", message, null);
-                                return;
+                                // Check if today is before the unlock date
+                                if (
+                                    todayYear < dayUnlockDateYear ||
+                                    (todayYear == dayUnlockDateYear &&
+                                        todayMonth < dayUnlockDateMonth) ||
+                                    (todayYear == dayUnlockDateYear &&
+                                        todayMonth == dayUnlockDateMonth &&
+                                        todayDate < dayUnlockDateDate)
+                                ) {
+                                    const message = "Please wait for the next day's content to unlock.";
+                                    await sendMessage(userMobileNumber, message);
+                                    await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+                                    return;
+                                }
                             }
                         }
 
@@ -1133,7 +1141,6 @@ const webhookService = async (body, res) => {
                     } else {
                         await sendCourseLessonToTeacher(profileId, userMobileNumber, currentUserState, currentLesson, messageType, messageContent);
                     }
-                    return;
                 }
             });
         }

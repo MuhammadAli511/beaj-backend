@@ -5,8 +5,8 @@ import azure_blob from '../utils/azureBlobStorage.js';
 const createCourseWeekService = async (weekNumber, courseId, image, description) => {
     try {
         const weekData = await courseWeekRepository.getByCourseId(courseId);
-        for (let i = 0; i < weekData.length; i++) {
-            if (weekData[i].weekNumber == weekNumber) {
+        for (const element of weekData) {
+            if (element.weekNumber == weekNumber) {
                 throw new Error("Week number already exists in the course");
             }
         }

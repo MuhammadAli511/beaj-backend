@@ -1,11 +1,10 @@
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
-import { sendMessage, sendButtonMessage } from "../utils/whatsappUtils.js";
+import { sendMessage, sendButtonMessage, sendMediaMessage } from "../utils/whatsappUtils.js";
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
-import { sendMediaMessage } from "../utils/whatsappUtils.js";
 import { endingMessage } from "../utils/endingMessageUtils.js";
 import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRepository.js";
-import { sleep, convertNumberToEmoji, removeHTMLTags } from "../utils/utils.js";
+import { sleep, convertNumberToEmoji } from "../utils/utils.js";
 import multipleChoiceQuestionRepository from "../repositories/multipleChoiceQuestionRepository.js";
 import multipleChoiceQuestionAnswerRepository from "../repositories/multipleChoiceQuestionAnswerRepository.js";
 
@@ -17,36 +16,25 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
-                // Activity Alias
-                const activityAlias = startingLesson.dataValues.activityAlias;
-                let lessonText = startingLesson.dataValues.text;
-                lessonText = removeHTMLTags(lessonText);
-                if (activityAlias == "*End of Week Challenge!* 💪🏽") {
-                    // Send lesson message
-                    let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                    lessonMessage += "\n\n" + "Answer the following questions.";
-                    // Text message
-                    await sendMessage(userMobileNumber, lessonMessage);
-                    await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
-
-                    await sendMessage(userMobileNumber, "Let's Start Questions👇🏽");
-                    await createActivityLog(userMobileNumber, "text", "outbound", "Let's Start Questions👇🏽", null);
-                } else if (activityAlias == "*Reading Comprehension* 📖") {
-                    let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
-                    lessonMessage += "\n\n" + "Answer the following questions about the reading passage.";
-                    // Text message
-                    await sendMessage(userMobileNumber, lessonMessage);
-                    await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
-
-                    await sendMessage(userMobileNumber, "Let's Start Questions👇🏽");
-                    await createActivityLog(userMobileNumber, "text", "outbound", "Let's Start Questions👇🏽", null);
+                let defaultTextInstruction = "Answer the following questions.";
+                const lessonTextInstruction = startingLesson.dataValues.textInstruction;
+                let finalTextInstruction = defaultTextInstruction;
+                if (lessonTextInstruction != null && lessonTextInstruction != "") {
+                    finalTextInstruction = lessonTextInstruction.replace(/\\n/g, '\n');
+                }
+                const lessonAudioInstruction = startingLesson.dataValues.audioInstructionUrl;
+                if (lessonAudioInstruction != null && lessonAudioInstruction != "") {
+                    await sendMediaMessage(userMobileNumber, lessonAudioInstruction, 'audio', null, 0, "Lesson", startingLesson.dataValues.LessonId, startingLesson.dataValues.audioInstructionMediaId, "audioInstructionMediaId");
+                    await createActivityLog(userMobileNumber, "audio", "outbound", lessonAudioInstruction, null);
                 }
 
-                // Lesson Text
-                if (lessonText.includes("After listening to the dialogue")) {
-                    await sendMessage(userMobileNumber, lessonText);
-                    await createActivityLog(userMobileNumber, "text", "outbound", lessonText, null);
-                }
+                // Send lesson message
+                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n');;
+                lessonMessage += "\n\n" + finalTextInstruction;
+
+                // Text message
+                await sendMessage(userMobileNumber, lessonMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
                 // Send first MCQs question
                 const firstMCQsQuestion = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, null);
@@ -250,7 +238,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
 
 
                     // Reset Question Number, Retry Counter, and Activity Type
-                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
 
                     // ENDING MESSAGE
                     await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
@@ -262,12 +250,25 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
-                // Activity Alias
-                const activityAlias = startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n');
-                let message = activityAlias + "\n\n" + startingLesson.dataValues.text;
+                let defaultTextInstruction = "Answer the following questions.";
+                const lessonTextInstruction = startingLesson.dataValues.textInstruction;
+                let finalTextInstruction = defaultTextInstruction;
+                if (lessonTextInstruction != null && lessonTextInstruction != "") {
+                    finalTextInstruction = lessonTextInstruction.replace(/\\n/g, '\n');
+                }
+                const lessonAudioInstruction = startingLesson.dataValues.audioInstructionUrl;
+                if (lessonAudioInstruction != null && lessonAudioInstruction != "") {
+                    await sendMediaMessage(userMobileNumber, lessonAudioInstruction, 'audio', null, 0, "Lesson", startingLesson.dataValues.LessonId, startingLesson.dataValues.audioInstructionMediaId, "audioInstructionMediaId");
+                    await createActivityLog(userMobileNumber, "audio", "outbound", lessonAudioInstruction, null);
+                }
 
-                await sendMessage(userMobileNumber, message);
-                await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+                // Send lesson message
+                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n');
+                lessonMessage += "\n\n" + finalTextInstruction;
+
+                // Text message
+                await sendMessage(userMobileNumber, lessonMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
                 // Send first MCQs question
                 const firstMCQsQuestion = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, null);
@@ -497,7 +498,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
 
 
                     // Reset Question Number, Retry Counter, and Activity Type
-                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null);
+                    await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
 
                     // ENDING MESSAGE
                     await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson, message);

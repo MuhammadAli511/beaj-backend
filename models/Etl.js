@@ -1,4 +1,4 @@
-import { Model, DataTypes } from "sequelize";
+import { Model } from "sequelize";
 import sequelize from "../config/sequelize.js";
 class Etl extends Model { }
 Etl.init(

@@ -1,7 +1,6 @@
 import express from 'express';
 import chatBotController from '../controllers/chatBotController.js';
 import errorHandler from '../middlewares/errorHandler.js';
-import upload from '../config/multerConfig.js';
 
 const router = express.Router();
 

@@ -2,8 +2,9 @@ import service from '../services/lessonService.js';
 
 const createLessonController = async (req, res, next) => {
     try {
-        const { lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status } = req.body;
-        const lesson = await service.createLessonService(lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status);
+        const { lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status, textInstruction } = req.body;
+        const audioInstruction = req.file ? req.file : null;
+        const lesson = await service.createLessonService(lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status, textInstruction, audioInstruction);
         res.status(200).send({ message: "Lesson created successfully", lesson });
     } catch (error) {
         error.fileName = 'lessonController.js';
@@ -35,8 +36,9 @@ const getLessonByIdController = async (req, res, next) => {
 const updateLessonController = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status } = req.body;
-        await service.updateLessonService(id, lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status);
+        const { lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status, textInstruction } = req.body;
+        const audioInstruction = req.file ? req.file : null;
+        await service.updateLessonService(id, lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status, textInstruction, audioInstruction);
         res.status(200).send({ message: "Lesson updated successfully" });
     } catch (error) {
         error.fileName = 'lessonController.js';
@@ -91,9 +93,7 @@ const getLessonByCourseIdController = async (req, res, next) => {
 const testLessonController = async (req, res, next) => {
     try {
         const { phoneNumber, lesson } = req.body;
-        // console.log("phoneNumber", phoneNumber);
         const result = await service.testLessonService(phoneNumber, lesson);
-        //  console.log("result", result);
         res.status(200).send({ message: "Lesson copied successfully", result });
     } catch (error) {
         error.fileName = 'lessonController.js';

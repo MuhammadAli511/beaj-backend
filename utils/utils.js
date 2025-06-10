@@ -1,26 +1,21 @@
 import { sendButtonMessage, sendMessage } from "./whatsappUtils.js";
 import { createActivityLog } from "./createActivityLogUtils.js";
+import waProfileRepository from "../repositories/waProfileRepository.js";
+import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
+import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
 
 
 const sleep = (ms) => {
     return new Promise(resolve => setTimeout(resolve, ms));
 };
 
-const removeHTMLTags = (text) => {
-    return text.replace(/<[^>]*>?/gm, '');
-};
-
 const extractTranscript = (results) => {
-    if (!results || !results.words) {
+    if (!results?.words) {
         return "";
     }
 
     const words = Object.values(results.words);
-    const transcriptWords = words.filter(word =>
-        word &&
-        word.PronunciationAssessment &&
-        word.PronunciationAssessment.ErrorType !== 'Omission'
-    );
+    const transcriptWords = words.filter(word => word?.PronunciationAssessment?.ErrorType !== 'Omission');
 
     const transcript = transcriptWords.map(word => word.Word).join(" ");
 
@@ -33,7 +28,7 @@ const extractTranscript = (results) => {
 };
 
 const extractMispronouncedWords = (results) => {
-    if (!results || !results.words) {
+    if (!results?.words) {
         return [];
     }
 
@@ -161,14 +156,46 @@ const getAcceptableMessagesList = async (activityType) => {
     }
 };
 
+const getDaysPerWeek = async (profileId) => {
+    const profile = await waProfileRepository.getByProfileId(profileId);
+    return profile.dataValues.profile_type === 'teacher' ? 6 : 5;
+};
+
+const getTotalLessonsForCourse = async (profileId) => {
+    const daysPerWeek = await getDaysPerWeek(profileId);
+    return 4 * daysPerWeek;
+};
+
+const difficultyLevelCalculation = async (profileId, userMobileNumber, currentUserState, messageContent) => {
+    if (messageContent != 'easy' && messageContent != 'hard') {
+        const difficultyLevelExists = await speakActivityQuestionRepository.checkIfDifficultyLevelExists(currentUserState.dataValues.currentLessonId);
+        if (difficultyLevelExists) {
+            await sendButtonMessage(userMobileNumber, "Select Difficulty Level", [{ id: "easy", title: "Easy" }, { id: "hard", title: "Hard" }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Select Difficulty Level", null);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["easy", "hard"]);
+            return false;
+        } else {
+            await waUserProgressRepository.updateDifficultyLevel(profileId, userMobileNumber, null);
+        }
+    } else if (messageContent == 'easy') {
+        await waUserProgressRepository.updateDifficultyLevel(profileId, userMobileNumber, 'easy');
+    } else if (messageContent == 'hard') {
+        await waUserProgressRepository.updateDifficultyLevel(profileId, userMobileNumber, 'hard');
+    }
+    return true;
+};
+
+
 
 export {
     sleep,
-    removeHTMLTags,
     extractTranscript,
     extractMispronouncedWords,
     getAudioBufferFromAudioFileUrl,
     convertNumberToEmoji,
     checkUserMessageAndAcceptableMessages,
-    getAcceptableMessagesList
+    getAcceptableMessagesList,
+    getDaysPerWeek,
+    getTotalLessonsForCourse,
+    difficultyLevelCalculation
 };

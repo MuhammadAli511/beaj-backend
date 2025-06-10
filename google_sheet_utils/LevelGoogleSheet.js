@@ -1,4 +1,4 @@
-import { google, tasks_v1 } from "googleapis";
+import { google } from "googleapis";
 import { readFile } from 'fs/promises';
 
 const creds = JSON.parse(
@@ -29,8 +29,8 @@ const new_loadDataToGoogleSheets = async (
     const spreadsheetId = "14nBbny1vGSVvXjnJNNgIH-1L0ku_-o2yKmF4xsXsVwM";
 
     for (let i = 1; i <= 2; i++) {
-      var sheet_name = `Pilot T${i}-Activity!`;
-      let pilot_activity = pilot_t1_activity[i - 1];
+      let sheet_name = `Pilot T${i}-Activity!`;
+      let pilot_activity;
       if (i == 1) {
         pilot_activity = pilot_t1_activity[i - 1];
       }
