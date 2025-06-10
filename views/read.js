@@ -16,7 +16,7 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
     try {
         const activity = startingLesson.dataValues.activity;
         if (persona == 'teacher') {
-            if (messageType != 'audio') {
+            if (messageType != 'audio' && messageContent != 'yes' && messageContent != 'no, try again' && messageContent != 'no') {
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
@@ -184,7 +184,7 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
             }
         }
         else if (persona == 'kid') {
-            if (messageType != 'audio') {
+            if (messageType != 'audio' && messageContent != 'yes' && messageContent != 'no, try again' && messageContent != 'no') {
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 

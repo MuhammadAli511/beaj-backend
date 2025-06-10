@@ -74,7 +74,7 @@ const duplicateCourseService = async (id) => {
         // COURSE
         // Get original course
         const course = await courseRepository.getById(id);
-        const { CourseId, CourseName, CoursePrice, CourseWeeks, CourseCategoryId, status, SequenceNumber, CourseDescription, courseStartDate } = course.dataValues;
+        const { CourseName, CoursePrice, CourseWeeks, CourseCategoryId, status, SequenceNumber, CourseDescription, courseStartDate } = course.dataValues;
         // Create new course
         const newCourseName = CourseName + ' - Copy';
         const newCourse = await courseRepository.create(newCourseName, CoursePrice, CourseWeeks, CourseCategoryId, status, SequenceNumber, CourseDescription, courseStartDate);
@@ -86,7 +86,7 @@ const duplicateCourseService = async (id) => {
         // Create new course weeks
         for (const element of courseWeeks) {
             const { weekNumber, image, description } = element.dataValues;
-            await courseWeekRepository.create(weekNumber, CourseId, image, description);
+            await courseWeekRepository.create(weekNumber, newCourse.CourseId, image, description);
         }
 
 

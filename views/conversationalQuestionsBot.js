@@ -138,7 +138,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                     let openaiFeedbackTranscript = null;
                     let openaiFeedbackAudio = null;
                     let initialFeedbackResponse = null;
-                    if (recordExists) {
+                    if (recordExists && recordExists[0]?.dataValues?.submittedAnswerText == null) {
                         const message = `Please wait for an answer. \n\nYou said: ${recognizedText}`;
                         await sendMessage(userMobileNumber, message);
                         await createActivityLog(userMobileNumber, "text", "outbound", message, null);
@@ -216,7 +216,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         submissionDate
                     );
 
-                    if (recordExists) {
+                    if (recordExists && recordExists[0]?.dataValues?.submittedAnswerText == null) {
                         // Update acceptable messages list for the user
                         await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
                         return;
@@ -358,7 +358,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                     let openaiFeedbackTranscript = null;
                     let openaiFeedbackAudio = null;
                     let initialFeedbackResponse = null;
-                    if (recordExists) {
+                    if (recordExists && recordExists[0]?.dataValues?.submittedAnswerText?.length == 0) {
                         const message = `Please wait for an answer. \n\nYou said: ${recognizedText}`;
                         await sendMessage(userMobileNumber, message);
                         await createActivityLog(userMobileNumber, "text", "outbound", message, null);
@@ -437,7 +437,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         submissionDate
                     );
 
-                    if (recordExists) {
+                    if (recordExists && recordExists[0]?.dataValues?.submittedAnswerText == null) {
                         // Update acceptable messages list for the user
                         await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
                         return;

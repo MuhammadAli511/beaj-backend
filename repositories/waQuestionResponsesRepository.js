@@ -455,21 +455,23 @@ const getPreviousMessages = async (profileId, phoneNumber, lessonId) => {
 
     if (responses.length > 0) {
         responses.forEach(async (response, index) => {
-            if (index === 0) {
+            if (response?.dataValues?.submittedAnswerText[0] !== null) {
+                if (index === 0) {
+                    finalMessages.push({
+                        role: "user",
+                        content: await question_bot_prompt() + "\n\nUser Response: " + response.dataValues.submittedAnswerText[0]
+                    });
+                } else {
+                    finalMessages.push({
+                        role: "user",
+                        content: response.dataValues.submittedAnswerText[0]
+                    });
+                }
                 finalMessages.push({
-                    role: "user",
-                    content: await question_bot_prompt() + "\n\nUser Response: " + response.dataValues.submittedAnswerText[0]
-                });
-            } else {
-                finalMessages.push({
-                    role: "user",
-                    content: response.dataValues.submittedAnswerText[0]
+                    role: "assistant",
+                    content: response.dataValues.submittedFeedbackText[0]
                 });
             }
-            finalMessages.push({
-                role: "assistant",
-                content: response.dataValues.submittedFeedbackText[0]
-            });
         });
     }
 
@@ -492,21 +494,23 @@ const getPreviousMessagesForAgencyBot = async (profileId, phoneNumber, lessonId,
 
     if (responses.length > 0) {
         responses.forEach(async (response, index) => {
-            if (index === 0) {
+            if (response?.dataValues?.submittedAnswerText[0] !== null) {
+                if (index === 0) {
+                    finalMessages.push({
+                        role: "user",
+                        content: questionText + "\n\n\nMy response: " + response.dataValues.submittedAnswerText[0]
+                    });
+                } else {
+                    finalMessages.push({
+                        role: "user",
+                        content: response.dataValues.submittedAnswerText[0]
+                    });
+                }
                 finalMessages.push({
-                    role: "user",
-                    content: questionText + "\n\n\nMy response: " + response.dataValues.submittedAnswerText[0]
-                });
-            } else {
-                finalMessages.push({
-                    role: "user",
-                    content: response.dataValues.submittedAnswerText[0]
+                    role: "assistant",
+                    content: response.dataValues.submittedFeedbackText[0]
                 });
             }
-            finalMessages.push({
-                role: "assistant",
-                content: response.dataValues.submittedFeedbackText[0]
-            });
         });
     }
     return finalMessages;
@@ -525,14 +529,14 @@ const getLatestBotResponse = async (profileId, phoneNumber, lessonId) => {
 };
 
 const checkRecordExistsForProfileIdAndLessonId = async (profileId, lessonId) => {
-    const response = await WA_QuestionResponses.findOne({
+    const response = await WA_QuestionResponses.findAll({
         where: {
             profile_id: profileId,
             lessonId: lessonId
         }
     });
 
-    return response ? false : true;
+    return response;
 };
 
 const getAllJsonFeedbacksForProfileIdAndLessonId = async (profileId, lessonId) => {
