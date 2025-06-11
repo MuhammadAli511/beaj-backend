@@ -13,7 +13,7 @@ import speakActivityQuestionRepository from "../repositories/speakActivityQuesti
 import { createAndUploadScoreImage } from "../utils/imageGenerationUtils.js";
 
 
-const assessmentWatchAndSpeak = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
+const assessmentWatchAndSpeakView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
         const activity = startingLesson.dataValues.activity;
         if (persona == 'teacher') {
@@ -401,4 +401,4 @@ const assessmentWatchAndSpeak = async (profileId, userMobileNumber, currentUserS
     }
 };
 
-export { assessmentWatchAndSpeak };
+export { assessmentWatchAndSpeakView };
