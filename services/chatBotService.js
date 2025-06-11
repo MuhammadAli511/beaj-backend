@@ -66,6 +66,8 @@ let activity_types_to_repeat = [
     "watchAndImage",
     "feedbackAudio",
     "feedbackMcqs",
+    "assessmentMcqs",
+    "assessmentWatchAndSpeak",
 ];
 
 let text_message_types = [

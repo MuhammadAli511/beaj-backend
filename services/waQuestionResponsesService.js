@@ -22,7 +22,7 @@ const getWaQuestionResponsesByActivityTypeService = async (activityType) => {
     let speakActivityQuestions = null;
     let mcqAnswers = {};
 
-    if (activityType == 'mcqs' || activityType == 'feedbackMcqs') {
+    if (activityType == 'mcqs' || activityType == 'feedbackMcqs' || activityType == 'assessmentMcqs') {
         const multipleChoiceLessonIds = lessons.map(lesson => lesson.LessonId);
         multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonIds(multipleChoiceLessonIds);
 
@@ -98,7 +98,7 @@ const getWaQuestionResponsesByActivityTypeService = async (activityType) => {
         };
     });
 
-    if (activityType == 'feedbackMcqs') {
+    if (activityType == 'feedbackMcqs' || activityType == 'assessmentMcqs') {
         const feedbackMcqsStatistics = await getFeedbackMcqsStatisticsService();
         return {
             result: result,

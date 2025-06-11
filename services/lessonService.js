@@ -34,10 +34,14 @@ const getAllLessonService = async () => {
 const getLessonByIdService = async (id) => {
     try {
         const lesson = await lessonRepository.getById(id);
-        if (lesson.activity == 'listenAndSpeak' || lesson.activity == 'watchAndSpeak' || lesson.activity == 'watchAndAudio' || lesson.activity == 'watchAndImage' || lesson.activity == 'conversationalQuestionsBot' || lesson.activity == 'conversationalMonologueBot' || lesson.activity == 'conversationalAgencyBot' || lesson.activity == 'speakingPractice' || lesson.activity == 'feedbackAudio') {
+        if (lesson.activity == 'listenAndSpeak' || lesson.activity == 'watchAndSpeak' || lesson.activity == 'watchAndAudio' ||
+            lesson.activity == 'watchAndImage' || lesson.activity == 'conversationalQuestionsBot' || lesson.activity == 'conversationalMonologueBot' ||
+            lesson.activity == 'conversationalAgencyBot' || lesson.activity == 'speakingPractice' || lesson.activity == 'feedbackAudio' ||
+            lesson.activity == 'assessmentMcqs' || lesson.activity == 'assessmentWatchAndSpeak' || lesson.activity == 'assessmentWatchAndSpeak'
+        ) {
             const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonId(lesson.LessonId);
             lesson.dataValues.speakActivityQuestionFiles = speakActivityQuestionFiles;
-        } else if (lesson.activity == 'mcqs' || lesson.activity === 'feedbackMcqs') {
+        } else if (lesson.activity == 'mcqs' || lesson.activity === 'feedbackMcqs' || lesson.activity == 'assessmentMcqs') {
             const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonId(lesson.LessonId);
             const multipleChoiceQuestionAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(multipleChoiceQuestions.map(question => question.Id));
             lesson.dataValues.multipleChoiceQuestions = multipleChoiceQuestions.map(question => {
@@ -79,9 +83,13 @@ const deleteLessonService = async (id) => {
         const activity = lesson.activity;
         await lessonRepository.deleteLesson(id);
 
-        if (activity == 'listenAndSpeak' || activity == 'watchAndSpeak' || activity == 'watchAndAudio' || activity == 'watchAndImage' || activity == 'conversationalQuestionsBot' || activity == 'conversationalMonologueBot' || activity == 'conversationalAgencyBot' || activity == 'speakingPractice' || activity == 'feedbackAudio') {
+        if (activity == 'listenAndSpeak' || activity == 'watchAndSpeak' || activity == 'watchAndAudio' ||
+            activity == 'watchAndImage' || activity == 'conversationalQuestionsBot' || activity == 'conversationalMonologueBot' ||
+            activity == 'conversationalAgencyBot' || activity == 'speakingPractice' || activity == 'feedbackAudio' ||
+            activity == 'assessmentMcqs' || activity == 'assessmentWatchAndSpeak'
+        ) {
             await speakActivityQuestionRepository.deleteByLessonId(id);
-        } else if (activity == 'mcqs' || activity === 'feedbackMcqs') {
+        } else if (activity == 'mcqs' || activity === 'feedbackMcqs' || activity == 'assessmentMcqs') {
             const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonIds(id);
             await multipleChoiceQuestionAnswerRepository.deleteByQuestionId(multipleChoiceQuestions.map(question => question.Id));
             await multipleChoiceQuestionRepository.deleteByLessonId(id);
@@ -99,7 +107,9 @@ const getLessonsByActivity = async (course, activity) => {
         const lessons = await lessonRepository.getByCourseActivity(course, activity);
         const lessonIds = lessons.map(lesson => lesson.LessonId);
 
-        if (activity == 'listenAndSpeak' || activity == 'watchAndSpeak' || activity == 'watchAndAudio' || activity == 'watchAndImage' || activity == 'conversationalQuestionsBot' || activity == 'conversationalMonologueBot' || activity == 'conversationalAgencyBot' || activity == 'speakingPractice' || activity == 'feedbackAudio') {
+        if (activity == 'listenAndSpeak' || activity == 'watchAndSpeak' || activity == 'watchAndAudio' || activity == 'watchAndImage' || activity == 'conversationalQuestionsBot' || activity == 'conversationalMonologueBot' || activity == 'conversationalAgencyBot' || activity == 'speakingPractice' || activity == 'feedbackAudio' ||
+            activity == 'assessmentMcqs' || activity == 'assessmentWatchAndSpeak' || activity == 'assessmentWatchAndSpeak'
+        ) {
             const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonIds(lessonIds);
             const lessonsWithFiles = lessons.map(lesson => {
                 return {
@@ -108,7 +118,7 @@ const getLessonsByActivity = async (course, activity) => {
                 };
             });
             return lessonsWithFiles;
-        } else if (activity == 'mcqs' || activity === 'feedbackMcqs') {
+        } else if (activity == 'mcqs' || activity === 'feedbackMcqs' || activity == 'assessmentMcqs') {
             const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonIds(lessonIds);
             const multipleChoiceQuestionAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(multipleChoiceQuestions.map(question => question.Id));
             const lessonsWithQuestions = lessons.map(lesson => {
@@ -182,7 +192,7 @@ const migrateLessonService = async (lessonId, courseId) => {
                 }
             );
 
-            if (['listenAndSpeak', 'watchAndSpeak', 'watchAndAudio', 'watchAndImage', 'conversationalQuestionsBot', 'conversationalMonologueBot', 'conversationalAgencyBot', 'speakingPractice', 'feedbackAudio'].includes(lesson.activity)) {
+            if (['listenAndSpeak', 'watchAndSpeak', 'watchAndAudio', 'watchAndImage', 'conversationalQuestionsBot', 'conversationalMonologueBot', 'conversationalAgencyBot', 'speakingPractice', 'feedbackAudio', 'assessmentMcqs', 'assessmentWatchAndSpeak', 'assessmentWatchAndSpeak'].includes(lesson.activity)) {
                 const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonId(lesson.LessonId);
                 await Promise.all(speakActivityQuestionFiles.map(file => {
                     const answerArray = Array.isArray(file.answer) ? file.answer : [file.answer];
@@ -206,7 +216,7 @@ const migrateLessonService = async (lessonId, courseId) => {
                     );
                 }));
 
-            } else if (['mcqs', 'feedbackMcqs'].includes(lesson.activity)) {
+            } else if (['mcqs', 'feedbackMcqs', 'assessmentMcqs'].includes(lesson.activity)) {
                 const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonId(lesson.LessonId);
 
                 await Promise.all(multipleChoiceQuestions.map(async question => {

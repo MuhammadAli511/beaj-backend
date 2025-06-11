@@ -28,6 +28,8 @@ import waActiveSessionRepository from "../repositories/waActiveSessionRepository
 import waProfileRepository from "../repositories/waProfileRepository.js";
 import { feedbackMcqsView } from "../views/feedbackMcqs.js";
 import { feedbackAudioView } from "../views/feedbackAudio.js";
+import { assessmentMcqsView } from "../views/assessmentMcqs.js";
+import { assessmentWatchAndSpeakView } from "../views/assessmentWatchAndSpeak.js";
 
 dotenv.config();
 
@@ -258,7 +260,12 @@ const sendCourseLessonToTeacher = async (profileId, userMobileNumber, currentUse
         else if (activity == 'feedbackMcqs') {
             await feedbackMcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
         }
-
+        else if (activity == 'assessmentMcqs') {
+            await assessmentMcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+        }
+        else if (activity == 'assessmentWatchAndSpeak') {
+            await assessmentWatchAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+        }
     } catch (error) {
         console.log('Error sending lesson to user:', error);
         error.fileName = 'chatBotService.js';
@@ -289,6 +296,12 @@ const sendCourseLessonToKid = async (profileId, userMobileNumber, currentUserSta
         }
         else if (activity == 'speakingPractice') {
             await speakingPracticeView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
+        }
+        else if (activity == 'assessmentMcqs') {
+            await assessmentMcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
+        }
+        else if (activity == 'assessmentWatchAndSpeak') {
+            await assessmentWatchAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
         }
     } catch (error) {
         console.log('Error sending lesson to user:', error);
