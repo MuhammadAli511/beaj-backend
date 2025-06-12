@@ -274,6 +274,171 @@ const createAndUploadScoreImage = async (pronunciationAssessment, threshold) => 
     }
 };
 
+const createAndUploadScoreImageNoAnswer = async (pronunciationAssessment, threshold) => {
+    try {
+        if (pronunciationAssessment === undefined || pronunciationAssessment == [] || pronunciationAssessment == null) {
+            return null;
+        };
+
+        const fluencyScoreNumber = Math.round(pronunciationAssessment.scoreNumber.fluencyScore);
+        let accuracyScoreNumber = Math.round(pronunciationAssessment.scoreNumber.accuracyScore);
+        const words = pronunciationAssessment.words;
+
+        const mispronouncedWordsList = pronunciationAssessment.words.filter(word =>
+            word?.PronunciationAssessment &&
+            (word?.PronunciationAssessment?.ErrorType == "Mispronunciation" ||
+                word?.PronunciationAssessment?.AccuracyScore < threshold)
+        );
+        if (mispronouncedWordsList.length == 0 && accuracyScoreNumber > threshold) {
+            accuracyScoreNumber = 100;
+        }
+
+        // Set up canvas dimensions
+        const width = 900;
+        const height = 850;
+        const canvas = createCanvas(width, height);
+        const ctx = canvas.getContext('2d');
+
+        // Draw background
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, width, height);
+
+        // Load and add the company logo in the top - right corner
+        const image = await loadImage("https://beajbloblive.blob.core.windows.net/beajdocuments/logo.jpeg");  // Path to the logo image
+        ctx.drawImage(image, width - 160, 20, image.width / 7.5, image.height / 7.5);
+
+        // Add "YOUR SCORE" Title
+        ctx.font = 'bold 40px Arial';
+        ctx.fillStyle = '#000000';
+        ctx.fillText('YOUR SCORE', 50, 80);
+
+        // Add "Pronunciation" Bar with dynamic score
+        ctx.font = '25px Arial';
+        ctx.fillText('Correct Pronunciation', 50, 120);
+
+        // Draw light blue background bar for full length
+        ctx.fillStyle = '#B2EBF2';
+        ctx.fillRect(50, 125, 790, 40);
+
+        // Draw dark blue foreground bar for actual score
+        ctx.fillStyle = '#30D5C8';
+        ctx.fillRect(50, 125, 790 * (accuracyScoreNumber / 100), 40);
+
+        // Add score text inside the bar
+        ctx.fillStyle = '#000000';
+        // Position till the end of dark blue bar
+        ctx.fillText(`${accuracyScoreNumber}%`, 50 + 790 * (accuracyScoreNumber / 100) - 70, 155);
+
+        // Add "Fluency" Bar with dynamic score
+        ctx.font = '25px Arial';
+        ctx.fillText('Fluency', 50, 215);
+
+        // Draw light yellow background bar for full length
+        ctx.fillStyle = '#F0F4C3';
+        ctx.fillRect(50, 220, 790, 40);
+
+        // Draw darker yellow foreground bar for actual score
+        ctx.fillStyle = '#C7EA46';
+        ctx.fillRect(50, 220, 790 * (fluencyScoreNumber / 100), 40);
+
+        // Add score text inside the bar
+        ctx.fillStyle = '#000000';
+        ctx.fillText(`${fluencyScoreNumber}%`, 50 + 790 * (fluencyScoreNumber / 100) - 70, 250);
+
+        ctx.font = 'bold 30px Arial';
+        ctx.fillText('You said:', 50, 315);
+
+        // Create a paragraph format for the text
+        ctx.font = '25px Arial';
+        const marginLeft = 50;
+        const maxWidth = 850;
+        let lineHeight = 40;
+        let cursorX = marginLeft;
+        let cursorY = 355; // Starting Y position for the text
+
+        // Loop through words and handle line breaks
+        words.forEach((wordObj, index) => {
+            // If undefined, skip the word
+            if (wordObj == undefined || !wordObj.PronunciationAssessment) {
+                return;
+            }
+
+            // If not Mispronunciation, Omission, or None, skip the word
+            if (!['Mispronunciation', 'Omission', 'None'].includes(wordObj.PronunciationAssessment.ErrorType)) {
+                return;
+            }
+            let word = wordObj.Word;
+
+            // Capitalize only the first letter of the first word
+            if (index == 0) {
+                word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+            } else {
+                word = word.toLowerCase();
+            }
+
+            const errorType = wordObj.PronunciationAssessment.ErrorType;
+            const wordAccuracyScore = wordObj.PronunciationAssessment.AccuracyScore;
+            const wordWidth = ctx.measureText(word).width + 15; // Measure width of the word
+
+            // If the word exceeds the max width, move to a new line
+            if (cursorX + wordWidth > maxWidth) {
+                cursorX = marginLeft; // Reset X position to the left margin
+                cursorY += lineHeight; // Move to the next line
+            }
+
+            if (errorType == 'Mispronunciation' || wordAccuracyScore < threshold) {
+                // Highlight mispronounced words in yellow
+                ctx.fillStyle = '#FFD700'; // Yellow
+                ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
+                ctx.fillStyle = '#000000'; // Black text
+                ctx.fillText(word, cursorX, cursorY);
+            } else if (errorType == 'Omission') {
+                // Highlight skipped words in grey
+                ctx.fillStyle = '#A9A9A9'; // Grey
+                ctx.fillRect(cursorX - 5, cursorY - 25, wordWidth - 5, 30);
+                ctx.fillStyle = '#000000'; // Black text
+                ctx.fillText(word, cursorX, cursorY);
+            } else if (errorType == 'None') {
+                // Regular words
+                ctx.fillStyle = '#000000';
+                ctx.fillText(word, cursorX, cursorY);
+            }
+
+            // Move cursor for the next word
+            cursorX += wordWidth;
+        });
+
+        // Add the legends at the bottom
+        ctx.font = '20px Arial';
+
+        // Mispronounced Words Legend (Yellow Circle)
+        ctx.fillStyle = '#FFD700'; // Yellow color
+        ctx.beginPath(); // Start a new path
+        ctx.arc(60, 820, 10, 0, 2 * Math.PI);
+        ctx.fill(); // Fill the circle
+        ctx.fillStyle = '#000000';
+        ctx.fillText('Mispronounced Words', 80, 827);
+
+        // Skipped Words Legend (Grey Circle)
+        ctx.fillStyle = '#A9A9A9'; // Grey color
+        ctx.beginPath(); // Start a new path
+        ctx.arc(350, 820, 10, 0, 2 * Math.PI);
+        ctx.fill(); // Fill the circle
+        ctx.fillStyle = '#000000';
+        ctx.fillText('Skipped Words', 370, 827);
+
+        // Convert the canvas to a buffer
+        const buffer = canvas.toBuffer('image/jpeg');
+
+        // Upload to Azure Blob Storage
+        const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
+        return imageUrl;
+    } catch (err) {
+        console.log('Error creating and uploading image:', err);
+        throw new Error('Failed to create and upload image');
+    }
+};
+
 const createAndUploadMonologueScoreImage = async (pronunciationAssessment, threshold) => {
     try {
         if (pronunciationAssessment === undefined || pronunciationAssessment == [] || pronunciationAssessment == null) {
@@ -768,5 +933,6 @@ export {
     createAndUploadScoreImage,
     createAndUploadMonologueScoreImage,
     createAndUploadSpeakingPracticeScoreImage,
-    generateInvoiceImage
+    generateInvoiceImage,
+    createAndUploadScoreImageNoAnswer
 };

@@ -10,7 +10,7 @@ import azureBlobStorage from "../utils/azureBlobStorage.js";
 import { sleep, extractTranscript, convertNumberToEmoji, getAudioBufferFromAudioFileUrl } from "../utils/utils.js";
 import AIServices from "../utils/AIServices.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
-import { createAndUploadScoreImage } from "../utils/imageGenerationUtils.js";
+import { createAndUploadScoreImage, createAndUploadScoreImageNoAnswer } from "../utils/imageGenerationUtils.js";
 
 
 const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
@@ -132,13 +132,24 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                 const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
 
                 // Azure Pronunciation Assessment
-                const pronunciationAssessment = await AIServices.azurePronunciationAssessment(audioBuffer, currentWatchAndSpeakQuestion.dataValues.answer[0]);
+                let pronunciationAssessment = null;
+                if (!currentWatchAndSpeakQuestion?.dataValues?.answer?.[0]) {
+                    const userTranscription = await AIServices.azureOpenAISpeechToText(audioBuffer);
+                    pronunciationAssessment = await AIServices.azurePronunciationAssessment(audioBuffer, userTranscription);
+                } else {
+                    pronunciationAssessment = await AIServices.azurePronunciationAssessment(audioBuffer, currentWatchAndSpeakQuestion.dataValues.answer[0]);
+                }
 
                 // Extract user transcription from words
                 const userTranscription = extractTranscript(pronunciationAssessment);
 
                 // Generate pronunciation assessment message
-                const imageUrl = await createAndUploadScoreImage(pronunciationAssessment, 70);
+                let imageUrl = null;
+                if (!currentWatchAndSpeakQuestion?.dataValues?.answer?.[0]) {
+                    imageUrl = await createAndUploadScoreImageNoAnswer(pronunciationAssessment, 70);
+                } else {
+                    imageUrl = await createAndUploadScoreImage(pronunciationAssessment, 70);
+                }
 
                 if (imageUrl) {
                     // Media message
@@ -328,13 +339,24 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                 const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
 
                 // Azure Pronunciation Assessment
-                const pronunciationAssessment = await AIServices.azurePronunciationAssessment(audioBuffer, currentWatchAndSpeakQuestion.dataValues.answer[0]);
+                let pronunciationAssessment = null;
+                if (!currentWatchAndSpeakQuestion?.dataValues?.answer?.[0]) {
+                    const userTranscription = await AIServices.azureOpenAISpeechToText(audioBuffer);
+                    pronunciationAssessment = await AIServices.azurePronunciationAssessment(audioBuffer, userTranscription);
+                } else {
+                    pronunciationAssessment = await AIServices.azurePronunciationAssessment(audioBuffer, currentWatchAndSpeakQuestion.dataValues.answer[0]);
+                }
 
                 // Extract user transcription from words
                 const userTranscription = extractTranscript(pronunciationAssessment);
 
                 // Generate pronunciation assessment message
-                const imageUrl = await createAndUploadScoreImage(pronunciationAssessment, 80);
+                let imageUrl = null;
+                if (!currentWatchAndSpeakQuestion?.dataValues?.answer?.[0]) {
+                    imageUrl = await createAndUploadScoreImageNoAnswer(pronunciationAssessment, 80);
+                } else {
+                    imageUrl = await createAndUploadScoreImage(pronunciationAssessment, 80);
+                }
 
                 if (imageUrl) {
                     // Media message
