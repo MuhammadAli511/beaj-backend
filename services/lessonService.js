@@ -107,8 +107,9 @@ const getLessonsByActivity = async (course, activity) => {
         const lessons = await lessonRepository.getByCourseActivity(course, activity);
         const lessonIds = lessons.map(lesson => lesson.LessonId);
 
-        if (activity == 'listenAndSpeak' || activity == 'watchAndSpeak' || activity == 'watchAndAudio' || activity == 'watchAndImage' || activity == 'conversationalQuestionsBot' || activity == 'conversationalMonologueBot' || activity == 'conversationalAgencyBot' || activity == 'speakingPractice' || activity == 'feedbackAudio' ||
-            activity == 'assessmentMcqs' || activity == 'assessmentWatchAndSpeak' || activity == 'assessmentWatchAndSpeak'
+        if (activity == 'listenAndSpeak' || activity == 'watchAndSpeak' || activity == 'watchAndAudio' || activity == 'watchAndImage' ||
+            activity == 'conversationalQuestionsBot' || activity == 'conversationalMonologueBot' || activity == 'conversationalAgencyBot' ||
+            activity == 'speakingPractice' || activity == 'feedbackAudio' || activity == 'assessmentMcqs' || activity == 'assessmentWatchAndSpeak'
         ) {
             const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonIds(lessonIds);
             const lessonsWithFiles = lessons.map(lesson => {
