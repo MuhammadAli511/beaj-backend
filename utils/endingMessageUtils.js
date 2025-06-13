@@ -9,6 +9,7 @@ import { weekEndScoreCalculation } from "./chatbotUtils.js";
 import { weekEndImage } from "./imageGenerationUtils.js";
 import { sleep, getDaysPerWeek, getTotalLessonsForCourse } from "./utils.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
+import stickerMapping from "../constants/sticker_mapping.js";
 
 
 const getDayEndingMessage = (dayNumber) => {
@@ -45,6 +46,11 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
             const challengeCompleteSticker = "https://beajbloblive.blob.core.windows.net/beajdocuments/challenge_complete_with_text.webp"
             await sendMediaMessage(userMobileNumber, challengeCompleteSticker, 'sticker');
             await createActivityLog(userMobileNumber, "sticker", "outbound", challengeCompleteSticker, null);
+        }
+        const sticker = stickerMapping[startingLesson.dataValues.activityAlias];
+        if (sticker) {
+            await sendMediaMessage(userMobileNumber, sticker, 'sticker');
+            await createActivityLog(userMobileNumber, "sticker", "outbound", sticker, null);
         }
     }
 

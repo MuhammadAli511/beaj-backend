@@ -1009,7 +1009,7 @@ const webhookService = async (body, res) => {
 
                         // Daily blocking
                         const daysPerWeek = await getDaysPerWeek(profileId);
-                        if (daysPerWeek == 5) {
+                        if (daysPerWeek == 5 && currentUserState.dataValues.persona == "kid") {
                             if (!numbers_to_ignore.includes(userMobileNumber)) {
                                 const course = await courseRepository.getById(
                                     currentUserState.dataValues.currentCourseId
