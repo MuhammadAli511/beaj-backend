@@ -150,6 +150,7 @@ const webhookService = async (body, res) => {
 
             // Wrap the webhook handling logic with the context containing the bot phone number ID
             await runWithContext({ botPhoneNumberId, profileId, userMobileNumber }, async () => {
+                const marketingPreviousMessages = await waUserActivityLogsRepository.getLastMarketingBotMessage(userMobileNumber);
                 let inboundUploadedImage = null;
                 if (message.type === "image") {
                     inboundUploadedImage = await createActivityLog(userMobileNumber, "image", "inbound", message, null);
@@ -193,6 +194,15 @@ const webhookService = async (body, res) => {
                 }
 
                 if (botPhoneNumberId == marketingBotPhoneNumberId) {
+                    if (messageContent.toLowerCase() == "yes" || messageContent.toLowerCase() == "no") {
+                        const lastMessage = marketingPreviousMessages.dataValues.messageContent;
+                        if (lastMessage == "type1_consent" || lastMessage == "type2_consent" || lastMessage == "type3_consent") {
+                            await sendMessage(userMobileNumber, "Response recorded");
+                            await createActivityLog(userMobileNumber, "text", "outbound", "Response recorded", null);
+                            return;
+                        }
+                    }
+
                     if (!["text", "button", "interactive"].includes(message.type)) {
                         await sendMessage(userMobileNumber, "Sorry, I am not able to respond to your question. I only accept text messages.");
                         await createActivityLog(userMobileNumber, "text", "outbound", "Sorry, I am not able to respond to your question. I only accept text messages.", null);
