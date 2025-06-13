@@ -455,7 +455,7 @@ const getPreviousMessages = async (profileId, phoneNumber, lessonId) => {
 
     if (responses.length > 0) {
         responses.forEach(async (response, index) => {
-            if (response?.dataValues?.submittedAnswerText[0] !== null) {
+            if (response?.dataValues?.submittedAnswerText.length > 0) {
                 if (index === 0) {
                     finalMessages.push({
                         role: "user",
@@ -494,7 +494,7 @@ const getPreviousMessagesForAgencyBot = async (profileId, phoneNumber, lessonId,
 
     if (responses.length > 0) {
         responses.forEach(async (response, index) => {
-            if (response?.dataValues?.submittedAnswerText[0] !== null) {
+            if (response?.dataValues?.submittedAnswerText.length > 0) {
                 if (index === 0) {
                     finalMessages.push({
                         role: "user",
