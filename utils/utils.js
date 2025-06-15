@@ -80,7 +80,7 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
     if (acceptableMessagesList.includes("image") && messageType == "image") {
         return true;
     }
-    if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "read" || activityType === "speakingPractice" || activityType === "feedbackAudio") {
+    if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "assessmentWatchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "read" || activityType === "speakingPractice" || activityType === "feedbackAudio") {
         if (acceptableMessagesList.includes("audio") && messageType === "audio") {
             return true;
         } else if (messageType == "text" && messageContent.toLowerCase() == "next" && activityType === "feedbackAudio") {
@@ -149,7 +149,7 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
 };
 
 const getAcceptableMessagesList = async (activityType) => {
-    if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "speakingPractice" || activityType === "feedbackAudio") {
+    if (activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "assessmentWatchAndSpeak" || activityType === "watchAndAudio" || activityType === "conversationalQuestionsBot" || activityType === "conversationalMonologueBot" || activityType === "conversationalAgencyBot" || activityType === "speakingPractice" || activityType === "feedbackAudio") {
         return ["audio"];
     } else if (activityType === "watchAndImage") {
         return ["image"];

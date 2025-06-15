@@ -37,7 +37,7 @@ const getLessonByIdService = async (id) => {
         if (lesson.activity == 'listenAndSpeak' || lesson.activity == 'watchAndSpeak' || lesson.activity == 'watchAndAudio' ||
             lesson.activity == 'watchAndImage' || lesson.activity == 'conversationalQuestionsBot' || lesson.activity == 'conversationalMonologueBot' ||
             lesson.activity == 'conversationalAgencyBot' || lesson.activity == 'speakingPractice' || lesson.activity == 'feedbackAudio' ||
-            lesson.activity == 'assessmentMcqs' || lesson.activity == 'assessmentWatchAndSpeak' || lesson.activity == 'assessmentWatchAndSpeak'
+             lesson.activity == 'assessmentWatchAndSpeak'
         ) {
             const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonId(lesson.LessonId);
             lesson.dataValues.speakActivityQuestionFiles = speakActivityQuestionFiles;
@@ -86,7 +86,7 @@ const deleteLessonService = async (id) => {
         if (activity == 'listenAndSpeak' || activity == 'watchAndSpeak' || activity == 'watchAndAudio' ||
             activity == 'watchAndImage' || activity == 'conversationalQuestionsBot' || activity == 'conversationalMonologueBot' ||
             activity == 'conversationalAgencyBot' || activity == 'speakingPractice' || activity == 'feedbackAudio' ||
-            activity == 'assessmentMcqs' || activity == 'assessmentWatchAndSpeak'
+             activity == 'assessmentWatchAndSpeak'
         ) {
             await speakActivityQuestionRepository.deleteByLessonId(id);
         } else if (activity == 'mcqs' || activity === 'feedbackMcqs' || activity == 'assessmentMcqs') {
@@ -109,7 +109,7 @@ const getLessonsByActivity = async (course, activity) => {
 
         if (activity == 'listenAndSpeak' || activity == 'watchAndSpeak' || activity == 'watchAndAudio' || activity == 'watchAndImage' ||
             activity == 'conversationalQuestionsBot' || activity == 'conversationalMonologueBot' || activity == 'conversationalAgencyBot' ||
-            activity == 'speakingPractice' || activity == 'feedbackAudio' || activity == 'assessmentMcqs' || activity == 'assessmentWatchAndSpeak'
+            activity == 'speakingPractice' || activity == 'feedbackAudio' || activity == 'assessmentWatchAndSpeak'
         ) {
             const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonIds(lessonIds);
             const lessonsWithFiles = lessons.map(lesson => {
@@ -193,7 +193,7 @@ const migrateLessonService = async (lessonId, courseId) => {
                 }
             );
 
-            if (['listenAndSpeak', 'watchAndSpeak', 'watchAndAudio', 'watchAndImage', 'conversationalQuestionsBot', 'conversationalMonologueBot', 'conversationalAgencyBot', 'speakingPractice', 'feedbackAudio', 'assessmentMcqs', 'assessmentWatchAndSpeak', 'assessmentWatchAndSpeak'].includes(lesson.activity)) {
+            if (['listenAndSpeak', 'watchAndSpeak', 'watchAndAudio', 'watchAndImage', 'conversationalQuestionsBot', 'conversationalMonologueBot', 'conversationalAgencyBot', 'speakingPractice', 'feedbackAudio', 'assessmentWatchAndSpeak', 'assessmentWatchAndSpeak'].includes(lesson.activity)) {
                 const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonId(lesson.LessonId);
                 await Promise.all(speakActivityQuestionFiles.map(file => {
                     const answerArray = Array.isArray(file.answer) ? file.answer : [file.answer];
@@ -338,12 +338,48 @@ const testLessonService = async (phoneNumber, lesson) => {
 
         const currentIndex = lessons.findIndex(l => l.LessonId === LessonId);
 
-        if (currentIndex <= 0) {
+        if (weekNumber === 1 && dayNumber === 1 && SequenceNumber === 1) {
             lessonObj = {
                 status: 'success',
                 previous_lesson_id: null,
                 message: 'start my course',
             };
+
+            const now = new Date();
+
+            // Delete previous purchases
+            await waPurchasedCoursesRepository.deleteByPhoneNumber(phoneNumber);
+
+            const waUserMeta = await waUserMetaRepository.getByPhoneNumber(phoneNumber);
+
+            const courseCateg = await courseRepository.getById(courseId);
+
+            // Add new record
+            await waPurchasedCoursesRepository.create({
+                phoneNumber,
+                courseId: courseId,
+                courseCategoryId: courseCateg.CourseCategoryId,
+                profile_id: waUserMeta.profile_id,
+                purchaseDate: now,
+                courseStartDate: now,
+            });
+
+            // Update progress
+            await waUserProgressRepository.updateTestUserProgress(phoneNumber, {
+                engagement_type: 'Course Start',
+                currentCourseId: null,
+                currentWeek: null,
+                currentDay: null,
+                currentLessonId: null,
+                currentLesson_sequence: null,
+                acceptableMessages: [lessonObj.message],
+                questionNumber: null,
+                retryCounter: 0,
+                activityType: null,
+                lastUpdated: now,
+            });
+
+            return lessonObj;
         }
 
         const previousLesson = lessons[currentIndex - 1];
