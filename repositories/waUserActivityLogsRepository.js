@@ -79,10 +79,23 @@ const getLastMessageTime = async () => {
             'phoneNumber',
             [Sequelize.fn('MAX', Sequelize.col('timestamp')), 'timestamp']
         ],
-        group: ['profile_id', 'phoneNumber']
+        group: ['profile_id', 'phoneNumber', 'messageContent']
     });
 
     return lastMessages;
+};
+
+const getLastMarketingBotMessage = async (phoneNumber) => {
+    const lastMessage = await WA_UserActivityLogs.findOne({
+        where: {
+            phoneNumber: phoneNumber,
+            bot_phone_number_id: process.env.MARKETING_BOT_PHONE_NUMBER_ID
+        },
+        order: [
+            ['timestamp', 'DESC']
+        ]
+    });
+    return lastMessage;
 };
 
 const getStudentCoursePriceByFirstMessage = async (phoneNumber) => {
@@ -172,5 +185,6 @@ export default {
     getLastActiveUsers,
     getLastMessageTime,
     getStudentCoursePriceByFirstMessage,
-    getMarketingBotChatHistory
+    getMarketingBotChatHistory,
+    getLastMarketingBotMessage
 };
