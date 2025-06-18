@@ -91,7 +91,7 @@ const getWaQuestionResponsesByActivityTypeService = async (activityType) => {
             courseName: course?.CourseName,
             SequenceNumber: lesson?.SequenceNumber,
             question: speakActivityQuestion?.question?.match(/<question>(.*?)<\/question>/s)?.[1]?.trim() || speakActivityQuestion?.question || multipleChoiceQuestion?.QuestionText,
-            answer: activityType == 'mcqs' || activityType == 'feedbackMcqs' ? userSelectedAnswerText : speakActivityQuestion?.answer,
+            answer: activityType == 'mcqs' || activityType == 'feedbackMcqs' || activityType == 'assessmentMcqs' ? userSelectedAnswerText : speakActivityQuestion?.answer,
             mediaFile: activityType == 'conversationalMonologueBot' ? null : speakActivityQuestion?.mediaFile,
             mediaFileSecond: speakActivityQuestion?.mediaFileSecond,
             questionNumber: speakActivityQuestion?.questionNumber || multipleChoiceQuestion?.QuestionNumber,
