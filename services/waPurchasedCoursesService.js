@@ -77,7 +77,7 @@ const getUnpurchasedCoursesByPhoneNumberService = async (phoneNumber) => {
     return courses.filter(course => course.user_status === "unpurchased");
 };
 
-const purchaseCourseService = async (phoneNumber, profile_id, courseId) => {
+const purchaseCourseService = async (phoneNumber, courseId, profile_id) => {
     const allCourses = await courseRepository.getAll();
     const course = allCourses.find(course => course.CourseId == courseId);
     if (!course) {

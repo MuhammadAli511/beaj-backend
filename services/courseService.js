@@ -97,7 +97,7 @@ const duplicateCourseService = async (id) => {
         for (const lesson of lessons) {
             const newLesson = await lessonRepository.create(lesson.dataValues.lessonType, lesson.dataValues.dayNumber, lesson.dataValues.activity, lesson.dataValues.activityAlias, lesson.dataValues.weekNumber, lesson.dataValues.text, newCourse.CourseId, lesson.dataValues.SequenceNumber, lesson.dataValues.status, lesson.dataValues.textInstruction, lesson.dataValues.audioInstructionUrl);
 
-            if (lesson.dataValues.activity == 'listenAndSpeak' || lesson.dataValues.activity == 'watchAndSpeak' || lesson.dataValues.activity == 'watchAndAudio' || lesson.dataValues.activity == 'watchAndImage' || lesson.dataValues.activity == 'conversationalQuestionsBot' || lesson.dataValues.activity == 'conversationalMonologueBot' || lesson.dataValues.activity == 'conversationalAgencyBot' || lesson.dataValues.activity == 'speakingPractice' || lesson.dataValues.activity == 'feedbackAudio') {
+            if (lesson.dataValues.activity == 'listenAndSpeak' || lesson.dataValues.activity == 'watchAndSpeak' || lesson.dataValues.activity == 'watchAndAudio' || lesson.dataValues.activity == 'watchAndImage' || lesson.dataValues.activity == 'conversationalQuestionsBot' || lesson.dataValues.activity == 'conversationalMonologueBot' || lesson.dataValues.activity == 'conversationalAgencyBot' || lesson.dataValues.activity == 'speakingPractice' || lesson.dataValues.activity == 'feedbackAudio' || lesson.dataValues.activity == 'assessmentWatchAndSpeak') {
                 // SPEAK ACTIVITY QUESTIONS
                 // Get original speak activity questions
                 const speakActivityQuestions = await speakActivityQuestionRepository.getByLessonId(lesson.dataValues.LessonId);
@@ -105,7 +105,7 @@ const duplicateCourseService = async (id) => {
                 for (const speakActivityQuestion of speakActivityQuestions) {
                     await speakActivityQuestionRepository.create(speakActivityQuestion.dataValues.question, speakActivityQuestion.dataValues.mediaFile, speakActivityQuestion.dataValues.mediaFileSecond, speakActivityQuestion.dataValues.answer, newLesson.LessonId, speakActivityQuestion.dataValues.questionNumber, speakActivityQuestion.dataValues.difficultyLevel, speakActivityQuestion.dataValues.customFeedbackText, speakActivityQuestion.dataValues.customFeedbackImage, speakActivityQuestion.dataValues.customFeedbackAudio);
                 }
-            } else if (lesson.dataValues.activity == 'mcqs' || lesson.dataValues.activity == 'feedbackMcqs') {
+            } else if (lesson.dataValues.activity == 'mcqs' || lesson.dataValues.activity == 'feedbackMcqs' || lesson.dataValues.activity == 'assessmentMcqs') {
                 // MULTIPLE CHOICE QUESTIONS
                 // Get original multiple choice questions
                 const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonId(lesson.dataValues.LessonId);
