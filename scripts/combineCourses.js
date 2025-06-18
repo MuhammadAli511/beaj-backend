@@ -154,7 +154,7 @@ const copyLessonRelatedData = async (sourceLessonId, targetLessonId, activity) =
     if (activity === 'listenAndSpeak' || activity === 'watchAndSpeak' || activity === 'watchAndAudio' ||
         activity === 'watchAndImage' || activity === 'conversationalQuestionsBot' ||
         activity === 'conversationalMonologueBot' || activity === 'conversationalAgencyBot' ||
-        activity === 'speakingPractice' || activity === 'feedbackAudio') {
+        activity === 'speakingPractice' || activity === 'feedbackAudio' || activity === 'assessmentWatchAndSpeak') {
 
         // Copy speak activity questions
         const speakQuestions = await speakActivityQuestionRepository.getByLessonId(sourceLessonId);
@@ -170,7 +170,7 @@ const copyLessonRelatedData = async (sourceLessonId, targetLessonId, activity) =
             );
         }
 
-    } else if (activity === 'mcqs' || activity === 'feedbackMcqs') {
+    } else if (activity === 'mcqs' || activity === 'feedbackMcqs' || activity === 'assessmentMcqs') {
 
         // Copy multiple choice questions
         const mcqs = await multipleChoiceQuestionRepository.getByLessonId(sourceLessonId);

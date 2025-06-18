@@ -3,20 +3,23 @@ import fs from 'fs';
 import path from 'path';
 import { createCanvas, loadImage } from 'canvas';
 import { fileURLToPath } from 'url';
+import { et } from "date-fns/locale";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const getAllUserProgressService = async (targetGroup, cohort, module, courseId1, courseId2, courseId3) => {
+const getAllUserProgressService = async (botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3, module) => {
+  console.log(botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3, module)
   let array_list = [];
 
   if (module === 'lesson') {
-    array_list = await etlRepository.getLessonCompletions(courseId1, courseId2, courseId3, targetGroup, cohort);
+    array_list = await etlRepository.getLessonCompletions(botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3);
   }
-  else if (module === 'week') {
-    let weekly_score_l1_list = await etlRepository.getWeeklyScore(courseId1, targetGroup, cohort);
-    let weekly_score_l2_list = await etlRepository.getWeeklyScore(courseId2, targetGroup, cohort);
-    let weekly_score_l3_list = await etlRepository.getWeeklyScore(courseId3, targetGroup, cohort);
+  else if (module === 'week' && botType === 'teacher') {
+
+    let weekly_score_l1_list = await etlRepository.getWeeklyScore(botType, rollout, level, cohort, targetGroup, courseId1);
+    let weekly_score_l2_list = await etlRepository.getWeeklyScore(botType, rollout, level, cohort, targetGroup, courseId2);
+    let weekly_score_l3_list = await etlRepository.getWeeklyScore(botType, rollout, level, cohort, targetGroup, courseId3);
 
     for (let i = 0; i < weekly_score_l1_list.length; i++) {
 
@@ -26,6 +29,7 @@ const getAllUserProgressService = async (targetGroup, cohort, module, courseId1,
 
       array_list.push([
         l1_entry.sr_no,
+        l1_entry.profile_id,
         l1_entry.phoneNumber,
         l1_entry.name,
         l1_entry.final_percentage_week1,
@@ -56,7 +60,93 @@ const getAllUserProgressService = async (targetGroup, cohort, module, courseId1,
     };
   }
   else if (module === 'activity') {
-    array_list = await etlRepository.getActivity_Completions(courseId1, courseId2, courseId3, targetGroup, cohort);
+    array_list = await etlRepository.getActivity_Completions(botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3);
+  }
+  else if (module === 'assessment') {
+    let array_list_Pre = await etlRepository.getActivtyAssessmentScore(botType, rollout, level, cohort, targetGroup, courseId1);
+    let array_listt_Post = await etlRepository.getActivtyAssessmentScore(botType, rollout, level, cohort, targetGroup, courseId2);
+
+    let individual_weekly_score_l1_list_total = [], individual_weekly_score_l2_list_total = [];
+      let arrayT1_List01 = [];
+
+      let maxL1 = {
+        listenAndSpeak_total: 0,
+        mcqs_total: 0,
+        watchAndSpeak_total: 0,
+        read_total: 0,
+        conversationalMonologue_total: 0,
+        Speaking_practice_total: 0
+      };
+
+      let maxL2 = {
+        listenAndSpeak_total: 0,
+        mcqs_total: 0,
+        watchAndSpeak_total: 0,
+        read_total: 0,
+        conversationalMonologue_total: 0,
+        Speaking_practice_total: 0
+      };
+
+      for (let i = 0; i < array_list_Pre.length; i++) {
+        let l1_entry = array_list_Pre[i];
+        let l2_entry = array_listt_Post[i];
+
+        // Update max totals for L1
+        maxL1.listenAndSpeak_total = Math.max(maxL1.listenAndSpeak_total, l1_entry.listenAndSpeak_total);
+        maxL1.mcqs_total = Math.max(maxL1.mcqs_total, l1_entry.mcqs_total);
+        maxL1.watchAndSpeak_total = Math.max(maxL1.watchAndSpeak_total, l1_entry.watchAndSpeak_total);
+        maxL1.read_total = Math.max(maxL1.read_total, l1_entry.read_total);
+        maxL1.conversationalMonologue_total = Math.max(maxL1.conversationalMonologue_total, l1_entry.conversationalMonologue_total);
+        maxL1.Speaking_practice_total = Math.max(maxL1.Speaking_practice_total, l1_entry.Speaking_practice_total);
+
+        // Update max totals for L2
+        maxL2.listenAndSpeak_total = Math.max(maxL2.listenAndSpeak_total, l2_entry.listenAndSpeak_total);
+        maxL2.mcqs_total = Math.max(maxL2.mcqs_total, l2_entry.mcqs_total);
+        maxL2.watchAndSpeak_total = Math.max(maxL2.watchAndSpeak_total, l2_entry.watchAndSpeak_total);
+        maxL2.read_total = Math.max(maxL2.read_total, l2_entry.read_total);
+        maxL2.conversationalMonologue_total = Math.max(maxL2.conversationalMonologue_total, l2_entry.conversationalMonologue_total);
+        maxL2.Speaking_practice_total = Math.max(maxL2.Speaking_practice_total, l2_entry.Speaking_practice_total);
+
+        // Your existing array push
+        arrayT1_List01.push([
+          i + 1,
+          l1_entry.profile_id,
+          l1_entry.phoneNumber,
+          l1_entry.name,
+          l1_entry.listenAndSpeak,
+          l1_entry.mcqs,
+          l1_entry.watchAndSpeak,
+          l1_entry.read,
+          l1_entry.conversationalMonologue,
+          l1_entry.Speaking_practice,
+          null,
+          l2_entry.listenAndSpeak,
+          l2_entry.mcqs,
+          l2_entry.watchAndSpeak,
+          l2_entry.read,
+          l2_entry.conversationalMonologue,
+          l2_entry.Speaking_practice,
+        ]);
+      }
+
+      // Push final max row to individual_weekly_score_l1_list_total
+      individual_weekly_score_l1_list_total.push([
+        maxL1.listenAndSpeak_total,
+        maxL1.mcqs_total,
+        maxL1.watchAndSpeak_total,
+        maxL1.read_total,
+        maxL1.conversationalMonologue_total,
+        maxL1.Speaking_practice_total,
+        null,
+        maxL2.listenAndSpeak_total,
+        maxL2.mcqs_total,
+        maxL2.watchAndSpeak_total,
+        maxL2.read_total,
+        maxL2.conversationalMonologue_total,
+        maxL2.Speaking_practice_total,
+      ]);
+       
+        array_list = arrayT1_List01;
   }
 
   array_list = array_list.map(obj => Object.values(obj).map(value => value));

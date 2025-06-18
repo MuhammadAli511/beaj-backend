@@ -9,6 +9,10 @@ import waUserMetaRepository from "../repositories/waUsersMetadataRepository.js";
 import prodSequelize from "../config/prodDB.js";
 import courseRepository from "../repositories/courseRepository.js";
 import azure_blob from "../utils/azureBlobStorage.js";
+import {removeUserTillCourse} from "../utils/chatbotUtils.js";
+import waUserActivityLogsRepository from "../repositories/waUserActivityLogsRepository.js";
+import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
+import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRepository.js";
 
 const createLessonService = async (lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status, textInstruction, audioInstruction) => {
     try {
@@ -37,7 +41,7 @@ const getLessonByIdService = async (id) => {
         if (lesson.activity == 'listenAndSpeak' || lesson.activity == 'watchAndSpeak' || lesson.activity == 'watchAndAudio' ||
             lesson.activity == 'watchAndImage' || lesson.activity == 'conversationalQuestionsBot' || lesson.activity == 'conversationalMonologueBot' ||
             lesson.activity == 'conversationalAgencyBot' || lesson.activity == 'speakingPractice' || lesson.activity == 'feedbackAudio' ||
-            lesson.activity == 'assessmentMcqs' || lesson.activity == 'assessmentWatchAndSpeak' || lesson.activity == 'assessmentWatchAndSpeak'
+             lesson.activity == 'assessmentWatchAndSpeak'
         ) {
             const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonId(lesson.LessonId);
             lesson.dataValues.speakActivityQuestionFiles = speakActivityQuestionFiles;
@@ -86,7 +90,7 @@ const deleteLessonService = async (id) => {
         if (activity == 'listenAndSpeak' || activity == 'watchAndSpeak' || activity == 'watchAndAudio' ||
             activity == 'watchAndImage' || activity == 'conversationalQuestionsBot' || activity == 'conversationalMonologueBot' ||
             activity == 'conversationalAgencyBot' || activity == 'speakingPractice' || activity == 'feedbackAudio' ||
-            activity == 'assessmentMcqs' || activity == 'assessmentWatchAndSpeak'
+            activity == 'assessmentWatchAndSpeak'
         ) {
             await speakActivityQuestionRepository.deleteByLessonId(id);
         } else if (activity == 'mcqs' || activity === 'feedbackMcqs' || activity == 'assessmentMcqs') {
@@ -109,7 +113,7 @@ const getLessonsByActivity = async (course, activity) => {
 
         if (activity == 'listenAndSpeak' || activity == 'watchAndSpeak' || activity == 'watchAndAudio' || activity == 'watchAndImage' ||
             activity == 'conversationalQuestionsBot' || activity == 'conversationalMonologueBot' || activity == 'conversationalAgencyBot' ||
-            activity == 'speakingPractice' || activity == 'feedbackAudio' || activity == 'assessmentMcqs' || activity == 'assessmentWatchAndSpeak'
+            activity == 'speakingPractice' || activity == 'feedbackAudio' || activity == 'assessmentWatchAndSpeak'
         ) {
             const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonIds(lessonIds);
             const lessonsWithFiles = lessons.map(lesson => {
@@ -193,7 +197,7 @@ const migrateLessonService = async (lessonId, courseId) => {
                 }
             );
 
-            if (['listenAndSpeak', 'watchAndSpeak', 'watchAndAudio', 'watchAndImage', 'conversationalQuestionsBot', 'conversationalMonologueBot', 'conversationalAgencyBot', 'speakingPractice', 'feedbackAudio', 'assessmentMcqs', 'assessmentWatchAndSpeak', 'assessmentWatchAndSpeak'].includes(lesson.activity)) {
+            if (['listenAndSpeak', 'watchAndSpeak', 'watchAndAudio', 'watchAndImage', 'conversationalQuestionsBot', 'conversationalMonologueBot', 'conversationalAgencyBot', 'speakingPractice', 'feedbackAudio', 'assessmentWatchAndSpeak'].includes(lesson.activity)) {
                 const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonId(lesson.LessonId);
                 await Promise.all(speakActivityQuestionFiles.map(file => {
                     const answerArray = Array.isArray(file.answer) ? file.answer : [file.answer];
@@ -341,9 +345,53 @@ const testLessonService = async (phoneNumber, lesson) => {
         if (currentIndex <= 0) {
             lessonObj = {
                 status: 'success',
-                previous_lesson_id: null,
+                previous_lesson_id: LessonId,
                 message: 'start my course',
             };
+
+            const now = new Date();
+
+            // Delete previous purchases
+            await waPurchasedCoursesRepository.deleteByPhoneNumber(phoneNumber);
+
+            const waUserMeta = await waUserMetaRepository.getByPhoneNumber(phoneNumber);
+
+            const courseCateg = await courseRepository.getById(courseId);
+
+            // Add new record
+            await waPurchasedCoursesRepository.create({
+                phoneNumber,
+                courseId: courseId,
+                courseCategoryId: courseCateg.CourseCategoryId,
+                profile_id: waUserMeta.profile_id,
+                purchaseDate: now,
+                courseStartDate: now,
+            });
+
+            // Update progress
+            await waUserProgressRepository.updateTestUserProgress(phoneNumber, {
+                engagement_type: null,
+                currentCourseId: courseId,
+                currentWeek: null,
+                currentDay: null,
+                currentLessonId: null,
+                currentLesson_sequence: null,
+                acceptableMessages: [lessonObj.message],
+                questionNumber: null,
+                retryCounter: 0,
+                activityType: null,
+                lastUpdated: now,
+            });
+
+            await waUserProgressRepository.update(waUserMeta.profile_id, phoneNumber, null, null, null, null, null, null, null, null, [lessonObj.message]);
+            await waUserProgressRepository.updateEngagementType(waUserMeta.profile_id, phoneNumber, "Course Start");
+            await waUserActivityLogsRepository.deleteByPhoneNumber(phoneNumber);
+            await waLessonsCompletedRepository.deleteByPhoneNumber(phoneNumber);
+            await waQuestionResponsesRepository.deleteByPhoneNumber(phoneNumber);
+
+            // removeUserTillCourse(waUserMeta.profile_id, phoneNumber);
+
+            return lessonObj;
         }
 
         const previousLesson = lessons[currentIndex - 1];
