@@ -48,8 +48,14 @@ const removeUser = async (phoneNumber) => {
 };
 
 const removeUserTillCourse = async (profileId, phoneNumber) => {
-    await waUserProgressRepository.update(profileId, phoneNumber, null, null, null, null, null, null, null, null, ["start my course"]);
-    await waUserProgressRepository.updateEngagementType(profileId, phoneNumber, "School Input");
+    const profile = await waProfileRepository.getByProfileId(profileId);
+    const profileType = profile.dataValues.profile_type;
+    if (profileType == "teacher") {
+        await waUserProgressRepository.update(profileId, phoneNumber, null, null, null, null, null, null, null, null, ["start my course"]);
+    } else {
+        await waUserProgressRepository.update(profileId, phoneNumber, null, null, null, null, null, null, null, null, ["start now!"]);
+    }
+    await waUserProgressRepository.updateEngagementType(profileId, phoneNumber, "Course Start");
     await waUserActivityLogsRepository.deleteByPhoneNumber(phoneNumber);
     await waLessonsCompletedRepository.deleteByPhoneNumber(phoneNumber);
     await waQuestionResponsesRepository.deleteByPhoneNumber(phoneNumber);

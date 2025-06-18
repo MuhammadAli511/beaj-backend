@@ -9,7 +9,7 @@ import { weekEndScoreCalculation } from "./chatbotUtils.js";
 import { weekEndImage } from "./imageGenerationUtils.js";
 import { sleep, getDaysPerWeek, getTotalLessonsForCourse } from "./utils.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
-import stickerMapping from "../constants/sticker_mapping.js";
+import stickerMapping from "../constants/stickerMapping.js";
 
 
 const getDayEndingMessage = (dayNumber) => {
