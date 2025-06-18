@@ -168,31 +168,35 @@ const startCourseForUser = async (profileId, userMobileNumber, numbers_to_ignore
     );
 
     // Extract Level from courseName
-    const courseName = nextCourse.dataValues.courseName.split("-");
-    const level = courseName[0].trim();
+    // if teacher
+    const profile = await waProfileRepository.getByProfileId(profileId);
+    const profileType = profile.dataValues.profile_type;
+    if (profileType == "teacher") {
+        const courseName = nextCourse.dataValues.courseName.split("-");
+        const level = courseName[0].trim();
 
-    let intro_message = "Assalam o Alaikum 👋\n\nWelcome to Beaj Self Development Course for Teachers " + level + "!";
-    if (level == "Level 1") {
-        intro_message += "\n\nMa'am Zainab Qureshi, Ma'am Fizza Hasan and Ma'am Sameen Shahid will be your instructors.";
+        let intro_message = "Assalam o Alaikum 👋\n\nWelcome to Beaj Self Development Course for Teachers " + level + "!";
+        if (level == "Level 1") {
+            intro_message += "\n\nMa'am Zainab Qureshi, Ma'am Fizza Hasan and Ma'am Sameen Shahid will be your instructors.";
+        }
+        await sendMessage(userMobileNumber, intro_message);
+        await createActivityLog(userMobileNumber, "text", "outbound", intro_message, null);
+        if (level == "Level 1") {
+            const demoVideo = await waConstantsRepository.getByKey("DEMO_VIDEO");
+            await sendMediaMessage(userMobileNumber, demoVideo.dataValues.constantValue, 'video', null, 0, "WA_Constants", demoVideo.dataValues.id, demoVideo.dataValues.constantMediaId, "constantMediaId");
+            await createActivityLog(userMobileNumber, "video", "outbound", demoVideo.dataValues.constantValue, null);
+            await sleep(12000);
+        }
+        await sendButtonMessage(userMobileNumber, "Are you ready to start " + level + "?", [{ id: "lets_start", title: "Start" }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start " + level + "?", null);
+        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start"]);
+    } else {
+        const puzzleImage = await waConstantsRepository.getByKey("PUZZLE1");
+        const captionText = "🎯 Play games to unlock the Summer Camp!";
+        await sendButtonMessage(userMobileNumber, captionText, [{ id: "lets_start", title: "Start" }], 0, puzzleImage.dataValues.constantValue, null, "WA_Constants", puzzleImage.dataValues.id, puzzleImage.dataValues.constantMediaId, null, "constantMediaId");
+        await createActivityLog(userMobileNumber, "template", "outbound", captionText, null);
+        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start"]);
     }
-    await sendMessage(userMobileNumber, intro_message);
-    await createActivityLog(userMobileNumber, "text", "outbound", intro_message, null);
-
-
-    if (level == "Level 1") {
-        const demoVideo = await waConstantsRepository.getByKey("DEMO_VIDEO");
-        await sendMediaMessage(userMobileNumber, demoVideo.dataValues.constantValue, 'video', null, 0, "WA_Constants", demoVideo.dataValues.id, demoVideo.dataValues.constantMediaId, "constantMediaId");
-        await createActivityLog(userMobileNumber, "video", "outbound", demoVideo.dataValues.constantValue, null);
-        await sleep(12000);
-    }
-
-    // Send Button Message
-    // "Are you ready to start level"
-    await sendButtonMessage(userMobileNumber, "Are you ready to start " + level + "?", [{ id: "lets_start", title: "Start" }]);
-    await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start " + level + "?", null);
-
-    // Update acceptable messages list for the user
-    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start"]);
 };
 
 const levelCourseStart = async (profileId, userMobileNumber, startingLesson, courseId) => {

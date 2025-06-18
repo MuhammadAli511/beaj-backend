@@ -176,7 +176,7 @@ const endTrialTeachers = async (profileId, userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "End Now");
     let endTrialMessage = "You have chosen to end your free trial. Next Steps:";
     const freeTrialCompleteImage = await waConstantsRepository.getByKey("FREE_TRIAL_COMPLETE_IMAGE");
-    const user = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
+    const user = await waUsersMetadataRepository.getByProfileId(profileId);
     if (user.dataValues.userRegistrationComplete) {
         await sendButtonMessage(userMobileNumber, endTrialMessage, [{ id: 'get_another_trial', title: 'Get Another Trial' }], 0, freeTrialCompleteImage.dataValues.constantValue, null, "WA_Constants", freeTrialCompleteImage.dataValues.id, freeTrialCompleteImage.dataValues.constantMediaId, null, "constantMediaId");
     } else {
@@ -194,7 +194,7 @@ const endTrialKids = async (profileId, userMobileNumber) => {
     await waUsersMetadataRepository.updateFreeDemoEnded(profileId, userMobileNumber);
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "End Now");
     let endTrialMessage = "You have chosen to end your free trial. Next Steps:\n\nآپ کا ٹرائل ختم ہوا۔ آپ آگے کیا کرنا چاہیں گے؟";
-    const user = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
+    const user = await waUsersMetadataRepository.getByProfileId(profileId);
     if (user.dataValues.userRegistrationComplete) {
         await sendButtonMessage(userMobileNumber, endTrialMessage, [{ id: 'get_another_trial', title: 'Get Another Trial' }]);
     } else {

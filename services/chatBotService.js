@@ -115,12 +115,15 @@ const webhookService = async (body, res) => {
             const message = body.entry[0].changes[0].value.messages[0];
             const userMobileNumber = "+" + message.from;
             const activeSession = await waActiveSessionRepository.getByPhoneNumberAndBotPhoneNumberId(userMobileNumber, botPhoneNumberId);
+            const userProfileExists = await waProfileRepository.getByPhoneNumberAndBotPhoneNumberId(userMobileNumber, botPhoneNumberId);
             let profileId = null;
             let userExists = false;
+            let chooseProfile = false;
             if (activeSession) {
                 profileId = activeSession.dataValues.profile_id;
                 userExists = true;
-            } else {
+            }
+            else if (!activeSession && !userProfileExists) {
                 let profile_type = "";
                 if (botPhoneNumberId == teacherBotPhoneNumberId) {
                     profile_type = "teacher";
@@ -140,6 +143,11 @@ const webhookService = async (body, res) => {
                 await waUsersMetadataRepository.create({ profile_id: profileId, phoneNumber: userMobileNumber, userClickedLink: new Date() });
                 await waActiveSessionRepository.create({ phone_number: userMobileNumber, bot_phone_number_id: botPhoneNumberId, profile_id: profileId });
                 userExists = false;
+            } else {
+                console.log("userMobileNumber 1", userMobileNumber);
+                const profiles = await waProfileRepository.getAllSortOnProfileId(userMobileNumber);
+                profileId = profiles[0].dataValues.profile_id;
+                chooseProfile = true;
             }
 
             let messageContent;
@@ -192,6 +200,41 @@ const webhookService = async (body, res) => {
                     await removeUserTillCourse(profileId, userMobileNumber);
                     return;
                 }
+
+
+                if (chooseProfile) {
+                    console.log("userMobileNumber 2", userMobileNumber);
+                    const profiles = await waProfileRepository.getAllSortOnProfileId(userMobileNumber);
+                    const userMetadata = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
+                    for (let i = 0; i < profiles.length; i += 3) {
+                        const profileChunk = profiles.slice(i, i + 3);
+                        let profileMessage = "Choose user:\n";
+
+                        // Create message for this chunk
+                        profileChunk.forEach((profile, chunkIndex) => {
+                            const globalIndex = i + chunkIndex;
+                            const matchingUser = userMetadata.find(user => user.dataValues.profile_id === profile.dataValues.profile_id);
+                            profileMessage += `${String.fromCharCode(65 + globalIndex)}) ${matchingUser.dataValues.name}\n`;
+                        });
+
+                        // Create buttons for this chunk
+                        const buttons = profileChunk.map((profile, chunkIndex) => {
+                            const globalIndex = i + chunkIndex;
+                            return { id: String(profile.dataValues.profile_id), title: String.fromCharCode(65 + globalIndex) };
+                        });
+
+                        await sendButtonMessage(userMobileNumber, profileMessage.trim(), buttons);
+                        await createActivityLog(userMobileNumber, "template", "outbound", profileMessage.trim(), null);
+                        await sleep(1000);
+                    }
+                    const acceptableMessagesList = Array.from({ length: profiles.length }, (_, i) => String.fromCharCode(65 + i));
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
+                    await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Choose User");
+                    await waActiveSessionRepository.create({ phone_number: userMobileNumber, bot_phone_number_id: botPhoneNumberId, profile_id: profileId });
+                    return;
+                }
+
+
 
                 if (botPhoneNumberId == marketingBotPhoneNumberId) {
                     if (messageContent.toLowerCase() == "yes" || messageContent.toLowerCase() == "no") {
@@ -751,6 +794,7 @@ const webhookService = async (body, res) => {
                 if (text_message_types.includes(message.type)) {
                     if (
                         messageContent.toLowerCase().includes("start next activity") ||
+                        messageContent.toLowerCase().includes("start next game") ||
                         messageContent.toLowerCase().includes("next challenge") ||
                         messageContent.toLowerCase().includes("go to next activity") ||
                         messageContent.toLowerCase().includes("next activity") ||
@@ -869,6 +913,47 @@ const webhookService = async (body, res) => {
                     }
                 }
 
+
+
+
+                // Actual Course
+                // User Switching
+                // if not active session and messageContent.toLowerCase().includes("start now!")
+                if (
+                    (messageContent.toLowerCase().includes("change user"))
+                ) {
+                    console.log("userMobileNumber 3", userMobileNumber);
+                    const profiles = await waProfileRepository.getAllSortOnProfileId(userMobileNumber);
+                    const userMetadata = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
+                    for (let i = 0; i < profiles.length; i += 3) {
+                        const profileChunk = profiles.slice(i, i + 3);
+                        let profileMessage = "Choose user:\n";
+
+                        // Create message for this chunk
+                        profileChunk.forEach((profile, chunkIndex) => {
+                            const globalIndex = i + chunkIndex;
+                            const matchingUser = userMetadata.find(user => user.dataValues.profile_id === profile.dataValues.profile_id);
+                            profileMessage += `${String.fromCharCode(65 + globalIndex)}) ${matchingUser.dataValues.name}\n`;
+                        });
+
+                        // Create buttons for this chunk
+                        const buttons = profileChunk.map((profile, chunkIndex) => {
+                            const globalIndex = i + chunkIndex;
+                            return { id: String(profile.dataValues.profile_id), title: String.fromCharCode(65 + globalIndex) };
+                        });
+
+                        await sendButtonMessage(userMobileNumber, profileMessage.trim(), buttons);
+                        await createActivityLog(userMobileNumber, "template", "outbound", profileMessage.trim(), null);
+                        await sleep(1000);
+                    }
+                    const acceptableMessagesList = Array.from({ length: profiles.length }, (_, i) => String.fromCharCode(65 + i));
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
+                    await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Choose User");
+                    return;
+                }
+
+
+
                 let numbers_to_ignore = [
                     "+923008400080",
                     "+923303418882",
@@ -884,11 +969,30 @@ const webhookService = async (body, res) => {
                     "+923012232148",
                 ];
 
+                // User selecting a profile
+                if (currentUserState.dataValues.engagement_type == "Choose User") {
+                    console.log("userMobileNumber 4", userMobileNumber);
+                    const profiles = await waProfileRepository.getAllSortOnProfileId(userMobileNumber);
+                    const index = messageContent.toLowerCase().charCodeAt(0) - 97;
+                    const profile = profiles[index];
+                    profileId = profile.dataValues.profile_id;
+                    if (!activeSession) {
+                        await waActiveSessionRepository.create({ phone_number: userMobileNumber, bot_phone_number_id: botPhoneNumberId, profile_id: profileId });
+                    } else {
+                        await waActiveSessionRepository.updateCurrentProfileIdOnPhoneNumber(userMobileNumber, profileId, botPhoneNumberId);
+                    }
+                    await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Course Start");
+                    await startCourseForUser(profileId, userMobileNumber, numbers_to_ignore);
+                    return;
+                }
+
                 // START MAIN COURSE
                 if (
                     text_message_types.includes(message.type) &&
                     (messageContent.toLowerCase().includes("start my course") ||
-                        messageContent.toLowerCase().includes("start next level"))
+                        messageContent.toLowerCase().includes("start next level") ||
+                        messageContent.toLowerCase().includes("start now!")
+                    )
                 ) {
                     await startCourseForUser(profileId, userMobileNumber, numbers_to_ignore);
                     return;
@@ -968,11 +1072,13 @@ const webhookService = async (body, res) => {
                 if (text_message_types.includes(message.type)) {
                     if (
                         messageContent.toLowerCase().includes("start next activity") ||
+                        messageContent.toLowerCase().includes("start next game") ||
                         messageContent.toLowerCase().includes("start next lesson") ||
                         messageContent.toLowerCase().includes("it was great") ||
                         messageContent.toLowerCase().includes("it was great 😁") ||
                         messageContent.toLowerCase().includes("it can be improved") ||
                         messageContent.toLowerCase().includes("it can be improved 🤔") ||
+                        messageContent.toLowerCase().includes("start questions") ||
                         messageContent.toLowerCase().includes("yes") ||
                         messageContent.toLowerCase().includes("no, try again") ||
                         messageContent.toLowerCase().includes("no") ||
@@ -1060,9 +1166,19 @@ const webhookService = async (body, res) => {
                                         todayMonth == dayUnlockDateMonth &&
                                         todayDate < dayUnlockDateDate)
                                 ) {
-                                    const message = "Please wait for the next day's content to unlock.";
-                                    await sendMessage(userMobileNumber, message);
-                                    await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+                                    if (messageContent.toLowerCase().includes("start next lesson")) {
+                                        const message = "Please come back tomorrow to unlock the next lesson.";
+                                        await sendButtonMessage(userMobileNumber, message, [{ id: 'start_next_lesson', title: 'Start Next Lesson' }, { id: 'change_user', title: 'Change User' }]);
+                                        await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Lesson", null);
+                                    } else if (messageContent.toLowerCase().includes("start next game")) {
+                                        const message = "Please come back tomorrow to unlock the next game.";
+                                        await sendButtonMessage(userMobileNumber, message, [{ id: 'start_next_game', title: 'Start Next Game' }, { id: 'change_user', title: 'Change User' }]);
+                                        await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Game", null);
+                                    } else {
+                                        const message = "Please come back tomorrow to unlock the next lesson.";
+                                        await sendMessage(userMobileNumber, message);
+                                        await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+                                    }
                                     return;
                                 }
                             }
