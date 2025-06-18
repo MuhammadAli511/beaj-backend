@@ -179,9 +179,6 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
             await createActivityLog(userMobileNumber, "template", "outbound", profileMessage.trim(), null);
             await sleep(1000);
         }
-        const acceptableMessagesList = Array.from({ length: profiles.length }, (_, i) => String.fromCharCode(65 + i));
-        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
-        await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Choose User");
         return false;
     }
     const buttonOptions = acceptableMessagesList.map(message => ({

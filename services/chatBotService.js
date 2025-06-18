@@ -144,7 +144,6 @@ const webhookService = async (body, res) => {
                 await waActiveSessionRepository.create({ phone_number: userMobileNumber, bot_phone_number_id: botPhoneNumberId, profile_id: profileId });
                 userExists = false;
             } else {
-                console.log("userMobileNumber 1", userMobileNumber);
                 const profiles = await waProfileRepository.getAllSortOnProfileId(userMobileNumber);
                 profileId = profiles[0].dataValues.profile_id;
                 chooseProfile = true;
@@ -203,7 +202,6 @@ const webhookService = async (body, res) => {
 
 
                 if (chooseProfile) {
-                    console.log("userMobileNumber 2", userMobileNumber);
                     const profiles = await waProfileRepository.getAllSortOnProfileId(userMobileNumber);
                     const userMetadata = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
                     for (let i = 0; i < profiles.length; i += 3) {
@@ -918,11 +916,9 @@ const webhookService = async (body, res) => {
 
                 // Actual Course
                 // User Switching
-                // if not active session and messageContent.toLowerCase().includes("start now!")
                 if (
                     (messageContent.toLowerCase().includes("change user"))
                 ) {
-                    console.log("userMobileNumber 3", userMobileNumber);
                     const profiles = await waProfileRepository.getAllSortOnProfileId(userMobileNumber);
                     const userMetadata = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
                     for (let i = 0; i < profiles.length; i += 3) {
@@ -971,7 +967,6 @@ const webhookService = async (body, res) => {
 
                 // User selecting a profile
                 if (currentUserState.dataValues.engagement_type == "Choose User") {
-                    console.log("userMobileNumber 4", userMobileNumber);
                     const profiles = await waProfileRepository.getAllSortOnProfileId(userMobileNumber);
                     const index = messageContent.toLowerCase().charCodeAt(0) - 97;
                     const profile = profiles[index];

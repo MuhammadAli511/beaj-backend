@@ -104,7 +104,7 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
               null,
               null
             ]);
-             arrayT1_List0.push([
+            arrayT1_List0.push([
               l1_entry.sr_no,
               l1_entry.phoneNumber,
               l1_entry.name,
@@ -145,7 +145,6 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
         );
         if (module == "Week") {
           if (arrayT1_List0) {
-            console.log(arrayT1_List0);
             await generateCertificatesForEligibleStudents(arrayT1_List0, 'cumulative');
           }
         }
@@ -191,8 +190,6 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
             }
           });
           arrayT1_List = uniqueList;
-
-          console.log(arrayT1_List);
 
           arrayT1_List = arrayT1_List.map(obj => Object.values(obj));
           arrayT1_List.forEach((record, index) => { record[0] = index + 1; });
@@ -289,7 +286,6 @@ const runETL = async (targetGroup, module, cohort, co_no, facilitator) => {
           last_activityCompleted_l3,
           module_week,
         );
-        console.log("Todat is the target date!");
       }
     }
 

@@ -307,12 +307,8 @@ async function azureSpeechToText(audioBuffer) {
 
                         if (cancellation.reason == sdk.CancellationReason.Error) {
                             console.log(`CANCELED: ErrorCode=${cancellation.ErrorCode}`);
-                            console.log(
-                                `CANCELED: ErrorDetails=${cancellation.errorDetails}`
-                            );
-                            console.log(
-                                "CANCELED: Did you set the speech resource key and region values?"
-                            );
+                            console.log(`CANCELED: ErrorDetails=${cancellation.errorDetails}`);
+                            console.log("CANCELED: Did you set the speech resource key and region values?");
                         }
                         reject(
                             new Error(`Speech recognition canceled: ${cancellation.reason}`)

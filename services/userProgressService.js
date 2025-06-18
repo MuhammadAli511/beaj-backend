@@ -9,7 +9,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const getAllUserProgressService = async (botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3, module) => {
-  console.log(botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3, module)
   let array_list = [];
 
   if (module === 'lesson') {
@@ -67,86 +66,86 @@ const getAllUserProgressService = async (botType, rollout, level, cohort, target
     let array_listt_Post = await etlRepository.getActivtyAssessmentScore(botType, rollout, level, cohort, targetGroup, courseId2);
 
     let individual_weekly_score_l1_list_total = [], individual_weekly_score_l2_list_total = [];
-      let arrayT1_List01 = [];
+    let arrayT1_List01 = [];
 
-      let maxL1 = {
-        listenAndSpeak_total: 0,
-        mcqs_total: 0,
-        watchAndSpeak_total: 0,
-        read_total: 0,
-        conversationalMonologue_total: 0,
-        Speaking_practice_total: 0
-      };
+    let maxL1 = {
+      listenAndSpeak_total: 0,
+      mcqs_total: 0,
+      watchAndSpeak_total: 0,
+      read_total: 0,
+      conversationalMonologue_total: 0,
+      Speaking_practice_total: 0
+    };
 
-      let maxL2 = {
-        listenAndSpeak_total: 0,
-        mcqs_total: 0,
-        watchAndSpeak_total: 0,
-        read_total: 0,
-        conversationalMonologue_total: 0,
-        Speaking_practice_total: 0
-      };
+    let maxL2 = {
+      listenAndSpeak_total: 0,
+      mcqs_total: 0,
+      watchAndSpeak_total: 0,
+      read_total: 0,
+      conversationalMonologue_total: 0,
+      Speaking_practice_total: 0
+    };
 
-      for (let i = 0; i < array_list_Pre.length; i++) {
-        let l1_entry = array_list_Pre[i];
-        let l2_entry = array_listt_Post[i];
+    for (let i = 0; i < array_list_Pre.length; i++) {
+      let l1_entry = array_list_Pre[i];
+      let l2_entry = array_listt_Post[i];
 
-        // Update max totals for L1
-        maxL1.listenAndSpeak_total = Math.max(maxL1.listenAndSpeak_total, l1_entry.listenAndSpeak_total);
-        maxL1.mcqs_total = Math.max(maxL1.mcqs_total, l1_entry.mcqs_total);
-        maxL1.watchAndSpeak_total = Math.max(maxL1.watchAndSpeak_total, l1_entry.watchAndSpeak_total);
-        maxL1.read_total = Math.max(maxL1.read_total, l1_entry.read_total);
-        maxL1.conversationalMonologue_total = Math.max(maxL1.conversationalMonologue_total, l1_entry.conversationalMonologue_total);
-        maxL1.Speaking_practice_total = Math.max(maxL1.Speaking_practice_total, l1_entry.Speaking_practice_total);
+      // Update max totals for L1
+      maxL1.listenAndSpeak_total = Math.max(maxL1.listenAndSpeak_total, l1_entry.listenAndSpeak_total);
+      maxL1.mcqs_total = Math.max(maxL1.mcqs_total, l1_entry.mcqs_total);
+      maxL1.watchAndSpeak_total = Math.max(maxL1.watchAndSpeak_total, l1_entry.watchAndSpeak_total);
+      maxL1.read_total = Math.max(maxL1.read_total, l1_entry.read_total);
+      maxL1.conversationalMonologue_total = Math.max(maxL1.conversationalMonologue_total, l1_entry.conversationalMonologue_total);
+      maxL1.Speaking_practice_total = Math.max(maxL1.Speaking_practice_total, l1_entry.Speaking_practice_total);
 
-        // Update max totals for L2
-        maxL2.listenAndSpeak_total = Math.max(maxL2.listenAndSpeak_total, l2_entry.listenAndSpeak_total);
-        maxL2.mcqs_total = Math.max(maxL2.mcqs_total, l2_entry.mcqs_total);
-        maxL2.watchAndSpeak_total = Math.max(maxL2.watchAndSpeak_total, l2_entry.watchAndSpeak_total);
-        maxL2.read_total = Math.max(maxL2.read_total, l2_entry.read_total);
-        maxL2.conversationalMonologue_total = Math.max(maxL2.conversationalMonologue_total, l2_entry.conversationalMonologue_total);
-        maxL2.Speaking_practice_total = Math.max(maxL2.Speaking_practice_total, l2_entry.Speaking_practice_total);
+      // Update max totals for L2
+      maxL2.listenAndSpeak_total = Math.max(maxL2.listenAndSpeak_total, l2_entry.listenAndSpeak_total);
+      maxL2.mcqs_total = Math.max(maxL2.mcqs_total, l2_entry.mcqs_total);
+      maxL2.watchAndSpeak_total = Math.max(maxL2.watchAndSpeak_total, l2_entry.watchAndSpeak_total);
+      maxL2.read_total = Math.max(maxL2.read_total, l2_entry.read_total);
+      maxL2.conversationalMonologue_total = Math.max(maxL2.conversationalMonologue_total, l2_entry.conversationalMonologue_total);
+      maxL2.Speaking_practice_total = Math.max(maxL2.Speaking_practice_total, l2_entry.Speaking_practice_total);
 
-        // Your existing array push
-        arrayT1_List01.push([
-          i + 1,
-          l1_entry.profile_id,
-          l1_entry.phoneNumber,
-          l1_entry.name,
-          l1_entry.listenAndSpeak,
-          l1_entry.mcqs,
-          l1_entry.watchAndSpeak,
-          l1_entry.read,
-          l1_entry.conversationalMonologue,
-          l1_entry.Speaking_practice,
-          null,
-          l2_entry.listenAndSpeak,
-          l2_entry.mcqs,
-          l2_entry.watchAndSpeak,
-          l2_entry.read,
-          l2_entry.conversationalMonologue,
-          l2_entry.Speaking_practice,
-        ]);
-      }
-
-      // Push final max row to individual_weekly_score_l1_list_total
-      individual_weekly_score_l1_list_total.push([
-        maxL1.listenAndSpeak_total,
-        maxL1.mcqs_total,
-        maxL1.watchAndSpeak_total,
-        maxL1.read_total,
-        maxL1.conversationalMonologue_total,
-        maxL1.Speaking_practice_total,
+      // Your existing array push
+      arrayT1_List01.push([
+        i + 1,
+        l1_entry.profile_id,
+        l1_entry.phoneNumber,
+        l1_entry.name,
+        l1_entry.listenAndSpeak,
+        l1_entry.mcqs,
+        l1_entry.watchAndSpeak,
+        l1_entry.read,
+        l1_entry.conversationalMonologue,
+        l1_entry.Speaking_practice,
         null,
-        maxL2.listenAndSpeak_total,
-        maxL2.mcqs_total,
-        maxL2.watchAndSpeak_total,
-        maxL2.read_total,
-        maxL2.conversationalMonologue_total,
-        maxL2.Speaking_practice_total,
+        l2_entry.listenAndSpeak,
+        l2_entry.mcqs,
+        l2_entry.watchAndSpeak,
+        l2_entry.read,
+        l2_entry.conversationalMonologue,
+        l2_entry.Speaking_practice,
       ]);
-       
-        array_list = arrayT1_List01;
+    }
+
+    // Push final max row to individual_weekly_score_l1_list_total
+    individual_weekly_score_l1_list_total.push([
+      maxL1.listenAndSpeak_total,
+      maxL1.mcqs_total,
+      maxL1.watchAndSpeak_total,
+      maxL1.read_total,
+      maxL1.conversationalMonologue_total,
+      maxL1.Speaking_practice_total,
+      null,
+      maxL2.listenAndSpeak_total,
+      maxL2.mcqs_total,
+      maxL2.watchAndSpeak_total,
+      maxL2.read_total,
+      maxL2.conversationalMonologue_total,
+      maxL2.Speaking_practice_total,
+    ]);
+
+    array_list = arrayT1_List01;
   }
 
   array_list = array_list.map(obj => Object.values(obj).map(value => value));
@@ -255,8 +254,6 @@ const generateStarTeachersImage = async (arrayLevels_List, columnIndex) => {
   try {
     const templatePath = path.join(__dirname, '../google_sheet_utils/leaderboard.png');
 
-    console.log(`Looking for template at: ${templatePath}`);
-
     // Check if input image exists
     if (!fs.existsSync(templatePath)) {
       console.error(`Template image not found at path: ${templatePath}`);
@@ -267,7 +264,6 @@ const generateStarTeachersImage = async (arrayLevels_List, columnIndex) => {
     const topPerformers = getTopPerformersWithNames(arrayLevels_List, columnIndex);
 
     if (topPerformers.length === 0) {
-      console.log("No performers found for this column");
       return null;
     }
 
