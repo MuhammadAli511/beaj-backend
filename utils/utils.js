@@ -70,6 +70,40 @@ const convertNumberToEmoji = async (number) => {
 const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber, currentUserState, messageType, messageContent) => {
     const acceptableMessagesList = currentUserState.dataValues.acceptableMessages;
     const activityType = currentUserState.dataValues.activityType;
+    if (currentUserState.dataValues.engagement_type == "Choose User") {
+        const profiles = await waProfileRepository.getAllSortOnProfileId(userMobileNumber);
+        const userMetadata = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
+
+        // Check if user sent a valid letter based on number of profiles
+        const validLetters = Array.from({ length: profiles.length }, (_, i) => String.fromCharCode(65 + i));
+        if (messageContent && (messageType === "text" || messageType === "button" || messageType === "interactive") && validLetters.includes(messageContent.toUpperCase())) {
+            return true;
+        }
+
+        // If not valid, show choose user options
+        for (let i = 0; i < profiles.length; i += 3) {
+            const profileChunk = profiles.slice(i, i + 3);
+            let profileMessage = "Choose user:\n";
+
+            // Create message for this chunk
+            profileChunk.forEach((profile, chunkIndex) => {
+                const globalIndex = i + chunkIndex;
+                const matchingUser = userMetadata.find(user => user.dataValues.profile_id === profile.dataValues.profile_id);
+                profileMessage += `${String.fromCharCode(65 + globalIndex)}) ${matchingUser.dataValues.name}\n`;
+            });
+
+            // Create buttons for this chunk
+            const buttons = profileChunk.map((profile, chunkIndex) => {
+                const globalIndex = i + chunkIndex;
+                return { id: String(profile.dataValues.profile_id), title: String.fromCharCode(65 + globalIndex) };
+            });
+
+            await sendButtonMessage(userMobileNumber, profileMessage.trim(), buttons);
+            await createActivityLog(userMobileNumber, "template", "outbound", profileMessage.trim(), null);
+            await sleep(1000);
+        }
+        return false;
+    }
     if (acceptableMessagesList.includes("image") && messageType != "image") {
         if (acceptableMessagesList.includes("start again") && messageContent.toLowerCase() == "start again") {
             return true;
@@ -171,40 +205,6 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
     if (acceptableMessagesList.includes("let's start") && acceptableMessagesList.includes("change user")) {
         await sendButtonMessage(userMobileNumber, "Are you ready?", [{ id: "let_s_start", title: "Let's Start" }, { id: "change_user", title: "Change User" }]);
         await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready?", null);
-        return false;
-    }
-    if (currentUserState.dataValues.engagement_type == "Choose User") {
-        const profiles = await waProfileRepository.getAllSortOnProfileId(userMobileNumber);
-        const userMetadata = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
-
-        // Check if user sent a valid letter based on number of profiles
-        const validLetters = Array.from({ length: profiles.length }, (_, i) => String.fromCharCode(65 + i));
-        if (messageContent && (messageType === "text" || messageType === "button" || messageType === "interactive") && validLetters.includes(messageContent.toUpperCase())) {
-            return true;
-        }
-
-        // If not valid, show choose user options
-        for (let i = 0; i < profiles.length; i += 3) {
-            const profileChunk = profiles.slice(i, i + 3);
-            let profileMessage = "Choose user:\n";
-
-            // Create message for this chunk
-            profileChunk.forEach((profile, chunkIndex) => {
-                const globalIndex = i + chunkIndex;
-                const matchingUser = userMetadata.find(user => user.dataValues.profile_id === profile.dataValues.profile_id);
-                profileMessage += `${String.fromCharCode(65 + globalIndex)}) ${matchingUser.dataValues.name}\n`;
-            });
-
-            // Create buttons for this chunk
-            const buttons = profileChunk.map((profile, chunkIndex) => {
-                const globalIndex = i + chunkIndex;
-                return { id: String(profile.dataValues.profile_id), title: String.fromCharCode(65 + globalIndex) };
-            });
-
-            await sendButtonMessage(userMobileNumber, profileMessage.trim(), buttons);
-            await createActivityLog(userMobileNumber, "template", "outbound", profileMessage.trim(), null);
-            await sleep(1000);
-        }
         return false;
     }
     const buttonOptions = acceptableMessagesList.map(message => ({

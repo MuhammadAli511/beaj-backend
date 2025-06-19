@@ -237,7 +237,7 @@ const assessmentMcqsView = async (profileId, userMobileNumber, currentUserState,
                     mcqMessage = "👉 *Question " + await convertNumberToEmoji(firstMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n";
                 }
                 if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
-                    mcqMessage += "Choose the correct answer:\nصحیح جواب پر کلک کریں۔\n";
+                    mcqMessage += "Choose the correct answer:\n";
                     if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                         mcqMessage += "\nor Type *next* to skip this activity!";
                     }
@@ -332,7 +332,7 @@ const assessmentMcqsView = async (profileId, userMobileNumber, currentUserState,
                         mcqMessage = "👉 *Question " + await convertNumberToEmoji(nextMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n";
                     }
                     if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
-                        mcqMessage += "Choose the correct answer:\nصحیح جواب پر کلک کریں۔\n";
+                        mcqMessage += "Choose the correct answer:\n";
                         if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                             mcqMessage += "\nor Type *next* to skip this activity!";
                         }

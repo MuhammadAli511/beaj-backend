@@ -10,7 +10,7 @@ import waActiveSessionRepository from "../repositories/waActiveSessionRepository
 import waProfileRepository from "../repositories/waProfileRepository.js";
 import waUserActivityLogsRepository from "../repositories/waUserActivityLogsRepository.js";
 import AIServices from "../utils/AIServices.js";
-import { removeUser, removeUserTillCourse, startCourseForUser, levelCourseStart, sendCourseLessonToTeacher, sendCourseLessonToKid } from "../utils/chatbotUtils.js";
+import { removeUser, removeUserTillCourse, startCourseForUser, levelCourseStart, sendCourseLessonToTeacher, sendCourseLessonToKid, resetCourseKid } from "../utils/chatbotUtils.js";
 import {
     greetingMessage,
     greetingMessageLoop,
@@ -200,6 +200,12 @@ const webhookService = async (body, res) => {
                     return;
                 }
 
+                // If message is reset course kid, delete user from database and create test data
+                if (text_message_types.includes(message.type) && messageContent.toLowerCase() == "reset course kid") {
+                    await resetCourseKid(userMobileNumber, botPhoneNumberId);
+                    return;
+                }
+
 
                 if (chooseProfile) {
                     const profiles = await waProfileRepository.getAllSortOnProfileId(userMobileNumber);
@@ -212,7 +218,7 @@ const webhookService = async (body, res) => {
                         profileChunk.forEach((profile, chunkIndex) => {
                             const globalIndex = i + chunkIndex;
                             const matchingUser = userMetadata.find(user => user.dataValues.profile_id === profile.dataValues.profile_id);
-                            profileMessage += `${String.fromCharCode(65 + globalIndex)}) ${matchingUser.dataValues.name}\n`;
+                            profileMessage += `${String.fromCharCode(65 + globalIndex)}) ${matchingUser.dataValues.name} - ${matchingUser.dataValues.classLevel}\n`;
                         });
 
                         // Create buttons for this chunk
@@ -931,7 +937,7 @@ const webhookService = async (body, res) => {
                         profileChunk.forEach((profile, chunkIndex) => {
                             const globalIndex = i + chunkIndex;
                             const matchingUser = userMetadata.find(user => user.dataValues.profile_id === profile.dataValues.profile_id);
-                            profileMessage += `${String.fromCharCode(65 + globalIndex)}) ${matchingUser.dataValues.name}\n`;
+                            profileMessage += `${String.fromCharCode(65 + globalIndex)}) ${matchingUser.dataValues.name} - ${matchingUser.dataValues.classLevel}\n`;
                         });
 
                         // Create buttons for this chunk
@@ -944,8 +950,6 @@ const webhookService = async (body, res) => {
                         await createActivityLog(userMobileNumber, "template", "outbound", profileMessage.trim(), null);
                         await sleep(1000);
                     }
-                    const acceptableMessagesList = Array.from({ length: profiles.length }, (_, i) => String.fromCharCode(65 + i));
-                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
                     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Choose User");
                     return;
                 }
@@ -967,15 +971,21 @@ const webhookService = async (body, res) => {
                     "+923012232148",
                 ];
 
-                // User selecting a profile
+                // User switching a profile
                 if (currentUserState.dataValues.engagement_type == "Choose User") {
                     const profiles = await waProfileRepository.getAllSortOnProfileId(userMobileNumber);
+                    const oldProfileId = profileId;
                     const index = messageContent.toLowerCase().charCodeAt(0) - 97;
                     const profile = profiles[index];
+                    if (!profile) {
+                        await sendMessage(userMobileNumber, "Invalid profile selected. Please try again.");
+                        return;
+                    }
                     profileId = profile.dataValues.profile_id;
                     if (!activeSession) {
                         await waActiveSessionRepository.create({ phone_number: userMobileNumber, bot_phone_number_id: botPhoneNumberId, profile_id: profileId });
                     } else {
+                        await waUserProgressRepository.updateEngagementType(oldProfileId, userMobileNumber, "Course Start");
                         await waActiveSessionRepository.updateCurrentProfileIdOnPhoneNumber(userMobileNumber, profileId, botPhoneNumberId);
                     }
 
@@ -1000,7 +1010,7 @@ const webhookService = async (body, res) => {
                                 await createActivityLog(userMobileNumber, "template", "outbound", messageText + " " + messageChunk.join(", "), null);
 
                                 if (i + 3 < acceptableMessages.length) {
-                                    await sleep(1000);
+                                    await sleep(500);
                                 }
                             }
                         }
