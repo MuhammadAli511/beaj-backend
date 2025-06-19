@@ -353,26 +353,50 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
     }
 };
 
+const assessmentPuzzleImages = async (userMobileNumber, activityAlias) => {
+    if (activityAlias == "💪 *Game 1: English Champions Activity A*") {
+        const puzzle2 = await waConstantsRepository.getByKey("PUZZLE2");
+        await sendMediaMessage(userMobileNumber, puzzle2.dataValues.constantValue, 'image', null, 0, "WA_Constants", puzzle2.dataValues.id, puzzle2.dataValues.constantMediaId, "constantMediaId");
+        await createActivityLog(userMobileNumber, "image", "outbound", puzzle2.dataValues.constantValue, null);
+        await sleep(2000);
+    } else if (activityAlias == "🗣 *Game 1: English Champions Activity B*") {
+        const puzzle3 = await waConstantsRepository.getByKey("PUZZLE3");
+        await sendMediaMessage(userMobileNumber, puzzle3.dataValues.constantValue, 'image', null, 0, "WA_Constants", puzzle3.dataValues.id, puzzle3.dataValues.constantMediaId, "constantMediaId");
+        await createActivityLog(userMobileNumber, "image", "outbound", puzzle3.dataValues.constantValue, null);
+        await sleep(2000);
+    } else if (activityAlias == "🧮 *Game 2: Number Ninjas!*") {
+        const puzzle4 = await waConstantsRepository.getByKey("PUZZLE4");
+        await sendMediaMessage(userMobileNumber, puzzle4.dataValues.constantValue, 'image', null, 0, "WA_Constants", puzzle4.dataValues.id, puzzle4.dataValues.constantMediaId, "constantMediaId");
+        await createActivityLog(userMobileNumber, "image", "outbound", puzzle4.dataValues.constantValue, null);
+        await sleep(2000);
+    } else if (activityAlias == "💡 *Game 3: Super YOU!*") {
+        const puzzle5 = await waConstantsRepository.getByKey("PUZZLE5");
+        await sendMediaMessage(userMobileNumber, puzzle5.dataValues.constantValue, 'image', null, 0, "WA_Constants", puzzle5.dataValues.id, puzzle5.dataValues.constantMediaId, "constantMediaId");
+        await createActivityLog(userMobileNumber, "image", "outbound", puzzle5.dataValues.constantValue, null);
+        await sleep(2000);
+    }
+}
+
 const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, startingLesson, message = null) => {
+    const activityAlias = startingLesson.dataValues.activityAlias;
     const lessonLast = await lessonRepository.isLastLessonOfDay(startingLesson.dataValues.LessonId);
     const courseName = await courseRepository.getCourseNameById(currentUserState.currentCourseId);
-    const activityAlias = startingLesson.dataValues.activityAlias;
-
-    // Send Day End Image here
-
-
-
-    // Send week end score image here if available or week end badges collected here
-
+    await assessmentPuzzleImages(userMobileNumber, activityAlias);
 
     // Lesson Ending Message
     if (lessonLast) {
-        // Come back tomorrow audio
-        const comeBackTomorrowAudio = await waConstantsRepository.getByKey("COME_BACK_TOMORROW");
-        await sendMediaMessage(userMobileNumber, comeBackTomorrowAudio.dataValues.constantValue, 'audio', null, 0, "WA_Constants", comeBackTomorrowAudio.dataValues.id, comeBackTomorrowAudio.dataValues.constantMediaId, "constantMediaId");
-        await createActivityLog(userMobileNumber, "audio", "outbound", comeBackTomorrowAudio.dataValues.constantValue, null);
-        await sleep(2000);
+        // Send Day End Image here for actual course
+
+
+
+        // Send week end score image here if available or week end badges collected here
+
+
         if (courseName.toLowerCase().includes("assessment")) {
+            const comeBackTomorrowAudio = await waConstantsRepository.getByKey("COME_BACK_TOMORROW");
+            await sendMediaMessage(userMobileNumber, comeBackTomorrowAudio.dataValues.constantValue, 'audio', null, 0, "WA_Constants", comeBackTomorrowAudio.dataValues.id, comeBackTomorrowAudio.dataValues.constantMediaId, "constantMediaId");
+            await createActivityLog(userMobileNumber, "audio", "outbound", comeBackTomorrowAudio.dataValues.constantValue, null);
+            await sleep(2000);
             await sendButtonMessage(userMobileNumber, 'Come back tomorrow for your next game!', [{ id: 'start_next_game', title: 'Start Next Game' }, { id: 'change_user', title: 'Change User' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Game", null);
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next game", "change user"]);
@@ -395,8 +419,26 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
             await sendButtonMessage(userMobileNumber, message, [{ id: 'start_questions', title: 'Start Questions' }, { id: 'change_user', title: 'Change User' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", message, null);
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start questions", "change user"]);
+        } else if (
+            activityAlias == "💪 *Game 1: English Champions Part A*" ||
+            activityAlias == "🗣 *Game 1: English Champions Part B*" ||
+            activityAlias == "🧮 *Game 2: Number Ninjas!*" ||
+            activityAlias == "💡 *Game 3: Super YOU!*"
+        ) {
+            await sendButtonMessage(userMobileNumber, 'Are you ready?', [{ id: 'let_s_start', title: 'Let\'s Start' }, { id: 'change_user', title: 'Change User' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Let's Start", null);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["let's start", "change user"]);
+        } else if (
+            activityAlias == "💪 *Game 1: English Champions Activity A*"
+        ) {
+            const anumPartAUnlocked = await waConstantsRepository.getByKey("ANUM_PART_A_UNLOCKED");
+            await sendMediaMessage(userMobileNumber, anumPartAUnlocked.dataValues.constantValue, 'audio', null, 0, "WA_Constants", anumPartAUnlocked.dataValues.id, anumPartAUnlocked.dataValues.constantMediaId, "constantMediaId");
+            await createActivityLog(userMobileNumber, "audio", "outbound", anumPartAUnlocked.dataValues.constantValue, null);
+            await sleep(2000);
+            await sendButtonMessage(userMobileNumber, 'Are you ready?', [{ id: 'start_part_b', title: 'Start Part B' }, { id: 'change_user', title: 'Change User' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Start Part B", null);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start part b", "change user"]);
         } else {
-
             await sendButtonMessage(userMobileNumber, 'Are you ready to start the next activity?', [{ id: 'start_next_activity', title: 'Start Next Activity' }, { id: 'change_user', title: 'Change User' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity", null);
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next activity", "change user"]);

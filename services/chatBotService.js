@@ -793,11 +793,13 @@ const webhookService = async (body, res) => {
                     if (
                         messageContent.toLowerCase().includes("start next activity") ||
                         messageContent.toLowerCase().includes("start next game") ||
+                        messageContent.toLowerCase().includes("let's start") ||
                         messageContent.toLowerCase().includes("next challenge") ||
                         messageContent.toLowerCase().includes("go to next activity") ||
                         messageContent.toLowerCase().includes("next activity") ||
                         messageContent.toLowerCase().includes("start questions") ||
                         messageContent.toLowerCase().includes("start challenge") ||
+                        messageContent.toLowerCase().includes("start part b") ||
                         messageContent.toLowerCase().includes("next")
                     ) {
                         if (currentUserState.dataValues.engagement_type == "Free Trial - Teachers" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
@@ -976,8 +978,33 @@ const webhookService = async (body, res) => {
                     } else {
                         await waActiveSessionRepository.updateCurrentProfileIdOnPhoneNumber(userMobileNumber, profileId, botPhoneNumberId);
                     }
-                    await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Course Start");
-                    await startCourseForUser(profileId, userMobileNumber, numbers_to_ignore);
+
+                    // Get the updated user state for the selected profile
+                    const selectedUserState = await waUserProgressRepository.getByProfileId(profileId);
+
+                    if (!selectedUserState.dataValues.currentCourseId) {
+                        await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Course Start");
+                        await startCourseForUser(profileId, userMobileNumber, numbers_to_ignore);
+                    } else {
+                        const acceptableMessages = selectedUserState.dataValues.acceptableMessages;
+                        if (acceptableMessages && acceptableMessages.length > 0) {
+                            for (let i = 0; i < acceptableMessages.length; i += 3) {
+                                const messageChunk = acceptableMessages.slice(i, i + 3);
+                                const buttons = messageChunk.map(message => ({
+                                    id: message.replace(/\s+/g, '_').toLowerCase(),
+                                    title: message.charAt(0).toUpperCase() + message.slice(1)
+                                }));
+
+                                const messageText = i === 0 ? "Continue where you left off:" : "More options:";
+                                await sendButtonMessage(userMobileNumber, messageText, buttons);
+                                await createActivityLog(userMobileNumber, "template", "outbound", messageText + " " + messageChunk.join(", "), null);
+
+                                if (i + 3 < acceptableMessages.length) {
+                                    await sleep(1000);
+                                }
+                            }
+                        }
+                    }
                     return;
                 }
 
@@ -1001,7 +1028,7 @@ const webhookService = async (body, res) => {
                 ) {
                     if (currentUserState.dataValues.engagement_type == "Course Start") {
                         const startingLesson = await lessonRepository.getNextLesson(currentUserState.dataValues.currentCourseId, 1, null, null);
-                        await levelCourseStart(profileId, userMobileNumber, startingLesson, currentUserState.dataValues.currentCourseId);
+                        await levelCourseStart(profileId, userMobileNumber, startingLesson, currentUserState.dataValues.currentCourseId, currentUserState.dataValues.persona);
                         // Send first lesson to user
                         currentUserState = await waUserProgressRepository.getByProfileId(profileId);
                         if (currentUserState.dataValues.persona == "kid" || currentUserState.dataValues.persona == "parent or student" || currentUserState.dataValues.persona == "school admin") {
@@ -1069,11 +1096,13 @@ const webhookService = async (body, res) => {
                         messageContent.toLowerCase().includes("start next activity") ||
                         messageContent.toLowerCase().includes("start next game") ||
                         messageContent.toLowerCase().includes("start next lesson") ||
+                        messageContent.toLowerCase().includes("let's start") ||
                         messageContent.toLowerCase().includes("it was great") ||
                         messageContent.toLowerCase().includes("it was great 😁") ||
                         messageContent.toLowerCase().includes("it can be improved") ||
                         messageContent.toLowerCase().includes("it can be improved 🤔") ||
                         messageContent.toLowerCase().includes("start questions") ||
+                        messageContent.toLowerCase().includes("start part b") ||
                         messageContent.toLowerCase().includes("yes") ||
                         messageContent.toLowerCase().includes("no, try again") ||
                         messageContent.toLowerCase().includes("no") ||

@@ -147,6 +147,32 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
         await createActivityLog(userMobileNumber, "template", "outbound", "Click on Start Now! 👇", null);
         return false;
     }
+    // Kids flow
+    if (acceptableMessagesList.includes("start part b") && acceptableMessagesList.includes("change user")) {
+        await sendButtonMessage(userMobileNumber, "Are you ready?", [{ id: "start_part_b", title: "Start Part B" }, { id: "change_user", title: "Change User" }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready?", null);
+        return false;
+    }
+    if (acceptableMessagesList.includes("start next game") && acceptableMessagesList.includes("change user")) {
+        await sendButtonMessage(userMobileNumber, "Ready to start your next game?", [{ id: "start_next_game", title: "Start Next Game" }, { id: "change_user", title: "Change User" }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "Ready to start your next game?", null);
+        return false;
+    }
+    if (acceptableMessagesList.includes("start next lesson") && acceptableMessagesList.includes("change user")) {
+        await sendButtonMessage(userMobileNumber, "Are you ready to start your next lesson?", [{ id: "start_next_lesson", title: "Start Next Lesson" }, { id: "change_user", title: "Change User" }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start your next lesson?", null);
+        return false;
+    }
+    if (acceptableMessagesList.includes("start questions") && acceptableMessagesList.includes("change user")) {
+        await sendButtonMessage(userMobileNumber, "👇 Click on the button below to start questions!", [{ id: "start_questions", title: "Start Questions" }, { id: "change_user", title: "Change User" }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "👇 Click on the button below to start questions!", null);
+        return false;
+    }
+    if (acceptableMessagesList.includes("let's start") && acceptableMessagesList.includes("change user")) {
+        await sendButtonMessage(userMobileNumber, "Are you ready?", [{ id: "let_s_start", title: "Let's Start" }, { id: "change_user", title: "Change User" }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready?", null);
+        return false;
+    }
     if (currentUserState.dataValues.engagement_type == "Choose User") {
         const profiles = await waProfileRepository.getAllSortOnProfileId(userMobileNumber);
         const userMetadata = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);

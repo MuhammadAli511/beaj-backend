@@ -199,7 +199,7 @@ const startCourseForUser = async (profileId, userMobileNumber, numbers_to_ignore
     }
 };
 
-const levelCourseStart = async (profileId, userMobileNumber, startingLesson, courseId) => {
+const levelCourseStart = async (profileId, userMobileNumber, startingLesson, courseId, persona) => {
     // Update user progress
     await waUserProgressRepository.update(
         profileId,
@@ -215,14 +215,12 @@ const levelCourseStart = async (profileId, userMobileNumber, startingLesson, cou
         null
     );
 
-    // Extract Level from courseName using courseId
-    const courseName = await courseRepository.getCourseNameById(courseId);
-    const level = courseName.split("-")[0].trim();
-
-
-    // Text Message
-    await sendMessage(userMobileNumber, "Great! Let's start " + level + "! 🤩");
-    await createActivityLog(userMobileNumber, "text", "outbound", "Great! Let's start " + level + "! 🤩", null);
+    if (persona == "teacher") {
+        const courseName = await courseRepository.getCourseNameById(courseId);
+        const level = courseName.split("-")[0].trim();
+        await sendMessage(userMobileNumber, "Great! Let's start " + level + "! 🤩");
+        await createActivityLog(userMobileNumber, "text", "outbound", "Great! Let's start " + level + "! 🤩", null);
+    }
 };
 
 const sendCourseLessonToTeacher = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent) => {
