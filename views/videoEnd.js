@@ -14,7 +14,7 @@ const videoEndView = async (profileId, userMobileNumber, currentUserState, start
             await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
             // Send lesson message
-            let defaultTextInstruction = "Watch the video.";
+            let defaultTextInstruction = "👀 *Watch the video.*";
             const lessonTextInstruction = startingLesson.dataValues.textInstruction;
             let finalTextInstruction = defaultTextInstruction;
             if (lessonTextInstruction != null && lessonTextInstruction != "") {
@@ -52,7 +52,7 @@ const videoEndView = async (profileId, userMobileNumber, currentUserState, start
             // Lesson Started Record
             await waLessonsCompletedRepository.create(userMobileNumber, startingLesson.dataValues.LessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
-            let defaultTextInstruction = "Watch the video.";
+            let defaultTextInstruction = "👀 *Watch the video.*";
             const lessonTextInstruction = startingLesson.dataValues.textInstruction;
             let finalTextInstruction = defaultTextInstruction;
             if (lessonTextInstruction != null && lessonTextInstruction != "") {
@@ -63,7 +63,7 @@ const videoEndView = async (profileId, userMobileNumber, currentUserState, start
                 await sendMediaMessage(userMobileNumber, lessonAudioInstruction, 'audio', null, 0, "Lesson", startingLesson.dataValues.LessonId, startingLesson.dataValues.audioInstructionMediaId, "audioInstructionMediaId");
                 await createActivityLog(userMobileNumber, "audio", "outbound", lessonAudioInstruction, null);
             }
-            finalTextInstruction += "\n\nThe video might take a few seconds to load.\nویڈیو کو لوڈ ہونے میں شاید چند سیکنڈ لگیں۔";
+            finalTextInstruction += "\n\nThe video might take a few seconds to load.";
 
             let lessonMessage = startingLesson.dataValues.activityAlias;
             lessonMessage += "\n\n" + finalTextInstruction;

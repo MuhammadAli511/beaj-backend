@@ -13,7 +13,9 @@ const getAll = async () => {
 };
 
 const getByPhoneNumber = async (phoneNumber) => {
-    return await WA_UsersMetadata.findByPk(phoneNumber);
+    return await WA_UsersMetadata.findAll({
+        where: { phoneNumber: phoneNumber }
+    });
 };
 
 const getByProfileId = async (profileId) => {

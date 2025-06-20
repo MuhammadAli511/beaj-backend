@@ -15,7 +15,7 @@ const feedbackMcqsView = async (profileId, userMobileNumber, currentUserState, s
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
-                let defaultTextInstruction = "Answer the following questions.";
+                let defaultTextInstruction = "👇 *Answer the following questions.*";
                 const lessonTextInstruction = startingLesson.dataValues.textInstruction;
                 let finalTextInstruction = defaultTextInstruction;
                 if (lessonTextInstruction != null && lessonTextInstruction != "") {
@@ -120,7 +120,7 @@ const feedbackMcqsView = async (profileId, userMobileNumber, currentUserState, s
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
-                let defaultTextInstruction = "Answer the following questions.";
+                let defaultTextInstruction = "👇 *Answer the following questions.*";
                 const lessonTextInstruction = startingLesson.dataValues.textInstruction;
                 let finalTextInstruction = defaultTextInstruction;
                 if (lessonTextInstruction != null && lessonTextInstruction != "") {

@@ -162,12 +162,12 @@ const getLessonCompletions = async (botType, rollout, level, cohort, targetGroup
     try {
 
         let classLevel = '', course_list = '', course_array = '', target_grp = '';
-        if(botType === 'teacher'){
-            if(rollout == 1 || rollout == 0){
+        if (botType === 'teacher') {
+            if (rollout == 1 || rollout == 0) {
                 target_grp = ` m."targetGroup" = '${targetGroup}' AND `;
             }
             classLevel = `m."classLevel" is null`;
-            course_list = `${courseId1}, ${courseId2}, ${courseId3}`;   
+            course_list = `${courseId1}, ${courseId2}, ${courseId3}`;
             course_array = `MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week1" END) AS "course1_week1",
                 MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week2" END) AS "course1_week2",
                 MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week3" END) AS "course1_week3",
@@ -214,7 +214,7 @@ const getLessonCompletions = async (botType, rollout, level, cohort, targetGroup
                     END), 0
             ),0) AS grand_total`;
         }
-        else{
+        else {
             classLevel = `m."classLevel" = '${level}'`;
             course_list = `${courseId1}`;
             course_array = `MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week1" END) AS "course1_week1",
@@ -230,157 +230,156 @@ const getLessonCompletions = async (botType, rollout, level, cohort, targetGroup
         }
 
         const qry = `WITH LessonAssignments AS (
-    SELECT
-        "courseId",
-        "weekNumber",
-        "dayNumber",
-        COUNT("LessonId") AS "TotalLessons"
-    FROM
-        "Lesson"
-    WHERE
-        "courseId" IN (${course_list}) and "status" = 'Active'
-    GROUP BY
-        "courseId", "weekNumber", "dayNumber"
-),
-Students AS (
-    SELECT DISTINCT
-        m."phoneNumber",
-		m."profile_id",
-		m."name"
-    FROM
-        "wa_users_metadata" m inner join "wa_profiles" p on
-		m."profile_id" = p."profile_id"
-    WHERE
-        ${target_grp} m."cohort" = '${cohort}' and m."rollout" = ${rollout}
-		and p."profile_type" = '${botType}' and ${classLevel}
-),
-AllCombinations AS (
-    SELECT
-        s."phoneNumber",
-		s."profile_id",
-		s."name",
-        la."courseId",
-        la."weekNumber",
-        la."dayNumber"
-    FROM
-        Students s
-    CROSS JOIN
-        LessonAssignments la
-),
-StudentCompletions AS (
-    SELECT
-        m."phoneNumber",
-		m."profile_id",
-		m."name",
-        s."courseId",
-        s."weekNumber",
-        s."dayNumber",
-        COUNT(l."lessonId") AS "CompletedLessons"
-    FROM
-        "wa_users_metadata" m inner join "wa_profiles" p on m."profile_id" = p."profile_id"
-    LEFT JOIN
-        "wa_lessons_completed" l 
-        ON m."phoneNumber" = l."phoneNumber" and m."profile_id" = l."profile_id" AND l."completionStatus" = 'Completed'
-    LEFT JOIN
-        "Lesson" s 
-        ON s."LessonId" = l."lessonId" AND s."courseId" = l."courseId"
-    WHERE
-        ${target_grp} m."cohort" = '${cohort}' and m."rollout" = ${rollout}
-		and p."profile_type" = '${botType}' and ${classLevel}
-        AND s."courseId" IN (${course_list}) 
-    GROUP BY
-        m."phoneNumber", m."profile_id", m."name", s."courseId", s."weekNumber", s."dayNumber"
-),
-FinalProgress AS (
-    SELECT
-        ac."phoneNumber",
-		ac."profile_id",
-		ac."name",
-        ac."courseId",
-        ac."weekNumber",
-        ac."dayNumber",
-        COALESCE(sc."CompletedLessons", 0) AS "CompletedLessons"
-    FROM
-        AllCombinations ac
-    LEFT JOIN
-        StudentCompletions sc 
-        ON ac."phoneNumber" = sc."phoneNumber"
-		and ac."profile_id" = sc."profile_id"
-        AND ac."courseId" = sc."courseId"
-        AND ac."weekNumber" = sc."weekNumber"
-        AND ac."dayNumber" = sc."dayNumber"
-),
-DailyProgress AS (
-    SELECT
-        fp."phoneNumber",
-		fp."profile_id",
-		fp."name",
-        fp."courseId",
-        fp."weekNumber",
-        fp."dayNumber",
-        CASE
-            WHEN fp."CompletedLessons" = la."TotalLessons" THEN 1
-            ELSE 0
-        END AS "DayCompleted"
-    FROM
-        FinalProgress fp
-    JOIN
-        LessonAssignments la 
-        ON fp."courseId" = la."courseId"
-        AND fp."weekNumber" = la."weekNumber"
-        AND fp."dayNumber" = la."dayNumber"
-),
-WeeklyProgress AS (
-    SELECT
-        dp."phoneNumber",
-		dp."profile_id",
-		dp."name",
-        dp."courseId",
-        dp."weekNumber",
-        SUM(dp."DayCompleted") AS "DaysCompletedInWeek"
-    FROM
-        DailyProgress dp
-    GROUP BY
-        dp."phoneNumber",dp."profile_id", dp."name", dp."courseId", dp."weekNumber"
-),
-PivotedProgress AS (
-    SELECT
-        wp."phoneNumber",
-		wp."profile_id",
-		wp."name",
-        wp."courseId",
-        MAX(CASE WHEN wp."weekNumber" = 1 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week1",
-        MAX(CASE WHEN wp."weekNumber" = 2 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week2",
-        MAX(CASE WHEN wp."weekNumber" = 3 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week3",
-        MAX(CASE WHEN wp."weekNumber" = 4 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week4"
-    FROM
-        WeeklyProgress wp
-    GROUP BY
-        wp."phoneNumber", wp."profile_id",wp."name", wp."courseId"
-),
-AggregatedProgress AS (
-    SELECT
-	    ROW_NUMBER() OVER (ORDER BY pp."name") AS sr_no,
-        pp."profile_id",
-        pp."phoneNumber",
-		pp."name",
-        ${course_array}
-    FROM
-        PivotedProgress pp
-    GROUP BY
-        pp."phoneNumber",pp."profile_id",pp."name"
-)
-SELECT
-    *
-FROM
-    AggregatedProgress
-ORDER BY
-        "name";`;
+            SELECT
+                "courseId",
+                "weekNumber",
+                "dayNumber",
+                COUNT("LessonId") AS "TotalLessons"
+            FROM
+                "Lesson"
+            WHERE
+                "courseId" IN (${course_list}) and "status" = 'Active'
+            GROUP BY
+                "courseId", "weekNumber", "dayNumber"
+        ),
+        Students AS (
+            SELECT DISTINCT
+                m."phoneNumber",
+                m."profile_id",
+                m."name"
+            FROM
+                "wa_users_metadata" m inner join "wa_profiles" p on
+                m."profile_id" = p."profile_id"
+            WHERE
+                ${target_grp} m."cohort" = '${cohort}' and m."rollout" = ${rollout}
+                and p."profile_type" = '${botType}' and ${classLevel}
+        ),
+        AllCombinations AS (
+            SELECT
+                s."phoneNumber",
+                s."profile_id",
+                s."name",
+                la."courseId",
+                la."weekNumber",
+                la."dayNumber"
+            FROM
+                Students s
+            CROSS JOIN
+                LessonAssignments la
+        ),
+        StudentCompletions AS (
+            SELECT
+                m."phoneNumber",
+                m."profile_id",
+                m."name",
+                s."courseId",
+                s."weekNumber",
+                s."dayNumber",
+                COUNT(l."lessonId") AS "CompletedLessons"
+            FROM
+                "wa_users_metadata" m inner join "wa_profiles" p on m."profile_id" = p."profile_id"
+            LEFT JOIN
+                "wa_lessons_completed" l 
+                ON m."phoneNumber" = l."phoneNumber" and m."profile_id" = l."profile_id" AND l."completionStatus" = 'Completed'
+            LEFT JOIN
+                "Lesson" s 
+                ON s."LessonId" = l."lessonId" AND s."courseId" = l."courseId"
+            WHERE
+                ${target_grp} m."cohort" = '${cohort}' and m."rollout" = ${rollout}
+                and p."profile_type" = '${botType}' and ${classLevel}
+                AND s."courseId" IN (${course_list}) 
+            GROUP BY
+                m."phoneNumber", m."profile_id", m."name", s."courseId", s."weekNumber", s."dayNumber"
+        ),
+        FinalProgress AS (
+            SELECT
+                ac."phoneNumber",
+                ac."profile_id",
+                ac."name",
+                ac."courseId",
+                ac."weekNumber",
+                ac."dayNumber",
+                COALESCE(sc."CompletedLessons", 0) AS "CompletedLessons"
+            FROM
+                AllCombinations ac
+            LEFT JOIN
+                StudentCompletions sc 
+                ON ac."phoneNumber" = sc."phoneNumber"
+                and ac."profile_id" = sc."profile_id"
+                AND ac."courseId" = sc."courseId"
+                AND ac."weekNumber" = sc."weekNumber"
+                AND ac."dayNumber" = sc."dayNumber"
+        ),
+        DailyProgress AS (
+            SELECT
+                fp."phoneNumber",
+                fp."profile_id",
+                fp."name",
+                fp."courseId",
+                fp."weekNumber",
+                fp."dayNumber",
+                CASE
+                    WHEN fp."CompletedLessons" = la."TotalLessons" THEN 1
+                    ELSE 0
+                END AS "DayCompleted"
+            FROM
+                FinalProgress fp
+            JOIN
+                LessonAssignments la 
+                ON fp."courseId" = la."courseId"
+                AND fp."weekNumber" = la."weekNumber"
+                AND fp."dayNumber" = la."dayNumber"
+        ),
+        WeeklyProgress AS (
+            SELECT
+                dp."phoneNumber",
+                dp."profile_id",
+                dp."name",
+                dp."courseId",
+                dp."weekNumber",
+                SUM(dp."DayCompleted") AS "DaysCompletedInWeek"
+            FROM
+                DailyProgress dp
+            GROUP BY
+                dp."phoneNumber",dp."profile_id", dp."name", dp."courseId", dp."weekNumber"
+        ),
+        PivotedProgress AS (
+            SELECT
+                wp."phoneNumber",
+                wp."profile_id",
+                wp."name",
+                wp."courseId",
+                MAX(CASE WHEN wp."weekNumber" = 1 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week1",
+                MAX(CASE WHEN wp."weekNumber" = 2 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week2",
+                MAX(CASE WHEN wp."weekNumber" = 3 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week3",
+                MAX(CASE WHEN wp."weekNumber" = 4 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week4"
+            FROM
+                WeeklyProgress wp
+            GROUP BY
+                wp."phoneNumber", wp."profile_id",wp."name", wp."courseId"
+        ),
+        AggregatedProgress AS (
+            SELECT
+                ROW_NUMBER() OVER (ORDER BY pp."name") AS sr_no,
+                pp."profile_id",
+                pp."phoneNumber",
+                pp."name",
+                ${course_array}
+            FROM
+                PivotedProgress pp
+            GROUP BY
+                pp."phoneNumber",pp."profile_id",pp."name"
+        )
+        SELECT
+            *
+        FROM
+            AggregatedProgress
+        ORDER BY
+                "name";`
+            ;
 
 
         const res = await sequelize.query(qry);
-
-        console.log(res[0])
 
         return res[0];
     } catch (error) {
@@ -680,8 +679,8 @@ SELECT
 const getWeeklyScore = async (botType, rollout, level, cohort, grp, course_id) => {
     try {
         let classLevel = '', target_grp = '';
-        if(botType === 'teacher'){
-            if(rollout == 1 || rollout == 0){
+        if (botType === 'teacher') {
+            if (rollout == 1 || rollout == 0) {
                 target_grp = ` m."targetGroup" = '${grp}' AND `;
             }
             classLevel = `m."classLevel" is null`;
@@ -1414,12 +1413,12 @@ const getWeeklyScore_pilot = async (course_id, grp, weekNo, cohort) => {
 const getActivity_Completions = async (botType, rollout, level, cohort, grp, course1_id, course2_id, course3_id) => {
     try {
         let classLevel = '', course_list = '', course_array = '', target_grp = '';
-        if(botType === 'teacher'){
-            if(rollout == 1 || rollout == 0){
+        if (botType === 'teacher') {
+            if (rollout == 1 || rollout == 0) {
                 target_grp = ` m."targetGroup" = '${grp}' AND `;
             }
             classLevel = `m."classLevel" is null`;
-            course_list = `${course1_id}, ${course2_id}, ${course3_id}`; 
+            course_list = `${course1_id}, ${course2_id}, ${course3_id}`;
             course_array = `SUM(CASE WHEN s."weekNumber" = 1 AND s."courseId" = ${course1_id} THEN 1 ELSE NULL END) AS "course1_week1_activities",
                 SUM(CASE WHEN s."weekNumber" = 2 AND s."courseId" = ${course1_id} THEN 1 ELSE NULL END) AS "course1_week2_activities",
                 SUM(CASE WHEN s."weekNumber" = 3 AND s."courseId" = ${course1_id} THEN 1 ELSE NULL END) AS "course1_week3_activities",
@@ -1444,7 +1443,7 @@ const getActivity_Completions = async (botType, rollout, level, cohort, grp, cou
                     SUM(CASE WHEN s."courseId" IN (${course1_id}, ${course2_id}, ${course3_id}) THEN 1 ELSE 0 END)
                 , 0) AS grand_total`
         }
-        else if(botType === 'student'){
+        else if (botType === 'student') {
             classLevel = `m."classLevel" = '${level}'`;
             course_list = `${course1_id}`;
             course_array = `SUM(CASE WHEN s."weekNumber" = 1 AND s."courseId" = ${course1_id} THEN 1 ELSE NULL END) AS "course1_week1_activities",
@@ -1495,13 +1494,13 @@ const getActivity_Completions = async (botType, rollout, level, cohort, grp, cou
 const getActivtyAssessmentScore = async (botType, rollout, level, cohort, grp, course_id) => {
     try {
         let classLevel = '', target_grp = '';
-        if(botType === 'teacher'){
-            if(rollout == 1 || rollout == 0){
+        if (botType === 'teacher') {
+            if (rollout == 1 || rollout == 0) {
                 target_grp = ` m."targetGroup" = '${grp}' AND `;
             }
             classLevel = `m."classLevel" is null and m."cohort" = '${cohort}'`;
         }
-        else if(botType === 'student'){
+        else if (botType === 'student') {
             classLevel = `m."classLevel" = '${level}' and m."cohort" = '${cohort}'`;
         }
         const qry = `
@@ -2024,14 +2023,14 @@ const getActivityNameCount = async (course_id1, course_id2, course_id3, grp, coh
 const getPhoneNumber_userNudges = async (course_id, grp, cohort, date) => {
     try {
         const qry = `
-           SELECT distinct m."phoneNumber"
-FROM "wa_users_metadata" m 
- left JOIN "wa_lessons_completed" l
-  ON m."phoneNumber" = l."phoneNumber" 
-  AND l."completionStatus" = 'Completed'  
-  AND l."endTime" >= '${date}' and l."courseId" = ${course_id}
-WHERE m."targetGroup" = '${grp}' 
-  AND m."cohort" = '${cohort}'  AND l."phoneNumber" IS NOT NULL;
+            SELECT distinct m."phoneNumber"
+            FROM "wa_users_metadata" m 
+            left JOIN "wa_lessons_completed" l
+            ON m."phoneNumber" = l."phoneNumber" 
+            AND l."completionStatus" = 'Completed'  
+            AND l."endTime" >= '${date}' and l."courseId" = ${course_id}
+            WHERE m."targetGroup" = '${grp}' 
+            AND m."cohort" = '${cohort}'  AND l."phoneNumber" IS NOT NULL;
         `;
 
         const res = await sequelize.query(qry);
@@ -2052,61 +2051,60 @@ const getLastActivityCompleted_DropOff = async (course_id1) => {
         "wa_users_metadata" m left join "wa_profiles" p on m."phoneNumber" = p."phone_number" and m."profile_id" = p."profile_id"
     WHERE 
         p."profile_type" = 'student'
-),
-get_lessonIds AS (
-    SELECT 
-        "LessonId", 
-        "weekNumber", 
-		"dayNumber",
-        "SequenceNumber" 
-    FROM 
-        "Lesson" 
-    WHERE 
-        "courseId" = ${course_id1} and "status" = 'Active'
-),
-LessonWithMaxTimestamp AS (
-    SELECT 
-        l."phoneNumber",
-        l."lessonId",
-        l."endTime",
-        ROW_NUMBER() OVER (
-            PARTITION BY l."phoneNumber" 
-            ORDER BY l."endTime" DESC
-        ) AS row_num
-    FROM 
-        "wa_lessons_completed" l
-    INNER JOIN 
-        TargetGroup tg 
-    ON 
-        l."phoneNumber" = tg."phoneNumber"
-    WHERE 
-        l."completionStatus" = 'Completed'
-        AND l."courseId" = ${course_id1}
-),
-LessonCompletionCounts AS (
-    SELECT 
-        lw."lessonId",
-        COUNT(lw."phoneNumber") AS "completionCount"
-    FROM 
-        LessonWithMaxTimestamp lw
-    WHERE 
-        lw.row_num = 1
-    GROUP BY 
-        lw."lessonId"
-)
-SELECT 
-    g."LessonId",
-    COALESCE(lcc."completionCount", null) AS "total_students_completed"
-FROM 
-    get_lessonIds g
-LEFT JOIN 
-    LessonCompletionCounts lcc 
-ON 
-    g."LessonId" = lcc."lessonId"
-ORDER BY 
-    g."weekNumber",g."dayNumber",g."SequenceNumber";`
+        ),
+        get_lessonIds AS (
+            SELECT 
+                "LessonId", 
+                "weekNumber", 
+                "dayNumber",
+                "SequenceNumber" 
+            FROM 
+                "Lesson" 
+            WHERE 
+                "courseId" = ${course_id1} and "status" = 'Active'
+        ),
+        LessonWithMaxTimestamp AS (
+            SELECT 
+                l."phoneNumber",
+                l."lessonId",
+                l."endTime",
+                ROW_NUMBER() OVER (
+                    PARTITION BY l."phoneNumber" 
+                    ORDER BY l."endTime" DESC
+                ) AS row_num
+            FROM 
+                "wa_lessons_completed" l
+            INNER JOIN 
+                TargetGroup tg 
+            ON 
+                l."phoneNumber" = tg."phoneNumber"
+            WHERE 
+                l."completionStatus" = 'Completed'
+                AND l."courseId" = ${course_id1}
+        ),
+        LessonCompletionCounts AS (
+            SELECT 
+                lw."lessonId",
+                COUNT(lw."phoneNumber") AS "completionCount"
+            FROM 
+                LessonWithMaxTimestamp lw
+            WHERE 
+                lw.row_num = 1
+            GROUP BY 
+                lw."lessonId"
+        )
+        SELECT 
+            g."LessonId",
+            COALESCE(lcc."completionCount", null) AS "total_students_completed"
+        FROM 
+            get_lessonIds g
+        LEFT JOIN 
+            LessonCompletionCounts lcc 
+        ON 
+            g."LessonId" = lcc."lessonId"
+        ORDER BY 
+            g."weekNumber",g."dayNumber",g."SequenceNumber";`;
         const res = await sequelize.query(qry);
-        console.log(res[0]);
         return res[0];
     } catch (error) {
         error.fileName = "etlRepository.js";

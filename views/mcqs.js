@@ -16,7 +16,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
-                let defaultTextInstruction = "Answer the following questions.";
+                let defaultTextInstruction = "👇 *Answer the following questions.*";
                 const lessonTextInstruction = startingLesson.dataValues.textInstruction;
                 let finalTextInstruction = defaultTextInstruction;
                 if (lessonTextInstruction != null && lessonTextInstruction != "") {
@@ -250,7 +250,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
-                let defaultTextInstruction = "Answer the following questions.";
+                let defaultTextInstruction = "👇 *Answer the following questions.*";
                 const lessonTextInstruction = startingLesson.dataValues.textInstruction;
                 let finalTextInstruction = defaultTextInstruction;
                 if (lessonTextInstruction != null && lessonTextInstruction != "") {
@@ -290,7 +290,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                     mcqMessage = "👉 *Question " + await convertNumberToEmoji(firstMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n";
                 }
                 if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
-                    mcqMessage += "Choose the correct answer:\nصحیح جواب پر کلک کریں۔\n";
+                    mcqMessage += "Choose the correct answer:\n";
                     if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                         mcqMessage += "\nor Type *next* to skip this activity!";
                     }
@@ -374,10 +374,19 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                     let customFeedbackText = selectedAnswer.dataValues.CustomAnswerFeedbackText;
                     const customFeedbackImage = selectedAnswer.dataValues.CustomAnswerFeedbackImage;
                     const customFeedbackAudio = selectedAnswer.dataValues.CustomAnswerFeedbackAudio;
+                    const totalQuestions = await multipleChoiceQuestionRepository.getTotalQuestions(currentUserState.dataValues.currentLessonId);
+                    const currentQuestionNumber = currentUserState.dataValues.questionNumber;
+                    const remainingQuestions = totalQuestions - currentQuestionNumber;
 
                     // If both image and text are available, send image with caption
                     if (customFeedbackImage && customFeedbackText) {
                         customFeedbackText = customFeedbackText.replace(/\\n/g, '\n');
+                        if (remainingQuestions > 1) {
+                            // if not trial
+                            if (currentUserState.dataValues.engagement_type != "Free Trial - Kids - Level 1" && currentUserState.dataValues.engagement_type != "Free Trial - Kids - Level 3") {
+                                customFeedbackText += "\n\n" + remainingQuestions + " more questions to go!";
+                            }
+                        }
                         await sendMediaMessage(userMobileNumber, customFeedbackImage, 'image', customFeedbackText, 0, "MultipleChoiceQuestionAnswer", selectedAnswer.dataValues.Id, selectedAnswer.dataValues.CustomAnswerFeedbackImageMediaId, "CustomAnswerFeedbackImageMediaId");
                         await createActivityLog(userMobileNumber, "image", "outbound", customFeedbackImage, customFeedbackText);
                         await sleep(2000);
@@ -385,6 +394,11 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                         // Otherwise send them separately if they exist
                         if (customFeedbackText) {
                             customFeedbackText = customFeedbackText.replace(/\\n/g, '\n');
+                            if (remainingQuestions > 1) {
+                                if (currentUserState.dataValues.engagement_type != "Free Trial - Kids - Level 1" && currentUserState.dataValues.engagement_type != "Free Trial - Kids - Level 3") {
+                                    customFeedbackText += "\n\n" + remainingQuestions + " more questions to go!";
+                                }
+                            }
                             await sendMessage(userMobileNumber, customFeedbackText);
                             await createActivityLog(userMobileNumber, "text", "outbound", customFeedbackText, null);
                         }
@@ -403,11 +417,13 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                     }
 
                     if (!customFeedbackText && !customFeedbackImage && !customFeedbackAudio) {
-                        // Correct Answer Feedback
                         if (isCorrectAnswer) {
-                            // Text message
-                            await sendMessage(userMobileNumber, "✅ That's right!");
-                            await createActivityLog(userMobileNumber, "text", "outbound", "✅ That's right!", null);
+                            let correctAnswerMessage = "✅ That's right!\n\n";
+                            if (remainingQuestions > 1) {
+                                correctAnswerMessage += remainingQuestions + " more questions to go!";
+                            }
+                            await sendMessage(userMobileNumber, correctAnswerMessage);
+                            await createActivityLog(userMobileNumber, "text", "outbound", correctAnswerMessage, null);
                         }
                         // Incorrect Answer Feedback
                         else {
@@ -417,7 +433,9 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                                     correctAnswer += String.fromCharCode(65 + i) + ": " + mcqAnswers[i].dataValues.AnswerText;
                                 }
                             }
-                            // Text message
+                            if (remainingQuestions > 1) {
+                                correctAnswer += "\n\n" + remainingQuestions + " more questions to go!";
+                            }
                             await sendMessage(userMobileNumber, correctAnswer);
                             await createActivityLog(userMobileNumber, "text", "outbound", correctAnswer, null);
                         }
@@ -448,7 +466,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                         mcqMessage = "👉 *Question " + await convertNumberToEmoji(nextMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n";
                     }
                     if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
-                        mcqMessage += "Choose the correct answer:\nصحیح جواب پر کلک کریں۔\n";
+                        mcqMessage += "Choose the correct answer:\n";
                         if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                             mcqMessage += "\nor Type *next* to skip this activity!";
                         }
