@@ -10,7 +10,7 @@ import waActiveSessionRepository from "../repositories/waActiveSessionRepository
 import waProfileRepository from "../repositories/waProfileRepository.js";
 import waUserActivityLogsRepository from "../repositories/waUserActivityLogsRepository.js";
 import AIServices from "../utils/AIServices.js";
-import { removeUser, removeUserTillCourse, startCourseForUser, levelCourseStart, sendCourseLessonToTeacher, sendCourseLessonToKid } from "../utils/chatbotUtils.js";
+import { removeUser, removeUserTillCourse, startCourseForUser, levelCourseStart, sendCourseLessonToTeacher, sendCourseLessonToKid, resetCourseKid } from "../utils/chatbotUtils.js";
 import {
     greetingMessage,
     greetingMessageLoop,
@@ -115,12 +115,15 @@ const webhookService = async (body, res) => {
             const message = body.entry[0].changes[0].value.messages[0];
             const userMobileNumber = "+" + message.from;
             const activeSession = await waActiveSessionRepository.getByPhoneNumberAndBotPhoneNumberId(userMobileNumber, botPhoneNumberId);
+            const userProfileExists = await waProfileRepository.getByPhoneNumberAndBotPhoneNumberId(userMobileNumber, botPhoneNumberId);
             let profileId = null;
             let userExists = false;
+            let chooseProfile = false;
             if (activeSession) {
                 profileId = activeSession.dataValues.profile_id;
                 userExists = true;
-            } else {
+            }
+            else if (!activeSession && !userProfileExists) {
                 let profile_type = "";
                 if (botPhoneNumberId == teacherBotPhoneNumberId) {
                     profile_type = "teacher";
@@ -140,6 +143,10 @@ const webhookService = async (body, res) => {
                 await waUsersMetadataRepository.create({ profile_id: profileId, phoneNumber: userMobileNumber, userClickedLink: new Date() });
                 await waActiveSessionRepository.create({ phone_number: userMobileNumber, bot_phone_number_id: botPhoneNumberId, profile_id: profileId });
                 userExists = false;
+            } else {
+                const profiles = await waProfileRepository.getAllSortOnProfileId(userMobileNumber);
+                profileId = profiles[0].dataValues.profile_id;
+                chooseProfile = true;
             }
 
             let messageContent;
@@ -192,6 +199,46 @@ const webhookService = async (body, res) => {
                     await removeUserTillCourse(profileId, userMobileNumber);
                     return;
                 }
+
+                // If message is reset course kid, delete user from database and create test data
+                if (text_message_types.includes(message.type) && messageContent.toLowerCase() == "reset course kid") {
+                    await resetCourseKid(userMobileNumber, botPhoneNumberId);
+                    return;
+                }
+
+
+                if (chooseProfile) {
+                    const profiles = await waProfileRepository.getAllSortOnProfileId(userMobileNumber);
+                    const userMetadata = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
+                    for (let i = 0; i < profiles.length; i += 3) {
+                        const profileChunk = profiles.slice(i, i + 3);
+                        let profileMessage = "Choose user:\n";
+
+                        // Create message for this chunk
+                        profileChunk.forEach((profile, chunkIndex) => {
+                            const globalIndex = i + chunkIndex;
+                            const matchingUser = userMetadata.find(user => user.dataValues.profile_id === profile.dataValues.profile_id);
+                            profileMessage += `${String.fromCharCode(65 + globalIndex)}) ${matchingUser.dataValues.name} - ${matchingUser.dataValues.classLevel}\n`;
+                        });
+
+                        // Create buttons for this chunk
+                        const buttons = profileChunk.map((profile, chunkIndex) => {
+                            const globalIndex = i + chunkIndex;
+                            return { id: String(profile.dataValues.profile_id), title: String.fromCharCode(65 + globalIndex) };
+                        });
+
+                        await sendButtonMessage(userMobileNumber, profileMessage.trim(), buttons);
+                        await createActivityLog(userMobileNumber, "template", "outbound", profileMessage.trim(), null);
+                        await sleep(1000);
+                    }
+                    const acceptableMessagesList = Array.from({ length: profiles.length }, (_, i) => String.fromCharCode(65 + i));
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
+                    await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Choose User");
+                    await waActiveSessionRepository.create({ phone_number: userMobileNumber, bot_phone_number_id: botPhoneNumberId, profile_id: profileId });
+                    return;
+                }
+
+
 
                 if (botPhoneNumberId == marketingBotPhoneNumberId) {
                     if (messageContent.toLowerCase() == "yes" || messageContent.toLowerCase() == "no") {
@@ -751,11 +798,14 @@ const webhookService = async (body, res) => {
                 if (text_message_types.includes(message.type)) {
                     if (
                         messageContent.toLowerCase().includes("start next activity") ||
+                        messageContent.toLowerCase().includes("start next game") ||
+                        messageContent.toLowerCase().includes("let's start") ||
                         messageContent.toLowerCase().includes("next challenge") ||
                         messageContent.toLowerCase().includes("go to next activity") ||
                         messageContent.toLowerCase().includes("next activity") ||
                         messageContent.toLowerCase().includes("start questions") ||
                         messageContent.toLowerCase().includes("start challenge") ||
+                        messageContent.toLowerCase().includes("start part b") ||
                         messageContent.toLowerCase().includes("next")
                     ) {
                         if (currentUserState.dataValues.engagement_type == "Free Trial - Teachers" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
@@ -869,6 +919,43 @@ const webhookService = async (body, res) => {
                     }
                 }
 
+
+
+
+                // Actual Course
+                // User Switching
+                if (
+                    (messageContent.toLowerCase().includes("change user"))
+                ) {
+                    const profiles = await waProfileRepository.getAllSortOnProfileId(userMobileNumber);
+                    const userMetadata = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
+                    for (let i = 0; i < profiles.length; i += 3) {
+                        const profileChunk = profiles.slice(i, i + 3);
+                        let profileMessage = "Choose user:\n";
+
+                        // Create message for this chunk
+                        profileChunk.forEach((profile, chunkIndex) => {
+                            const globalIndex = i + chunkIndex;
+                            const matchingUser = userMetadata.find(user => user.dataValues.profile_id === profile.dataValues.profile_id);
+                            profileMessage += `${String.fromCharCode(65 + globalIndex)}) ${matchingUser.dataValues.name} - ${matchingUser.dataValues.classLevel}\n`;
+                        });
+
+                        // Create buttons for this chunk
+                        const buttons = profileChunk.map((profile, chunkIndex) => {
+                            const globalIndex = i + chunkIndex;
+                            return { id: String(profile.dataValues.profile_id), title: String.fromCharCode(65 + globalIndex) };
+                        });
+
+                        await sendButtonMessage(userMobileNumber, profileMessage.trim(), buttons);
+                        await createActivityLog(userMobileNumber, "template", "outbound", profileMessage.trim(), null);
+                        await sleep(1000);
+                    }
+                    await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Choose User");
+                    return;
+                }
+
+
+
                 let numbers_to_ignore = [
                     "+923008400080",
                     "+923303418882",
@@ -884,11 +971,60 @@ const webhookService = async (body, res) => {
                     "+923012232148",
                 ];
 
+                // User switching a profile
+                if (currentUserState.dataValues.engagement_type == "Choose User") {
+                    const profiles = await waProfileRepository.getAllSortOnProfileId(userMobileNumber);
+                    const oldProfileId = profileId;
+                    const index = messageContent.toLowerCase().charCodeAt(0) - 97;
+                    const profile = profiles[index];
+                    if (!profile) {
+                        await sendMessage(userMobileNumber, "Invalid profile selected. Please try again.");
+                        return;
+                    }
+                    profileId = profile.dataValues.profile_id;
+                    if (!activeSession) {
+                        await waActiveSessionRepository.create({ phone_number: userMobileNumber, bot_phone_number_id: botPhoneNumberId, profile_id: profileId });
+                    } else {
+                        await waUserProgressRepository.updateEngagementType(oldProfileId, userMobileNumber, "Course Start");
+                        await waActiveSessionRepository.updateCurrentProfileIdOnPhoneNumber(userMobileNumber, profileId, botPhoneNumberId);
+                    }
+
+                    // Get the updated user state for the selected profile
+                    const selectedUserState = await waUserProgressRepository.getByProfileId(profileId);
+
+                    if (!selectedUserState.dataValues.currentCourseId) {
+                        await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Course Start");
+                        await startCourseForUser(profileId, userMobileNumber, numbers_to_ignore);
+                    } else {
+                        const acceptableMessages = selectedUserState.dataValues.acceptableMessages;
+                        if (acceptableMessages && acceptableMessages.length > 0) {
+                            for (let i = 0; i < acceptableMessages.length; i += 3) {
+                                const messageChunk = acceptableMessages.slice(i, i + 3);
+                                const buttons = messageChunk.map(message => ({
+                                    id: message.replace(/\s+/g, '_').toLowerCase(),
+                                    title: message.charAt(0).toUpperCase() + message.slice(1)
+                                }));
+
+                                const messageText = i === 0 ? "Continue where you left off:" : "More options:";
+                                await sendButtonMessage(userMobileNumber, messageText, buttons);
+                                await createActivityLog(userMobileNumber, "template", "outbound", messageText + " " + messageChunk.join(", "), null);
+
+                                if (i + 3 < acceptableMessages.length) {
+                                    await sleep(500);
+                                }
+                            }
+                        }
+                    }
+                    return;
+                }
+
                 // START MAIN COURSE
                 if (
                     text_message_types.includes(message.type) &&
                     (messageContent.toLowerCase().includes("start my course") ||
-                        messageContent.toLowerCase().includes("start next level"))
+                        messageContent.toLowerCase().includes("start next level") ||
+                        messageContent.toLowerCase().includes("start now!")
+                    )
                 ) {
                     await startCourseForUser(profileId, userMobileNumber, numbers_to_ignore);
                     return;
@@ -902,7 +1038,7 @@ const webhookService = async (body, res) => {
                 ) {
                     if (currentUserState.dataValues.engagement_type == "Course Start") {
                         const startingLesson = await lessonRepository.getNextLesson(currentUserState.dataValues.currentCourseId, 1, null, null);
-                        await levelCourseStart(profileId, userMobileNumber, startingLesson, currentUserState.dataValues.currentCourseId);
+                        await levelCourseStart(profileId, userMobileNumber, startingLesson, currentUserState.dataValues.currentCourseId, currentUserState.dataValues.persona);
                         // Send first lesson to user
                         currentUserState = await waUserProgressRepository.getByProfileId(profileId);
                         if (currentUserState.dataValues.persona == "kid" || currentUserState.dataValues.persona == "parent or student" || currentUserState.dataValues.persona == "school admin") {
@@ -968,11 +1104,15 @@ const webhookService = async (body, res) => {
                 if (text_message_types.includes(message.type)) {
                     if (
                         messageContent.toLowerCase().includes("start next activity") ||
+                        messageContent.toLowerCase().includes("start next game") ||
                         messageContent.toLowerCase().includes("start next lesson") ||
+                        messageContent.toLowerCase().includes("let's start") ||
                         messageContent.toLowerCase().includes("it was great") ||
                         messageContent.toLowerCase().includes("it was great 😁") ||
                         messageContent.toLowerCase().includes("it can be improved") ||
                         messageContent.toLowerCase().includes("it can be improved 🤔") ||
+                        messageContent.toLowerCase().includes("start questions") ||
+                        messageContent.toLowerCase().includes("start part b") ||
                         messageContent.toLowerCase().includes("yes") ||
                         messageContent.toLowerCase().includes("no, try again") ||
                         messageContent.toLowerCase().includes("no") ||
@@ -1019,7 +1159,7 @@ const webhookService = async (body, res) => {
 
                         // Daily blocking
                         const daysPerWeek = await getDaysPerWeek(profileId);
-                        if (daysPerWeek == 5) {
+                        if (daysPerWeek == 5 && currentUserState.dataValues.persona == "kid") {
                             if (!numbers_to_ignore.includes(userMobileNumber)) {
                                 const course = await courseRepository.getById(
                                     currentUserState.dataValues.currentCourseId
@@ -1060,9 +1200,19 @@ const webhookService = async (body, res) => {
                                         todayMonth == dayUnlockDateMonth &&
                                         todayDate < dayUnlockDateDate)
                                 ) {
-                                    const message = "Please wait for the next day's content to unlock.";
-                                    await sendMessage(userMobileNumber, message);
-                                    await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+                                    if (messageContent.toLowerCase().includes("start next lesson")) {
+                                        const message = "Please come back tomorrow to unlock the next lesson.";
+                                        await sendButtonMessage(userMobileNumber, message, [{ id: 'start_next_lesson', title: 'Start Next Lesson' }, { id: 'change_user', title: 'Change User' }]);
+                                        await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Lesson", null);
+                                    } else if (messageContent.toLowerCase().includes("start next game")) {
+                                        const message = "Please come back tomorrow to unlock the next game.";
+                                        await sendButtonMessage(userMobileNumber, message, [{ id: 'start_next_game', title: 'Start Next Game' }, { id: 'change_user', title: 'Change User' }]);
+                                        await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Game", null);
+                                    } else {
+                                        const message = "Please come back tomorrow to unlock the next lesson.";
+                                        await sendMessage(userMobileNumber, message);
+                                        await createActivityLog(userMobileNumber, "text", "outbound", message, null);
+                                    }
                                     return;
                                 }
                             }

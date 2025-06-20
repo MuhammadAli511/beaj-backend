@@ -48,12 +48,87 @@ const removeUser = async (phoneNumber) => {
 };
 
 const removeUserTillCourse = async (profileId, phoneNumber) => {
-    await waUserProgressRepository.update(profileId, phoneNumber, null, null, null, null, null, null, null, null, ["start my course"]);
-    await waUserProgressRepository.updateEngagementType(profileId, phoneNumber, "School Input");
+    const profile = await waProfileRepository.getByProfileId(profileId);
+    const profileType = profile.dataValues.profile_type;
+    if (profileType == "teacher") {
+        await waUserProgressRepository.update(profileId, phoneNumber, null, null, null, null, null, null, null, null, ["start my course"]);
+    } else {
+        await waUserProgressRepository.update(profileId, phoneNumber, null, null, null, null, null, null, null, null, ["start now!"]);
+    }
+    await waUserProgressRepository.updateEngagementType(profileId, phoneNumber, "Course Start");
     await waUserActivityLogsRepository.deleteByPhoneNumber(phoneNumber);
     await waLessonsCompletedRepository.deleteByPhoneNumber(phoneNumber);
     await waQuestionResponsesRepository.deleteByPhoneNumber(phoneNumber);
     await sendMessage(phoneNumber, "Your data has been removed. Please start again using the link provided.");
+};
+
+const resetCourseKid = async (phoneNumber, botPhoneNumberId) => {
+    // First, delete all existing data like "reset all"
+    await waUsersMetadataRepository.deleteByPhoneNumber(phoneNumber);
+    await waUserProgressRepository.deleteByPhoneNumber(phoneNumber);
+    await waUserActivityLogsRepository.deleteByPhoneNumber(phoneNumber);
+    await waLessonsCompletedRepository.deleteByPhoneNumber(phoneNumber);
+    await waQuestionResponsesRepository.deleteByPhoneNumber(phoneNumber);
+    await waActiveSessionRepository.deleteByPhoneNumber(phoneNumber);
+    await waProfileRepository.deleteByPhoneNumber(phoneNumber);
+    await waPurchasedCoursesRepository.deleteByPhoneNumber(phoneNumber);
+
+    // Create test profiles
+    const profiles = [
+        { phone_number: phoneNumber, bot_phone_number_id: botPhoneNumberId, profile_type: 'student' },
+        { phone_number: phoneNumber, bot_phone_number_id: botPhoneNumberId, profile_type: 'student' },
+        { phone_number: phoneNumber, bot_phone_number_id: botPhoneNumberId, profile_type: 'student' },
+        { phone_number: phoneNumber, bot_phone_number_id: botPhoneNumberId, profile_type: 'student' }
+    ];
+
+    const createdProfiles = [];
+    for (const profileData of profiles) {
+        const profile = await waProfileRepository.create(profileData);
+        createdProfiles.push(profile);
+    }
+
+    // Create user metadata for each profile
+    const userMetadata = [
+        { phoneNumber: phoneNumber, name: 'user 1', userClickedLink: new Date(), userRegistrationComplete: new Date(), userId: 29560, profile_id: createdProfiles[0].dataValues.profile_id, classLevel: 'grade 1' },
+        { phoneNumber: phoneNumber, name: 'user 2', userClickedLink: new Date(), userRegistrationComplete: new Date(), userId: 29561, profile_id: createdProfiles[1].dataValues.profile_id, classLevel: 'grade 2' },
+        { phoneNumber: phoneNumber, name: 'user 3', userClickedLink: new Date(), userRegistrationComplete: new Date(), userId: 29562, profile_id: createdProfiles[2].dataValues.profile_id, classLevel: 'grade 3' },
+        { phoneNumber: phoneNumber, name: 'user 4', userClickedLink: new Date(), userRegistrationComplete: new Date(), userId: 29563, profile_id: createdProfiles[3].dataValues.profile_id, classLevel: 'grade 4' }
+    ];
+
+    for (const metadata of userMetadata) {
+        await waUsersMetadataRepository.create(metadata);
+    }
+
+    // Create user progress for each profile
+    const userProgress = [
+        { profile_id: createdProfiles[0].dataValues.profile_id, phoneNumber: phoneNumber, persona: 'kid', engagement_type: 'Course Start', acceptableMessages: ['Start Now!'], lastUpdated: new Date() },
+        { profile_id: createdProfiles[1].dataValues.profile_id, phoneNumber: phoneNumber, persona: 'kid', engagement_type: 'Course Start', acceptableMessages: ['Start Now!'], lastUpdated: new Date() },
+        { profile_id: createdProfiles[2].dataValues.profile_id, phoneNumber: phoneNumber, persona: 'kid', engagement_type: 'Course Start', acceptableMessages: ['Start Now!'], lastUpdated: new Date() },
+        { profile_id: createdProfiles[3].dataValues.profile_id, phoneNumber: phoneNumber, persona: 'kid', engagement_type: 'Course Start', acceptableMessages: ['Start Now!'], lastUpdated: new Date() }
+    ];
+
+    for (const progress of userProgress) {
+        await waUserProgressRepository.create(progress);
+    }
+
+    // Create purchased courses
+    const paymentProof = "https://beajbloblive.blob.core.windows.net/beajdocuments/20250618163609353-d5f65630-4f1e-4b87-974d-44034f71c1d5-1664985517525471";
+    const purchasedCourses = [
+        { phoneNumber: phoneNumber, courseCategoryId: 71, courseId: 119, courseStartDate: new Date(), purchaseDate: new Date(), profile_id: createdProfiles[0].dataValues.profile_id, paymentProof: paymentProof, paymentStatus: 'Approved' },
+        { phoneNumber: phoneNumber, courseCategoryId: 71, courseId: 120, courseStartDate: new Date(), purchaseDate: new Date(), profile_id: createdProfiles[1].dataValues.profile_id, paymentProof: paymentProof, paymentStatus: 'Approved' },
+        { phoneNumber: phoneNumber, courseCategoryId: 71, courseId: 121, courseStartDate: new Date(), purchaseDate: new Date(), profile_id: createdProfiles[3].dataValues.profile_id, paymentProof: paymentProof, paymentStatus: 'Approved' },
+        { phoneNumber: phoneNumber, courseCategoryId: 71, courseId: 119, courseStartDate: new Date(), purchaseDate: new Date(), profile_id: createdProfiles[2].dataValues.profile_id, paymentProof: paymentProof, paymentStatus: 'Approved' },
+        { phoneNumber: phoneNumber, courseCategoryId: 71, courseId: 139, courseStartDate: new Date(), purchaseDate: new Date(), profile_id: createdProfiles[0].dataValues.profile_id, paymentProof: paymentProof, paymentStatus: 'Approved' },
+        { phoneNumber: phoneNumber, courseCategoryId: 71, courseId: 139, courseStartDate: new Date(), purchaseDate: new Date(), profile_id: createdProfiles[2].dataValues.profile_id, paymentProof: paymentProof, paymentStatus: 'Approved' },
+        { phoneNumber: phoneNumber, courseCategoryId: 71, courseId: 139, courseStartDate: new Date(), purchaseDate: new Date(), profile_id: createdProfiles[1].dataValues.profile_id, paymentProof: paymentProof, paymentStatus: 'Approved' },
+        { phoneNumber: phoneNumber, courseCategoryId: 71, courseId: 140, courseStartDate: new Date(), purchaseDate: new Date(), profile_id: createdProfiles[3].dataValues.profile_id, paymentProof: paymentProof, paymentStatus: 'Approved' }
+    ];
+
+    for (const purchase of purchasedCourses) {
+        await waPurchasedCoursesRepository.create(purchase);
+    }
+
+    await sendMessage(phoneNumber, "Test data has been created for kid profiles. You now have 4 student profiles with purchased courses.");
 };
 
 const weekEndScoreCalculation = async (profileId, phoneNumber, weekNumber, courseId) => {
@@ -162,34 +237,38 @@ const startCourseForUser = async (profileId, userMobileNumber, numbers_to_ignore
     );
 
     // Extract Level from courseName
-    const courseName = nextCourse.dataValues.courseName.split("-");
-    const level = courseName[0].trim();
+    // if teacher
+    const profile = await waProfileRepository.getByProfileId(profileId);
+    const profileType = profile.dataValues.profile_type;
+    if (profileType == "teacher") {
+        const courseName = nextCourse.dataValues.courseName.split("-");
+        const level = courseName[0].trim();
 
-    let intro_message = "Assalam o Alaikum 👋\n\nWelcome to Beaj Self Development Course for Teachers " + level + "!";
-    if (level == "Level 1") {
-        intro_message += "\n\nMa'am Zainab Qureshi, Ma'am Fizza Hasan and Ma'am Sameen Shahid will be your instructors.";
+        let intro_message = "Assalam o Alaikum 👋\n\nWelcome to Beaj Self Development Course for Teachers " + level + "!";
+        if (level == "Level 1") {
+            intro_message += "\n\nMa'am Zainab Qureshi, Ma'am Fizza Hasan and Ma'am Sameen Shahid will be your instructors.";
+        }
+        await sendMessage(userMobileNumber, intro_message);
+        await createActivityLog(userMobileNumber, "text", "outbound", intro_message, null);
+        if (level == "Level 1") {
+            const demoVideo = await waConstantsRepository.getByKey("DEMO_VIDEO");
+            await sendMediaMessage(userMobileNumber, demoVideo.dataValues.constantValue, 'video', null, 0, "WA_Constants", demoVideo.dataValues.id, demoVideo.dataValues.constantMediaId, "constantMediaId");
+            await createActivityLog(userMobileNumber, "video", "outbound", demoVideo.dataValues.constantValue, null);
+            await sleep(12000);
+        }
+        await sendButtonMessage(userMobileNumber, "Are you ready to start " + level + "?", [{ id: "lets_start", title: "Start" }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start " + level + "?", null);
+        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start"]);
+    } else {
+        const puzzleImage = await waConstantsRepository.getByKey("PUZZLE1");
+        const captionText = "🎯 Play games to unlock the Summer Camp!";
+        await sendButtonMessage(userMobileNumber, captionText, [{ id: "lets_start", title: "Start" }], 0, puzzleImage.dataValues.constantValue, null, "WA_Constants", puzzleImage.dataValues.id, puzzleImage.dataValues.constantMediaId, null, "constantMediaId");
+        await createActivityLog(userMobileNumber, "template", "outbound", captionText, null);
+        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start"]);
     }
-    await sendMessage(userMobileNumber, intro_message);
-    await createActivityLog(userMobileNumber, "text", "outbound", intro_message, null);
-
-
-    if (level == "Level 1") {
-        const demoVideo = await waConstantsRepository.getByKey("DEMO_VIDEO");
-        await sendMediaMessage(userMobileNumber, demoVideo.dataValues.constantValue, 'video', null, 0, "WA_Constants", demoVideo.dataValues.id, demoVideo.dataValues.constantMediaId, "constantMediaId");
-        await createActivityLog(userMobileNumber, "video", "outbound", demoVideo.dataValues.constantValue, null);
-        await sleep(12000);
-    }
-
-    // Send Button Message
-    // "Are you ready to start level"
-    await sendButtonMessage(userMobileNumber, "Are you ready to start " + level + "?", [{ id: "lets_start", title: "Start" }]);
-    await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start " + level + "?", null);
-
-    // Update acceptable messages list for the user
-    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start"]);
 };
 
-const levelCourseStart = async (profileId, userMobileNumber, startingLesson, courseId) => {
+const levelCourseStart = async (profileId, userMobileNumber, startingLesson, courseId, persona) => {
     // Update user progress
     await waUserProgressRepository.update(
         profileId,
@@ -205,14 +284,12 @@ const levelCourseStart = async (profileId, userMobileNumber, startingLesson, cou
         null
     );
 
-    // Extract Level from courseName using courseId
-    const courseName = await courseRepository.getCourseNameById(courseId);
-    const level = courseName.split("-")[0].trim();
-
-
-    // Text Message
-    await sendMessage(userMobileNumber, "Great! Let's start " + level + "! 🤩");
-    await createActivityLog(userMobileNumber, "text", "outbound", "Great! Let's start " + level + "! 🤩", null);
+    if (persona == "teacher") {
+        const courseName = await courseRepository.getCourseNameById(courseId);
+        const level = courseName.split("-")[0].trim();
+        await sendMessage(userMobileNumber, "Great! Let's start " + level + "! 🤩");
+        await createActivityLog(userMobileNumber, "text", "outbound", "Great! Let's start " + level + "! 🤩", null);
+    }
 };
 
 const sendCourseLessonToTeacher = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent) => {
@@ -318,5 +395,6 @@ export {
     sendCourseLessonToTeacher,
     sendCourseLessonToKid,
     weekEndScoreCalculation,
-    removeUserTillCourse
+    removeUserTillCourse,
+    resetCourseKid
 };

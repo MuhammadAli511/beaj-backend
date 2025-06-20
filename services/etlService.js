@@ -351,7 +351,6 @@ const runCumulativeSheets = async () => {
 
   individual_weekly_score_l1_list_total = individual_weekly_score_l1_list_total.map(obj => Object.values(obj).map(value => value));
   individual_weekly_score_l2_list_total = individual_weekly_score_l2_list_total.map(obj => Object.values(obj).map(value => value));
-  console.log(individual_weekly_score_l1_list_total);
 
   await CumulativeUtils_load(
     array_Lesson_List,

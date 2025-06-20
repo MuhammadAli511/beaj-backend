@@ -149,8 +149,6 @@ const getLessonCompletions = async (course_id1, course_id2, course_id3, grp) => 
 
             if (resT1[0] && resT1[0][0]) {
                 offsetT1 = resT1[0][0].totalt1 || 0;
-            } else {
-                console.log("No records found for targetGroup 'T1' and cohort not 'Pilot'.");
             }
         }
 
@@ -375,8 +373,6 @@ const getActivity_Completions = async (course1_id, course2_id, course3_id, grp) 
 
             if (resT1[0] && resT1[0][0]) {
                 offsetT1 = resT1[0][0].totalt1 || 0;
-            } else {
-                console.log("No records found for targetGroup 'T1' and cohort not 'Pilot'.");
             }
         }
 

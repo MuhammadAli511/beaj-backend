@@ -997,8 +997,8 @@ SELECT
 const getWeeklyScore = async (botType, rollout, level, cohort, grp, course_id) => {
     try {
         let classLevel = '', target_grp = '';
-        if(botType === 'teacher'){
-            if(rollout == 1 || rollout == 0){
+        if (botType === 'teacher') {
+            if (rollout == 1 || rollout == 0) {
                 target_grp = ` m."targetGroup" = '${grp}' AND `;
             }
             classLevel = `m."classLevel" is null`;
@@ -1731,8 +1731,8 @@ const getWeeklyScore_pilot = async (course_id, grp, weekNo, cohort) => {
 const getActivity_Completions = async (botType, rollout, level, cohort, grp, course1_id, course2_id, course3_id) => {
     try {
         let classLevel = '', course_list = '', course_array = '', target_grp = '';
-        if(botType === 'teacher'){
-            if(rollout == 1 || rollout == 0){
+        if (botType === 'teacher') {
+            if (rollout == 1 || rollout == 0) {
                 target_grp = ` m."targetGroup" = '${grp}' AND `;
             }
             classLevel = `and m."classLevel" is null`;
@@ -1813,8 +1813,8 @@ const getActivity_Completions = async (botType, rollout, level, cohort, grp, cou
 const getActivtyAssessmentScore = async (botType, rollout, level, cohort, grp, course_id) => {
     try {
         let classLevel = '', target_grp = '';
-        if(botType === 'teacher'){
-            if(rollout == 1 || rollout == 0){
+        if (botType === 'teacher') {
+            if (rollout == 1 || rollout == 0) {
                 target_grp = ` m."targetGroup" = '${grp}' AND `;
             }
             // rollout = 1;
@@ -2058,14 +2058,14 @@ const getActivityNameCount = async (course_id1, course_id2, course_id3, grp, coh
 const getPhoneNumber_userNudges = async (course_id, grp, cohort, date) => {
     try {
         const qry = `
-           SELECT distinct m."phoneNumber"
-FROM "wa_users_metadata" m 
- left JOIN "wa_lessons_completed" l
-  ON m."phoneNumber" = l."phoneNumber" 
-  AND l."completionStatus" = 'Completed'  
-  AND l."endTime" >= '${date}' and l."courseId" = ${course_id}
-WHERE m."targetGroup" = '${grp}' 
-  AND m."cohort" = '${cohort}'  AND l."phoneNumber" IS NOT NULL;
+            SELECT distinct m."phoneNumber"
+            FROM "wa_users_metadata" m 
+            left JOIN "wa_lessons_completed" l
+            ON m."phoneNumber" = l."phoneNumber" 
+            AND l."completionStatus" = 'Completed'  
+            AND l."endTime" >= '${date}' and l."courseId" = ${course_id}
+            WHERE m."targetGroup" = '${grp}' 
+            AND m."cohort" = '${cohort}'  AND l."phoneNumber" IS NOT NULL;
         `;
 
         const res = await sequelize.query(qry);
@@ -2086,61 +2086,60 @@ const getLastActivityCompleted_DropOff = async (course_id1) => {
         "wa_users_metadata" m left join "wa_profiles" p on m."phoneNumber" = p."phone_number" and m."profile_id" = p."profile_id"
     WHERE 
         p."profile_type" = 'student'
-),
-get_lessonIds AS (
-    SELECT 
-        "LessonId", 
-        "weekNumber", 
-		"dayNumber",
-        "SequenceNumber" 
-    FROM 
-        "Lesson" 
-    WHERE 
-        "courseId" = ${course_id1} and "status" = 'Active'
-),
-LessonWithMaxTimestamp AS (
-    SELECT 
-        l."phoneNumber",
-        l."lessonId",
-        l."endTime",
-        ROW_NUMBER() OVER (
-            PARTITION BY l."phoneNumber" 
-            ORDER BY l."endTime" DESC
-        ) AS row_num
-    FROM 
-        "wa_lessons_completed" l
-    INNER JOIN 
-        TargetGroup tg 
-    ON 
-        l."phoneNumber" = tg."phoneNumber"
-    WHERE 
-        l."completionStatus" = 'Completed'
-        AND l."courseId" = ${course_id1}
-),
-LessonCompletionCounts AS (
-    SELECT 
-        lw."lessonId",
-        COUNT(lw."phoneNumber") AS "completionCount"
-    FROM 
-        LessonWithMaxTimestamp lw
-    WHERE 
-        lw.row_num = 1
-    GROUP BY 
-        lw."lessonId"
-)
-SELECT 
-    g."LessonId",
-    COALESCE(lcc."completionCount", null) AS "total_students_completed"
-FROM 
-    get_lessonIds g
-LEFT JOIN 
-    LessonCompletionCounts lcc 
-ON 
-    g."LessonId" = lcc."lessonId"
-ORDER BY 
-    g."weekNumber",g."dayNumber",g."SequenceNumber";`
+        ),
+        get_lessonIds AS (
+            SELECT 
+                "LessonId", 
+                "weekNumber", 
+                "dayNumber",
+                "SequenceNumber" 
+            FROM 
+                "Lesson" 
+            WHERE 
+                "courseId" = ${course_id1} and "status" = 'Active'
+        ),
+        LessonWithMaxTimestamp AS (
+            SELECT 
+                l."phoneNumber",
+                l."lessonId",
+                l."endTime",
+                ROW_NUMBER() OVER (
+                    PARTITION BY l."phoneNumber" 
+                    ORDER BY l."endTime" DESC
+                ) AS row_num
+            FROM 
+                "wa_lessons_completed" l
+            INNER JOIN 
+                TargetGroup tg 
+            ON 
+                l."phoneNumber" = tg."phoneNumber"
+            WHERE 
+                l."completionStatus" = 'Completed'
+                AND l."courseId" = ${course_id1}
+        ),
+        LessonCompletionCounts AS (
+            SELECT 
+                lw."lessonId",
+                COUNT(lw."phoneNumber") AS "completionCount"
+            FROM 
+                LessonWithMaxTimestamp lw
+            WHERE 
+                lw.row_num = 1
+            GROUP BY 
+                lw."lessonId"
+        )
+        SELECT 
+            g."LessonId",
+            COALESCE(lcc."completionCount", null) AS "total_students_completed"
+        FROM 
+            get_lessonIds g
+        LEFT JOIN 
+            LessonCompletionCounts lcc 
+        ON 
+            g."LessonId" = lcc."lessonId"
+        ORDER BY 
+            g."weekNumber",g."dayNumber",g."SequenceNumber";`;
         const res = await sequelize.query(qry);
-        console.log(res[0]);
         return res[0];
     } catch (error) {
         error.fileName = "etlRepository.js";

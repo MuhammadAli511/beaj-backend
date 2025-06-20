@@ -86,9 +86,9 @@ const getAllUserProgressService = async (botType, rollout, level, cohort, target
         watchAndSpeak_total: 0
       };
 
-      for (let i = 0; i < array_list_Pre.length; i++) {
-        let l1_entry = array_list_Pre[i];
-        let l2_entry = array_listt_Post[i];
+    for (let i = 0; i < array_list_Pre.length; i++) {
+      let l1_entry = array_list_Pre[i];
+      let l2_entry = array_listt_Post[i];
 
         // Update max totals for L1
         maxL1.mcqs_total = Math.max(maxL1.mcqs_total, l1_entry.mcqs_total);
@@ -234,8 +234,6 @@ const generateStarTeachersImage = async (arrayLevels_List, columnIndex) => {
   try {
     const templatePath = path.join(__dirname, '../google_sheet_utils/leaderboard.png');
 
-    console.log(`Looking for template at: ${templatePath}`);
-
     // Check if input image exists
     if (!fs.existsSync(templatePath)) {
       console.error(`Template image not found at path: ${templatePath}`);
@@ -246,7 +244,6 @@ const generateStarTeachersImage = async (arrayLevels_List, columnIndex) => {
     const topPerformers = getTopPerformersWithNames(arrayLevels_List, columnIndex);
 
     if (topPerformers.length === 0) {
-      console.log("No performers found for this column");
       return null;
     }
 
