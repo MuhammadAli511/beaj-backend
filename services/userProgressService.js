@@ -8,8 +8,8 @@ import { et } from "date-fns/locale";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const getAllUserProgressService = async (botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3, module) => {
-  console.log(botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3, module)
+const getAllUserProgressService = async (botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3,courseId4, courseId5, module) => {
+  // console.log(botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3,courseId4, courseId5, module)
   let array_list = [];
 
   if (module === 'lesson') {
@@ -48,12 +48,20 @@ const getAllUserProgressService = async (botType, rollout, level, cohort, target
     }
     array_list = array_list.map(obj => Object.values(obj).map(value => value));
     array_list = capitalizeNames(array_list);
-    let columnIndex = await getColumnIndexWithPercentageValues(array_list, 1);
-    const buffer = await generateStarTeachersImage(array_list, columnIndex);
+    let leaderboardBase64 = [];
+    // let columnIndex = await getColumnIndexWithPercentageValues(array_list, 1);
+    for (let j = 4; j < 16; j++) {
+      const buffer = await generateStarTeachersImage(array_list, j);
 
     // Convert buffer to base64 string
-    const leaderboardBase64 = buffer.toString('base64');
-
+      // leaderboardBase64 = buffer.toString('base64');
+      if (buffer) {
+          leaderboardBase64.push({
+            columnIndex: j,
+            imageBase64: buffer.toString('base64')
+          });
+        }
+    }
     return {
       array_list: array_list,
       leaderboard: leaderboardBase64,
@@ -63,28 +71,19 @@ const getAllUserProgressService = async (botType, rollout, level, cohort, target
     array_list = await etlRepository.getActivity_Completions(botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3);
   }
   else if (module === 'assessment') {
-    let array_list_Pre = await etlRepository.getActivtyAssessmentScore(botType, rollout, level, cohort, targetGroup, courseId1);
-    let array_listt_Post = await etlRepository.getActivtyAssessmentScore(botType, rollout, level, cohort, targetGroup, courseId2);
-
-    let individual_weekly_score_l1_list_total = [], individual_weekly_score_l2_list_total = [];
-      let arrayT1_List01 = [];
+    let array_list_Pre = await etlRepository.getActivtyAssessmentScore(botType, rollout, level, cohort, targetGroup, courseId4);
+    let array_listt_Post = await etlRepository.getActivtyAssessmentScore(botType, rollout, level, cohort, targetGroup, courseId5);
+    let totalRow = [], arrayT1_List01 = [];
+    
 
       let maxL1 = {
-        listenAndSpeak_total: 0,
         mcqs_total: 0,
-        watchAndSpeak_total: 0,
-        read_total: 0,
-        conversationalMonologue_total: 0,
-        Speaking_practice_total: 0
+        watchAndSpeak_total: 0
       };
 
       let maxL2 = {
-        listenAndSpeak_total: 0,
         mcqs_total: 0,
-        watchAndSpeak_total: 0,
-        read_total: 0,
-        conversationalMonologue_total: 0,
-        Speaking_practice_total: 0
+        watchAndSpeak_total: 0
       };
 
       for (let i = 0; i < array_list_Pre.length; i++) {
@@ -92,20 +91,12 @@ const getAllUserProgressService = async (botType, rollout, level, cohort, target
         let l2_entry = array_listt_Post[i];
 
         // Update max totals for L1
-        maxL1.listenAndSpeak_total = Math.max(maxL1.listenAndSpeak_total, l1_entry.listenAndSpeak_total);
         maxL1.mcqs_total = Math.max(maxL1.mcqs_total, l1_entry.mcqs_total);
         maxL1.watchAndSpeak_total = Math.max(maxL1.watchAndSpeak_total, l1_entry.watchAndSpeak_total);
-        maxL1.read_total = Math.max(maxL1.read_total, l1_entry.read_total);
-        maxL1.conversationalMonologue_total = Math.max(maxL1.conversationalMonologue_total, l1_entry.conversationalMonologue_total);
-        maxL1.Speaking_practice_total = Math.max(maxL1.Speaking_practice_total, l1_entry.Speaking_practice_total);
 
         // Update max totals for L2
-        maxL2.listenAndSpeak_total = Math.max(maxL2.listenAndSpeak_total, l2_entry.listenAndSpeak_total);
         maxL2.mcqs_total = Math.max(maxL2.mcqs_total, l2_entry.mcqs_total);
         maxL2.watchAndSpeak_total = Math.max(maxL2.watchAndSpeak_total, l2_entry.watchAndSpeak_total);
-        maxL2.read_total = Math.max(maxL2.read_total, l2_entry.read_total);
-        maxL2.conversationalMonologue_total = Math.max(maxL2.conversationalMonologue_total, l2_entry.conversationalMonologue_total);
-        maxL2.Speaking_practice_total = Math.max(maxL2.Speaking_practice_total, l2_entry.Speaking_practice_total);
 
         // Your existing array push
         arrayT1_List01.push([
@@ -113,44 +104,32 @@ const getAllUserProgressService = async (botType, rollout, level, cohort, target
           l1_entry.profile_id,
           l1_entry.phoneNumber,
           l1_entry.name,
-          l1_entry.listenAndSpeak,
           l1_entry.mcqs,
           l1_entry.watchAndSpeak,
-          l1_entry.read,
-          l1_entry.conversationalMonologue,
-          l1_entry.Speaking_practice,
           null,
-          l2_entry.listenAndSpeak,
           l2_entry.mcqs,
           l2_entry.watchAndSpeak,
-          l2_entry.read,
-          l2_entry.conversationalMonologue,
-          l2_entry.Speaking_practice,
         ]);
       }
+      
 
-      // Push final max row to individual_weekly_score_l1_list_total
-      individual_weekly_score_l1_list_total.push([
-        maxL1.listenAndSpeak_total,
-        maxL1.mcqs_total,
-        maxL1.watchAndSpeak_total,
-        maxL1.read_total,
-        maxL1.conversationalMonologue_total,
-        maxL1.Speaking_practice_total,
-        null,
-        maxL2.listenAndSpeak_total,
-        maxL2.mcqs_total,
-        maxL2.watchAndSpeak_total,
-        maxL2.read_total,
-        maxL2.conversationalMonologue_total,
-        maxL2.Speaking_practice_total,
-      ]);
-       
-        array_list = arrayT1_List01;
-  }
-
+      totalRow = [
+      null,
+      null,
+      null,
+      null,
+      maxL1.mcqs_total,
+      maxL1.watchAndSpeak_total,
+      null,
+      maxL2.mcqs_total,
+      maxL2.watchAndSpeak_total,
+    ];
+    array_list = [totalRow, ...arrayT1_List01];
+  
+}
   array_list = array_list.map(obj => Object.values(obj).map(value => value));
   array_list = capitalizeNames(array_list);
+  //  console.log(array_list);
   return {
     array_list: array_list
   };
@@ -204,7 +183,7 @@ const getColumnIndexWithPercentageValues = async (arrayLevels_List, minValues) =
   }
 
   // Predefined list of column indexes to check
-  const columnIndexes = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+  const columnIndexes = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
 
   // Iterate through the column indexes in reverse order
   for (let i = columnIndexes.length - 1; i >= 0; i--) {
@@ -239,13 +218,13 @@ const getColumnIndexWithPercentageValues = async (arrayLevels_List, minValues) =
 const capitalizeNames = (arrayLevels_List) => {
   return arrayLevels_List.map(row => {
     // Ensure the row has at least 3 columns and the third column is a string
-    if (row.length > 2 && typeof row[2] === 'string') {
+    if (row.length > 2 && typeof row[3] === 'string') {
       // Split the name into words, capitalize each word, and join them back
-      const capitalized = row[2]
+      const capitalized = row[3]
         .split(' ') // Split by spaces
         .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()) // Capitalize first letter
         .join(' '); // Join back with spaces
-      row[2] = capitalized; // Update the name in the row
+      row[3] = capitalized; // Update the name in the row
     }
     return row;
   });
@@ -392,7 +371,7 @@ const getTopPerformersWithNames = (data, columnIndex) => {
       const percentStr = String(row[columnIndex]);
       // Extract the number part and convert to integer
       const percentValue = parseInt(percentStr.replace('%', ''), 10);
-      const name = row[2]; // Assuming name is in the 3rd column (index 2)
+      const name = row[3]; // Assuming name is in the 3rd column (index 2)
 
       if (!isNaN(percentValue) && name) {
         if (!scoreToNames.has(percentValue)) {

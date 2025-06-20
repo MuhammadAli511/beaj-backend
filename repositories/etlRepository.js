@@ -158,231 +158,548 @@ const getCompletedActivity = async (course_id1, course_id2, grp, activity_name_l
     }
 };
 
+// const getLessonCompletions = async (botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3) => {
+//     try {
+
+//         let classLevel = '', course_list = '', course_array = '', target_grp = '';
+//         if(botType === 'teacher'){
+//             if(rollout == 1 || rollout == 0){
+//                 target_grp = ` m."targetGroup" = '${targetGroup}' AND `;
+//             }
+//             classLevel = `m."classLevel" is null`;
+//             course_list = `${courseId1}, ${courseId2}, ${courseId3}`;   
+//             course_array = `MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week1" END) AS "course1_week1",
+//                 MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week2" END) AS "course1_week2",
+//                 MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week3" END) AS "course1_week3",
+//                 MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week4" END) AS "course1_week4",
+//                 MAX(CASE WHEN pp."courseId" = ${courseId1} THEN NULLIF(
+//             COALESCE(pp."week1", 0) +
+//             COALESCE(pp."week2", 0) +
+//             COALESCE(pp."week3", 0) +
+//             COALESCE(pp."week4", 0), 0
+//             ) END) AS "course1_total",
+//                     MAX(CASE WHEN pp."courseId" = ${courseId2} THEN pp."week1" END) AS "course2_week1",
+//                     MAX(CASE WHEN pp."courseId" = ${courseId2} THEN pp."week2" END) AS "course2_week2",
+//                     MAX(CASE WHEN pp."courseId" = ${courseId2} THEN pp."week3" END) AS "course2_week3",
+//                     MAX(CASE WHEN pp."courseId" = ${courseId2} THEN pp."week4" END) AS "course2_week4",
+//                     MAX(CASE WHEN pp."courseId" = ${courseId2} THEN NULLIF(
+//                 COALESCE(pp."week1", 0) +
+//                 COALESCE(pp."week2", 0) +
+//                 COALESCE(pp."week3", 0) +
+//                 COALESCE(pp."week4", 0), 0
+//             ) END) AS "course2_total",
+//                 MAX(CASE WHEN pp."courseId" = ${courseId3} THEN pp."week1" END) AS "course3_week1",
+//             MAX(CASE WHEN pp."courseId" = ${courseId3} THEN pp."week2" END) AS "course3_week2",
+//             MAX(CASE WHEN pp."courseId" = ${courseId3} THEN pp."week3" END) AS "course3_week3",
+//             MAX(CASE WHEN pp."courseId" = ${courseId3} THEN pp."week4" END) AS "course3_week4",
+//                 MAX(CASE WHEN pp."courseId" = ${courseId3} THEN NULLIF(
+//                 COALESCE(pp."week1", 0) +
+//                 COALESCE(pp."week2", 0) +
+//                 COALESCE(pp."week3", 0) +
+//                 COALESCE(pp."week4", 0), 0
+//             ) END) AS "course3_total",
+//         NULLIF(COALESCE(
+//                     MAX(CASE WHEN pp."courseId" = ${courseId1} THEN 
+//                         COALESCE(pp."week1", 0) + COALESCE(pp."week2", 0) + COALESCE(pp."week3", 0) + COALESCE(pp."week4", 0)
+//                     END), 0
+//                 ) +
+//                 COALESCE(
+//                     MAX(CASE WHEN pp."courseId" = ${courseId2} THEN 
+//                         COALESCE(pp."week1", 0) + COALESCE(pp."week2", 0) + COALESCE(pp."week3", 0) + COALESCE(pp."week4", 0)
+//                     END), 0
+//                 ) +
+//                 COALESCE(
+//                     MAX(CASE WHEN pp."courseId" = ${courseId3} THEN 
+//                         COALESCE(pp."week1", 0) + COALESCE(pp."week2", 0) + COALESCE(pp."week3", 0) + COALESCE(pp."week4", 0)
+//                     END), 0
+//             ),0) AS grand_total`;
+//         }
+//         else{
+//             classLevel = `m."classLevel" = '${level}'`;
+//             course_list = `${courseId1}`;
+//             course_array = `MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week1" END) AS "course1_week1",
+//                 MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week2" END) AS "course1_week2",
+//                 MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week3" END) AS "course1_week3",
+//                 MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week4" END) AS "course1_week4",
+//                 MAX(CASE WHEN pp."courseId" = ${courseId1} THEN NULLIF(
+//             COALESCE(pp."week1", 0) +
+//             COALESCE(pp."week2", 0) +
+//             COALESCE(pp."week3", 0) +
+//             COALESCE(pp."week4", 0), 0
+//             ) END) AS "course1_total"`;
+//         }
+
+//          const qry = `WITH LessonAssignments AS (
+//     SELECT
+//         "courseId",
+//         "weekNumber",
+//         "dayNumber",
+//         COUNT("LessonId") AS "TotalLessons"
+//     FROM
+//         "Lesson"
+//     WHERE
+//         "courseId" IN (${course_list})  and "status" = 'Active'
+//     GROUP BY
+//         "courseId", "weekNumber", "dayNumber"
+// ),
+// Students AS (
+//     SELECT DISTINCT
+//         m."phoneNumber",
+//         m."profile_id",
+// 		m."name"
+//     FROM
+//         "wa_users_metadata" m inner join "wa_profiles" p on
+// 		m."profile_id" = p."profile_id"
+//     WHERE
+//         ${target_grp} m."cohort" = '${cohort}' and m."rollout" = ${rollout}
+// 		and p."profile_type" = '${botType}' and ${classLevel}
+// ),
+// AllCombinations AS (
+//     SELECT
+//         s."phoneNumber",
+//         s."profile_id",
+// 		s."name",
+//         la."courseId",
+//         la."weekNumber",
+//         la."dayNumber"
+//     FROM
+//         Students s
+//     CROSS JOIN
+//         LessonAssignments la
+// ),
+// StudentCompletions AS (
+//     SELECT
+//         m."phoneNumber",
+//         m."profile_id",
+// 		    m."name",
+//         s."courseId",
+//         s."weekNumber",
+//         s."dayNumber",
+//         COUNT(l."lessonId") AS "CompletedLessons"
+//     FROM
+//         "wa_users_metadata" m inner join "wa_profiles" p on m."profile_id" = p."profile_id"
+//     LEFT JOIN
+//         "wa_lessons_completed" l 
+//         ON m."profile_id" = l."profile_id" and m."phoneNumber" = l."phoneNumber" AND l."completionStatus" = 'Completed'
+//     LEFT JOIN
+//         "Lesson" s 
+//         ON s."LessonId" = l."lessonId" AND s."courseId" = l."courseId"
+//     WHERE
+//         ${target_grp} m."cohort" = '${cohort}' and m."rollout" = ${rollout}
+// 		and p."profile_type" = '${botType}' and ${classLevel}
+//         AND s."courseId" IN (${course_list}) 
+//     GROUP BY
+//         m."phoneNumber", m."profile_id", m."name", s."courseId", s."weekNumber", s."dayNumber"
+// ),
+// FinalProgress AS (
+//     SELECT
+//         ac."phoneNumber",
+//         ac."profile_id",
+//         ac."name",
+//         ac."courseId",
+//         ac."weekNumber",
+//         ac."dayNumber",
+//         COALESCE(sc."CompletedLessons", 0) AS "CompletedLessons"
+//     FROM
+//         AllCombinations ac
+//     LEFT JOIN
+//         StudentCompletions sc 
+//         ON ac."profile_id" = sc."profile_id"
+//         AND ac."courseId" = sc."courseId"
+//         AND ac."weekNumber" = sc."weekNumber"
+//         AND ac."dayNumber" = sc."dayNumber"
+// ),
+// DailyProgress AS (
+//     SELECT
+//         fp."phoneNumber",
+//         fp."profile_id",
+// 		    fp."name",
+//         fp."courseId",
+//         fp."weekNumber",
+//         fp."dayNumber",
+//         CASE
+//             WHEN fp."CompletedLessons" = la."TotalLessons" THEN 1
+//             ELSE 0
+//         END AS "DayCompleted"
+//     FROM
+//         FinalProgress fp
+//     JOIN
+//         LessonAssignments la 
+//         ON fp."courseId" = la."courseId"
+//         AND fp."weekNumber" = la."weekNumber"
+//         AND fp."dayNumber" = la."dayNumber"
+// ),
+// WeeklyProgress AS (
+//     SELECT
+//         dp."phoneNumber",
+//         dp."profile_id",
+// 		    dp."name",
+//         dp."courseId",
+//         dp."weekNumber",
+//         SUM(dp."DayCompleted") AS "DaysCompletedInWeek"
+//     FROM
+//         DailyProgress dp
+//     GROUP BY
+//         dp."phoneNumber",dp."profile_id",dp."name", dp."courseId", dp."weekNumber"
+// ),
+// PivotedProgress AS (
+//     SELECT
+//         wp."phoneNumber",
+//         wp."profile_id",
+// 		    wp."name",
+//         wp."courseId",
+//         MAX(CASE WHEN wp."weekNumber" = 1 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week1",
+//         MAX(CASE WHEN wp."weekNumber" = 2 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week2",
+//         MAX(CASE WHEN wp."weekNumber" = 3 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week3",
+//         MAX(CASE WHEN wp."weekNumber" = 4 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week4"
+//     FROM
+//         WeeklyProgress wp
+//     GROUP BY
+//         wp."phoneNumber", wp."profile_id", wp."name", wp."courseId"
+// ),
+// AggregatedProgress AS (
+//     SELECT
+//          ROW_NUMBER() OVER (ORDER BY pp."name") AS sr_no,
+//         pp."phoneNumber",
+//         pp."profile_id",
+//         pp."name",
+//         ${course_array}
+//     FROM
+//         PivotedProgress pp
+//     GROUP BY
+//         pp."phoneNumber", pp."profile_id", pp."name"
+// )
+// SELECT
+//     *
+// FROM
+//     AggregatedProgress
+// ORDER BY "name" asc;`;
+
+// //         const qry = `WITH LessonAssignments AS (
+// //     SELECT
+// //         "courseId",
+// //         "weekNumber",
+// //         "dayNumber",
+// //         COUNT("LessonId") AS "TotalLessons"
+// //     FROM
+// //         "Lesson"
+// //     WHERE
+// //         "courseId" IN (${course_list}) and "status" = 'Active'
+// //     GROUP BY
+// //         "courseId", "weekNumber", "dayNumber"
+// // ),
+// // Students AS (
+// //     SELECT DISTINCT
+// //         m."phoneNumber",
+// // 		m."profile_id",
+// // 		m."name"
+// //     FROM
+// //         "wa_users_metadata" m inner join "wa_profiles" p on
+// // 		m."profile_id" = p."profile_id"
+// //     WHERE
+// //         ${target_grp} m."cohort" = '${cohort}' and m."rollout" = ${rollout}
+// // 		and p."profile_type" = '${botType}' and ${classLevel}
+// // ),
+// // AllCombinations AS (
+// //     SELECT
+// //         s."phoneNumber",
+// // 		s."profile_id",
+// // 		s."name",
+// //         la."courseId",
+// //         la."weekNumber",
+// //         la."dayNumber"
+// //     FROM
+// //         Students s
+// //     CROSS JOIN
+// //         LessonAssignments la
+// // ),
+// // StudentCompletions AS (
+// //     SELECT
+// //         m."phoneNumber",
+// // 		m."profile_id",
+// // 		m."name",
+// //         s."courseId",
+// //         s."weekNumber",
+// //         s."dayNumber",
+// //         COUNT(l."lessonId") AS "CompletedLessons"
+// //     FROM
+// //         "wa_users_metadata" m inner join "wa_profiles" p on m."profile_id" = p."profile_id"
+// //     LEFT JOIN
+// //         "wa_lessons_completed" l 
+// //         ON m."phoneNumber" = l."phoneNumber" and m."profile_id" = l."profile_id" AND l."completionStatus" = 'Completed'
+// //     LEFT JOIN
+// //         "Lesson" s 
+// //         ON s."LessonId" = l."lessonId" AND s."courseId" = l."courseId"
+// //     WHERE
+// //         ${target_grp} m."cohort" = '${cohort}' and m."rollout" = ${rollout}
+// // 		and p."profile_type" = '${botType}' and ${classLevel}
+// //         AND s."courseId" IN (${course_list}) 
+// //     GROUP BY
+// //         m."phoneNumber", m."profile_id", m."name", s."courseId", s."weekNumber", s."dayNumber"
+// // ),
+// // FinalProgress AS (
+// //     SELECT
+// //         ac."phoneNumber",
+// // 		ac."profile_id",
+// // 		ac."name",
+// //         ac."courseId",
+// //         ac."weekNumber",
+// //         ac."dayNumber",
+// //         COALESCE(sc."CompletedLessons", 0) AS "CompletedLessons"
+// //     FROM
+// //         AllCombinations ac
+// //     LEFT JOIN
+// //         StudentCompletions sc 
+// //         ON ac."phoneNumber" = sc."phoneNumber"
+// // 		and ac."profile_id" = sc."profile_id"
+// //         AND ac."courseId" = sc."courseId"
+// //         AND ac."weekNumber" = sc."weekNumber"
+// //         AND ac."dayNumber" = sc."dayNumber"
+// // ),
+// // DailyProgress AS (
+// //     SELECT
+// //         fp."phoneNumber",
+// // 		fp."profile_id",
+// // 		fp."name",
+// //         fp."courseId",
+// //         fp."weekNumber",
+// //         fp."dayNumber",
+// //         CASE
+// //             WHEN fp."CompletedLessons" = la."TotalLessons" THEN 1
+// //             ELSE 0
+// //         END AS "DayCompleted"
+// //     FROM
+// //         FinalProgress fp
+// //     JOIN
+// //         LessonAssignments la 
+// //         ON fp."courseId" = la."courseId"
+// //         AND fp."weekNumber" = la."weekNumber"
+// //         AND fp."dayNumber" = la."dayNumber"
+// // ),
+// // WeeklyProgress AS (
+// //     SELECT
+// //         dp."phoneNumber",
+// // 		dp."profile_id",
+// // 		dp."name",
+// //         dp."courseId",
+// //         dp."weekNumber",
+// //         SUM(dp."DayCompleted") AS "DaysCompletedInWeek"
+// //     FROM
+// //         DailyProgress dp
+// //     GROUP BY
+// //         dp."phoneNumber",dp."profile_id", dp."name", dp."courseId", dp."weekNumber"
+// // ),
+// // PivotedProgress AS (
+// //     SELECT
+// //         wp."phoneNumber",
+// // 		wp."profile_id",
+// // 		wp."name",
+// //         wp."courseId",
+// //         MAX(CASE WHEN wp."weekNumber" = 1 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week1",
+// //         MAX(CASE WHEN wp."weekNumber" = 2 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week2",
+// //         MAX(CASE WHEN wp."weekNumber" = 3 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week3",
+// //         MAX(CASE WHEN wp."weekNumber" = 4 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week4"
+// //     FROM
+// //         WeeklyProgress wp
+// //     GROUP BY
+// //         wp."phoneNumber", wp."profile_id",wp."name", wp."courseId"
+// // ),
+// // AggregatedProgress AS (
+// //     SELECT
+// // 	    ROW_NUMBER() OVER (ORDER BY pp."name") AS sr_no,
+// //         pp."profile_id",
+// //         pp."phoneNumber",
+// // 		pp."name",
+// //         ${course_array}
+// //     FROM
+// //         PivotedProgress pp
+// //     GROUP BY
+// //         pp."phoneNumber",pp."profile_id",pp."name"
+// // )
+// // SELECT
+// //     *
+// // FROM
+// //     AggregatedProgress
+// // ORDER BY
+// //         "name";`;
+
+
+//         const res = await sequelize.query(qry);
+
+//         return res[0];
+//     } catch (error) {
+//         error.fileName = "etlRepository.js";
+//         throw error;
+//     }
+// };
 const getLessonCompletions = async (botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3) => {
     try {
-
         let classLevel = '', course_list = '', course_array = '', target_grp = '';
+        
         if(botType === 'teacher'){
             if(rollout == 1 || rollout == 0){
                 target_grp = ` m."targetGroup" = '${targetGroup}' AND `;
             }
-            classLevel = `m."classLevel" is null`;
+            classLevel = `and m."classLevel" is null`;
             course_list = `${courseId1}, ${courseId2}, ${courseId3}`;   
-            course_array = `MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week1" END) AS "course1_week1",
-                MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week2" END) AS "course1_week2",
-                MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week3" END) AS "course1_week3",
-                MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week4" END) AS "course1_week4",
-                MAX(CASE WHEN pp."courseId" = ${courseId1} THEN NULLIF(
-            COALESCE(pp."week1", 0) +
-            COALESCE(pp."week2", 0) +
-            COALESCE(pp."week3", 0) +
-            COALESCE(pp."week4", 0), 0
-            ) END) AS "course1_total",
-                    MAX(CASE WHEN pp."courseId" = ${courseId2} THEN pp."week1" END) AS "course2_week1",
-                    MAX(CASE WHEN pp."courseId" = ${courseId2} THEN pp."week2" END) AS "course2_week2",
-                    MAX(CASE WHEN pp."courseId" = ${courseId2} THEN pp."week3" END) AS "course2_week3",
-                    MAX(CASE WHEN pp."courseId" = ${courseId2} THEN pp."week4" END) AS "course2_week4",
-                    MAX(CASE WHEN pp."courseId" = ${courseId2} THEN NULLIF(
-                COALESCE(pp."week1", 0) +
-                COALESCE(pp."week2", 0) +
-                COALESCE(pp."week3", 0) +
-                COALESCE(pp."week4", 0), 0
-            ) END) AS "course2_total",
-                MAX(CASE WHEN pp."courseId" = ${courseId3} THEN pp."week1" END) AS "course3_week1",
-            MAX(CASE WHEN pp."courseId" = ${courseId3} THEN pp."week2" END) AS "course3_week2",
-            MAX(CASE WHEN pp."courseId" = ${courseId3} THEN pp."week3" END) AS "course3_week3",
-            MAX(CASE WHEN pp."courseId" = ${courseId3} THEN pp."week4" END) AS "course3_week4",
-                MAX(CASE WHEN pp."courseId" = ${courseId3} THEN NULLIF(
-                COALESCE(pp."week1", 0) +
-                COALESCE(pp."week2", 0) +
-                COALESCE(pp."week3", 0) +
-                COALESCE(pp."week4", 0), 0
-            ) END) AS "course3_total",
-        NULLIF(COALESCE(
-                    MAX(CASE WHEN pp."courseId" = ${courseId1} THEN 
-                        COALESCE(pp."week1", 0) + COALESCE(pp."week2", 0) + COALESCE(pp."week3", 0) + COALESCE(pp."week4", 0)
-                    END), 0
-                ) +
-                COALESCE(
-                    MAX(CASE WHEN pp."courseId" = ${courseId2} THEN 
-                        COALESCE(pp."week1", 0) + COALESCE(pp."week2", 0) + COALESCE(pp."week3", 0) + COALESCE(pp."week4", 0)
-                    END), 0
-                ) +
-                COALESCE(
-                    MAX(CASE WHEN pp."courseId" = ${courseId3} THEN 
-                        COALESCE(pp."week1", 0) + COALESCE(pp."week2", 0) + COALESCE(pp."week3", 0) + COALESCE(pp."week4", 0)
-                    END), 0
-            ),0) AS grand_total`;
-        }
-        else{
-            classLevel = `m."classLevel" = '${level}'`;
+            course_array = `
+                MAX(CASE WHEN lc."courseId" = ${courseId1} AND lc."weekNumber" = 1 THEN lc."days_completed" END) AS "course1_week1",
+                MAX(CASE WHEN lc."courseId" = ${courseId1} AND lc."weekNumber" = 2 THEN lc."days_completed" END) AS "course1_week2",
+                MAX(CASE WHEN lc."courseId" = ${courseId1} AND lc."weekNumber" = 3 THEN lc."days_completed" END) AS "course1_week3",
+                MAX(CASE WHEN lc."courseId" = ${courseId1} AND lc."weekNumber" = 4 THEN lc."days_completed" END) AS "course1_week4",
+                NULLIF(COALESCE(
+                    MAX(CASE WHEN lc."courseId" = ${courseId1} AND lc."weekNumber" = 1 THEN lc."days_completed" END), 0) +
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId1} AND lc."weekNumber" = 2 THEN lc."days_completed" END), 0) +
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId1} AND lc."weekNumber" = 3 THEN lc."days_completed" END), 0) +
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId1} AND lc."weekNumber" = 4 THEN lc."days_completed" END), 0)
+                , 0) AS "course1_total",
+                MAX(CASE WHEN lc."courseId" = ${courseId2} AND lc."weekNumber" = 1 THEN lc."days_completed" END) AS "course2_week1",
+                MAX(CASE WHEN lc."courseId" = ${courseId2} AND lc."weekNumber" = 2 THEN lc."days_completed" END) AS "course2_week2",
+                MAX(CASE WHEN lc."courseId" = ${courseId2} AND lc."weekNumber" = 3 THEN lc."days_completed" END) AS "course2_week3",
+                MAX(CASE WHEN lc."courseId" = ${courseId2} AND lc."weekNumber" = 4 THEN lc."days_completed" END) AS "course2_week4",
+                NULLIF(COALESCE(
+                    MAX(CASE WHEN lc."courseId" = ${courseId2} AND lc."weekNumber" = 1 THEN lc."days_completed" END), 0) +
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId2} AND lc."weekNumber" = 2 THEN lc."days_completed" END), 0) +
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId2} AND lc."weekNumber" = 3 THEN lc."days_completed" END), 0) +
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId2} AND lc."weekNumber" = 4 THEN lc."days_completed" END), 0)
+                , 0) AS "course2_total",
+                MAX(CASE WHEN lc."courseId" = ${courseId3} AND lc."weekNumber" = 1 THEN lc."days_completed" END) AS "course3_week1",
+                MAX(CASE WHEN lc."courseId" = ${courseId3} AND lc."weekNumber" = 2 THEN lc."days_completed" END) AS "course3_week2",
+                MAX(CASE WHEN lc."courseId" = ${courseId3} AND lc."weekNumber" = 3 THEN lc."days_completed" END) AS "course3_week3",
+                MAX(CASE WHEN lc."courseId" = ${courseId3} AND lc."weekNumber" = 4 THEN lc."days_completed" END) AS "course3_week4",
+                NULLIF(COALESCE(
+                    MAX(CASE WHEN lc."courseId" = ${courseId3} AND lc."weekNumber" = 1 THEN lc."days_completed" END), 0) +
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId3} AND lc."weekNumber" = 2 THEN lc."days_completed" END), 0) +
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId3} AND lc."weekNumber" = 3 THEN lc."days_completed" END), 0) +
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId3} AND lc."weekNumber" = 4 THEN lc."days_completed" END), 0)
+                , 0) AS "course3_total",
+                NULLIF(COALESCE(
+                    -- Course 1 total
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId1} AND lc."weekNumber" = 1 THEN lc."days_completed" END), 0) +
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId1} AND lc."weekNumber" = 2 THEN lc."days_completed" END), 0) +
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId1} AND lc."weekNumber" = 3 THEN lc."days_completed" END), 0) +
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId1} AND lc."weekNumber" = 4 THEN lc."days_completed" END), 0) +
+                    -- Course 2 total
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId2} AND lc."weekNumber" = 1 THEN lc."days_completed" END), 0) +
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId2} AND lc."weekNumber" = 2 THEN lc."days_completed" END), 0) +
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId2} AND lc."weekNumber" = 3 THEN lc."days_completed" END), 0) +
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId2} AND lc."weekNumber" = 4 THEN lc."days_completed" END), 0) +
+                    -- Course 3 total
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId3} AND lc."weekNumber" = 1 THEN lc."days_completed" END), 0) +
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId3} AND lc."weekNumber" = 2 THEN lc."days_completed" END), 0) +
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId3} AND lc."weekNumber" = 3 THEN lc."days_completed" END), 0) +
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId3} AND lc."weekNumber" = 4 THEN lc."days_completed" END), 0)
+                , 0), 0) AS grand_total`;
+        } else {
+            classLevel = `and m."classLevel" = '${level}'`;
             course_list = `${courseId1}`;
-            course_array = `MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week1" END) AS "course1_week1",
-                MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week2" END) AS "course1_week2",
-                MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week3" END) AS "course1_week3",
-                MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week4" END) AS "course1_week4",
-                MAX(CASE WHEN pp."courseId" = ${courseId1} THEN NULLIF(
-            COALESCE(pp."week1", 0) +
-            COALESCE(pp."week2", 0) +
-            COALESCE(pp."week3", 0) +
-            COALESCE(pp."week4", 0), 0
-            ) END) AS "course1_total"`;
+            // botType = 'teacher';
+            course_array = `
+                MAX(CASE WHEN lc."courseId" = ${courseId1} AND lc."weekNumber" = 1 THEN lc."days_completed" END) AS "course1_week1",
+                MAX(CASE WHEN lc."courseId" = ${courseId1} AND lc."weekNumber" = 2 THEN lc."days_completed" END) AS "course1_week2",
+                MAX(CASE WHEN lc."courseId" = ${courseId1} AND lc."weekNumber" = 3 THEN lc."days_completed" END) AS "course1_week3",
+                MAX(CASE WHEN lc."courseId" = ${courseId1} AND lc."weekNumber" = 4 THEN lc."days_completed" END) AS "course1_week4",
+                NULLIF(COALESCE(
+                    MAX(CASE WHEN lc."courseId" = ${courseId1} AND lc."weekNumber" = 1 THEN lc."days_completed" END), 0) +
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId1} AND lc."weekNumber" = 2 THEN lc."days_completed" END), 0) +
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId1} AND lc."weekNumber" = 3 THEN lc."days_completed" END), 0) +
+                    COALESCE(MAX(CASE WHEN lc."courseId" = ${courseId1} AND lc."weekNumber" = 4 THEN lc."days_completed" END), 0)
+                , 0) AS "course1_total"`;
         }
 
-        const qry = `WITH LessonAssignments AS (
-    SELECT
-        "courseId",
-        "weekNumber",
-        "dayNumber",
-        COUNT("LessonId") AS "TotalLessons"
-    FROM
-        "Lesson"
-    WHERE
-        "courseId" IN (${course_list}) and "status" = 'Active'
-    GROUP BY
-        "courseId", "weekNumber", "dayNumber"
-),
-Students AS (
-    SELECT DISTINCT
-        m."phoneNumber",
-		m."profile_id",
-		m."name"
-    FROM
-        "wa_users_metadata" m inner join "wa_profiles" p on
-		m."profile_id" = p."profile_id"
-    WHERE
-        ${target_grp} m."cohort" = '${cohort}' and m."rollout" = ${rollout}
-		and p."profile_type" = '${botType}' and ${classLevel}
-),
-AllCombinations AS (
-    SELECT
-        s."phoneNumber",
-		s."profile_id",
-		s."name",
-        la."courseId",
-        la."weekNumber",
-        la."dayNumber"
-    FROM
-        Students s
-    CROSS JOIN
-        LessonAssignments la
-),
-StudentCompletions AS (
-    SELECT
-        m."phoneNumber",
-		m."profile_id",
-		m."name",
-        s."courseId",
-        s."weekNumber",
-        s."dayNumber",
-        COUNT(l."lessonId") AS "CompletedLessons"
-    FROM
-        "wa_users_metadata" m inner join "wa_profiles" p on m."profile_id" = p."profile_id"
-    LEFT JOIN
-        "wa_lessons_completed" l 
-        ON m."phoneNumber" = l."phoneNumber" and m."profile_id" = l."profile_id" AND l."completionStatus" = 'Completed'
-    LEFT JOIN
-        "Lesson" s 
-        ON s."LessonId" = l."lessonId" AND s."courseId" = l."courseId"
-    WHERE
-        ${target_grp} m."cohort" = '${cohort}' and m."rollout" = ${rollout}
-		and p."profile_type" = '${botType}' and ${classLevel}
-        AND s."courseId" IN (${course_list}) 
-    GROUP BY
-        m."phoneNumber", m."profile_id", m."name", s."courseId", s."weekNumber", s."dayNumber"
-),
-FinalProgress AS (
-    SELECT
-        ac."phoneNumber",
-		ac."profile_id",
-		ac."name",
-        ac."courseId",
-        ac."weekNumber",
-        ac."dayNumber",
-        COALESCE(sc."CompletedLessons", 0) AS "CompletedLessons"
-    FROM
-        AllCombinations ac
-    LEFT JOIN
-        StudentCompletions sc 
-        ON ac."phoneNumber" = sc."phoneNumber"
-		and ac."profile_id" = sc."profile_id"
-        AND ac."courseId" = sc."courseId"
-        AND ac."weekNumber" = sc."weekNumber"
-        AND ac."dayNumber" = sc."dayNumber"
-),
-DailyProgress AS (
-    SELECT
-        fp."phoneNumber",
-		fp."profile_id",
-		fp."name",
-        fp."courseId",
-        fp."weekNumber",
-        fp."dayNumber",
-        CASE
-            WHEN fp."CompletedLessons" = la."TotalLessons" THEN 1
-            ELSE 0
-        END AS "DayCompleted"
-    FROM
-        FinalProgress fp
-    JOIN
-        LessonAssignments la 
-        ON fp."courseId" = la."courseId"
-        AND fp."weekNumber" = la."weekNumber"
-        AND fp."dayNumber" = la."dayNumber"
-),
-WeeklyProgress AS (
-    SELECT
-        dp."phoneNumber",
-		dp."profile_id",
-		dp."name",
-        dp."courseId",
-        dp."weekNumber",
-        SUM(dp."DayCompleted") AS "DaysCompletedInWeek"
-    FROM
-        DailyProgress dp
-    GROUP BY
-        dp."phoneNumber",dp."profile_id", dp."name", dp."courseId", dp."weekNumber"
-),
-PivotedProgress AS (
-    SELECT
-        wp."phoneNumber",
-		wp."profile_id",
-		wp."name",
-        wp."courseId",
-        MAX(CASE WHEN wp."weekNumber" = 1 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week1",
-        MAX(CASE WHEN wp."weekNumber" = 2 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week2",
-        MAX(CASE WHEN wp."weekNumber" = 3 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week3",
-        MAX(CASE WHEN wp."weekNumber" = 4 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week4"
-    FROM
-        WeeklyProgress wp
-    GROUP BY
-        wp."phoneNumber", wp."profile_id",wp."name", wp."courseId"
-),
-AggregatedProgress AS (
-    SELECT
-	    ROW_NUMBER() OVER (ORDER BY pp."name") AS sr_no,
-        pp."profile_id",
-        pp."phoneNumber",
-		pp."name",
-        ${course_array}
-    FROM
-        PivotedProgress pp
-    GROUP BY
-        pp."phoneNumber",pp."profile_id",pp."name"
-)
-SELECT
-    *
-FROM
-    AggregatedProgress
-ORDER BY
-        "name";`;
-
-
+        // Optimized query with proper total calculations
+        const qry = `
+        WITH lesson_completions AS (
+            SELECT 
+                wlc."profile_id",
+                wlc."phoneNumber",
+                l."courseId",
+                l."weekNumber",
+                COUNT(DISTINCT CASE 
+                    WHEN l."weekNumber" = 1 THEN l."dayNumber" 
+                END) as week1_days,
+                COUNT(DISTINCT CASE 
+                    WHEN l."weekNumber" = 2 THEN l."dayNumber" 
+                END) as week2_days,
+                COUNT(DISTINCT CASE 
+                    WHEN l."weekNumber" = 3 THEN l."dayNumber" 
+                END) as week3_days,
+                COUNT(DISTINCT CASE 
+                    WHEN l."weekNumber" = 4 THEN l."dayNumber" 
+                END) as week4_days
+            FROM "wa_lessons_completed" wlc
+            INNER JOIN "Lesson" l ON l."LessonId" = wlc."lessonId" 
+                AND l."courseId" = wlc."courseId"
+                AND l."status" = 'Active'
+            WHERE wlc."completionStatus" = 'Completed'
+                AND l."courseId" IN (${course_list})
+            GROUP BY wlc."profile_id", wlc."phoneNumber", l."courseId", l."weekNumber"
+        ),
+        user_progress AS (
+            SELECT 
+                lc."profile_id",
+                lc."phoneNumber", 
+                lc."courseId",
+                1 as "weekNumber",
+                NULLIF(lc.week1_days, 0) as days_completed
+            FROM lesson_completions lc
+            WHERE lc.week1_days > 0
+            
+            UNION ALL
+            
+            SELECT 
+                lc."profile_id",
+                lc."phoneNumber", 
+                lc."courseId",
+                2 as "weekNumber",
+                NULLIF(lc.week2_days, 0) as days_completed
+            FROM lesson_completions lc
+            WHERE lc.week2_days > 0
+            
+            UNION ALL
+            
+            SELECT 
+                lc."profile_id",
+                lc."phoneNumber", 
+                lc."courseId",
+                3 as "weekNumber",
+                NULLIF(lc.week3_days, 0) as days_completed
+            FROM lesson_completions lc
+            WHERE lc.week3_days > 0
+            
+            UNION ALL
+            
+            SELECT 
+                lc."profile_id",
+                lc."phoneNumber", 
+                lc."courseId",
+                4 as "weekNumber",
+                NULLIF(lc.week4_days, 0) as days_completed
+            FROM lesson_completions lc
+            WHERE lc.week4_days > 0
+        )
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY m."name") AS sr_no,
+            m."profile_id",
+            m."phoneNumber",
+            m."name",
+            ${course_array}
+        FROM "wa_users_metadata" m
+        INNER JOIN "wa_profiles" p ON m."profile_id" = p."profile_id"
+        LEFT JOIN user_progress lc ON m."profile_id" = lc."profile_id" 
+            AND m."phoneNumber" = lc."phoneNumber"
+        WHERE ${target_grp} m."cohort" = '${cohort}' 
+            AND m."rollout" = ${rollout}
+            AND p."profile_type" = '${botType}' 
+             ${classLevel}
+        GROUP BY m."profile_id", m."phoneNumber", m."name"
+        ORDER BY m."name" ASC;`;
+// console.log(qry);
         const res = await sequelize.query(qry);
-
-        console.log(res[0])
-
         return res[0];
+
+        
+        
     } catch (error) {
         error.fileName = "etlRepository.js";
         throw error;
@@ -1418,7 +1735,7 @@ const getActivity_Completions = async (botType, rollout, level, cohort, grp, cou
             if(rollout == 1 || rollout == 0){
                 target_grp = ` m."targetGroup" = '${grp}' AND `;
             }
-            classLevel = `m."classLevel" is null`;
+            classLevel = `and m."classLevel" is null`;
             course_list = `${course1_id}, ${course2_id}, ${course3_id}`; 
             course_array = `SUM(CASE WHEN s."weekNumber" = 1 AND s."courseId" = ${course1_id} THEN 1 ELSE NULL END) AS "course1_week1_activities",
                 SUM(CASE WHEN s."weekNumber" = 2 AND s."courseId" = ${course1_id} THEN 1 ELSE NULL END) AS "course1_week2_activities",
@@ -1445,7 +1762,8 @@ const getActivity_Completions = async (botType, rollout, level, cohort, grp, cou
                 , 0) AS grand_total`
         }
         else if(botType === 'student'){
-            classLevel = `m."classLevel" = '${level}'`;
+            classLevel = `and m."classLevel" = '${level}'`;
+            // botType = 'teacher'
             course_list = `${course1_id}`;
             course_array = `SUM(CASE WHEN s."weekNumber" = 1 AND s."courseId" = ${course1_id} THEN 1 ELSE NULL END) AS "course1_week1_activities",
                 SUM(CASE WHEN s."weekNumber" = 2 AND s."courseId" = ${course1_id} THEN 1 ELSE NULL END) AS "course1_week2_activities",
@@ -1460,7 +1778,7 @@ const getActivity_Completions = async (botType, rollout, level, cohort, grp, cou
                 m."profile_id",
                 m."phoneNumber", 
                 m."name",
-                ${course_list}
+                ${course_array}
             FROM 
                 "wa_users_metadata" m 
                 inner join "wa_profiles" p on
@@ -1477,7 +1795,7 @@ const getActivity_Completions = async (botType, rollout, level, cohort, grp, cou
                 AND s."weekNumber" IN (1, 2, 3, 4) and s."status" = 'Active'
             WHERE 
                 ${target_grp} m."cohort" = '${cohort}' and m."rollout" = ${rollout}
-		       and p."profile_type" = '${botType}' and ${classLevel}
+		       and p."profile_type" = '${botType}' ${classLevel}
             GROUP BY 
                 m."name", m."phoneNumber", m."profile_id"
             ORDER BY 
@@ -1499,10 +1817,13 @@ const getActivtyAssessmentScore = async (botType, rollout, level, cohort, grp, c
             if(rollout == 1 || rollout == 0){
                 target_grp = ` m."targetGroup" = '${grp}' AND `;
             }
-            classLevel = `m."classLevel" is null and m."cohort" = '${cohort}'`;
+            // rollout = 1;
+            classLevel = `and m."classLevel" is null and m."cohort" = '${cohort}'`;
         }
         else if(botType === 'student'){
-            classLevel = `m."classLevel" = '${level}' and m."cohort" = '${cohort}'`;
+            // rollout = 1;
+            // botType = 'teacher';
+            classLevel = `and m."classLevel" = '${level}' and m."cohort" = '${cohort}'`;
         }
         const qry = `
            WITH target_group_users AS (
@@ -1510,34 +1831,12 @@ const getActivtyAssessmentScore = async (botType, rollout, level, cohort, grp, c
     FROM "wa_users_metadata" m inner join "wa_profiles" p on
 		m."profile_id" = p."profile_id"
     WHERE ${target_grp} m."rollout" = ${rollout}
-		       and p."profile_type" = '${botType}' and ${classLevel}
+		       and p."profile_type" = '${botType}' ${classLevel}
 ),
 course_activities AS (
     SELECT "LessonId", "activity", "courseId", "weekNumber"
     FROM "Lesson" 
     WHERE "courseId" = ${course_id} AND "weekNumber" IN (1,2,3,4) and "status" = 'Active'
-),
-listen_and_speak AS (
-    SELECT 
-        q."phoneNumber",  
-        q."profile_id",
-        COUNT(CASE WHEN l."weekNumber" = 1 AND q."correct" @> ARRAY[TRUE] THEN 1 ELSE NULL END) AS listenAndSpeak_week1_correct_count,
-        COUNT(CASE WHEN l."weekNumber" = 1 THEN 1 ELSE NULL END) AS listenAndSpeak_week1_total,
-        COUNT(CASE WHEN l."weekNumber" = 2 AND q."correct" @> ARRAY[TRUE] THEN 1 ELSE NULL END) AS listenAndSpeak_week2_correct_count,
-        COUNT(CASE WHEN l."weekNumber" = 2 THEN 1 ELSE NULL END) AS listenAndSpeak_week2_total,
-        COUNT(CASE WHEN l."weekNumber" = 3 AND q."correct" @> ARRAY[TRUE] THEN 1 ELSE NULL END) AS listenAndSpeak_week3_correct_count,
-        COUNT(CASE WHEN l."weekNumber" = 3 THEN 1 ELSE NULL END) AS listenAndSpeak_week3_total,
-        COUNT(CASE WHEN l."weekNumber" = 4 AND q."correct" @> ARRAY[TRUE] THEN 1 ELSE NULL END) AS listenAndSpeak_week4_correct_count,
-        COUNT(CASE WHEN l."weekNumber" = 4 THEN 1 ELSE NULL END) AS listenAndSpeak_week4_total
-    FROM 
-        "wa_question_responses" q 
-    LEFT JOIN 
-        course_activities l ON q."lessonId" = l."LessonId"
-    WHERE 
-        l."activity" = 'listenAndSpeak' 
-        AND q."profile_id" IN (SELECT "profile_id" FROM target_group_users)
-    GROUP BY 
-        q."phoneNumber", q."profile_id" ORDER BY q."profile_id"
 ),
 mcqs AS (
     SELECT 
@@ -1615,234 +1914,12 @@ watch_and_speak AS (
         AND q."profile_id" IN (SELECT "profile_id" FROM target_group_users)
     GROUP BY 
         q."phoneNumber", q."profile_id"
-),
-read_activity AS (
-    SELECT 
-        q."phoneNumber",
-        q."profile_id",
-        COUNT(CASE WHEN l."weekNumber" = 1 THEN 1 ELSE NULL END) * 6 AS read_week1_total,
-        COALESCE(
-            SUM(
-                CASE WHEN l."weekNumber" = 1 THEN 
-                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
-                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
-                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
-                END
-            ) / 300 * 6, 0
-        ) AS read_week1_score,
-        COUNT(CASE WHEN l."weekNumber" = 2 THEN 1 ELSE NULL END) * 6 AS read_week2_total,
-        COALESCE(
-            SUM(
-                CASE WHEN l."weekNumber" = 2 THEN 
-                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
-                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
-                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
-                END
-            ) / 300 * 6, 0
-        ) AS read_week2_score,
-        COUNT(CASE WHEN l."weekNumber" = 3 THEN 1 ELSE NULL END) * 6 AS read_week3_total,
-        COALESCE(
-            SUM(
-                CASE WHEN l."weekNumber" = 3 THEN 
-                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
-                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
-                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
-                END
-            ) / 300 * 6, 0
-        ) AS read_week3_score,
-        COUNT(CASE WHEN l."weekNumber" = 4 THEN 1 ELSE NULL END) * 6 AS read_week4_total,
-        COALESCE(
-            SUM(
-                CASE WHEN l."weekNumber" = 4 THEN 
-                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
-                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
-                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
-                END
-            ) / 300 * 6, 0
-        ) AS read_week4_score
-    FROM 
-        "wa_question_responses" q 
-    LEFT JOIN 
-        course_activities l ON l."LessonId" = q."lessonId"
-    WHERE 
-        l."activity" = 'read' 
-        AND q."profile_id" IN (SELECT "profile_id" FROM target_group_users)
-    GROUP BY 
-        q."phoneNumber",q."profile_id"
-),
-conversational_monologue AS (
-    SELECT 
-        q."phoneNumber",
-        q."profile_id",
-        COALESCE(
-            SUM(
-                CASE 
-                    WHEN l."weekNumber" = 1 THEN 
-                        CASE 
-                            WHEN (l."courseId" = 98 OR l."courseId" = 99) THEN
-                                COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'contentAssessment'->>'CompScore')::DECIMAL, 0)
-                            ELSE
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
-                        END
-                    ELSE NULL
-                END
-            ) / 300 * 5, 0
-        ) AS conversationalMonologue_week1_score,
-        COUNT(CASE WHEN l."weekNumber" = 1 THEN 1 ELSE NULL END) * 5 AS conversationalMonologue_week1_total,
-   
-        COALESCE(
-            SUM(
-                CASE 
-                    WHEN l."weekNumber" = 2 THEN 
-                        CASE 
-                            WHEN (l."courseId" = 98 OR l."courseId" = 99) THEN
-                                COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'contentAssessment'->>'CompScore')::DECIMAL, 0)
-                            ELSE
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
-                        END
-                    ELSE NULL
-                END
-            ) / 300 * 5, 0
-        ) AS conversationalMonologue_week2_score,
-        COUNT(CASE WHEN l."weekNumber" = 2 THEN 1 ELSE NULL END) * 5 AS conversationalMonologue_week2_total,
-
-        COALESCE(
-            SUM(
-                CASE 
-                    WHEN l."weekNumber" = 3 THEN 
-                        CASE 
-                            WHEN (l."courseId" = 98 OR l."courseId" = 99) THEN
-                                COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'contentAssessment'->>'CompScore')::DECIMAL, 0)
-                            ELSE
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
-                        END
-                    ELSE NULL
-                END
-            ) / 300 * 5, 0
-        ) AS conversationalMonologue_week3_score,
-        COUNT(CASE WHEN l."weekNumber" = 3 THEN 1 ELSE NULL END) * 5 AS conversationalMonologue_week3_total,
-
-        COALESCE(
-            SUM(
-                CASE 
-                    WHEN l."weekNumber" = 4 THEN 
-                        CASE 
-                            WHEN (l."courseId" = 98 OR l."courseId" = 99) THEN
-                                COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'AccuracyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'PronunciationAssessment'->>'FluencyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->0->'NBest'->0->'contentAssessment'->>'CompScore')::DECIMAL, 0)
-                            ELSE
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
-                        END
-                    ELSE NULL
-                END
-            ) / 300 * 5, 0
-        ) AS conversationalMonologue_week4_score,
-        COUNT(CASE WHEN l."weekNumber" = 4 THEN 1 ELSE NULL END) * 5 AS conversationalMonologue_week4_total
-    FROM 
-        "wa_question_responses" q 
-    LEFT JOIN 
-        course_activities l ON l."LessonId" = q."lessonId"
-    WHERE 
-        l."activity" = 'conversationalMonologueBot' 
-        AND q."profile_id" IN (SELECT "profile_id" FROM target_group_users)
-    GROUP BY 
-        q."phoneNumber",q."profile_id"
-),
-Speaking_practice AS (
-    SELECT 
-        q."phoneNumber",
-        q."profile_id",
-        COALESCE(
-            SUM(
-                CASE 
-                    WHEN l."weekNumber" = 1 THEN 
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
-                    ELSE NULL
-                END
-            ) / 300 * 5, 0
-        ) AS Speaking_practice_week1_score,
-        COUNT(CASE WHEN l."weekNumber" = 1 THEN 1 ELSE NULL END) * 5 AS Speaking_practice_week1_total,
-   
-        COALESCE(
-            SUM(
-                CASE 
-                    WHEN l."weekNumber" = 2 THEN 
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
-                    ELSE NULL
-                END
-            ) / 300 * 5, 0
-        ) AS Speaking_practice_week2_score,
-        COUNT(CASE WHEN l."weekNumber" = 2 THEN 1 ELSE NULL END) * 5 AS Speaking_practice_week2_total,
-
-        COALESCE(
-            SUM(
-                CASE 
-                    WHEN l."weekNumber" = 3 THEN 
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
-                    ELSE NULL
-                END
-            ) / 300 * 5, 0
-        ) AS Speaking_practice_week3_score,
-        COUNT(CASE WHEN l."weekNumber" = 3 THEN 1 ELSE NULL END) * 5 AS Speaking_practice_week3_total,
-
-        COALESCE(
-            SUM(
-                CASE 
-                    WHEN l."weekNumber" = 4 THEN 
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
-                                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
-                    ELSE NULL
-                END
-            ) / 300 * 5, 0
-        ) AS Speaking_practice_week4_score,
-        COUNT(CASE WHEN l."weekNumber" = 4 THEN 1 ELSE NULL END) * 5 AS Speaking_practice_week4_total
-    FROM 
-        "wa_question_responses" q 
-    LEFT JOIN 
-        course_activities l ON l."LessonId" = q."lessonId"
-    WHERE 
-        l."activity" = 'speakingPractice' 
-        AND q."profile_id" IN (SELECT "profile_id" FROM target_group_users)
-    GROUP BY 
-        q."phoneNumber",q."profile_id"
 )
 SELECT 
      ROW_NUMBER() OVER (ORDER BY m."name") AS sr_no,
      m."phoneNumber", 
      m."profile_id",
      m."name",
-     CASE 
-         WHEN round(COALESCE(ls.listenAndSpeak_week1_correct_count, 0), 2) + round(COALESCE(ls.listenAndSpeak_week2_correct_count, 0), 2)
-             + round(COALESCE(ls.listenAndSpeak_week3_correct_count, 0), 2) + round(COALESCE(ls.listenAndSpeak_week4_correct_count, 0), 2) = 0 THEN NULL
-         ELSE round(COALESCE(ls.listenAndSpeak_week1_correct_count, 0), 2) + round(COALESCE(ls.listenAndSpeak_week2_correct_count, 0), 2)
-             + round(COALESCE(ls.listenAndSpeak_week3_correct_count, 0), 2) + round(COALESCE(ls.listenAndSpeak_week4_correct_count, 0), 2)
-     END as "listenAndSpeak",
-
-      round(COALESCE(ls.listenAndSpeak_week1_total, 0), 2) + round(COALESCE(ls.listenAndSpeak_week2_total, 0), 2)
-             + round(COALESCE(ls.listenAndSpeak_week3_total, 0), 2) + round(COALESCE(ls.listenAndSpeak_week4_total, 0), 2)
-      as "listenAndSpeak_total",
      
      CASE 
          WHEN round(COALESCE(mc.mcqs_week1_correct_count, 0), 2) + round(COALESCE(mc.mcqs_week2_correct_count, 0), 2) 
@@ -1864,62 +1941,19 @@ SELECT
      
       round(COALESCE(ws.watchAndSpeak_week1_total, 0), 2) + round(COALESCE(ws.watchAndSpeak_week2_total, 0), 2)
              + round(COALESCE(ws.watchAndSpeak_week3_total, 0), 2) + round(COALESCE(ws.watchAndSpeak_week4_total, 0), 2)
-      as "watchAndSpeak_total",
-     
-     CASE 
-         WHEN round(COALESCE(rd.read_week1_score, 0), 2) + round(COALESCE(rd.read_week2_score, 0), 2) + round(COALESCE(rd.read_week3_score, 0), 2)
-             + round(COALESCE(rd.read_week4_score, 0), 2) = 0 THEN NULL
-         ELSE round(COALESCE(rd.read_week1_score, 0), 2) + round(COALESCE(rd.read_week2_score, 0), 2) + round(COALESCE(rd.read_week3_score, 0), 2)
-             + round(COALESCE(rd.read_week4_score, 0), 2)
-     END as "read",
-
-      round(COALESCE(rd.read_week1_total, 0), 2) + round(COALESCE(rd.read_week2_total, 0), 2) + round(COALESCE(rd.read_week3_total, 0), 2)
-             + round(COALESCE(rd.read_week4_total, 0), 2)
-      as "read_total",
-
-     CASE 
-         WHEN round(COALESCE(cm.conversationalMonologue_week1_score, 0), 2) + round(COALESCE(cm.conversationalMonologue_week2_score, 0), 2) +
-             round(COALESCE(cm.conversationalMonologue_week3_score, 0), 2) + round(COALESCE(cm.conversationalMonologue_week4_score, 0), 2) = 0 THEN NULL
-         ELSE round(COALESCE(cm.conversationalMonologue_week1_score, 0), 2) + round(COALESCE(cm.conversationalMonologue_week2_score, 0), 2) +
-             round(COALESCE(cm.conversationalMonologue_week3_score, 0), 2) + round(COALESCE(cm.conversationalMonologue_week4_score, 0), 2)
-     END as "conversationalMonologue",
-
-      round(COALESCE(cm.conversationalMonologue_week1_total, 0), 2) + round(COALESCE(cm.conversationalMonologue_week2_total, 0), 2) +
-             round(COALESCE(cm.conversationalMonologue_week3_total, 0), 2) + round(COALESCE(cm.conversationalMonologue_week4_total, 0), 2)
-      as "conversationalMonologue_total",
-
-     CASE 
-         WHEN round(COALESCE(sp.Speaking_practice_week1_score, 0), 2) + round(COALESCE(sp.Speaking_practice_week2_score, 0), 2) + 
-             round(COALESCE(sp.Speaking_practice_week3_score, 0), 2) + round(COALESCE(sp.Speaking_practice_week4_score, 0), 2) = 0 THEN NULL
-         ELSE round(COALESCE(sp.Speaking_practice_week1_score, 0), 2) + round(COALESCE(sp.Speaking_practice_week2_score, 0), 2) + 
-             round(COALESCE(sp.Speaking_practice_week3_score, 0), 2) + round(COALESCE(sp.Speaking_practice_week4_score, 0), 2)
-     END as "Speaking_practice",
-
-     round(COALESCE(sp.Speaking_practice_week1_total, 0), 2) + round(COALESCE(sp.Speaking_practice_week2_total, 0), 2) + 
-             round(COALESCE(sp.Speaking_practice_week3_total, 0), 2) + round(COALESCE(sp.Speaking_practice_week4_total, 0), 2)
-      as "Speaking_practice_total",
-
-     m."cohort"
+      as "watchAndSpeak_total"
 FROM 
     "wa_users_metadata" m 
     inner join "wa_profiles" p on
 		m."profile_id" = p."profile_id"
 LEFT JOIN 
-    listen_and_speak ls ON m."profile_id" = ls."profile_id"
-LEFT JOIN 
     mcqs mc ON m."profile_id" = mc."profile_id"
 LEFT JOIN 
     watch_and_speak ws ON m."profile_id" = ws."profile_id"
-LEFT JOIN 
-    read_activity rd ON m."profile_id" = rd."profile_id"
-LEFT JOIN 
-    conversational_monologue cm ON m."profile_id" = cm."profile_id"
-LEFT JOIN 
-    Speaking_practice sp ON m."profile_id" = sp."profile_id"
 WHERE 
     ${target_grp} m."rollout" = ${rollout}
-		       and p."profile_type" = '${botType}' and ${classLevel}
-ORDER BY m."cohort", m."name" ASC;
+		       and p."profile_type" = '${botType}' ${classLevel}
+ORDER BY  m."name" ASC;
         `;
 
         const res = await sequelize.query(qry);
