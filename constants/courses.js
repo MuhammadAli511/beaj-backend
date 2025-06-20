@@ -6,7 +6,7 @@ const courses = {
     "class 5": "Grade 5 - Kids - July",
     "class 6": "Grade 6 - Kids - July",
     "class 7": "Grade 7 - Kids - July",
-    "class 8": "Grade 8 - Kids - July",
+    "class 8": "Grade 7 - Kids - July",
 }
 
 export default courses;

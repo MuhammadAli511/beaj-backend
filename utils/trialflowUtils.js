@@ -382,8 +382,8 @@ const studentSpecificClassInput = async (profileId, userMobileNumber, genericCla
         await sendButtonMessage(userMobileNumber, studentClassInputMessage, [{ id: 'class_4', title: 'Class 4' }, { id: 'class_5', title: 'Class 5' }, { id: 'class_6', title: 'Class 6' }]);
         await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["class 4", "class 5", "class 6"]);
     } else if (genericClass.toLowerCase() == "class 7 and above") {
-        await sendButtonMessage(userMobileNumber, studentClassInputMessage, [{ id: 'class_7', title: 'Class 7' }, { id: 'class_8', title: 'Class 8' }]);
-        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["class 7", "class 8"]);
+        await sendButtonMessage(userMobileNumber, studentClassInputMessage, [{ id: 'class_7', title: 'Class 7' }]);
+        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["class 7"]);
     }
     await createActivityLog(userMobileNumber, "template", "outbound", studentClassInputMessage, null);
 };

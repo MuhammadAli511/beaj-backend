@@ -925,7 +925,7 @@ const webhookService = async (body, res) => {
                 // Actual Course
                 // User Switching
                 if (
-                    (messageContent.toLowerCase().includes("change user"))
+                    (messageType === "text" || messageType === "button" || messageType === "interactive") && (messageContent.toLowerCase().includes("change user"))
                 ) {
                     const profiles = await waProfileRepository.getAllSortOnProfileId(userMobileNumber);
                     const userMetadata = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
@@ -962,6 +962,7 @@ const webhookService = async (body, res) => {
                     "+923345520552",
                     "+923225036358",
                     "+923365560202",
+                    "+923170729640",
                     "+923328251950",
                     "+923225812411",
                     "+923232658153",
@@ -982,19 +983,14 @@ const webhookService = async (body, res) => {
                         return;
                     }
                     profileId = profile.dataValues.profile_id;
-                    if (!activeSession) {
-                        await waActiveSessionRepository.create({ phone_number: userMobileNumber, bot_phone_number_id: botPhoneNumberId, profile_id: profileId });
-                    } else {
-                        await waUserProgressRepository.updateEngagementType(oldProfileId, userMobileNumber, "Course Start");
-                        await waActiveSessionRepository.updateCurrentProfileIdOnPhoneNumber(userMobileNumber, profileId, botPhoneNumberId);
-                    }
-
-                    // Get the updated user state for the selected profile
                     const selectedUserState = await waUserProgressRepository.getByProfileId(profileId);
 
                     if (!selectedUserState.dataValues.currentCourseId) {
+                        const courseStarted = await startCourseForUser(profileId, userMobileNumber, numbers_to_ignore);
+                        if (!courseStarted) {
+                            return;
+                        }
                         await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Course Start");
-                        await startCourseForUser(profileId, userMobileNumber, numbers_to_ignore);
                     } else {
                         const acceptableMessages = selectedUserState.dataValues.acceptableMessages;
                         if (acceptableMessages && acceptableMessages.length > 0) {
@@ -1014,6 +1010,12 @@ const webhookService = async (body, res) => {
                                 }
                             }
                         }
+                    }
+                    if (!activeSession) {
+                        await waActiveSessionRepository.create({ phone_number: userMobileNumber, bot_phone_number_id: botPhoneNumberId, profile_id: profileId });
+                    } else {
+                        await waUserProgressRepository.updateEngagementType(oldProfileId, userMobileNumber, "Course Start");
+                        await waActiveSessionRepository.updateCurrentProfileIdOnPhoneNumber(userMobileNumber, profileId, botPhoneNumberId);
                     }
                     return;
                 }
@@ -1145,12 +1147,25 @@ const webhookService = async (body, res) => {
                         if (!nextLesson) {
                             const daysPerWeek = await getDaysPerWeek(profileId);
                             const lessonNumberCheck = (currentUserState.dataValues.currentWeek - 1) * daysPerWeek + currentUserState.dataValues.currentDay;
-                            const totalLessons = await getTotalLessonsForCourse(profileId);
+                            let totalLessons = 0;
+                            let courseName = await courseRepository.getCourseNameById(currentUserState.dataValues.currentCourseId);
+                            if (courseName.toLowerCase().includes("assessment")) {
+                                totalLessons = 3;
+                            } else {
+                                totalLessons = await getTotalLessonsForCourse(profileId);
+                            }
                             if (lessonNumberCheck >= totalLessons) {
-                                await sendButtonMessage(userMobileNumber, 'You have completed all the lessons in this course. Click the button below to proceed', [{ id: 'start_next_level', title: 'Start Next Level' }]);
-                                await createActivityLog(userMobileNumber, "template", "outbound", "You have completed all the lessons in this course. Click the button below to proceed", null);
-                                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next level"]);
-                                return;
+                                if (totalLessons == 3) {
+                                    await sendButtonMessage(userMobileNumber, 'Click the button to continue', [{ id: 'start_now', title: 'Start Now!' }]);
+                                    await createActivityLog(userMobileNumber, "template", "outbound", "Click the button to continue", null);
+                                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start now!"]);
+                                    return;
+                                } else {
+                                    await sendButtonMessage(userMobileNumber, 'You have completed all the lessons in this course. Click the button below to proceed', [{ id: 'start_next_level', title: 'Start Next Level' }]);
+                                    await createActivityLog(userMobileNumber, "template", "outbound", "You have completed all the lessons in this course. Click the button below to proceed", null);
+                                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next level"]);
+                                    return;
+                                }
                             }
                             await sendMessage(userMobileNumber, "Please wait for the next lesson to start.");
                             await createActivityLog(userMobileNumber, "text", "outbound", "Please wait for the next lesson to start.", null);
