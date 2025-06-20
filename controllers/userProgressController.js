@@ -2,8 +2,9 @@ import service from '../services/userProgressService.js';
 
 const getAllUserProgressController = async (req, res, next) => {
   try {
-    const { botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3, module } = req.query;
-    const result = await service.getAllUserProgressService(botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3, module);
+    const { botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3,courseId4, courseId5, module } = req.query;
+    // console.log('getAllUserProgressController', req.query);
+    const result = await service.getAllUserProgressService(botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3,courseId4, courseId5, module);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     error.fileName = 'userProgressController.js';
