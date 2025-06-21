@@ -354,7 +354,9 @@ const testLessonService = async (phoneNumber, lesson) => {
             // Delete previous purchases
             await waPurchasedCoursesRepository.deleteByPhoneNumber(phoneNumber);
 
-            const waUserMeta = await waUserMetaRepository.getByPhoneNumber(phoneNumber);
+            const waUserMetaArray = await waUserMetaRepository.getByPhoneNumber(phoneNumber);
+            const waUserMeta = Array.isArray(waUserMetaArray) ? waUserMetaArray[0] : waUserMetaArray;
+            // console.log("waUserMeta1 ", waUserMeta);
 
             const courseCateg = await courseRepository.getById(courseId);
 
@@ -435,7 +437,9 @@ const testLessonService = async (phoneNumber, lesson) => {
             // Delete previous purchases
             await waPurchasedCoursesRepository.deleteByPhoneNumber(phoneNumber);
 
-            const waUserMeta = await waUserMetaRepository.getByPhoneNumber(phoneNumber);
+             const waUserMetaArray = await waUserMetaRepository.getByPhoneNumber(phoneNumber);
+             const waUserMeta = Array.isArray(waUserMetaArray) ? waUserMetaArray[0] : waUserMetaArray;
+            //  console.log("waUserMeta2 ", waUserMeta);
 
             const courseCateg = await courseRepository.getById(previousLesson.courseId);
 

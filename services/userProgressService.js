@@ -106,9 +106,11 @@ const getAllUserProgressService = async (botType, rollout, level, cohort, target
           l1_entry.name,
           l1_entry.mcqs,
           l1_entry.watchAndSpeak,
+          l1_entry.total_activity_score,
           null,
           l2_entry.mcqs,
           l2_entry.watchAndSpeak,
+          l2_entry.total_activity_score,
         ]);
       }
       
@@ -121,8 +123,10 @@ const getAllUserProgressService = async (botType, rollout, level, cohort, target
       maxL1.mcqs_total,
       maxL1.watchAndSpeak_total,
       null,
+      null,
       maxL2.mcqs_total,
       maxL2.watchAndSpeak_total,
+      null
     ];
     array_list = [totalRow, ...arrayT1_List01];
   

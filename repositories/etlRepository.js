@@ -1814,6 +1814,8 @@ const getActivtyAssessmentScore = async (botType, rollout, level, cohort, grp, c
     try {
         let classLevel = '', target_grp = '';
         if (botType === 'teacher') {
+            // rollout = 1;
+            // grp = 'T1'
             if (rollout == 1 || rollout == 0) {
                 target_grp = ` m."targetGroup" = '${grp}' AND `;
             }
@@ -1941,7 +1943,23 @@ SELECT
      
       round(COALESCE(ws.watchAndSpeak_week1_total, 0), 2) + round(COALESCE(ws.watchAndSpeak_week2_total, 0), 2)
              + round(COALESCE(ws.watchAndSpeak_week3_total, 0), 2) + round(COALESCE(ws.watchAndSpeak_week4_total, 0), 2)
-      as "watchAndSpeak_total"
+      as "watchAndSpeak_total",
+
+      NULLIF(round(COALESCE(CASE 
+         WHEN round(COALESCE(mc.mcqs_week1_correct_count, 0), 2) + round(COALESCE(mc.mcqs_week2_correct_count, 0), 2) 
+             + round(COALESCE(mc.mcqs_week3_correct_count, 0), 2) + round(COALESCE(mc.mcqs_week4_correct_count, 0), 2) = 0 THEN NULL
+         ELSE round(COALESCE(mc.mcqs_week1_correct_count, 0), 2) + round(COALESCE(mc.mcqs_week2_correct_count, 0), 2) 
+             + round(COALESCE(mc.mcqs_week3_correct_count, 0), 2) + round(COALESCE(mc.mcqs_week4_correct_count, 0), 2)
+     END, 0 ) + 
+     
+     COALESCE(CASE 
+         WHEN round(COALESCE(ws.watchAndSpeak_week1_score, 0), 2) + round(COALESCE(ws.watchAndSpeak_week2_score, 0), 2)
+             + round(COALESCE(ws.watchAndSpeak_week3_score, 0), 2) + round(COALESCE(ws.watchAndSpeak_week4_score, 0), 2) = 0 THEN NULL
+         ELSE round(COALESCE(ws.watchAndSpeak_week1_score, 0), 2) + round(COALESCE(ws.watchAndSpeak_week2_score, 0), 2)
+             + round(COALESCE(ws.watchAndSpeak_week3_score, 0), 2) + round(COALESCE(ws.watchAndSpeak_week4_score, 0), 2)
+     END, 0 ), 2),0) as total_activity_score
+
+
 FROM 
     "wa_users_metadata" m 
     inner join "wa_profiles" p on
