@@ -7,7 +7,7 @@ import waUserProgressRepository from "../repositories/waUserProgressRepository.j
 import courseRepository from "../repositories/courseRepository.js";
 import { weekEndScoreCalculation } from "./chatbotUtils.js";
 import { weekEndImage } from "./imageGenerationUtils.js";
-import { sleep, getDaysPerWeek, getTotalLessonsForCourse } from "./utils.js";
+import { sleep, getDaysPerWeek, getTotalLessonsForCourse, getLevelFromCourseName } from "./utils.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import stickerMapping from "../constants/stickerMapping.js";
 
@@ -386,16 +386,9 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
     const lessonLast = await lessonRepository.isLastLessonOfDay(startingLesson.dataValues.LessonId);
     const courseName = await courseRepository.getCourseNameById(currentUserState.currentCourseId);
     await assessmentPuzzleImages(userMobileNumber, activityAlias);
-
+    const daysPerWeek = await getDaysPerWeek(profileId);
     // Lesson Ending Message
     if (lessonLast) {
-        // Send Day End Image here for actual course
-
-
-
-        // Send week end score image here if available or week end badges collected here
-
-
         if (courseName.toLowerCase().includes("assessment")) {
             const comeBackTomorrowAudio = await waConstantsRepository.getByKey("COME_BACK_TOMORROW");
             await sendMediaMessage(userMobileNumber, comeBackTomorrowAudio.dataValues.constantValue, 'audio', null, 0, "WA_Constants", comeBackTomorrowAudio.dataValues.id, comeBackTomorrowAudio.dataValues.constantMediaId, "constantMediaId");
@@ -406,9 +399,26 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next game", "change user"]);
         }
         else {
-            await sendButtonMessage(userMobileNumber, 'Are you ready to start your next lesson?', [{ id: 'start_next_lesson', title: 'Start Next Lesson' }, { id: 'change_user', title: 'Change User' }]);
-            await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Lesson", null);
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next lesson", "change user"]);
+            const level = getLevelFromCourseName(courseName);
+            const dayNumber = (startingLesson.dataValues.weekNumber - 1) * daysPerWeek + startingLesson.dataValues.dayNumber;
+            const imageUrl = "https://beajbloblive.blob.core.windows.net/beajdocuments/kids_badges_level" + level + "_day_" + dayNumber + "_end.jpg";
+            let captionText = "Day " + dayNumber + " Complete! 🥳";
+            await sendMediaMessage(userMobileNumber, imageUrl, 'image', captionText);
+            await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
+            await sleep(2000);
+            if (dayNumber == 20) {
+                const winImageUrl = "https://beajbloblive.blob.core.windows.net/beajdocuments/win_image_level" + level + ".jpg";
+                await sendMediaMessage(userMobileNumber, winImageUrl, 'image', null);
+                await createActivityLog(userMobileNumber, "image", "outbound", winImageUrl, null);
+                await sleep(2000);
+                await sendButtonMessage(userMobileNumber, 'You have completed the course! 🥳', [{ id: 'start_next_lesson', title: 'Start Next Lesson' }, { id: 'change_user', title: 'Change User' }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Lesson", null);
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next lesson", "change user"]);
+            } else {
+                await sendButtonMessage(userMobileNumber, 'Are you ready to start your next lesson?', [{ id: 'start_next_lesson', title: 'Start Next Lesson' }, { id: 'change_user', title: 'Change User' }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Lesson", null);
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next lesson", "change user"]);
+            }
         }
     }
     else {

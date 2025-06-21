@@ -44,7 +44,7 @@ import { sendMessage, sendButtonMessage, retrieveMediaURL, sendMediaMessage, sen
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
 import { createFeedback } from "../utils/createFeedbackUtils.js";
 import { endingMessage } from "../utils/endingMessageUtils.js";
-import { checkUserMessageAndAcceptableMessages, getAcceptableMessagesList, sleep, getDaysPerWeek, getTotalLessonsForCourse } from "../utils/utils.js";
+import { checkUserMessageAndAcceptableMessages, getAcceptableMessagesList, sleep, getDaysPerWeek, getTotalLessonsForCourse, getLevelFromCourseName } from "../utils/utils.js";
 import { runWithContext } from "../utils/requestContext.js";
 import { studentBotContactData, teacherBotContactData } from "../constants/contacts.js";
 dotenv.config();
@@ -1156,14 +1156,14 @@ const webhookService = async (body, res) => {
                             }
                             if (lessonNumberCheck >= totalLessons) {
                                 if (totalLessons == 3) {
-                                    await sendButtonMessage(userMobileNumber, 'Click the button to continue', [{ id: 'start_now', title: 'Start Now!' }]);
+                                    await sendButtonMessage(userMobileNumber, 'Click the button to continue', [{ id: 'start_now', title: 'Start Now!' }, { id: 'change_user', title: 'Change User' }]);
                                     await createActivityLog(userMobileNumber, "template", "outbound", "Click the button to continue", null);
-                                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start now!"]);
+                                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start now!", "change user"]);
                                     return;
                                 } else {
-                                    await sendButtonMessage(userMobileNumber, 'You have completed all the lessons in this course. Click the button below to proceed', [{ id: 'start_next_level', title: 'Start Next Level' }]);
+                                    await sendButtonMessage(userMobileNumber, 'You have completed all the lessons in this course. Click the button below to proceed', [{ id: 'start_next_level', title: 'Start Next Level' }, { id: 'change_user', title: 'Change User' }]);
                                     await createActivityLog(userMobileNumber, "template", "outbound", "You have completed all the lessons in this course. Click the button below to proceed", null);
-                                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next level"]);
+                                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next level", "change user"]);
                                     return;
                                 }
                             }
@@ -1231,6 +1231,22 @@ const webhookService = async (body, res) => {
                                     return;
                                 }
                             }
+                        }
+
+                        if (currentUserState.dataValues.dayNumber != nextLesson.dataValues.dayNumber && currentUserState.dataValues.persona == "kid") {
+                            const courseName = await courseRepository.getCourseNameById(currentUserState.dataValues.currentCourseId);
+                            const level = getLevelFromCourseName(courseName);
+                            let imageUrl = "https://beajbloblive.blob.core.windows.net/beajdocuments/kids_badges_level" + level + "_day_" + nextLesson.dataValues.dayNumber + "_start.jpg";
+                            let captionText = "";
+                            if (nextLesson.dataValues.dayNumber == 1 && nextLesson.dataValues.weekNumber == 1) {
+                                captionText = "💥 Let's begin your 1st adventure!";
+                            } else {
+                                const dayNumber = (nextLesson.dataValues.weekNumber - 1) * daysPerWeek + nextLesson.dataValues.dayNumber;
+                                captionText = "👍 Let's start Day " + dayNumber + "!";
+                            }
+                            await sendMediaMessage(userMobileNumber, imageUrl, 'image', captionText);
+                            await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null, captionText);
+                            return;
                         }
 
                         // Get acceptable messages for the next question/lesson
