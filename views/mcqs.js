@@ -503,8 +503,11 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                 } else {
                     // Calculate total score and send message
                     const totalScore = await waQuestionResponsesRepository.getTotalScore(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
+                    console.log("totalScore", totalScore);
                     const totalQuestions = await waQuestionResponsesRepository.getTotalQuestions(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
+                    console.log("totalQuestions", totalQuestions);
                     const scorePercentage = (totalScore / totalQuestions) * 100;
+                    console.log("scorePercentage", scorePercentage);
                     let message = "*Your score: " + totalScore + "/" + totalQuestions + ".*";
                     if (scorePercentage >= 0 && scorePercentage <= 60) {
                         message += "\n\nGood Effort! 👍🏽";
@@ -514,6 +517,8 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                         message += "\n\nExcellent 🎉";
                     }
 
+                    await sendMessage(userMobileNumber, message);
+                    await createActivityLog(userMobileNumber, "text", "outbound", message, null);
 
                     // Reset Question Number, Retry Counter, and Activity Type
                     await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);

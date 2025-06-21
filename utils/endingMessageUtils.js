@@ -40,7 +40,8 @@ const sendingSticker = async (profileId, userMobileNumber, currentUserState, sta
             await sendMediaMessage(userMobileNumber, challengeCompleteSticker, 'sticker');
             await createActivityLog(userMobileNumber, "sticker", "outbound", challengeCompleteSticker, null);
         }
-        const sticker = stickerMapping[startingLesson.dataValues.activityAlias];
+        const lowerCaseActivityAlias = startingLesson.dataValues.activityAlias.toLowerCase();
+        const sticker = stickerMapping[lowerCaseActivityAlias];
         if (sticker) {
             await sendMediaMessage(userMobileNumber, sticker, 'sticker');
             await createActivityLog(userMobileNumber, "sticker", "outbound", sticker, null);

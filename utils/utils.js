@@ -150,8 +150,8 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
         if (messageContent.toLowerCase() == "yes" || messageContent.toLowerCase() == "no" || messageContent.toLowerCase() == "no, try again" || messageContent.toLowerCase() == "no, type again" || messageContent.toLowerCase() == "no, choose again" || messageContent.toLowerCase() == "no, go to payment") {
             return true;
         } else {
-            await sendButtonMessage(userMobileNumber, "Please select an option.", [{ id: "yes", title: "Yes" }, { id: "no", title: "No" }]);
-            await createActivityLog(userMobileNumber, "template", "outbound", "Please select an option. (Yes or No)", null);
+            await sendButtonMessage(userMobileNumber, "Please select an option:", [{ id: "yes", title: "Yes" }, { id: "no", title: "No" }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Please select an option: (Yes or No)", null);
             return false;
         }
     }
@@ -160,8 +160,8 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
     }
     // If list has "option a", "option b", "option c" then "option a", "option b", "option c" type kerain.
     if (acceptableMessagesList.includes("option a") && acceptableMessagesList.includes("option b") && acceptableMessagesList.includes("option c")) {
-        await sendButtonMessage(userMobileNumber, "Please select an option.", [{ id: "option a", title: "Option A" }, { id: "option b", title: "Option B" }, { id: "option c", title: "Option C" }]);
-        await createActivityLog(userMobileNumber, "template", "outbound", "Please select an option. (Option A, Option B, Option C)", null);
+        await sendButtonMessage(userMobileNumber, "Please select an option:", [{ id: "option a", title: "Option A" }, { id: "option b", title: "Option B" }, { id: "option c", title: "Option C" }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "Please select an option: (Option A, Option B, Option C)", null);
         return false;
     }
     // If list has "a", "b", "c" then "a", "b", "c" type kerain.
@@ -169,8 +169,8 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
         if ((messageType == "text" || messageType == "button" || messageType == "interactive") && messageContent.toLowerCase() == "next" && (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")) {
             return true;
         }
-        await sendButtonMessage(userMobileNumber, "Please select an option.", [{ id: "a", title: "Option A" }, { id: "b", title: "Option B" }, { id: "c", title: "Option C" }]);
-        await createActivityLog(userMobileNumber, "template", "outbound", "Please select an option. (Option A, Option B, Option C)", null);
+        await sendButtonMessage(userMobileNumber, "Please select an option:", [{ id: "a", title: "Option A" }, { id: "b", title: "Option B" }, { id: "c", title: "Option C" }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "Please select an option: (Option A, Option B, Option C)", null);
         return false;
     }
     // If list has "audio"
@@ -188,6 +188,11 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
     if (acceptableMessagesList.includes("start")) {
         await sendButtonMessage(userMobileNumber, "Please click on the start button: \n\nstart", [{ id: "start", title: "Start" }]);
         await createActivityLog(userMobileNumber, "template", "outbound", "Please click on the start button: \n\nstart", null);
+        return false;
+    }
+    if (acceptableMessagesList.includes("start now!") && acceptableMessagesList.includes("change user")) {
+        await sendButtonMessage(userMobileNumber, "Click on Start Now! 👇", [{ id: "start_now", title: "Start Now!" }, { id: "change_user", title: "Change User" }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "Click on Start Now! 👇", null);
         return false;
     }
     if (acceptableMessagesList.includes("start now!")) {
@@ -226,8 +231,8 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
         title: message.charAt(0).toUpperCase() + message.slice(1)
     }));
     const limitedButtonOptions = buttonOptions.slice(0, 3);
-    let logMessage = "Please select an option. (" + buttonOptions.map(option => option.title).join(", ") + ")";
-    await sendButtonMessage(userMobileNumber, "Please select an option.", limitedButtonOptions);
+    let logMessage = "Please select an option: (" + buttonOptions.map(option => option.title).join(", ") + ")";
+    await sendButtonMessage(userMobileNumber, "Please select an option:", limitedButtonOptions);
     await createActivityLog(userMobileNumber, "template", "outbound", logMessage, null);
     return false;
 };

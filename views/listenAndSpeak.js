@@ -350,20 +350,21 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 }
 
                 // Send question text
-                if (firstListenAndSpeakQuestion.dataValues.question != null && firstListenAndSpeakQuestion.dataValues.question != "") {
-                    const questionText = firstListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
-                    await sendMessage(userMobileNumber, questionText);
-                    await createActivityLog(userMobileNumber, "text", "outbound", questionText, null);
-                }
+
 
                 const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
 
                 // Instructions
                 let instructions = "👉 *Question " + await convertNumberToEmoji(firstListenAndSpeakQuestion.dataValues.questionNumber) + " of " + totalQuestions + "*\n\n";
-                instructions += "Record a voice message:\nوائس میسج ریکارڈ کریں";
+                if (firstListenAndSpeakQuestion.dataValues.question != null && firstListenAndSpeakQuestion.dataValues.question != "") {
+                    const questionText = firstListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
+                    instructions += questionText;
+                }
+                instructions += "\n\n*Record a voice message.*";
                 if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                     instructions += "\nOR\n" + "or Type *next* to skip this activity!";
                 }
+
                 await sendMessage(userMobileNumber, instructions);
                 await createActivityLog(userMobileNumber, "text", "outbound", instructions, null);
 
@@ -557,16 +558,16 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                         }
 
                         // Text message
-                        const questionText = nextListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
-                        if (questionText != null && questionText != "") {
-                            await sendMessage(userMobileNumber, questionText);
-                            await createActivityLog(userMobileNumber, "text", "outbound", questionText, null);
-                        }
+
 
                         // Instructions
                         const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
                         let instructions = "👉 *Question " + await convertNumberToEmoji(nextListenAndSpeakQuestion.dataValues.questionNumber) + " of " + totalQuestions + "*\n\n";
-                        instructions += "Record a voice message:\nوائس میسج ریکارڈ کریں";
+                        if (nextListenAndSpeakQuestion.dataValues.question != null && nextListenAndSpeakQuestion.dataValues.question != "") {
+                            const questionText = nextListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
+                            instructions += questionText;
+                        }
+                        instructions += "\n\n*Record a voice message.*";
                         if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                             instructions += "\nOR\n" + "or Type *next* to skip this activity!";
                         }

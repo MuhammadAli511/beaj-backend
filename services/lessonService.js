@@ -9,7 +9,7 @@ import waUserMetaRepository from "../repositories/waUsersMetadataRepository.js";
 import prodSequelize from "../config/prodDB.js";
 import courseRepository from "../repositories/courseRepository.js";
 import azure_blob from "../utils/azureBlobStorage.js";
-import {removeUserTillCourse} from "../utils/chatbotUtils.js";
+import { removeUserTillCourse } from "../utils/chatbotUtils.js";
 import waUserActivityLogsRepository from "../repositories/waUserActivityLogsRepository.js";
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRepository.js";
@@ -41,7 +41,7 @@ const getLessonByIdService = async (id) => {
         if (lesson.activity == 'listenAndSpeak' || lesson.activity == 'watchAndSpeak' || lesson.activity == 'watchAndAudio' ||
             lesson.activity == 'watchAndImage' || lesson.activity == 'conversationalQuestionsBot' || lesson.activity == 'conversationalMonologueBot' ||
             lesson.activity == 'conversationalAgencyBot' || lesson.activity == 'speakingPractice' || lesson.activity == 'feedbackAudio' ||
-             lesson.activity == 'assessmentWatchAndSpeak'
+            lesson.activity == 'assessmentWatchAndSpeak'
         ) {
             const speakActivityQuestionFiles = await speakActivityQuestionRepository.getByLessonId(lesson.LessonId);
             lesson.dataValues.speakActivityQuestionFiles = speakActivityQuestionFiles;
@@ -167,9 +167,9 @@ const migrateLessonService = async (lessonId, courseId) => {
             const [newLesson] = await prodSequelize.query(
                 `INSERT INTO "Lesson" 
                     ("lessonType", "dayNumber", "activity", "activityAlias", "weekNumber", "text", 
-                    "courseId", "SequenceNumber", "status", "textInstruction", "audioInstructionUrl", "audioInstructionMediaId", "customFeedbackText", "customFeedbackImage", "customFeedbackAudio", "customFeedbackImageMediaId", "customFeedbackAudioMediaId", "difficultyLevel") 
+                    "courseId", "SequenceNumber", "status", "textInstruction", "audioInstructionUrl", "audioInstructionMediaId") 
                     VALUES (:lessonType, :dayNumber, :activity, :activityAlias, :weekNumber, :text, 
-                    :courseId, :SequenceNumber, :status, :textInstruction, :audioInstructionUrl, :audioInstructionMediaId, :customFeedbackText, :customFeedbackImage, :customFeedbackAudio, :customFeedbackImageMediaId, :customFeedbackAudioMediaId, :difficultyLevel) 
+                    :courseId, :SequenceNumber, :status, :textInstruction, :audioInstructionUrl, :audioInstructionMediaId) 
                     RETURNING *`,
                 {
                     replacements: {
@@ -184,13 +184,7 @@ const migrateLessonService = async (lessonId, courseId) => {
                         status: lesson.status,
                         textInstruction: lesson.textInstruction,
                         audioInstructionUrl: lesson.audioInstructionUrl,
-                        audioInstructionMediaId: lesson.audioInstructionMediaId,
-                        customFeedbackText: lesson.customFeedbackText,
-                        customFeedbackImage: lesson.customFeedbackImage,
-                        customFeedbackAudio: lesson.customFeedbackAudio,
-                        customFeedbackImageMediaId: lesson.customFeedbackImageMediaId,
-                        customFeedbackAudioMediaId: lesson.customFeedbackAudioMediaId,
-                        difficultyLevel: lesson.difficultyLevel
+                        audioInstructionMediaId: lesson.audioInstructionMediaId
                     },
                     type: prodSequelize.QueryTypes.INSERT,
                     transaction,
@@ -204,16 +198,28 @@ const migrateLessonService = async (lessonId, courseId) => {
                     const formattedAnswer = `{${answerArray.map(answer => `"${answer}"`).join(',')}}`;
                     return prodSequelize.query(
                         `INSERT INTO "speakActivityQuestions" 
-                                ("question", "mediaFile", "mediaFileSecond", "answer", "lessonId", "questionNumber") 
-                                VALUES (:question, :mediaFile, :mediaFileSecond, :answer, :lessonId, :questionNumber)`,
+                                ("question", "mediaFile", "mediaFileMediaId", "mediaFileSecond", "mediaFileSecondMediaId", 
+                                "answer", "lessonId", "questionNumber", "customFeedbackText", "customFeedbackImage", 
+                                "customFeedbackAudio", "customFeedbackImageMediaId", "customFeedbackAudioMediaId", "difficultyLevel") 
+                                VALUES (:question, :mediaFile, :mediaFileMediaId, :mediaFileSecond, :mediaFileSecondMediaId, 
+                                :answer, :lessonId, :questionNumber, :customFeedbackText, :customFeedbackImage, 
+                                :customFeedbackAudio, :customFeedbackImageMediaId, :customFeedbackAudioMediaId, :difficultyLevel)`,
                         {
                             replacements: {
                                 question: file.question,
                                 mediaFile: file.mediaFile,
+                                mediaFileMediaId: file.mediaFileMediaId || null,
                                 mediaFileSecond: file.mediaFileSecond,
+                                mediaFileSecondMediaId: file.mediaFileSecondMediaId || null,
                                 answer: formattedAnswer,
                                 lessonId: newLesson[0].LessonId,
-                                questionNumber: file.questionNumber
+                                questionNumber: file.questionNumber,
+                                customFeedbackText: file.customFeedbackText || null,
+                                customFeedbackImage: file.customFeedbackImage || null,
+                                customFeedbackAudio: file.customFeedbackAudio || null,
+                                customFeedbackImageMediaId: file.customFeedbackImageMediaId || null,
+                                customFeedbackAudioMediaId: file.customFeedbackAudioMediaId || null,
+                                difficultyLevel: file.difficultyLevel || null
                             },
                             type: prodSequelize.QueryTypes.INSERT,
                             transaction
@@ -227,9 +233,11 @@ const migrateLessonService = async (lessonId, courseId) => {
                 await Promise.all(multipleChoiceQuestions.map(async question => {
                     const [newQuestion] = await prodSequelize.query(
                         `INSERT INTO "MultipleChoiceQuesions" 
-                            ("QuestionType", "QuestionText", "QuestionImageUrl", "QuestionAudioUrl", "QuestionVideoUrl",
+                            ("QuestionType", "QuestionText", "QuestionImageUrl", "QuestionImageMediaId", 
+                            "QuestionAudioUrl", "QuestionAudioMediaId", "QuestionVideoUrl", "QuestionVideoMediaId",
                             "QuestionNumber", "LessonId", "OptionsType")
-                            VALUES (:QuestionType, :QuestionText, :QuestionImageUrl, :QuestionAudioUrl, :QuestionVideoUrl,
+                            VALUES (:QuestionType, :QuestionText, :QuestionImageUrl, :QuestionImageMediaId, 
+                            :QuestionAudioUrl, :QuestionAudioMediaId, :QuestionVideoUrl, :QuestionVideoMediaId,
                             :QuestionNumber, :LessonId, :OptionsType)
                             RETURNING *`,
                         {
@@ -237,8 +245,11 @@ const migrateLessonService = async (lessonId, courseId) => {
                                 QuestionType: question.QuestionType,
                                 QuestionText: question.QuestionText || null,
                                 QuestionImageUrl: question.QuestionImageUrl || null,
+                                QuestionImageMediaId: question.QuestionImageMediaId || null,
                                 QuestionAudioUrl: question.QuestionAudioUrl || null,
+                                QuestionAudioMediaId: question.QuestionAudioMediaId || null,
                                 QuestionVideoUrl: question.QuestionVideoUrl || null,
+                                QuestionVideoMediaId: question.QuestionVideoMediaId || null,
                                 QuestionNumber: question.QuestionNumber,
                                 LessonId: newLesson[0].LessonId,
                                 OptionsType: question.OptionsType
@@ -253,21 +264,27 @@ const migrateLessonService = async (lessonId, courseId) => {
                     await Promise.all(multipleChoiceQuestionAnswers.map(answer =>
                         prodSequelize.query(
                             `INSERT INTO "MultipleChoiceQuestionAnswers" 
-                                ("AnswerText", "AnswerImageUrl", "AnswerAudioUrl", "IsCorrect", 
-                                "MultipleChoiceQuestionId", "SequenceNumber", "CustomAnswerFeedbackText", "CustomAnswerFeedbackImage", "CustomAnswerFeedbackAudio") 
-                                VALUES (:AnswerText, :AnswerImageUrl, :AnswerAudioUrl, :IsCorrect,
-                                :MultipleChoiceQuestionId, :SequenceNumber, :CustomAnswerFeedbackText, :CustomAnswerFeedbackImage, :CustomAnswerFeedbackAudio)`,
+                                ("AnswerText", "AnswerImageUrl", "AnswerImageMediaId", "AnswerAudioUrl", "AnswerAudioMediaId", 
+                                "IsCorrect", "MultipleChoiceQuestionId", "SequenceNumber", "CustomAnswerFeedbackText", 
+                                "CustomAnswerFeedbackImage", "CustomAnswerFeedbackImageMediaId", "CustomAnswerFeedbackAudio", "CustomAnswerFeedbackAudioMediaId") 
+                                VALUES (:AnswerText, :AnswerImageUrl, :AnswerImageMediaId, :AnswerAudioUrl, :AnswerAudioMediaId,
+                                :IsCorrect, :MultipleChoiceQuestionId, :SequenceNumber, :CustomAnswerFeedbackText, 
+                                :CustomAnswerFeedbackImage, :CustomAnswerFeedbackImageMediaId, :CustomAnswerFeedbackAudio, :CustomAnswerFeedbackAudioMediaId)`,
                             {
                                 replacements: {
                                     AnswerText: answer.AnswerText || null,
                                     AnswerImageUrl: answer.AnswerImageUrl || null,
+                                    AnswerImageMediaId: answer.AnswerImageMediaId || null,
                                     AnswerAudioUrl: answer.AnswerAudioUrl || null,
+                                    AnswerAudioMediaId: answer.AnswerAudioMediaId || null,
                                     IsCorrect: answer.IsCorrect,
                                     MultipleChoiceQuestionId: newQuestion[0].Id,
                                     SequenceNumber: answer.SequenceNumber,
                                     CustomAnswerFeedbackText: answer.CustomAnswerFeedbackText || null,
                                     CustomAnswerFeedbackImage: answer.CustomAnswerFeedbackImage || null,
-                                    CustomAnswerFeedbackAudio: answer.CustomAnswerFeedbackAudio || null
+                                    CustomAnswerFeedbackImageMediaId: answer.CustomAnswerFeedbackImageMediaId || null,
+                                    CustomAnswerFeedbackAudio: answer.CustomAnswerFeedbackAudio || null,
+                                    CustomAnswerFeedbackAudioMediaId: answer.CustomAnswerFeedbackAudioMediaId || null
                                 },
                                 type: prodSequelize.QueryTypes.INSERT,
                                 transaction
@@ -280,25 +297,27 @@ const migrateLessonService = async (lessonId, courseId) => {
 
 
                 await Promise.all(documentFiles.map(file => {
-                    prodSequelize.query(
+                    return prodSequelize.query(
                         `INSERT INTO "DocumentFiles" 
-                            ("lessonId", "language", "image", "video", "audio", "mediaType") 
-                            VALUES (:lessonId, :language, :image, :video, :audio, :mediaType)`,
+                            ("lessonId", "language", "image", "imageMediaId", "video", "videoMediaId", "audio", "audioMediaId", "mediaType") 
+                            VALUES (:lessonId, :language, :image, :imageMediaId, :video, :videoMediaId, :audio, :audioMediaId, :mediaType)`,
                         {
                             replacements: {
                                 lessonId: newLesson[0].LessonId,
                                 language: file.language,
                                 image: file.image || null,
+                                imageMediaId: file.imageMediaId || null,
                                 video: file.video || null,
+                                videoMediaId: file.videoMediaId || null,
                                 audio: file.audio || null,
+                                audioMediaId: file.audioMediaId || null,
                                 mediaType: file.mediaType
                             },
                             type: prodSequelize.QueryTypes.INSERT,
                             transaction
                         }
                     )
-                }
-                ));
+                }));
             }
 
             await transaction.commit();

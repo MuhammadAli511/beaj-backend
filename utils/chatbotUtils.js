@@ -128,7 +128,7 @@ const resetCourseKid = async (phoneNumber, botPhoneNumberId) => {
         await waPurchasedCoursesRepository.create(purchase);
     }
 
-    await sendMessage(phoneNumber, "Test data has been created for kid profiles. You now have 4 student profiles with purchased courses.");
+    await sendMessage(phoneNumber, "Test data has been created for kid profiles. You now have 3 student profiles with purchased courses.");
 };
 
 const weekEndScoreCalculation = async (profileId, phoneNumber, weekNumber, courseId) => {
@@ -268,7 +268,7 @@ const startCourseForUser = async (profileId, userMobileNumber, numbers_to_ignore
             await createActivityLog(userMobileNumber, "template", "outbound", captionText, null);
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start"]);
         } else {
-            const captionText = "Let's being your adventure!";
+            const captionText = "👍 Let's begin your adventure!";
             await sendButtonMessage(userMobileNumber, captionText, [{ id: "lets_start", title: "Start" }]);
             await createActivityLog(userMobileNumber, "template", "outbound", captionText, null);
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start"]);

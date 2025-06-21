@@ -399,7 +399,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
 
                     // Send question media file
                     let instructions = "👉 *Question " + await convertNumberToEmoji(nextWatchAndSpeakQuestion.dataValues.questionNumber) + " of " + totalQuestions + "*\n\n";
-                    instructions += "Record a voice message:\nوائس میسج ریکارڈ کریں";
+                    instructions += "Record a voice message.";
                     if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                         instructions += "\nOR\n" + "Type *next* to skip this activity!";
                     }

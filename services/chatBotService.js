@@ -1039,6 +1039,16 @@ const webhookService = async (body, res) => {
                     (messageContent.toLowerCase() == "start" || messageContent.toLowerCase() == "start!")
                 ) {
                     if (currentUserState.dataValues.engagement_type == "Course Start") {
+                        if (currentUserState.dataValues.persona == "kid") {
+                            const courseName = await courseRepository.getCourseNameById(currentUserState.dataValues.currentCourseId);
+                            if (!courseName.toLowerCase().includes("assessment")) {
+                                const level = getLevelFromCourseName(courseName);
+                                let imageUrl = "https://beajbloblive.blob.core.windows.net/beajdocuments/kids_badges_level" + level + "_day_1_start.jpg";
+                                let captionText = "💥 Let's begin your 1st adventure!";
+                                await sendMediaMessage(userMobileNumber, imageUrl, 'image', captionText);
+                                await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null, captionText);
+                            }
+                        }
                         const startingLesson = await lessonRepository.getNextLesson(currentUserState.dataValues.currentCourseId, 1, null, null);
                         await levelCourseStart(profileId, userMobileNumber, startingLesson, currentUserState.dataValues.currentCourseId, currentUserState.dataValues.persona);
                         // Send first lesson to user
@@ -1156,8 +1166,8 @@ const webhookService = async (body, res) => {
                             }
                             if (lessonNumberCheck >= totalLessons) {
                                 if (totalLessons == 3) {
-                                    await sendButtonMessage(userMobileNumber, 'Click the button to continue', [{ id: 'start_now', title: 'Start Now!' }, { id: 'change_user', title: 'Change User' }]);
-                                    await createActivityLog(userMobileNumber, "template", "outbound", "Click the button to continue", null);
+                                    await sendButtonMessage(userMobileNumber, 'Click on Start Now! 👇', [{ id: 'start_now', title: 'Start Now!' }, { id: 'change_user', title: 'Change User' }]);
+                                    await createActivityLog(userMobileNumber, "template", "outbound", "Click on Start Now! 👇", null);
                                     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start now!", "change user"]);
                                     return;
                                 } else {
@@ -1233,20 +1243,17 @@ const webhookService = async (body, res) => {
                             }
                         }
 
-                        if (currentUserState.dataValues.dayNumber != nextLesson.dataValues.dayNumber && currentUserState.dataValues.persona == "kid") {
+                        if ((currentUserState.dataValues.currentDay != nextLesson.dataValues.dayNumber) && currentUserState.dataValues.persona == "kid") {
                             const courseName = await courseRepository.getCourseNameById(currentUserState.dataValues.currentCourseId);
-                            const level = getLevelFromCourseName(courseName);
-                            let imageUrl = "https://beajbloblive.blob.core.windows.net/beajdocuments/kids_badges_level" + level + "_day_" + nextLesson.dataValues.dayNumber + "_start.jpg";
-                            let captionText = "";
-                            if (nextLesson.dataValues.dayNumber == 1 && nextLesson.dataValues.weekNumber == 1) {
-                                captionText = "💥 Let's begin your 1st adventure!";
-                            } else {
+                            if (!courseName.toLowerCase().includes("assessment")) {
+                                const level = getLevelFromCourseName(courseName);
+                                let imageUrl = "https://beajbloblive.blob.core.windows.net/beajdocuments/kids_badges_level" + level + "_day_" + nextLesson.dataValues.dayNumber + "_start.jpg";
+                                let captionText = "";
                                 const dayNumber = (nextLesson.dataValues.weekNumber - 1) * daysPerWeek + nextLesson.dataValues.dayNumber;
                                 captionText = "👍 Let's start Day " + dayNumber + "!";
+                                await sendMediaMessage(userMobileNumber, imageUrl, 'image', captionText);
+                                await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null, captionText);
                             }
-                            await sendMediaMessage(userMobileNumber, imageUrl, 'image', captionText);
-                            await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null, captionText);
-                            return;
                         }
 
                         // Get acceptable messages for the next question/lesson
