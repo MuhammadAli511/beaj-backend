@@ -439,6 +439,256 @@ const createAndUploadScoreImageNoAnswer = async (pronunciationAssessment, thresh
     }
 };
 
+const createAndUploadKidsScoreImage = async (pronunciationAssessment, threshold, level) => {
+    try {
+        if (pronunciationAssessment === undefined || pronunciationAssessment == [] || pronunciationAssessment == null) {
+            return null;
+        };
+
+        const fluencyScoreNumber = Math.round(pronunciationAssessment.scoreNumber.fluencyScore);
+        let accuracyScoreNumber = Math.round(pronunciationAssessment.scoreNumber.accuracyScore);
+        const words = pronunciationAssessment.words;
+
+        const mispronouncedWordsList = pronunciationAssessment.words.filter(word =>
+            word?.PronunciationAssessment?.ErrorType == "Mispronunciation" ||
+            word?.PronunciationAssessment?.AccuracyScore < threshold
+        );
+        if (mispronouncedWordsList.length == 0 && accuracyScoreNumber > threshold) {
+            accuracyScoreNumber = 100;
+        }
+
+        // Set up canvas dimensions
+        const width = 900;
+        const height = 850;
+        const canvas = createCanvas(width, height);
+        const ctx = canvas.getContext('2d');
+
+        // Draw background
+        ctx.fillStyle = '#f2fdf7';
+        ctx.fillRect(0, 0, width, height);
+
+        // Add "Your Score" Title
+        ctx.font = 'bold 48px Arial';
+        ctx.fillStyle = '#000000';
+        ctx.textAlign = 'center';
+        ctx.fillText('Your Score', width / 2, 80);
+
+        // Pronunciation section
+        ctx.font = 'bold 28px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#000000';
+        ctx.fillText('Pronunciation', 225, 140);
+
+        // Draw pronunciation semi-circle arc
+        const pronunciationCenterX = 225;
+        const pronunciationCenterY = 280;
+        const arcRadius = 100;
+        const arcWidth = 35;
+
+        // Background arc (light pink)
+        ctx.beginPath();
+        ctx.arc(pronunciationCenterX, pronunciationCenterY, arcRadius, Math.PI, 0, false);
+        ctx.lineWidth = arcWidth;
+        ctx.strokeStyle = '#f7b7cc';
+        ctx.stroke();
+
+        // Foreground arc (dark pink) - score percentage
+        const pronunciationAngle = Math.PI * (accuracyScoreNumber / 100);
+        ctx.beginPath();
+        ctx.arc(pronunciationCenterX, pronunciationCenterY, arcRadius, Math.PI, Math.PI + pronunciationAngle, false);
+        ctx.lineWidth = arcWidth;
+        ctx.strokeStyle = '#f94e6b';
+        ctx.stroke();
+
+        // Pronunciation score text - inside the arc, positioned higher
+        ctx.font = 'bold 36px Arial';
+        ctx.fillStyle = '#000000';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${accuracyScoreNumber}%`, pronunciationCenterX, pronunciationCenterY - 20);
+
+        // Fluency section
+        ctx.font = 'bold 28px Arial';
+        ctx.fillStyle = '#000000';
+        ctx.textAlign = 'center';
+        ctx.fillText('Fluency', 675, 140);
+
+        // Draw fluency semi-circle arc
+        const fluencyCenterX = 675;
+        const fluencyCenterY = 280;
+
+        // Background arc (light teal)
+        ctx.beginPath();
+        ctx.arc(fluencyCenterX, fluencyCenterY, arcRadius, Math.PI, 0, false);
+        ctx.lineWidth = arcWidth;
+        ctx.strokeStyle = '#95eaf1';
+        ctx.stroke();
+
+        // Foreground arc (dark teal) - score percentage
+        const fluencyAngle = Math.PI * (fluencyScoreNumber / 100);
+        ctx.beginPath();
+        ctx.arc(fluencyCenterX, fluencyCenterY, arcRadius, Math.PI, Math.PI + fluencyAngle, false);
+        ctx.lineWidth = arcWidth;
+        ctx.strokeStyle = '#51bccc';
+        ctx.stroke();
+
+        // Fluency score text - inside the arc, positioned higher
+        ctx.font = 'bold 36px Arial';
+        ctx.fillStyle = '#000000';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${fluencyScoreNumber}%`, fluencyCenterX, fluencyCenterY - 20);
+
+        // Load and add the avatars positioned above the "You said" box
+        const avatarImage = await loadImage(`https://beajbloblive.blob.core.windows.net/beajdocuments/level${level}_scorecard_avatars.png`);
+
+        // "You said" section with rounded rectangle
+        ctx.font = 'bold 30px Arial';
+        ctx.fillStyle = '#000000';
+        ctx.textAlign = 'center';
+        ctx.fillText('You said', width / 2, 420);
+
+        // Draw large rounded rectangle for "You said" content
+        const youSaidRectX = 50;
+        const youSaidRectY = 440;
+        const youSaidRectWidth = 800;
+        const youSaidRectHeight = 180;
+        const cornerRadius = 20;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.roundRect(youSaidRectX, youSaidRectY, youSaidRectWidth, youSaidRectHeight, cornerRadius);
+        ctx.fill();
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Position avatars above the "You said" rectangle - way bigger
+        if (level == 1) {
+            const avatarSize = 550;
+            // Left avatar (girl) - positioned on left edge of "You said" box
+            ctx.drawImage(avatarImage, 0, 0, avatarImage.width / 2, avatarImage.height,
+                youSaidRectX - 150, youSaidRectY - avatarSize + 178, avatarSize, avatarSize);
+            // Right avatar (boy) - positioned on right edge of "You said" box
+            ctx.drawImage(avatarImage, avatarImage.width / 2, 0, avatarImage.width / 2, avatarImage.height,
+                youSaidRectX + youSaidRectWidth - avatarSize + 150, youSaidRectY - avatarSize + 178, avatarSize, avatarSize);
+        } else if (level == 2) {
+            const avatarSize = 530;
+            // Left avatar (girl) - positioned more to the left
+            ctx.drawImage(avatarImage, 0, 0, avatarImage.width / 2, avatarImage.height,
+                youSaidRectX - 180, youSaidRectY - avatarSize + 175, avatarSize, avatarSize);
+            // Right avatar (boy) - positioned more to the right
+            ctx.drawImage(avatarImage, avatarImage.width / 2, 0, avatarImage.width / 2, avatarImage.height,
+                youSaidRectX + youSaidRectWidth - avatarSize + 170, youSaidRectY - avatarSize + 175, avatarSize, avatarSize);
+        } else if (level == 3) {
+            const avatarSize = 500;
+            // Left avatar (girl) - positioned more to the left
+            ctx.drawImage(avatarImage, 0, 0, avatarImage.width / 2, avatarImage.height,
+                youSaidRectX - 120, youSaidRectY - avatarSize + 170, avatarSize, avatarSize);
+            // Right avatar (boy) - positioned more to the right
+            ctx.drawImage(avatarImage, avatarImage.width / 2, 0, avatarImage.width / 2, avatarImage.height,
+                youSaidRectX + youSaidRectWidth - avatarSize + 130, youSaidRectY - avatarSize + 165, avatarSize, avatarSize);
+        }
+
+        // Function to wrap text
+        function wrapText(text, maxWidth) {
+            const words = text.split(' ');
+            const lines = [];
+            let currentLine = words[0];
+
+            for (let i = 1; i < words.length; i++) {
+                const word = words[i];
+                const width = ctx.measureText(currentLine + ' ' + word).width;
+                if (width < maxWidth) {
+                    currentLine += ' ' + word;
+                } else {
+                    lines.push(currentLine);
+                    currentLine = word;
+                }
+            }
+            lines.push(currentLine);
+            return lines;
+        }
+
+        // Add all words to "You said" section
+        let youSaidText = '';
+        words.forEach((wordObj, index) => {
+            if (wordObj && wordObj.PronunciationAssessment) {
+                let word = wordObj.Word;
+                if (index === 0) {
+                    word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+                } else {
+                    word = word.toLowerCase();
+                }
+                youSaidText += (index > 0 ? ' ' : '') + word;
+            }
+        });
+
+        // Draw wrapped text in "You said" rectangle
+        ctx.font = '24px Arial';
+        ctx.fillStyle = '#000000';
+        ctx.textAlign = 'left';
+        const youSaidLines = wrapText(youSaidText, youSaidRectWidth - 40);
+        const lineHeight = 28;
+        const startY = youSaidRectY + 35;
+
+        youSaidLines.slice(0, 6).forEach((line, index) => {
+            ctx.fillText(line, youSaidRectX + 20, startY + (index * lineHeight));
+        });
+
+        // "Mispronounced Words" section
+        ctx.font = 'bold 30px Arial';
+        ctx.fillStyle = '#000000';
+        ctx.textAlign = 'center';
+        ctx.fillText('Mispronounced Words', width / 2, 670);
+
+        // Draw rounded rectangle for mispronounced words
+        const mispronRectX = 50;
+        const mispronRectY = 690;
+        const mispronRectWidth = 800;
+        const mispronRectHeight = 140;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.roundRect(mispronRectX, mispronRectY, mispronRectWidth, mispronRectHeight, cornerRadius);
+        ctx.fill();
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Add mispronounced words text
+        let mispronText = '';
+        mispronouncedWordsList.forEach((wordObj, index) => {
+            let word = wordObj.Word;
+            if (index === 0) {
+                word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+            } else {
+                word = word.toLowerCase();
+            }
+            mispronText += (index > 0 ? ', ' : '') + word;
+        });
+
+        // Draw wrapped mispronounced words text
+        ctx.font = '24px Arial';
+        ctx.fillStyle = '#ff0000';
+        ctx.textAlign = 'left';
+        const mispronLines = wrapText(mispronText || 'None', mispronRectWidth - 40);
+        const mispronStartY = mispronRectY + 35;
+
+        mispronLines.slice(0, 4).forEach((line, index) => {
+            ctx.fillText(line, mispronRectX + 20, mispronStartY + (index * lineHeight));
+        });
+
+        // Convert the canvas to a buffer
+        const buffer = canvas.toBuffer('image/jpeg');
+
+        // Upload to Azure Blob Storage
+        const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
+        return imageUrl;
+    } catch (err) {
+        console.log('Error creating and uploading image:', err);
+        throw new Error('Failed to create and upload image');
+    }
+};
+
 const createAndUploadMonologueScoreImage = async (pronunciationAssessment, threshold) => {
     try {
         if (pronunciationAssessment === undefined || pronunciationAssessment == [] || pronunciationAssessment == null) {
@@ -934,5 +1184,6 @@ export {
     createAndUploadMonologueScoreImage,
     createAndUploadSpeakingPracticeScoreImage,
     generateInvoiceImage,
-    createAndUploadScoreImageNoAnswer
+    createAndUploadScoreImageNoAnswer,
+    createAndUploadKidsScoreImage
 };

@@ -28,6 +28,20 @@ const extractTranscript = (results) => {
     return transcript;
 };
 
+const getLevelFromCourseName = (courseName) => {
+    if (courseName == "Free Trial - Kids - Level 1") {
+        return 1;
+    } else if (courseName == "Free Trial - Kids - Level 3") {
+        return 3;
+    } else if (courseName.includes("Grade 1") || courseName.includes("Grade 2")) {
+        return 1;
+    } else if (courseName.includes("Grade 3") || courseName.includes("Grade 4")) {
+        return 2;
+    } else {
+        return 3;
+    }
+};
+
 const extractMispronouncedWords = (results) => {
     if (!results?.words) {
         return [];
@@ -272,5 +286,6 @@ export {
     getAcceptableMessagesList,
     getDaysPerWeek,
     getTotalLessonsForCourse,
-    difficultyLevelCalculation
+    difficultyLevelCalculation,
+    getLevelFromCourseName
 };

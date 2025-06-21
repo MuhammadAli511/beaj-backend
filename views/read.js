@@ -8,9 +8,10 @@ import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRe
 import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
-import { sleep, extractTranscript, getAudioBufferFromAudioFileUrl } from "../utils/utils.js";
+import { sleep, extractTranscript, getAudioBufferFromAudioFileUrl, getLevelFromCourseName } from "../utils/utils.js";
 import AIServices from "../utils/AIServices.js";
-import { createAndUploadScoreImage } from "../utils/imageGenerationUtils.js";
+import { createAndUploadScoreImage, createAndUploadKidsScoreImage } from "../utils/imageGenerationUtils.js";
+import courseRepository from "../repositories/courseRepository.js";
 
 const readView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
@@ -302,7 +303,9 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
                 // Extract user transcription from words
                 const userTranscription = extractTranscript(pronunciationAssessment);
 
-                const imageUrl = await createAndUploadScoreImage(pronunciationAssessment, 80);
+                const courseName = await courseRepository.getCourseNameById(currentUserState.dataValues.currentCourseId);
+                const level = getLevelFromCourseName(courseName);
+                const imageUrl = await createAndUploadKidsScoreImage(pronunciationAssessment, 80, level);
 
                 if (imageUrl) {
                     // Media message

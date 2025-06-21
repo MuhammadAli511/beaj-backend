@@ -7,10 +7,11 @@ import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRe
 import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
-import { sleep, extractTranscript, convertNumberToEmoji, getAudioBufferFromAudioFileUrl } from "../utils/utils.js";
+import { sleep, extractTranscript, convertNumberToEmoji, getAudioBufferFromAudioFileUrl, getLevelFromCourseName } from "../utils/utils.js";
 import AIServices from "../utils/AIServices.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
-import { createAndUploadScoreImage, createAndUploadScoreImageNoAnswer } from "../utils/imageGenerationUtils.js";
+import { createAndUploadScoreImage, createAndUploadScoreImageNoAnswer, createAndUploadKidsScoreImage } from "../utils/imageGenerationUtils.js";
+import courseRepository from "../repositories/courseRepository.js";
 
 
 const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
@@ -352,10 +353,12 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
 
                 // Generate pronunciation assessment message
                 let imageUrl = null;
+                const courseName = await courseRepository.getCourseNameById(currentUserState.dataValues.currentCourseId);
+                const level = getLevelFromCourseName(courseName);
                 if (!currentWatchAndSpeakQuestion?.dataValues?.answer?.[0]) {
-                    imageUrl = await createAndUploadScoreImageNoAnswer(pronunciationAssessment, 80);
+                    imageUrl = await createAndUploadKidsScoreImage(pronunciationAssessment, 80, level);
                 } else {
-                    imageUrl = await createAndUploadScoreImage(pronunciationAssessment, 80);
+                    imageUrl = await createAndUploadKidsScoreImage(pronunciationAssessment, 80, level);
                 }
 
                 if (imageUrl) {
