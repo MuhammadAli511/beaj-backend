@@ -99,6 +99,10 @@ const uploadUserDataService = async (users) => {
     return;
 };
 
+const getCombinedUserDataService = async () => {
+    return await waUsersMetadataRepository.getCombinedUserData();
+};
+
 const webhookService = async (body, res) => {
     try {
         res.sendStatus(200);
@@ -1353,4 +1357,4 @@ const webhookService = async (body, res) => {
     }
 };
 
-export default { webhookService, verifyWebhookService, uploadUserDataService };
+export default { webhookService, verifyWebhookService, uploadUserDataService, getCombinedUserDataService };

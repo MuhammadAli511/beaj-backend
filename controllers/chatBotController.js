@@ -95,8 +95,19 @@ const uploadUserDataController = async (req, res, next) => {
     }
 };
 
+const getCombinedUserDataController = async (req, res, next) => {
+    try {
+        const result = await service.getCombinedUserDataService();
+        res.status(200).send(result);
+    } catch (error) {
+        error.fileName = 'chatBotController.js';
+        next(error);
+    }
+};
+
 export default {
     webhookController,
     verifyWebhookController,
-    uploadUserDataController
+    uploadUserDataController,
+    getCombinedUserDataController
 };

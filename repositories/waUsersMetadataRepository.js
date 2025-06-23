@@ -1,5 +1,6 @@
 import WA_UsersMetadata from '../models/WA_UsersMetadata.js';
 import Sequelize from 'sequelize';
+import sequelize from '../config/sequelize.js';
 
 const create = async (data) => {
     const userMetadata = new WA_UsersMetadata(data);
@@ -237,7 +238,29 @@ const getProfileIds = async (phoneNumber) => {
     return profileIds.map(profile => profile.dataValues.profile_id);
 };
 
+const getCombinedUserData = async () => {
+    const query = `
+        SELECT DISTINCT ON (wum.profile_id, wum."phoneNumber") 
+            wum."phoneNumber",
+            wum.name,
+            wum.profile_id,
+            wual.last_message_timestamp
+        FROM wa_users_metadata wum
+        LEFT JOIN (
+            SELECT 
+                profile_id,
+                "phoneNumber",
+                MAX(timestamp) as last_message_timestamp
+            FROM wa_user_activity_logs
+            GROUP BY profile_id, "phoneNumber"
+        ) wual ON wum.profile_id = wual.profile_id AND wum."phoneNumber" = wual."phoneNumber"
+        WHERE wum.name IS NOT NULL AND wum.name != ''
+        ORDER BY wum.profile_id, wum."phoneNumber", wum."userRegistrationComplete" ASC;
+    `;
 
+    const [results] = await sequelize.query(query);
+    return results;
+};
 
 export default {
     create,
@@ -262,5 +285,6 @@ export default {
     getTotalRegistrationsSummary,
     updateName,
     getProfileIds,
-    deleteByProfileId
+    deleteByProfileId,
+    getCombinedUserData
 };

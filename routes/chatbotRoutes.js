@@ -1,6 +1,7 @@
 import express from 'express';
 import chatBotController from '../controllers/chatBotController.js';
 import errorHandler from '../middlewares/errorHandler.js';
+import beajFacilitatorsAuth from '../middlewares/beajFacilitatorsAuth.js';
 
 const router = express.Router();
 
@@ -18,6 +19,8 @@ router.get('/webhook', chatBotController.verifyWebhookController);
 // POST /chatbot/upload-user-data
 router.post('/upload-user-data', chatBotController.uploadUserDataController);
 
+// GET /chatbot/combined-user-data
+router.get('/combined-user-data', beajFacilitatorsAuth, chatBotController.getCombinedUserDataController);
 
 // Use error handler middleware
 router.use(errorHandler);
