@@ -183,18 +183,21 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         openaiFeedbackTranscript = await AIServices.openaiCustomFeedback(await wrapup_prompt(), userResponse);
                         initialFeedbackResponse = openaiFeedbackTranscript;
 
+                        let hardcodedFeedbackAudio = null;
                         if (openaiFeedbackTranscript.toLowerCase().includes("can be improved")) {
                             const betterAudio = await waConstantsRepository.getByKey("BETTER_AUDIO");
-                            openaiFeedbackAudio = betterAudio.dataValues.constantValue;
+                            hardcodedFeedbackAudio = betterAudio.dataValues.constantValue;
                         } else if (openaiFeedbackTranscript.toLowerCase().includes("it was great")) {
                             const okAudio = await waConstantsRepository.getByKey("OK_AUDIO");
-                            openaiFeedbackAudio = okAudio.dataValues.constantValue;
+                            hardcodedFeedbackAudio = okAudio.dataValues.constantValue;
                         }
 
                         // Media message
-                        await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
-                        await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
-                        await sleep(5000);
+                        if (hardcodedFeedbackAudio) {
+                            await sendMediaMessage(userMobileNumber, hardcodedFeedbackAudio, 'audio');
+                            await createActivityLog(userMobileNumber, "audio", "outbound", hardcodedFeedbackAudio, null);
+                            await sleep(2000);
+                        }
                     }
 
                     // Update user response to the database with processing results
@@ -209,7 +212,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         [recognizedText],
                         [audioUrl],
                         [initialFeedbackResponse],
-                        [openaiFeedbackAudio],
+                        [hardcodedFeedbackAudio],
                         null,
                         null,
                         1,
@@ -413,9 +416,11 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         }
 
                         // Media message
-                        await sendMediaMessage(userMobileNumber, hardcodedFeedbackAudio.dataValues.constantValue, 'audio', null, 0, "WA_Constants", hardcodedFeedbackAudio.dataValues.id, hardcodedFeedbackAudio.dataValues.constantMediaId, "constantMediaId");
-                        await createActivityLog(userMobileNumber, "audio", "outbound", hardcodedFeedbackAudio.dataValues.constantValue, null);
-                        await sleep(2000);
+                        if (hardcodedFeedbackAudio) {
+                            await sendMediaMessage(userMobileNumber, hardcodedFeedbackAudio.dataValues.constantValue, 'audio', null, 0, "WA_Constants", hardcodedFeedbackAudio.dataValues.id, hardcodedFeedbackAudio.dataValues.constantMediaId, "constantMediaId");
+                            await createActivityLog(userMobileNumber, "audio", "outbound", hardcodedFeedbackAudio.dataValues.constantValue, null);
+                            await sleep(2000);
+                        }
                     }
 
                     // Update user response to the database with processing results
@@ -430,7 +435,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         [recognizedText],
                         [audioUrl],
                         [initialFeedbackResponse],
-                        null,
+                        [hardcodedFeedbackAudio],
                         null,
                         null,
                         1,

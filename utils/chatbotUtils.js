@@ -17,7 +17,7 @@ import { watchAndAudioView } from "../views/watchAndAudio.js";
 import { readView } from "../views/read.js";
 import { videoView } from "../views/video.js";
 import { videoEndView } from "../views/videoEnd.js";
-import { sleep } from "./utils.js";
+import { getLevelFromCourseName, sleep } from "./utils.js";
 import { conversationalQuestionsBotView } from "../views/conversationalQuestionsBot.js";
 import { conversationalMonologueBotView } from "../views/conversationalMonologueBot.js";
 import { watchAndSpeakView } from "../views/watchAndSpeak.js";
@@ -252,20 +252,26 @@ const startCourseForUser = async (profileId, userMobileNumber, numbers_to_ignore
         await createActivityLog(userMobileNumber, "text", "outbound", intro_message, null);
         if (level == "Level 1") {
             const demoVideo = await waConstantsRepository.getByKey("DEMO_VIDEO");
-            await sendMediaMessage(userMobileNumber, demoVideo.dataValues.constantValue, 'video', null, 0, "WA_Constants", demoVideo.dataValues.id, demoVideo.dataValues.constantMediaId, "constantMediaId");
-            await createActivityLog(userMobileNumber, "video", "outbound", demoVideo.dataValues.constantValue, null);
-            await sleep(12000);
+            if (demoVideo) {
+                await sendMediaMessage(userMobileNumber, demoVideo.dataValues.constantValue, 'video', null, 0, "WA_Constants", demoVideo.dataValues.id, demoVideo.dataValues.constantMediaId, "constantMediaId");
+                await createActivityLog(userMobileNumber, "video", "outbound", demoVideo.dataValues.constantValue, null);
+                await sleep(4000);
+            }
         }
         await sendButtonMessage(userMobileNumber, "Are you ready to start " + level + "?", [{ id: "lets_start", title: "Start" }]);
         await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start " + level + "?", null);
         await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start"]);
     } else {
         const courseName = nextCourse.dataValues.courseName;
+        const level = getLevelFromCourseName(courseName);
         if (courseName.toLowerCase().includes("assessment")) {
-            const puzzleImage = await waConstantsRepository.getByKey("PUZZLE1");
-            const captionText = "🎯 Play games to unlock the Summer Camp!";
-            await sendButtonMessage(userMobileNumber, captionText, [{ id: "lets_start", title: "Start" }], 0, puzzleImage.dataValues.constantValue, null, "WA_Constants", puzzleImage.dataValues.id, puzzleImage.dataValues.constantMediaId, null, "constantMediaId");
-            await createActivityLog(userMobileNumber, "template", "outbound", captionText, null);
+            let key = "LEVEL" + level + "PUZZLE1";
+            const puzzleImage = await waConstantsRepository.getByKey(key);
+            if (puzzleImage) {
+                const captionText = "🎯 Play games to unlock the Summer Camp!";
+                await sendButtonMessage(userMobileNumber, captionText, [{ id: "lets_start", title: "Start" }], 0, puzzleImage.dataValues.constantValue, null, "WA_Constants", puzzleImage.dataValues.id, puzzleImage.dataValues.constantMediaId, null, "constantMediaId");
+                await createActivityLog(userMobileNumber, "template", "outbound", captionText, null);
+            }
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start"]);
         } else {
             const captionText = "👍 Let's begin your adventure!";

@@ -46,24 +46,30 @@ const greetingMessage = async (profileId, userMobileNumber, persona) => {
         } else {
             flyer = combined_flyer;
         }
-        await sendMediaMessage(userMobileNumber, flyer.dataValues.constantValue, "image", null, 0, "WA_Constants", flyer.dataValues.id, flyer.dataValues.constantMediaId, "constantMediaId");
-        await sleep(2000);
+        if (flyer) {
+            await sendMediaMessage(userMobileNumber, flyer.dataValues.constantValue, "image", null, 0, "WA_Constants", flyer.dataValues.id, flyer.dataValues.constantMediaId, "constantMediaId");
+            await sleep(2000);
+        }
         let videoCaption = "Why should you choose Beaj Education? Here is a message from our founder.\n\nآپ کو بیج ایجوکیشن کیوں چُننا چاہیے؟ — بیج ایجوکیشن کی سربراہ کا پیغام۔";
         let whyBeaj = await waConstantsRepository.getByKey("WHY_BEAJ");
-        if (userRegistrationComplete) {
-            await sendButtonMessage(userMobileNumber, videoCaption, [{ id: 'start_free_trial', title: 'Start Free Trial' }], 0, null, whyBeaj.dataValues.constantValue, "WA_Constants", whyBeaj.dataValues.id, null, whyBeaj.dataValues.constantMediaId, "constantMediaId");
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start free trial", "chat with beaj rep"]);
-        } else {
-            await sendButtonMessage(userMobileNumber, videoCaption, [{ id: 'start_free_trial', title: 'Start Free Trial' }, { id: 'go_to_registration', title: 'Go to Registration' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }], 0, null, whyBeaj.dataValues.constantValue, "WA_Constants", whyBeaj.dataValues.id, null, whyBeaj.dataValues.constantMediaId, "constantMediaId");
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start free trial", "go to registration", "chat with beaj rep"]);
+        if (whyBeaj) {
+            if (userRegistrationComplete) {
+                await sendButtonMessage(userMobileNumber, videoCaption, [{ id: 'start_free_trial', title: 'Start Free Trial' }], 0, null, whyBeaj.dataValues.constantValue, "WA_Constants", whyBeaj.dataValues.id, null, whyBeaj.dataValues.constantMediaId, "constantMediaId");
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start free trial", "chat with beaj rep"]);
+            } else {
+                await sendButtonMessage(userMobileNumber, videoCaption, [{ id: 'start_free_trial', title: 'Start Free Trial' }, { id: 'go_to_registration', title: 'Go to Registration' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }], 0, null, whyBeaj.dataValues.constantValue, "WA_Constants", whyBeaj.dataValues.id, null, whyBeaj.dataValues.constantMediaId, "constantMediaId");
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start free trial", "go to registration", "chat with beaj rep"]);
+            }
         }
         await createActivityLog(userMobileNumber, "template", "outbound", videoCaption, null);
 
         await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Greeting Message - Kids");
     } else if (persona == "teachers") {
         const greetingImage = await waConstantsRepository.getByKey("TEACHER_GREETING");
-        await sendButtonMessage(userMobileNumber, greetingMessageText, [{ id: 'start', title: 'Start' }], 0, greetingImage.dataValues.constantValue, null, "WA_Constants", greetingImage.dataValues.id, greetingImage.dataValues.constantMediaId, null, "constantMediaId");
-        await createActivityLog(userMobileNumber, "image", "outbound", greetingImage.dataValues.constantValue, null);
+        if (greetingImage) {
+            await sendButtonMessage(userMobileNumber, greetingMessageText, [{ id: 'start', title: 'Start' }], 0, greetingImage.dataValues.constantValue, null, "WA_Constants", greetingImage.dataValues.id, greetingImage.dataValues.constantMediaId, null, "constantMediaId");
+            await createActivityLog(userMobileNumber, "image", "outbound", greetingImage.dataValues.constantValue, null);
+        }
         await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start"]);
         return;
     }
@@ -80,12 +86,14 @@ const startOfFlow = async (profileId, userMobileNumber) => {
     await createActivityLog(userMobileNumber, "text", "outbound", greetingMessageText, null);
     let videoCaption = "Why should you choose Beaj Education? Here is a message from our founder.\n\nآپ کو بیج ایجوکیشن کیوں چُننا چاہیے؟ — بیج ایجوکیشن کی سربراہ کا پیغام۔";
     let whyBeaj = await waConstantsRepository.getByKey("WHY_BEAJ");
-    if (userRegistrationComplete) {
-        await sendButtonMessage(userMobileNumber, videoCaption, [{ id: 'start_free_trial', title: 'Start Free Trial' }], 0, null, whyBeaj.dataValues.constantValue, "WA_Constants", whyBeaj.dataValues.id, null, whyBeaj.dataValues.constantMediaId, "constantMediaId");
-        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start free trial"]);
-    } else {
-        await sendButtonMessage(userMobileNumber, videoCaption, [{ id: 'start_free_trial', title: 'Start Free Trial' }, { id: 'go_to_registration', title: 'Go to Registration' }], 0, null, whyBeaj.dataValues.constantValue, "WA_Constants", whyBeaj.dataValues.id, null, whyBeaj.dataValues.constantMediaId, "constantMediaId");
-        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start free trial", "go to registration"]);
+    if (whyBeaj) {
+        if (userRegistrationComplete) {
+            await sendButtonMessage(userMobileNumber, videoCaption, [{ id: 'start_free_trial', title: 'Start Free Trial' }], 0, null, whyBeaj.dataValues.constantValue, "WA_Constants", whyBeaj.dataValues.id, null, whyBeaj.dataValues.constantMediaId, "constantMediaId");
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start free trial"]);
+        } else {
+            await sendButtonMessage(userMobileNumber, videoCaption, [{ id: 'start_free_trial', title: 'Start Free Trial' }, { id: 'go_to_registration', title: 'Go to Registration' }], 0, null, whyBeaj.dataValues.constantValue, "WA_Constants", whyBeaj.dataValues.id, null, whyBeaj.dataValues.constantMediaId, "constantMediaId");
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start free trial", "go to registration"]);
+        }
     }
     await createActivityLog(userMobileNumber, "template", "outbound", videoCaption, null);
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Greeting Message - Kids");
@@ -103,8 +111,10 @@ const kidsChooseClass = async (profileId, userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Choose Class");
     const chooseClassMessage = `Take a look inside the course!\nکورس کی ایک جھلک دیکھیں۔\n\n👇Choose your class:\nاپنی کلاس منتخب کریں۔`;
     let summerIntroVideo = await waConstantsRepository.getByKey("SUMMER_INTRO_VIDEO");
-    await sendButtonMessage(userMobileNumber, chooseClassMessage, [{ id: 'kids_summer_camp_class_1_or_2', title: 'Class 1 or 2' }, { id: 'kids_summer_camp_class_5_or_6', title: 'Class 3 to 6' }, { id: 'skip_trial', title: 'Skip Trial' }], 0, null, summerIntroVideo.dataValues.constantValue, "WA_Constants", summerIntroVideo.dataValues.id, null, summerIntroVideo.dataValues.constantMediaId, "constantMediaId");
-    await createActivityLog(userMobileNumber, "template", "outbound", chooseClassMessage, null);
+    if (summerIntroVideo) {
+        await sendButtonMessage(userMobileNumber, chooseClassMessage, [{ id: 'kids_summer_camp_class_1_or_2', title: 'Class 1 or 2' }, { id: 'kids_summer_camp_class_5_or_6', title: 'Class 3 to 6' }, { id: 'skip_trial', title: 'Skip Trial' }], 0, null, summerIntroVideo.dataValues.constantValue, "WA_Constants", summerIntroVideo.dataValues.id, null, summerIntroVideo.dataValues.constantMediaId, "constantMediaId");
+        await createActivityLog(userMobileNumber, "template", "outbound", chooseClassMessage, null);
+    }
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["class 1 or 2", "class 3 to 6", "skip trial"]);
 };
 
@@ -177,10 +187,12 @@ const endTrialTeachers = async (profileId, userMobileNumber) => {
     let endTrialMessage = "You have chosen to end your free trial. Next Steps:";
     const freeTrialCompleteImage = await waConstantsRepository.getByKey("FREE_TRIAL_COMPLETE_IMAGE");
     const user = await waUsersMetadataRepository.getByProfileId(profileId);
-    if (user.dataValues.userRegistrationComplete) {
-        await sendButtonMessage(userMobileNumber, endTrialMessage, [{ id: 'get_another_trial', title: 'Get Another Trial' }], 0, freeTrialCompleteImage.dataValues.constantValue, null, "WA_Constants", freeTrialCompleteImage.dataValues.id, freeTrialCompleteImage.dataValues.constantMediaId, null, "constantMediaId");
-    } else {
-        await sendButtonMessage(userMobileNumber, endTrialMessage, [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'register', title: 'Register' }], 0, freeTrialCompleteImage.dataValues.constantValue, null, "WA_Constants", freeTrialCompleteImage.dataValues.id, freeTrialCompleteImage.dataValues.constantMediaId, null, "constantMediaId");
+    if (freeTrialCompleteImage) {
+        if (user.dataValues.userRegistrationComplete) {
+            await sendButtonMessage(userMobileNumber, endTrialMessage, [{ id: 'get_another_trial', title: 'Get Another Trial' }], 0, freeTrialCompleteImage.dataValues.constantValue, null, "WA_Constants", freeTrialCompleteImage.dataValues.id, freeTrialCompleteImage.dataValues.constantMediaId, null, "constantMediaId");
+        } else {
+            await sendButtonMessage(userMobileNumber, endTrialMessage, [{ id: 'get_another_trial', title: 'Get Another Trial' }, { id: 'register', title: 'Register' }], 0, freeTrialCompleteImage.dataValues.constantValue, null, "WA_Constants", freeTrialCompleteImage.dataValues.id, freeTrialCompleteImage.dataValues.constantMediaId, null, "constantMediaId");
+        }
     }
     await createActivityLog(userMobileNumber, "template", "outbound", endTrialMessage, null);
     if (user.dataValues.userRegistrationComplete) {
@@ -253,8 +265,10 @@ const getUserProfile = async (profileId, userMobileNumber) => {
 const schoolAdminConfirmation = async (profileId, userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "School Admin Confirmation");
     const schoolAdminConfirmationAudio = await waConstantsRepository.getByKey("SCHOOL_ADMIN_CONFIRMATION_AUDIO");
-    await sendMediaMessage(userMobileNumber, schoolAdminConfirmationAudio.dataValues.constantValue, "audio", null, 0, "WA_Constants", schoolAdminConfirmationAudio.dataValues.id, schoolAdminConfirmationAudio.dataValues.constantMediaId, "constantMediaId");
-    await sleep(2000);
+    if (schoolAdminConfirmationAudio) {
+        await sendMediaMessage(userMobileNumber, schoolAdminConfirmationAudio.dataValues.constantValue, "audio", null, 0, "WA_Constants", schoolAdminConfirmationAudio.dataValues.id, schoolAdminConfirmationAudio.dataValues.constantMediaId, "constantMediaId");
+        await sleep(2000);
+    }
     let selectOptionMessage = "👆Listen to the audio instructions and select an option:\n\n:آڈیو ہدایات سنیں اور ایک آپشن منتخب کریں";
     await sendButtonMessage(userMobileNumber, selectOptionMessage, [{ id: 'school_admin', title: 'School Admin' }, { id: 'parent_or_student', title: 'Parent or Student' }, { id: 'start_again', title: 'Start Again' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", selectOptionMessage, null);
@@ -266,12 +280,12 @@ const thankyouMessageSchoolOwner = async (profileId, userMobileNumber, messageCo
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Thankyou Message - School Owner");
     await waUserProgressRepository.update(profileId, userMobileNumber, null, null, null, null, null, null, null, null, ["go to start", "chat with beaj rep"]);
     const schoolRegistrationImage = await waConstantsRepository.getByKey("SCHOOL_REGISTRATION_IMAGE");
-    let thankyouMessage = "📳 A Beaj team member will call you within 24 hours to discuss a partnership with your school!\nWe look forward to speaking with you soon!\nاگلے 24 گھنٹے میں بیج ٹیم کا نمائندہ آپ سے اسکول پارٹنرشپ کے لئے رابطہ کرے گا۔ ہم آپ سے بات کرنے کے منتظر ہیں! \n\nIn the meantime, if you have any questions, please click on 'Chat with Beaj Rep' to talk to our team.\nاس دوران اگر آپ کے کوئ سوال ہیں، تو ‘Chat with Beaj Rep’ پر کلک کیجیئے اور ہم سے رابطہ کریں۔";
-    await sendButtonMessage(userMobileNumber, thankyouMessage, [{ id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }, { id: 'go_to_start', title: 'Go to Start' }], 0, schoolRegistrationImage.dataValues.constantValue, null, "WA_Constants", schoolRegistrationImage.dataValues.id, schoolRegistrationImage.dataValues.constantMediaId, null, "constantMediaId");
-    await createActivityLog(userMobileNumber, "image", "outbound", schoolRegistrationImage.dataValues.constantValue, null);
-    await waUsersMetadataRepository.update(profileId, userMobileNumber, {
-        userRegistrationComplete: new Date()
-    });
+    if (schoolRegistrationImage) {
+        let thankyouMessage = "📳 A Beaj team member will call you within 24 hours to discuss a partnership with your school!\nWe look forward to speaking with you soon!\nاگلے 24 گھنٹے میں بیج ٹیم کا نمائندہ آپ سے اسکول پارٹنرشپ کے لئے رابطہ کرے گا۔ ہم آپ سے بات کرنے کے منتظر ہیں! \n\nIn the meantime, if you have any questions, please click on 'Chat with Beaj Rep' to talk to our team.\nاس دوران اگر آپ کے کوئ سوال ہیں، تو ‘Chat with Beaj Rep’ پر کلک کیجیئے اور ہم سے رابطہ کریں۔";
+        await sendButtonMessage(userMobileNumber, thankyouMessage, [{ id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }, { id: 'go_to_start', title: 'Go to Start' }], 0, schoolRegistrationImage.dataValues.constantValue, null, "WA_Constants", schoolRegistrationImage.dataValues.id, schoolRegistrationImage.dataValues.constantMediaId, null, "constantMediaId");
+        await createActivityLog(userMobileNumber, "image", "outbound", schoolRegistrationImage.dataValues.constantValue, null);
+    }
+    await waUsersMetadataRepository.update(profileId, userMobileNumber, { userRegistrationComplete: new Date() });
 };
 
 
@@ -295,11 +309,15 @@ const parentOrStudentSelection = async (profileId, userMobileNumber) => {
     } else {
         flyer = combined_flyer;
     }
-    await sendMediaMessage(userMobileNumber, flyer.dataValues.constantValue, "image", null, 0, "WA_Constants", flyer.dataValues.id, flyer.dataValues.constantMediaId, "constantMediaId");
-    await sleep(1000);
+    if (flyer) {
+        await sendMediaMessage(userMobileNumber, flyer.dataValues.constantValue, "image", null, 0, "WA_Constants", flyer.dataValues.id, flyer.dataValues.constantMediaId, "constantMediaId");
+        await sleep(1000);
+    }
     const introAudio = await waConstantsRepository.getByKey("REGISTRATION_INTRO_AUDIO");
-    await sendMediaMessage(userMobileNumber, introAudio.dataValues.constantValue, "audio", null, 0, "WA_Constants", introAudio.dataValues.id, introAudio.dataValues.constantMediaId, "constantMediaId");
-    await sleep(2000);
+    if (introAudio) {
+        await sendMediaMessage(userMobileNumber, introAudio.dataValues.constantValue, "audio", null, 0, "WA_Constants", introAudio.dataValues.id, introAudio.dataValues.constantMediaId, "constantMediaId");
+        await sleep(2000);
+    }
     let selectOptionMessage = "👆Listen to the audio instructions and select an option:\n\nآڈیو میں دی گئی ہدایت سنیں اور ایک آپشن پہ کلک کریں:";
     await sendButtonMessage(userMobileNumber, selectOptionMessage, [{ id: 'register_on_whatsapp', title: 'Register on Whatsapp' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }, { id: 'start_again', title: 'Start Again' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", selectOptionMessage, null);
@@ -310,12 +328,12 @@ const thankyouMessageParent = async (profileId, userMobileNumber) => {
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Thankyou Message - Parent");
     await waUserProgressRepository.update(profileId, userMobileNumber, null, null, null, null, null, null, null, null, ["get another trial"]);
     const parentThankyouImage = await waConstantsRepository.getByKey("PARENT_REGISTRATION");
-    let thankyouMessage = `📳 Thank You!\n\nA Beaj Rep will call you within the next 24 hours to confirm your registration.\nWe are excited to speak to you soon!\nشکریہ!\n\nبیج ٹیم کا نمائندہ آپ سے 24 گھنٹوں کے اندر رابطہ کر کے آپ کی رجسٹریشن مکمل کرے گا.\nہم آپ سے بات کرنے کے منتظر ہی`;
-    await sendButtonMessage(userMobileNumber, thankyouMessage, [{ id: 'get_another_trial', title: 'Get Another Trial' }], 0, parentThankyouImage.dataValues.constantValue, null, "WA_Constants", parentThankyouImage.dataValues.id, parentThankyouImage.dataValues.constantMediaId, null, "constantMediaId");
-    await createActivityLog(userMobileNumber, "image", "outbound", parentThankyouImage.dataValues.constantValue, null);
-    await waUsersMetadataRepository.update(profileId, userMobileNumber, {
-        userRegistrationComplete: new Date()
-    });
+    if (parentThankyouImage) {
+        let thankyouMessage = `📳 Thank You!\n\nA Beaj Rep will call you within the next 24 hours to confirm your registration.\nWe are excited to speak to you soon!\nشکریہ!\n\nبیج ٹیم کا نمائندہ آپ سے 24 گھنٹوں کے اندر رابطہ کر کے آپ کی رجسٹریشن مکمل کرے گا.\nہم آپ سے بات کرنے کے منتظر ہی`;
+        await sendButtonMessage(userMobileNumber, thankyouMessage, [{ id: 'get_another_trial', title: 'Get Another Trial' }], 0, parentThankyouImage.dataValues.constantValue, null, "WA_Constants", parentThankyouImage.dataValues.id, parentThankyouImage.dataValues.constantMediaId, null, "constantMediaId");
+        await createActivityLog(userMobileNumber, "image", "outbound", parentThankyouImage.dataValues.constantValue, null);
+    }
+    await waUsersMetadataRepository.update(profileId, userMobileNumber, { userRegistrationComplete: new Date() });
 };
 
 const talkToBeajRep = async (profileId, userMobileNumber) => {
@@ -334,8 +352,10 @@ const talkToBeajRep = async (profileId, userMobileNumber) => {
 // Multi user registration
 const studentNameInput = async (profileId, userMobileNumber) => {
     const typeNameAudio = await waConstantsRepository.getByKey("TYPE_NAME_AUDIO");
-    await sendMediaMessage(userMobileNumber, typeNameAudio.dataValues.constantValue, "audio", null, 0, "WA_Constants", typeNameAudio.dataValues.id, typeNameAudio.dataValues.constantMediaId, "constantMediaId");
-    await sleep(2000);
+    if (typeNameAudio) {
+        await sendMediaMessage(userMobileNumber, typeNameAudio.dataValues.constantValue, "audio", null, 0, "WA_Constants", typeNameAudio.dataValues.id, typeNameAudio.dataValues.constantMediaId, "constantMediaId");
+        await sleep(2000);
+    }
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Student Name Input");
     const studentNameInputMessage = "Please type student's *Full Name*\n\nسٹوڈنٹ کا پورا نام لکھیں۔";
     await sendMessage(userMobileNumber, studentNameInputMessage);
@@ -354,8 +374,10 @@ const studentNameConfirmation = async (profileId, userMobileNumber, messageConte
 
 const studentGenericClassInput = async (profileId, userMobileNumber) => {
     const genericClassAudio = await waConstantsRepository.getByKey("CHOOSE_CLASS_AUDIO");
-    await sendMediaMessage(userMobileNumber, genericClassAudio.dataValues.constantValue, "audio", null, 0, "WA_Constants", genericClassAudio.dataValues.id, genericClassAudio.dataValues.constantMediaId, "constantMediaId");
-    await sleep(2000);
+    if (genericClassAudio) {
+        await sendMediaMessage(userMobileNumber, genericClassAudio.dataValues.constantValue, "audio", null, 0, "WA_Constants", genericClassAudio.dataValues.id, genericClassAudio.dataValues.constantMediaId, "constantMediaId");
+        await sleep(2000);
+    }
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Student Generic Class Input");
     const studentClassInputMessage = "Please select student's *class level*:\n\nسٹوڈنٹ کی *کلاس* منتخب کریں۔";
     await sendButtonMessage(userMobileNumber, studentClassInputMessage, [{ id: 'class_1_or_2_or_3', title: 'Class 1, 2 or 3' }, { id: 'class_4_or_5_or_6', title: 'Class 4, 5 or 6' }, { id: 'class_7_and_above', title: 'Class 7 and above' }]);
@@ -399,11 +421,11 @@ const studentSpecificClassConfirmation = async (profileId, userMobileNumber, mes
 
 const singleStudentRegistationComplate = async (profileId, userMobileNumber) => {
     const registerAnotherStudentAudio = await waConstantsRepository.getByKey("REGISTER_ANOTHER_AUDIO");
-    await sendMediaMessage(userMobileNumber, registerAnotherStudentAudio.dataValues.constantValue, "audio", null, 0, "WA_Constants", registerAnotherStudentAudio.dataValues.id, registerAnotherStudentAudio.dataValues.constantMediaId, "constantMediaId");
-    await sleep(2000);
-    await waUsersMetadataRepository.update(profileId, userMobileNumber, {
-        userRegistrationComplete: new Date()
-    });
+    if (registerAnotherStudentAudio) {
+        await sendMediaMessage(userMobileNumber, registerAnotherStudentAudio.dataValues.constantValue, "audio", null, 0, "WA_Constants", registerAnotherStudentAudio.dataValues.id, registerAnotherStudentAudio.dataValues.constantMediaId, "constantMediaId");
+        await sleep(2000);
+    }
+    await waUsersMetadataRepository.update(profileId, userMobileNumber, { userRegistrationComplete: new Date() });
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Single Student Registration Complete");
     const user = await waUsersMetadataRepository.getByProfileId(profileId);
     const name = user.dataValues.name;
@@ -441,8 +463,10 @@ const getTotalRegistrationsSummaryForUnpaidUsers = async (userMobileNumber) => {
 
 const paymentDetails = async (profileId, userMobileNumber) => {
     const invoiceAudio = await waConstantsRepository.getByKey("INVOICE_AUDIO");
-    await sendMediaMessage(userMobileNumber, invoiceAudio.dataValues.constantValue, "audio", null, 0, "WA_Constants", invoiceAudio.dataValues.id, invoiceAudio.dataValues.constantMediaId, "constantMediaId");
-    await sleep(2000);
+    if (invoiceAudio) {
+        await sendMediaMessage(userMobileNumber, invoiceAudio.dataValues.constantValue, "audio", null, 0, "WA_Constants", invoiceAudio.dataValues.id, invoiceAudio.dataValues.constantMediaId, "constantMediaId");
+        await sleep(2000);
+    }
     const registrationsSummary = await getTotalRegistrationsSummaryForUnpaidUsers(userMobileNumber);
     const totalRegistrations = registrationsSummary.count;
     let perCoursePrice = await waUserActivityLogsRepository.getStudentCoursePriceByFirstMessage(userMobileNumber);
@@ -504,14 +528,16 @@ const paymentComplete = async (profileId, userMobileNumber, paymentProof) => {
         });
     }
     const parentThankyouImage = await waConstantsRepository.getByKey("PARENT_REGISTRATION");
-    let thankYouMessage =
-        "📳 Thank You! A member from the Beaj Team will call you to confirm your payment and add you to your Summer Camp class!" +
-        "\n\nIf you have any additional questions, please click on Chat with Beaj Rep to talk to us." +
-        "\n\nشکریہ! بیج ٹیم کا ایک رکن آپ کو آپ کی ادائیگی کی تصدیق کے لئے کال کرے گا اور آپ کو آپ کی سمر کیمپ کلاس میں شامل کرے گا۔" +
-        "\n\nاگر آپ کے پاس کوئی اضافی سوالات ہیں، تو 'بیج ریپ کے ساتھ چیٹ کریں' پر کلک کریں۔";
-    await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Payment Complete");
-    await sendButtonMessage(userMobileNumber, thankYouMessage, [{ id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }, { id: 'go_to_start', title: 'Go to Start' }], 0, parentThankyouImage.dataValues.constantValue, null, "WA_Constants", parentThankyouImage.dataValues.id, parentThankyouImage.dataValues.constantMediaId, null, "constantMediaId");
-    await createActivityLog(userMobileNumber, "template", "outbound", thankYouMessage, null);
+    if (parentThankyouImage) {
+        let thankYouMessage =
+            "📳 Thank You! A member from the Beaj Team will call you to confirm your payment and add you to your Summer Camp class!" +
+            "\n\nIf you have any additional questions, please click on Chat with Beaj Rep to talk to us." +
+            "\n\nشکریہ! بیج ٹیم کا ایک رکن آپ کو آپ کی ادائیگی کی تصدیق کے لئے کال کرے گا اور آپ کو آپ کی سمر کیمپ کلاس میں شامل کرے گا۔" +
+            "\n\nاگر آپ کے پاس کوئی اضافی سوالات ہیں، تو 'بیج ریپ کے ساتھ چیٹ کریں' پر کلک کریں۔";
+        await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Payment Complete");
+        await sendButtonMessage(userMobileNumber, thankYouMessage, [{ id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }, { id: 'go_to_start', title: 'Go to Start' }], 0, parentThankyouImage.dataValues.constantValue, null, "WA_Constants", parentThankyouImage.dataValues.id, parentThankyouImage.dataValues.constantMediaId, null, "constantMediaId");
+        await createActivityLog(userMobileNumber, "template", "outbound", thankYouMessage, null);
+    }
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["chat with beaj rep", "go to start"]);
 };
 
@@ -560,8 +586,10 @@ const cancelRegistration = async (profileId, userMobileNumber) => {
 
 const confirmCancelRegistration = async (profileId, userMobileNumber, engagementType) => {
     const cancelRegistrationConfirmationAudio = await waConstantsRepository.getByKey("CANCEL_REGISTRATION_CONFIRMATION_AUDIO");
-    await sendMediaMessage(userMobileNumber, cancelRegistrationConfirmationAudio.dataValues.constantValue, "audio", null, 0, "WA_Constants", cancelRegistrationConfirmationAudio.dataValues.id, cancelRegistrationConfirmationAudio.dataValues.constantMediaId, "constantMediaId");
-    await sleep(2000);
+    if (cancelRegistrationConfirmationAudio) {
+        await sendMediaMessage(userMobileNumber, cancelRegistrationConfirmationAudio.dataValues.constantValue, "audio", null, 0, "WA_Constants", cancelRegistrationConfirmationAudio.dataValues.id, cancelRegistrationConfirmationAudio.dataValues.constantMediaId, "constantMediaId");
+        await sleep(2000);
+    }
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Cancel Registration Confirmation - " + engagementType);
     const confirmCancelRegistrationMessage = "Are you sure you want to cancel this registration?\n\nکیا آپ اس رجسٹریشن کو ختم کرنا چاہتے ہیں؟";
     await sendButtonMessage(userMobileNumber, confirmCancelRegistrationMessage, [{ id: 'yes', title: 'Yes' }, { id: 'no', title: 'No' }]);

@@ -354,31 +354,44 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
     }
 };
 
-const assessmentPuzzleImages = async (userMobileNumber, activityAlias) => {
+const assessmentPuzzleImages = async (userMobileNumber, activityAlias, courseName) => {
+    const level = getLevelFromCourseName(courseName);
     if (activityAlias == "💪 *Game 1: English Champions Activity A*") {
-        const puzzle2 = await waConstantsRepository.getByKey("PUZZLE2");
-        let captionText = "Woooh! Congratulations on unlocking 1/4th of the puzzle! 🧩";
-        await sendMediaMessage(userMobileNumber, puzzle2.dataValues.constantValue, 'image', captionText, 0, "WA_Constants", puzzle2.dataValues.id, puzzle2.dataValues.constantMediaId, "constantMediaId");
-        await createActivityLog(userMobileNumber, "image", "outbound", puzzle2.dataValues.constantValue, null, captionText);
-        await sleep(2000);
+        const finalKey = "LEVEL" + level + "PUZZLE2";
+        const puzzle2 = await waConstantsRepository.getByKey(finalKey);
+        if (puzzle2) {
+            let captionText = "Woooh! Congratulations on unlocking 1/4th of the puzzle! 🧩";
+            await sendMediaMessage(userMobileNumber, puzzle2.dataValues.constantValue, 'image', captionText, 0, "WA_Constants", puzzle2.dataValues.id, puzzle2.dataValues.constantMediaId, "constantMediaId");
+            await createActivityLog(userMobileNumber, "image", "outbound", puzzle2.dataValues.constantValue, null, captionText);
+            await sleep(2000);
+        }
     } else if (activityAlias == "🗣 *Game 1: English Champions Activity B*") {
-        const puzzle3 = await waConstantsRepository.getByKey("PUZZLE3");
-        let captionText = "Woooh! Congratulations on unlocking 2/4th of the puzzle! 🧩";
-        await sendMediaMessage(userMobileNumber, puzzle3.dataValues.constantValue, 'image', captionText, 0, "WA_Constants", puzzle3.dataValues.id, puzzle3.dataValues.constantMediaId, "constantMediaId");
-        await createActivityLog(userMobileNumber, "image", "outbound", puzzle3.dataValues.constantValue, null, captionText);
-        await sleep(2000);
+        const finalKey = "LEVEL" + level + "PUZZLE3";
+        const puzzle3 = await waConstantsRepository.getByKey(finalKey);
+        if (puzzle3) {
+            let captionText = "Woooh! Congratulations on unlocking 2/4th of the puzzle! 🧩";
+            await sendMediaMessage(userMobileNumber, puzzle3.dataValues.constantValue, 'image', captionText, 0, "WA_Constants", puzzle3.dataValues.id, puzzle3.dataValues.constantMediaId, "constantMediaId");
+            await createActivityLog(userMobileNumber, "image", "outbound", puzzle3.dataValues.constantValue, null, captionText);
+            await sleep(2000);
+        }
     } else if (activityAlias == "🧮 *Game 2: Number Ninjas Activity*") {
-        const puzzle4 = await waConstantsRepository.getByKey("PUZZLE4");
-        let captionText = "Woooh! Congratulations on unlocking 3/4th of the puzzle! 🧩";
-        await sendMediaMessage(userMobileNumber, puzzle4.dataValues.constantValue, 'image', captionText, 0, "WA_Constants", puzzle4.dataValues.id, puzzle4.dataValues.constantMediaId, "constantMediaId");
-        await createActivityLog(userMobileNumber, "image", "outbound", puzzle4.dataValues.constantValue, null, captionText);
-        await sleep(2000);
+        const finalKey = "LEVEL" + level + "PUZZLE4";
+        const puzzle4 = await waConstantsRepository.getByKey(finalKey);
+        if (puzzle4) {
+            let captionText = "Woooh! Congratulations on unlocking 3/4th of the puzzle! 🧩";
+            await sendMediaMessage(userMobileNumber, puzzle4.dataValues.constantValue, 'image', captionText, 0, "WA_Constants", puzzle4.dataValues.id, puzzle4.dataValues.constantMediaId, "constantMediaId");
+            await createActivityLog(userMobileNumber, "image", "outbound", puzzle4.dataValues.constantValue, null, captionText);
+            await sleep(2000);
+        }
     } else if (activityAlias == "💡 *Game 3: Super YOU! Activity*") {
-        const puzzle5 = await waConstantsRepository.getByKey("PUZZLE5");
-        let captionText = "Woooh! Congratulations! You did it! You unlocked the camp! 🧩";
-        await sendMediaMessage(userMobileNumber, puzzle5.dataValues.constantValue, 'image', captionText, 0, "WA_Constants", puzzle5.dataValues.id, puzzle5.dataValues.constantMediaId, "constantMediaId");
-        await createActivityLog(userMobileNumber, "image", "outbound", puzzle5.dataValues.constantValue, null, captionText);
-        await sleep(2000);
+        const finalKey = "LEVEL" + level + "PUZZLE5";
+        const puzzle5 = await waConstantsRepository.getByKey(finalKey);
+        if (puzzle5) {
+            let captionText = "Woooh! Congratulations! You did it! You unlocked the camp! 🧩";
+            await sendMediaMessage(userMobileNumber, puzzle5.dataValues.constantValue, 'image', captionText, 0, "WA_Constants", puzzle5.dataValues.id, puzzle5.dataValues.constantMediaId, "constantMediaId");
+            await createActivityLog(userMobileNumber, "image", "outbound", puzzle5.dataValues.constantValue, null, captionText);
+            await sleep(2000);
+        }
     }
 }
 
@@ -386,7 +399,7 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
     const activityAlias = startingLesson.dataValues.activityAlias;
     const lessonLast = await lessonRepository.isLastLessonOfDay(startingLesson.dataValues.LessonId);
     const courseName = await courseRepository.getCourseNameById(currentUserState.currentCourseId);
-    await assessmentPuzzleImages(userMobileNumber, activityAlias);
+    await assessmentPuzzleImages(userMobileNumber, activityAlias, courseName);
     const daysPerWeek = await getDaysPerWeek(profileId);
     // Lesson Ending Message
     if (lessonLast) {
@@ -407,6 +420,13 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
             await sendMediaMessage(userMobileNumber, imageUrl, 'image', captionText);
             await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
             await sleep(2000);
+            if (startingLesson.dataValues.dayNumber == daysPerWeek) {
+                let key = "LEVEL" + level + "WEEK" + startingLesson.dataValues.weekNumber;
+                const weekEndImage = await waConstantsRepository.getByKey(key);
+                await sendMediaMessage(userMobileNumber, weekEndImage.dataValues.constantValue, 'image', null, 0, "WA_Constants", weekEndImage.dataValues.id, weekEndImage.dataValues.constantMediaId, "constantMediaId");
+                await createActivityLog(userMobileNumber, "image", "outbound", weekEndImage.dataValues.constantValue, null);
+                await sleep(2000);
+            }
             if (dayNumber == 20) {
                 const winImageUrl = "https://beajbloblive.blob.core.windows.net/beajdocuments/win_image_level" + level + ".jpg";
                 await sendMediaMessage(userMobileNumber, winImageUrl, 'image', null);

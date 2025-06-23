@@ -37,6 +37,12 @@ const getLevelFromCourseName = (courseName) => {
         return 1;
     } else if (courseName.includes("Grade 3") || courseName.includes("Grade 4")) {
         return 2;
+    } else if (courseName.includes("Level 1")) {
+        return 1;
+    } else if (courseName.includes("Level 2")) {
+        return 2;
+    } else if (courseName.includes("Level 3")) {
+        return 3;
     } else {
         return 3;
     }
