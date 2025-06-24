@@ -977,6 +977,8 @@ const webhookService = async (body, res) => {
                     "+923704558660",
                     "+923012232148",
                     "+923331432681",
+                    "+923196609478",
+                    "+923151076203",
                 ];
 
                 // User switching a profile
