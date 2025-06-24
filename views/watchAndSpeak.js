@@ -354,7 +354,10 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                 // Generate pronunciation assessment message
                 let imageUrl = null;
                 const courseName = await courseRepository.getCourseNameById(currentUserState.dataValues.currentCourseId);
-                const level = getLevelFromCourseName(courseName);
+                let level = getLevelFromCourseName(courseName);
+                if (level == 4) {
+                    level = 3;
+                }
                 if (!currentWatchAndSpeakQuestion?.dataValues?.answer?.[0]) {
                     imageUrl = await createAndUploadKidsScoreImage(pronunciationAssessment, 80, level);
                 } else {

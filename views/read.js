@@ -304,7 +304,10 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
                 const userTranscription = extractTranscript(pronunciationAssessment);
 
                 const courseName = await courseRepository.getCourseNameById(currentUserState.dataValues.currentCourseId);
-                const level = getLevelFromCourseName(courseName);
+                let level = getLevelFromCourseName(courseName);
+                if (level == 4) {
+                    level = 3;
+                }
                 const imageUrl = await createAndUploadKidsScoreImage(pronunciationAssessment, 80, level);
 
                 if (imageUrl) {

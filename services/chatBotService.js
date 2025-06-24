@@ -222,7 +222,22 @@ const webhookService = async (body, res) => {
                         profileChunk.forEach((profile, chunkIndex) => {
                             const globalIndex = i + chunkIndex;
                             const matchingUser = userMetadata.find(user => user.dataValues.profile_id === profile.dataValues.profile_id);
-                            profileMessage += `${String.fromCharCode(65 + globalIndex)}) ${matchingUser.dataValues.name} - ${matchingUser.dataValues.classLevel}\n`;
+                            let classLevel = matchingUser.dataValues.classLevel;
+                            if (classLevel == "Grade 7") {
+                                classLevel = "Youth Camp";
+                            } else if (
+                                classLevel == "grade 1" ||
+                                classLevel == "grade 2" ||
+                                classLevel == "grade 3" ||
+                                classLevel == "grade 4" ||
+                                classLevel == "grade 5" ||
+                                classLevel == "grade 6"
+                            ) {
+                                classLevel = classLevel.charAt(0).toUpperCase() + classLevel.slice(1);
+                            } else {
+                                classLevel = "Youth Camp";
+                            }
+                            profileMessage += `${String.fromCharCode(65 + globalIndex)}) ${matchingUser.dataValues.name} - ${classLevel}\n`;
                         });
 
                         // Create buttons for this chunk
@@ -943,7 +958,22 @@ const webhookService = async (body, res) => {
                         profileChunk.forEach((profile, chunkIndex) => {
                             const globalIndex = i + chunkIndex;
                             const matchingUser = userMetadata.find(user => user.dataValues.profile_id === profile.dataValues.profile_id);
-                            profileMessage += `${String.fromCharCode(65 + globalIndex)}) ${matchingUser.dataValues.name} - ${matchingUser.dataValues.classLevel}\n`;
+                            let classLevel = matchingUser.dataValues.classLevel;
+                            if (classLevel == "Grade 7") {
+                                classLevel = "Youth Camp";
+                            } else if (
+                                classLevel == "grade 1" ||
+                                classLevel == "grade 2" ||
+                                classLevel == "grade 3" ||
+                                classLevel == "grade 4" ||
+                                classLevel == "grade 5" ||
+                                classLevel == "grade 6"
+                            ) {
+                                classLevel = classLevel.charAt(0).toUpperCase() + classLevel.slice(1);
+                            } else {
+                                classLevel = "Youth Camp";
+                            }
+                            profileMessage += `${String.fromCharCode(65 + globalIndex)}) ${matchingUser.dataValues.name} - ${classLevel}\n`;
                         });
 
                         // Create buttons for this chunk
@@ -979,6 +1009,7 @@ const webhookService = async (body, res) => {
                     "+923331432681",
                     "+923196609478",
                     "+923151076203",
+                    "+923222731870",
                 ];
 
                 // User switching a profile
