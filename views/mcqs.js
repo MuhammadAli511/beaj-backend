@@ -58,32 +58,53 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                 const mcqType = firstMCQsQuestion.dataValues.QuestionType;
 
                 if (mcqType == 'Text') {
-                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })));
+                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `q${firstMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })));
                     await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
                 }
                 else if (mcqType == 'Text+Image') {
-                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, mcqImage, null, "MultipleChoiceQuestion", firstMCQsQuestion.dataValues.Id, firstMCQsQuestion.dataValues.QuestionImageMediaId, null, "QuestionImageMediaId");
+                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `q${firstMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, mcqImage, null, "MultipleChoiceQuestion", firstMCQsQuestion.dataValues.Id, firstMCQsQuestion.dataValues.QuestionImageMediaId, null, "QuestionImageMediaId");
                     await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
                 }
                 else if (mcqType == 'Text+Video') {
-                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, null, mcqVideo, "MultipleChoiceQuestion", firstMCQsQuestion.dataValues.Id, null, firstMCQsQuestion.dataValues.QuestionVideoMediaId, "QuestionVideoMediaId");
+                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `q${firstMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, null, mcqVideo, "MultipleChoiceQuestion", firstMCQsQuestion.dataValues.Id, null, firstMCQsQuestion.dataValues.QuestionVideoMediaId, "QuestionVideoMediaId");
                     await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
                 }
                 else if (mcqType == 'Image') {
-                    await sendButtonMessage(userMobileNumber, "", mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, mcqImage, null, "MultipleChoiceQuestion", firstMCQsQuestion.dataValues.Id, firstMCQsQuestion.dataValues.QuestionImageMediaId, null, "QuestionImageMediaId");
+                    await sendButtonMessage(userMobileNumber, "", mcqAnswers.map((answer, index) => ({ id: `q${firstMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, mcqImage, null, "MultipleChoiceQuestion", firstMCQsQuestion.dataValues.Id, firstMCQsQuestion.dataValues.QuestionImageMediaId, null, "QuestionImageMediaId");
                     await createActivityLog(userMobileNumber, "template", "outbound", "", null);
                 }
 
-                // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["option a", "option b", "option c"]);
+                // Update acceptable messages list for the user (include both button IDs and text options)
+                const buttonIds = mcqAnswers.map((answer, index) => `q${firstMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index).toLowerCase()}`);
+                const textOptions = mcqAnswers.map((answer, index) => `option ${String.fromCharCode(65 + index).toLowerCase()}`);
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, [...buttonIds, ...textOptions]);
             }
             else {
+                // Parse question ID from button response
+                let questionIdFromButton = null;
+                let userOption = messageContent.toLowerCase();
+
+                // Check if this is a button click with question ID (format: q123_a)
+                if (messageContent.includes('_') && messageContent.startsWith('q')) {
+                    const parts = messageContent.split('_');
+                    if (parts.length >= 2) {
+                        questionIdFromButton = parseInt(parts[0].substring(1)); // Remove 'q' prefix
+                        userOption = parts[1]; // Get the option part (a, b, c)
+                    }
+                }
+
                 // Get current MCQ question
                 const currentMCQsQuestion = await multipleChoiceQuestionRepository.getCurrentMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
+                // **KEY CHECK** - If button was for a different question, ignore it
+                if (questionIdFromButton && questionIdFromButton !== currentMCQsQuestion.dataValues.Id) {
+                    console.log(`Ignoring late click for question ${questionIdFromButton}, user is now on question ${currentMCQsQuestion.dataValues.Id}`);
+                    return;
+                }
+
                 // Upper and Lower case answers
-                const originalAnswer = messageContent;
-                const userAnswer = messageContent.toLowerCase();
+                const originalAnswer = userOption;
+                const userAnswer = userOption.toLowerCase();
 
                 // Get all answers against the question
                 const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(currentMCQsQuestion.dataValues.Id);
@@ -195,24 +216,26 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                     const mcqType = nextMCQsQuestion.dataValues.QuestionType;
 
                     if (mcqType == 'Text') {
-                        await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })));
+                        await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `q${nextMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })));
                         await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
                     }
                     else if (mcqType == 'Text+Image') {
-                        await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, mcqImage, null, "MultipleChoiceQuestion", nextMCQsQuestion.dataValues.Id, nextMCQsQuestion.dataValues.QuestionImageMediaId, null, "QuestionImageMediaId");
+                        await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `q${nextMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, mcqImage, null, "MultipleChoiceQuestion", nextMCQsQuestion.dataValues.Id, nextMCQsQuestion.dataValues.QuestionImageMediaId, null, "QuestionImageMediaId");
                         await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
                     }
                     else if (mcqType == 'Text+Video') {
-                        await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, null, mcqVideo, "MultipleChoiceQuestion", nextMCQsQuestion.dataValues.Id, null, nextMCQsQuestion.dataValues.QuestionVideoMediaId, "QuestionVideoMediaId");
+                        await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `q${nextMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, null, mcqVideo, "MultipleChoiceQuestion", nextMCQsQuestion.dataValues.Id, null, nextMCQsQuestion.dataValues.QuestionVideoMediaId, "QuestionVideoMediaId");
                         await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
                     }
                     else if (mcqType == 'Image') {
-                        await sendButtonMessage(userMobileNumber, "", mcqAnswers.map((answer, index) => ({ id: `option_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, mcqImage, null, "MultipleChoiceQuestion", nextMCQsQuestion.dataValues.Id, nextMCQsQuestion.dataValues.QuestionImageMediaId, null, "QuestionImageMediaId");
+                        await sendButtonMessage(userMobileNumber, "", mcqAnswers.map((answer, index) => ({ id: `q${nextMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })), 0, mcqImage, null, "MultipleChoiceQuestion", nextMCQsQuestion.dataValues.Id, nextMCQsQuestion.dataValues.QuestionImageMediaId, null, "QuestionImageMediaId");
                         await createActivityLog(userMobileNumber, "template", "outbound", "", null);
                     }
 
-                    // Update acceptable messages list for the user
-                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["option a", "option b", "option c"]);
+                    // Update acceptable messages list for the user (include both button IDs and text options)
+                    const buttonIds = mcqAnswers.map((answer, index) => `q${nextMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index).toLowerCase()}`);
+                    const textOptions = mcqAnswers.map((answer, index) => `option ${String.fromCharCode(65 + index).toLowerCase()}`);
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, [...buttonIds, ...textOptions]);
                 } else {
                     // Calculate total score and send message
                     const totalScore = await waQuestionResponsesRepository.getTotalScore(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
@@ -305,32 +328,53 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                 const mcqVideo = firstMCQsQuestion.dataValues.QuestionVideoUrl;
 
                 if (mcqType == 'Text') {
-                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })));
+                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `q${firstMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })));
                     await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
                 }
                 else if (mcqType == 'Text+Image') {
-                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })), 0, mcqImage, null, "MultipleChoiceQuestion", firstMCQsQuestion.dataValues.Id, firstMCQsQuestion.dataValues.QuestionImageMediaId, null, "QuestionImageMediaId");
+                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `q${firstMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })), 0, mcqImage, null, "MultipleChoiceQuestion", firstMCQsQuestion.dataValues.Id, firstMCQsQuestion.dataValues.QuestionImageMediaId, null, "QuestionImageMediaId");
                     await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
                 }
                 else if (mcqType == 'Text+Video') {
-                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })), 0, null, mcqVideo, "MultipleChoiceQuestion", firstMCQsQuestion.dataValues.Id, null, firstMCQsQuestion.dataValues.QuestionVideoMediaId, "QuestionVideoMediaId");
+                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `q${firstMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })), 0, null, mcqVideo, "MultipleChoiceQuestion", firstMCQsQuestion.dataValues.Id, null, firstMCQsQuestion.dataValues.QuestionVideoMediaId, "QuestionVideoMediaId");
                     await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
                 }
                 else if (mcqType == 'Image') {
-                    await sendButtonMessage(userMobileNumber, "", mcqAnswers.map((answer, index) => ({ id: `${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })), 0, mcqImage, null, "MultipleChoiceQuestion", firstMCQsQuestion.dataValues.Id, firstMCQsQuestion.dataValues.QuestionImageMediaId, null, "QuestionImageMediaId");
+                    await sendButtonMessage(userMobileNumber, "", mcqAnswers.map((answer, index) => ({ id: `q${firstMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })), 0, mcqImage, null, "MultipleChoiceQuestion", firstMCQsQuestion.dataValues.Id, firstMCQsQuestion.dataValues.QuestionImageMediaId, null, "QuestionImageMediaId");
                     await createActivityLog(userMobileNumber, "template", "outbound", "", null);
                 }
 
-                // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["a", "b", "c"]);
+                // Update acceptable messages list for the user (include both button IDs and text options)
+                const buttonIds = mcqAnswers.map((answer, index) => `q${firstMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index).toLowerCase()}`);
+                const textOptions = mcqAnswers.map((answer, index) => String.fromCharCode(65 + index).toLowerCase());
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, [...buttonIds, ...textOptions]);
             }
             else {
+                // Parse question ID from button response
+                let questionIdFromButton = null;
+                let userOption = messageContent.toLowerCase();
+
+                // Check if this is a button click with question ID (format: q123_a)
+                if (messageContent.includes('_') && messageContent.startsWith('q')) {
+                    const parts = messageContent.split('_');
+                    if (parts.length >= 2) {
+                        questionIdFromButton = parseInt(parts[0].substring(1)); // Remove 'q' prefix
+                        userOption = parts[1]; // Get the option part (a, b, c)
+                    }
+                }
+
                 // Get current MCQ question
                 const currentMCQsQuestion = await multipleChoiceQuestionRepository.getCurrentMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
+                // **KEY CHECK** - If button was for a different question, ignore it
+                if (questionIdFromButton && questionIdFromButton !== currentMCQsQuestion.dataValues.Id) {
+                    console.log(`Ignoring late click for question ${questionIdFromButton}, user is now on question ${currentMCQsQuestion.dataValues.Id}`);
+                    return;
+                }
+
                 // Upper and Lower case answers
-                const originalAnswer = messageContent;
-                const userAnswer = messageContent.toLowerCase();
+                const originalAnswer = userOption;
+                const userAnswer = userOption.toLowerCase();
 
                 // Get all answers against the question
                 const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(currentMCQsQuestion.dataValues.Id);
@@ -482,24 +526,26 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                     const mcqVideo = nextMCQsQuestion.dataValues.QuestionVideoUrl;
 
                     if (mcqType == 'Text') {
-                        await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })));
+                        await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `q${nextMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })));
                         await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
                     }
                     else if (mcqType == 'Text+Image') {
-                        await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })), 0, mcqImage, null, "MultipleChoiceQuestion", nextMCQsQuestion.dataValues.Id, nextMCQsQuestion.dataValues.QuestionImageMediaId, null, "QuestionImageMediaId");
+                        await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `q${nextMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })), 0, mcqImage, null, "MultipleChoiceQuestion", nextMCQsQuestion.dataValues.Id, nextMCQsQuestion.dataValues.QuestionImageMediaId, null, "QuestionImageMediaId");
                         await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
                     }
                     else if (mcqType == 'Text+Video') {
-                        await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })), 0, null, mcqVideo, "MultipleChoiceQuestion", nextMCQsQuestion.dataValues.Id, null, nextMCQsQuestion.dataValues.QuestionVideoMediaId, "QuestionVideoMediaId");
+                        await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `q${nextMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })), 0, null, mcqVideo, "MultipleChoiceQuestion", nextMCQsQuestion.dataValues.Id, null, nextMCQsQuestion.dataValues.QuestionVideoMediaId, "QuestionVideoMediaId");
                         await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
                     }
                     else if (mcqType == 'Image') {
-                        await sendButtonMessage(userMobileNumber, "", mcqAnswers.map((answer, index) => ({ id: `${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })), 0, mcqImage, null, "MultipleChoiceQuestion", nextMCQsQuestion.dataValues.Id, nextMCQsQuestion.dataValues.QuestionImageMediaId, null, "QuestionImageMediaId");
+                        await sendButtonMessage(userMobileNumber, "", mcqAnswers.map((answer, index) => ({ id: `q${nextMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })), 0, mcqImage, null, "MultipleChoiceQuestion", nextMCQsQuestion.dataValues.Id, nextMCQsQuestion.dataValues.QuestionImageMediaId, null, "QuestionImageMediaId");
                         await createActivityLog(userMobileNumber, "template", "outbound", "", null);
                     }
 
-                    // Update acceptable messages list for the user
-                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["a", "b", "c"]);
+                    // Update acceptable messages list for the user (include both button IDs and text options)
+                    const buttonIds = mcqAnswers.map((answer, index) => `q${nextMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index).toLowerCase()}`);
+                    const textOptions = mcqAnswers.map((answer, index) => String.fromCharCode(65 + index).toLowerCase());
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, [...buttonIds, ...textOptions]);
                 } else {
                     // Calculate total score and send message
                     const totalScore = await waQuestionResponsesRepository.getTotalScore(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
