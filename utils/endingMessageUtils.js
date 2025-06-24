@@ -393,13 +393,36 @@ const assessmentPuzzleImages = async (userMobileNumber, activityAlias, courseNam
             await sleep(2000);
         }
     }
+
+    // LEVEL4
+    if (activityAlias == "*You Can Speak!*") {
+        const finalKey = "LEVEL" + level + "PUZZLE2";
+        const puzzle2 = await waConstantsRepository.getByKey(finalKey);
+        if (puzzle2) {
+            let captionText = "Woooh! Congratulations on unlocking 1/4th of the puzzle! 🧩";
+            await sendMediaMessage(userMobileNumber, puzzle2.dataValues.constantValue, 'image', captionText, 0, "WA_Constants", puzzle2.dataValues.id, puzzle2.dataValues.constantMediaId, "constantMediaId");
+            await createActivityLog(userMobileNumber, "image", "outbound", puzzle2.dataValues.constantValue, null, captionText);
+            await sleep(2000);
+        }
+    } else if (activityAlias == "💡 *Game 2: Super YOU! Activity*") {
+        const finalKey = "LEVEL" + level + "PUZZLE3";
+        const puzzle3 = await waConstantsRepository.getByKey(finalKey);
+        if (puzzle3) {
+            let captionText = "Woooh! Congratulations! You did it! You unlocked the camp! 🧩";
+            await sendMediaMessage(userMobileNumber, puzzle3.dataValues.constantValue, 'image', captionText, 0, "WA_Constants", puzzle3.dataValues.id, puzzle3.dataValues.constantMediaId, "constantMediaId");
+            await createActivityLog(userMobileNumber, "image", "outbound", puzzle3.dataValues.constantValue, null, captionText);
+            await sleep(2000);
+        }
+    }
 }
 
 const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, startingLesson, message = null) => {
     const activityAlias = startingLesson.dataValues.activityAlias;
     const lessonLast = await lessonRepository.isLastLessonOfDay(startingLesson.dataValues.LessonId);
     const courseName = await courseRepository.getCourseNameById(currentUserState.currentCourseId);
-    await assessmentPuzzleImages(userMobileNumber, activityAlias, courseName);
+    if (courseName.toLowerCase().includes("pre")) {
+        await assessmentPuzzleImages(userMobileNumber, activityAlias, courseName);
+    }
     const daysPerWeek = await getDaysPerWeek(profileId);
     // Lesson Ending Message
     if (lessonLast) {

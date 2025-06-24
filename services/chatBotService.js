@@ -222,16 +222,16 @@ const webhookService = async (body, res) => {
                         profileChunk.forEach((profile, chunkIndex) => {
                             const globalIndex = i + chunkIndex;
                             const matchingUser = userMetadata.find(user => user.dataValues.profile_id === profile.dataValues.profile_id);
-                            let classLevel = matchingUser.dataValues.classLevel;
-                            if (classLevel == "Grade 7") {
+                            let classLevel = matchingUser.dataValues.classLevel.toLowerCase();
+                            if (classLevel == "grade 7" || classLevel == "class 7") {
                                 classLevel = "Youth Camp";
                             } else if (
-                                classLevel == "grade 1" ||
-                                classLevel == "grade 2" ||
-                                classLevel == "grade 3" ||
-                                classLevel == "grade 4" ||
-                                classLevel == "grade 5" ||
-                                classLevel == "grade 6"
+                                classLevel == "grade 1" || classLevel == "class 1" ||
+                                classLevel == "grade 2" || classLevel == "class 2" ||
+                                classLevel == "grade 3" || classLevel == "class 3" ||
+                                classLevel == "grade 4" || classLevel == "class 4" ||
+                                classLevel == "grade 5" || classLevel == "class 5" ||
+                                classLevel == "grade 6" || classLevel == "class 6"
                             ) {
                                 classLevel = classLevel.charAt(0).toUpperCase() + classLevel.slice(1);
                             } else {
@@ -958,16 +958,16 @@ const webhookService = async (body, res) => {
                         profileChunk.forEach((profile, chunkIndex) => {
                             const globalIndex = i + chunkIndex;
                             const matchingUser = userMetadata.find(user => user.dataValues.profile_id === profile.dataValues.profile_id);
-                            let classLevel = matchingUser.dataValues.classLevel;
-                            if (classLevel == "Grade 7") {
+                            let classLevel = matchingUser.dataValues.classLevel.toLowerCase();
+                            if (classLevel == "grade 7" || classLevel == "class 7") {
                                 classLevel = "Youth Camp";
                             } else if (
-                                classLevel == "grade 1" ||
-                                classLevel == "grade 2" ||
-                                classLevel == "grade 3" ||
-                                classLevel == "grade 4" ||
-                                classLevel == "grade 5" ||
-                                classLevel == "grade 6"
+                                classLevel == "grade 1" || classLevel == "class 1" ||
+                                classLevel == "grade 2" || classLevel == "class 2" ||
+                                classLevel == "grade 3" || classLevel == "class 3" ||
+                                classLevel == "grade 4" || classLevel == "class 4" ||
+                                classLevel == "grade 5" || classLevel == "class 5" ||
+                                classLevel == "grade 6" || classLevel == "class 6"
                             ) {
                                 classLevel = classLevel.charAt(0).toUpperCase() + classLevel.slice(1);
                             } else {
@@ -1010,6 +1010,8 @@ const webhookService = async (body, res) => {
                     "+923196609478",
                     "+923151076203",
                     "+923222731870",
+                    "+923475363220",
+                    "+12028123335",
                 ];
 
                 // User switching a profile
