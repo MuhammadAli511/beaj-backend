@@ -1,6 +1,5 @@
 const stickerMapping = {
     "🗣️ *you can speak!*": "https://beajbloblive.blob.core.windows.net/beajdocuments/speaking_sticker.webp",
-
     "📕 *do you remember?*": "https://beajbloblive.blob.core.windows.net/beajdocuments/reading_sticker.webp",
     "🔡 *let's learn new words!*": "https://beajbloblive.blob.core.windows.net/beajdocuments/reading_sticker.webp",
     "🔡 *let's learn new words!*": "https://beajbloblive.blob.core.windows.net/beajdocuments/reading_sticker.webp",
@@ -34,7 +33,9 @@ const stickerMapping = {
     "💪 *game 1: english champions activity a*": null,
     "🗣 *game 1: english champions activity b*": null,
     "🧮 *game 2: number ninjas activity*": null,
-    "💡 *game 3: super you activity*": null
+    "💡 *game 3: super you activity*": null,
+    "*You Can Speak!*": null,
+    "💡 *Game 2: Super YOU! Activity*": null
 }
 
 
