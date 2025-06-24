@@ -240,7 +240,7 @@ const getProfileIds = async (phoneNumber) => {
 
 const getCombinedUserData = async () => {
     const query = `
-        SELECT DISTINCT ON (wum.profile_id, wum."phoneNumber") 
+        SELECT 
             wum."phoneNumber",
             wum.name,
             wum.profile_id,
@@ -255,7 +255,8 @@ const getCombinedUserData = async () => {
             GROUP BY profile_id, "phoneNumber"
         ) wual ON wum.profile_id = wual.profile_id AND wum."phoneNumber" = wual."phoneNumber"
         WHERE wum.name IS NOT NULL AND wum.name != ''
-        ORDER BY wum.profile_id, wum."phoneNumber", wum."userRegistrationComplete" ASC;
+        GROUP BY wum."phoneNumber", wum.name, wum.profile_id, wual.last_message_timestamp
+        ORDER BY wum."phoneNumber", wum."userRegistrationComplete" ASC;
     `;
 
     const [results] = await sequelize.query(query);
