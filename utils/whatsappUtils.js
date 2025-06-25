@@ -187,7 +187,7 @@ const sendMediaMessageWithId = async (to, mediaId, mediaType, captionText = null
 
         // Check if the error indicates an expired or invalid media ID
         const errorCode = errData?.error?.code;
-        const isExpiredMediaError = errorCode === 131053 || errorCode === 131026 || errorCode === 100;
+        const isExpiredMediaError = errorCode === 131053 || errorCode === 131026 || errorCode === 100 || errorCode === 200;
 
         if (isExpiredMediaError) {
             console.log(`Media ID appears to be expired or invalid (Error code: ${errorCode})`);
@@ -462,7 +462,7 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
             } catch (mediaIdError) {
                 const errData = mediaIdError.response ? mediaIdError.response.data : null;
                 const errorCode = errData?.error?.code;
-                const isExpiredMediaError = errorCode === 131053 || errorCode === 131026 || errorCode === 100;
+                const isExpiredMediaError = errorCode === 131053 || errorCode === 131026 || errorCode === 100 || errorCode === 200;
 
                 if (isExpiredMediaError) {
                     console.log(`Image Media ID appears to be expired or invalid (Error code: ${errorCode}), falling back to URL`);
@@ -500,7 +500,7 @@ const sendButtonMessage = async (to, bodyText, buttonOptions, retryAttempt = 0, 
             } catch (mediaIdError) {
                 const errData = mediaIdError.response ? mediaIdError.response.data : null;
                 const errorCode = errData?.error?.code;
-                const isExpiredMediaError = errorCode === 131053 || errorCode === 131026 || errorCode === 100;
+                const isExpiredMediaError = errorCode === 131053 || errorCode === 131026 || errorCode === 100 || errorCode === 200;
 
                 if (isExpiredMediaError) {
                     console.log(`Video Media ID appears to be expired or invalid (Error code: ${errorCode}), falling back to URL`);
