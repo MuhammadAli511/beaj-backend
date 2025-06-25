@@ -74,10 +74,8 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                     await createActivityLog(userMobileNumber, "template", "outbound", "", null);
                 }
 
-                // Update acceptable messages list for the user (include both button IDs and text options)
-                const buttonIds = mcqAnswers.map((answer, index) => `${firstMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index).toLowerCase()}`);
-                const textOptions = mcqAnswers.map((answer, index) => `option ${String.fromCharCode(65 + index).toLowerCase()}`);
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, [...buttonIds, ...textOptions]);
+                // Update acceptable messages list for the user
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["option a", "option b", "option c"]);
             }
             else {
                 // Parse question ID from button response
@@ -233,10 +231,8 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                         await createActivityLog(userMobileNumber, "template", "outbound", "", null);
                     }
 
-                    // Update acceptable messages list for the user (include both button IDs and text options)
-                    const buttonIds = mcqAnswers.map((answer, index) => `${nextMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index).toLowerCase()}`);
-                    const textOptions = mcqAnswers.map((answer, index) => `option ${String.fromCharCode(65 + index).toLowerCase()}`);
-                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, [...buttonIds, ...textOptions]);
+                    // Update acceptable messages list for the user
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["option a", "option b", "option c"]);
                 } else {
                     // Calculate total score and send message
                     const totalScore = await waQuestionResponsesRepository.getTotalScore(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
@@ -345,10 +341,8 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                     await createActivityLog(userMobileNumber, "template", "outbound", "", null);
                 }
 
-                // Update acceptable messages list for the user (include both button IDs and text options)
-                const buttonIds = mcqAnswers.map((answer, index) => `${firstMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index).toLowerCase()}`);
-                const textOptions = mcqAnswers.map((answer, index) => String.fromCharCode(65 + index).toLowerCase());
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, [...buttonIds, ...textOptions]);
+                // Update acceptable messages list for the user
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["a", "b", "c"]);
             }
             else {
                 // Parse question ID from button response
@@ -544,10 +538,8 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                         await createActivityLog(userMobileNumber, "template", "outbound", "", null);
                     }
 
-                    // Update acceptable messages list for the user (include both button IDs and text options)
-                    const buttonIds = mcqAnswers.map((answer, index) => `${nextMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index).toLowerCase()}`);
-                    const textOptions = mcqAnswers.map((answer, index) => String.fromCharCode(65 + index).toLowerCase());
-                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, [...buttonIds, ...textOptions]);
+                    // Update acceptable messages list for the user
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["a", "b", "c"]);
                 } else {
                     // Calculate total score and send message
                     const totalScore = await waQuestionResponsesRepository.getTotalScore(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);

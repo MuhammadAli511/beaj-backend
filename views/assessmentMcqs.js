@@ -8,7 +8,7 @@ import { convertNumberToEmoji } from "../utils/utils.js";
 import multipleChoiceQuestionRepository from "../repositories/multipleChoiceQuestionRepository.js";
 import multipleChoiceQuestionAnswerRepository from "../repositories/multipleChoiceQuestionAnswerRepository.js";
 
-const assessmentMcqsView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
+const assessmentMcqsView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null, buttonId = null) => {
     try {
         const activity = startingLesson.dataValues.activity;
         if (persona == 'teacher') {
