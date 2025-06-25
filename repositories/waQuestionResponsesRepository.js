@@ -4,23 +4,31 @@ import Sequelize from 'sequelize';
 import { question_bot_prompt } from "../utils/prompts.js";
 
 const create = async (profileId, phoneNumber, lessonId, questionId, activityType, alias, submittedAnswerText, submittedUserAudio, submittedFeedbackText, submittedFeedbackAudio, submittedFeedbackJson, correct, numberOfTries, submissionDate) => {
-    const response = new WA_QuestionResponses({
-        profile_id: profileId,
-        phoneNumber: phoneNumber,
-        lessonId: lessonId,
-        questionId: questionId,
-        activityType: activityType,
-        alias: alias,
-        submittedAnswerText: submittedAnswerText,
-        submittedUserAudio: submittedUserAudio,
-        submittedFeedbackText: submittedFeedbackText,
-        submittedFeedbackAudio: submittedFeedbackAudio,
-        submittedFeedbackJson: submittedFeedbackJson,
-        correct: correct,
-        numberOfTries: numberOfTries,
-        submissionDate: submissionDate
-    });
-    return await response.save();
+    try {
+        const response = new WA_QuestionResponses({
+            profile_id: profileId,
+            phoneNumber: phoneNumber,
+            lessonId: lessonId,
+            questionId: questionId,
+            activityType: activityType,
+            alias: alias,
+            submittedAnswerText: submittedAnswerText,
+            submittedUserAudio: submittedUserAudio,
+            submittedFeedbackText: submittedFeedbackText,
+            submittedFeedbackAudio: submittedFeedbackAudio,
+            submittedFeedbackJson: submittedFeedbackJson,
+            correct: correct,
+            numberOfTries: numberOfTries,
+            submissionDate: submissionDate
+        });
+        return await response.save();
+    } catch (error) {
+        if (error.name == 'SequelizeUniqueConstraintError') {
+            console.log(`Duplicate question response for profileId: ${profileId}, questionId: ${questionId} - ignoring`);
+            return null;
+        }
+        throw error;
+    }
 };
 
 const getAll = async () => {

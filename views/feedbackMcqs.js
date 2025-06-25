@@ -65,7 +65,7 @@ const feedbackMcqsView = async (profileId, userMobileNumber, currentUserState, s
 
                 // Save user response to the database
                 const submissionDate = new Date();
-                await waQuestionResponsesRepository.create(
+                const response = await waQuestionResponsesRepository.create(
                     profileId,
                     userMobileNumber,
                     currentUserState.dataValues.currentLessonId,
@@ -81,7 +81,9 @@ const feedbackMcqsView = async (profileId, userMobileNumber, currentUserState, s
                     1,
                     submissionDate
                 );
-
+                if (!response) {
+                    return;
+                }
 
                 // Get next MCQ question
                 const nextMCQsQuestion = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
@@ -170,7 +172,7 @@ const feedbackMcqsView = async (profileId, userMobileNumber, currentUserState, s
 
                 // Save user response to the database
                 const submissionDate = new Date();
-                await waQuestionResponsesRepository.create(
+                const response = await waQuestionResponsesRepository.create(
                     profileId,
                     userMobileNumber,
                     currentUserState.dataValues.currentLessonId,
@@ -186,7 +188,9 @@ const feedbackMcqsView = async (profileId, userMobileNumber, currentUserState, s
                     1,
                     submissionDate
                 );
-
+                if (!response) {
+                    return;
+                }
 
                 // Get next MCQ question
                 const nextMCQsQuestion = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);

@@ -353,7 +353,7 @@ const sendCourseLessonToTeacher = async (profileId, userMobileNumber, currentUse
             await feedbackMcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
         }
         else if (activity == 'assessmentMcqs') {
-            await assessmentMcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await assessmentMcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher', buttonId);
         }
         else if (activity == 'assessmentWatchAndSpeak') {
             await assessmentWatchAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
@@ -390,7 +390,7 @@ const sendCourseLessonToKid = async (profileId, userMobileNumber, currentUserSta
             await speakingPracticeView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
         }
         else if (activity == 'assessmentMcqs') {
-            await assessmentMcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
+            await assessmentMcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid', buttonId);
         }
         else if (activity == 'assessmentWatchAndSpeak') {
             await assessmentWatchAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');

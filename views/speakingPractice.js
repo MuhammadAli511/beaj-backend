@@ -27,16 +27,17 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                 if (lessonTextInstruction != null && lessonTextInstruction != "") {
                     finalTextInstruction = lessonTextInstruction.replace(/\\n/g, '\n');
                 }
-                const lessonAudioInstruction = startingLesson.dataValues.audioInstructionUrl;
-                if (lessonAudioInstruction != null && lessonAudioInstruction != "") {
-                    await sendMediaMessage(userMobileNumber, lessonAudioInstruction, 'audio', null, 0, "Lesson", startingLesson.dataValues.LessonId, startingLesson.dataValues.audioInstructionMediaId, "audioInstructionMediaId");
-                    await createActivityLog(userMobileNumber, "audio", "outbound", lessonAudioInstruction, null);
-                }
 
                 let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n');;
                 lessonMessage += "\n\n" + finalTextInstruction;
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+
+                const lessonAudioInstruction = startingLesson.dataValues.audioInstructionUrl;
+                if (lessonAudioInstruction != null && lessonAudioInstruction != "") {
+                    await sendMediaMessage(userMobileNumber, lessonAudioInstruction, 'audio', null, 0, "Lesson", startingLesson.dataValues.LessonId, startingLesson.dataValues.audioInstructionMediaId, "audioInstructionMediaId");
+                    await createActivityLog(userMobileNumber, "audio", "outbound", lessonAudioInstruction, null);
+                }
 
                 // Send first Speaking Practice question
                 const firstSpeakingPracticeQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null, currentUserState.dataValues.currentDifficultyLevel);
@@ -88,7 +89,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                     );
                 } else {
                     // Create new record if none exists
-                    await waQuestionResponsesRepository.create(
+                    const response = await waQuestionResponsesRepository.create(
                         profileId,
                         userMobileNumber,
                         currentUserState.dataValues.currentLessonId,
@@ -104,6 +105,9 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                         1,
                         submissionDate
                     );
+                    if (!response) {
+                        return;
+                    }
                 }
 
                 await sendButtonMessage(userMobileNumber, "Submit response? 🧐", [{ id: "yes", title: "Yes" }, { id: "no", title: "No, try again" }]);
@@ -230,16 +234,18 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                 if (lessonTextInstruction != null && lessonTextInstruction != "") {
                     finalTextInstruction = lessonTextInstruction.replace(/\\n/g, '\n');
                 }
-                const lessonAudioInstruction = startingLesson.dataValues.audioInstructionUrl;
-                if (lessonAudioInstruction != null && lessonAudioInstruction != "") {
-                    await sendMediaMessage(userMobileNumber, lessonAudioInstruction, 'audio', null, 0, "Lesson", startingLesson.dataValues.LessonId, startingLesson.dataValues.audioInstructionMediaId, "audioInstructionMediaId");
-                    await createActivityLog(userMobileNumber, "audio", "outbound", lessonAudioInstruction, null);
-                }
+
 
                 let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n');;
                 lessonMessage += "\n\n" + finalTextInstruction;
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+
+                const lessonAudioInstruction = startingLesson.dataValues.audioInstructionUrl;
+                if (lessonAudioInstruction != null && lessonAudioInstruction != "") {
+                    await sendMediaMessage(userMobileNumber, lessonAudioInstruction, 'audio', null, 0, "Lesson", startingLesson.dataValues.LessonId, startingLesson.dataValues.audioInstructionMediaId, "audioInstructionMediaId");
+                    await createActivityLog(userMobileNumber, "audio", "outbound", lessonAudioInstruction, null);
+                }
 
                 // Send first Speaking Practice question
                 const firstSpeakingPracticeQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null, currentUserState.dataValues.currentDifficultyLevel);
@@ -291,7 +297,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                     );
                 } else {
                     // Create new record if none exists
-                    await waQuestionResponsesRepository.create(
+                    const response = await waQuestionResponsesRepository.create(
                         profileId,
                         userMobileNumber,
                         currentUserState.dataValues.currentLessonId,
@@ -307,6 +313,9 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                         1,
                         submissionDate
                     );
+                    if (!response) {
+                        return;
+                    }
                 }
 
                 await sendButtonMessage(userMobileNumber, "Submit response? 🧐", [{ id: "yes", title: "Yes" }, { id: "no", title: "No, try again" }]);
@@ -330,7 +339,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                 // Extract user transcription
                 const userTranscription = await AIServices.azureOpenAISpeechToText(audioBuffer);
 
-                let disclaimerAndUserTranscriptionMessage = "Agar hamara chatbot aap ka naam ghalat likay, ya kuch alfaaz skip karay, tau we are sorry! Hum iss ko roz behtar kar rahay hain!";
+                let disclaimerAndUserTranscriptionMessage = "Agar hamara chatbot aap ka naam ghalat likhay, ya kuch alfaaz skip karay, tau we are sorry! Hum iss ko roz behtar kar rahay hain!";
                 disclaimerAndUserTranscriptionMessage += "\n\nYou said: " + userTranscription;
                 await sendMessage(userMobileNumber, disclaimerAndUserTranscriptionMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", disclaimerAndUserTranscriptionMessage, null);

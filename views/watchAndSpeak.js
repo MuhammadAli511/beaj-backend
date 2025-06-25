@@ -99,7 +99,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                     );
                 } else {
                     // Create new record if none exists
-                    await waQuestionResponsesRepository.create(
+                    const response = await waQuestionResponsesRepository.create(
                         profileId,
                         userMobileNumber,
                         currentUserState.dataValues.currentLessonId,
@@ -115,6 +115,9 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                         1,
                         submissionDate
                     );
+                    if (!response) {
+                        return;
+                    }
                 }
 
                 await sendButtonMessage(userMobileNumber, "Submit response? 🧐", [{ id: "yes", title: "Yes" }, { id: "no", title: "No, try again" }]);
@@ -306,7 +309,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                         submissionDate
                     );
                 } else {
-                    await waQuestionResponsesRepository.create(
+                    const response = await waQuestionResponsesRepository.create(
                         profileId,
                         userMobileNumber,
                         currentUserState.dataValues.currentLessonId,
@@ -322,6 +325,9 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                         1,
                         submissionDate
                     );
+                    if (!response) {
+                        return;
+                    }
                 }
 
                 await sendButtonMessage(userMobileNumber, "Submit response? 🧐", [{ id: "yes", title: "Yes" }, { id: "no", title: "No, try again" }]);

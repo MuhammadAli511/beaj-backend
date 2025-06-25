@@ -70,6 +70,13 @@ WA_QuestionResponses.init({
     modelName: 'WA_QuestionResponses',
     tableName: 'wa_question_responses',
     timestamps: false,
+    indexes: [
+        {
+            unique: true,
+            fields: ['profile_id', 'questionId'],
+            name: 'unique_profile_question_response'
+        }
+    ]
 });
 
 export default WA_QuestionResponses;

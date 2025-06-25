@@ -59,7 +59,7 @@ const watchAndImageView = async (profileId, userMobileNumber, currentUserState, 
                 const userImage = `${timestamp}-${uniqueID}-` + "imageFile.jpg";
                 const userImageFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userImage);
                 const submissionDate = new Date();
-                await waQuestionResponsesRepository.create(
+                const response = await waQuestionResponsesRepository.create(
                     profileId,
                     userMobileNumber,
                     currentUserState.dataValues.currentLessonId,
@@ -75,6 +75,9 @@ const watchAndImageView = async (profileId, userMobileNumber, currentUserState, 
                     1,
                     submissionDate
                 );
+                if (!response) {
+                    return;
+                }
 
                 const nextWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber, currentUserState.dataValues.currentDifficultyLevel);
                 if (nextWatchAndSpeakQuestion) {
@@ -139,7 +142,7 @@ const watchAndImageView = async (profileId, userMobileNumber, currentUserState, 
                 const userImage = `${timestamp}-${uniqueID}-` + "imageFile.jpg";
                 const userImageFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userImage);
                 const submissionDate = new Date();
-                await waQuestionResponsesRepository.create(
+                const response = await waQuestionResponsesRepository.create(
                     profileId,
                     userMobileNumber,
                     currentUserState.dataValues.currentLessonId,
@@ -155,6 +158,9 @@ const watchAndImageView = async (profileId, userMobileNumber, currentUserState, 
                     1,
                     submissionDate
                 );
+                if (!response) {
+                    return;
+                }
 
                 const nextWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber, currentUserState.dataValues.currentDifficultyLevel);
                 if (nextWatchAndSpeakQuestion) {

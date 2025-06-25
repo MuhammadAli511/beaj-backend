@@ -96,7 +96,7 @@ const conversationalAgencyBotView = async (profileId, userMobileNumber, currentU
                     );
                 } else {
                     // Create new record if none exists
-                    await waQuestionResponsesRepository.create(
+                    const response = await waQuestionResponsesRepository.create(
                         profileId,
                         userMobileNumber,
                         currentUserState.dataValues.currentLessonId,
@@ -112,6 +112,9 @@ const conversationalAgencyBotView = async (profileId, userMobileNumber, currentU
                         1,
                         submissionDate
                     );
+                    if (!response) {
+                        return;
+                    }
                 }
 
                 await sendButtonMessage(userMobileNumber, "Submit response? 🧐", [{ id: "yes", title: "Yes" }, { id: "no", title: "No, try again" }]);
@@ -398,7 +401,7 @@ const conversationalAgencyBotView = async (profileId, userMobileNumber, currentU
                     );
                 } else {
                     // Create new record if none exists
-                    await waQuestionResponsesRepository.create(
+                    const response = await waQuestionResponsesRepository.create(
                         profileId,
                         userMobileNumber,
                         currentUserState.dataValues.currentLessonId,
@@ -414,6 +417,9 @@ const conversationalAgencyBotView = async (profileId, userMobileNumber, currentU
                         1,
                         submissionDate
                     );
+                    if (!response) {
+                        return;
+                    }
                 }
 
                 await sendButtonMessage(userMobileNumber, "Submit response? 🧐", [{ id: "yes", title: "Yes" }, { id: "no", title: "No, try again" }]);

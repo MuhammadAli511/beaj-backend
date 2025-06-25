@@ -124,7 +124,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
 
                 // Save user response to the database
                 const submissionDate = new Date();
-                await waQuestionResponsesRepository.create(
+                const response = await waQuestionResponsesRepository.create(
                     profileId,
                     userMobileNumber,
                     currentUserState.dataValues.currentLessonId,
@@ -140,6 +140,9 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                     1,
                     submissionDate
                 );
+                if (!response) {
+                    return;
+                }
 
                 // Check if custom feedback exists for the selected answer
                 if (selectedAnswerIndex !== -1) {
@@ -391,7 +394,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
 
                 // Save user response to the database
                 const submissionDate = new Date();
-                await waQuestionResponsesRepository.create(
+                const response = await waQuestionResponsesRepository.create(
                     profileId,
                     userMobileNumber,
                     currentUserState.dataValues.currentLessonId,
@@ -407,6 +410,9 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                     1,
                     submissionDate
                 );
+                if (!response) {
+                    return;
+                }
 
                 // Check if custom feedback exists for the selected answer
                 if (selectedAnswerIndex !== -1) {
