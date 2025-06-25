@@ -181,8 +181,8 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
         if ((messageType == "text" || messageType == "button" || messageType == "interactive") && messageContent.toLowerCase() == "next" && (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")) {
             return true;
         }
-        await sendButtonMessage(userMobileNumber, "Please select an option:", [{ id: "a", title: "Option A" }, { id: "b", title: "Option B" }, { id: "c", title: "Option C" }]);
-        await createActivityLog(userMobileNumber, "template", "outbound", "Please select an option: (Option A, Option B, Option C)", null);
+        await sendButtonMessage(userMobileNumber, "Please select an option:", [{ id: "a", title: "A" }, { id: "b", title: "B" }, { id: "c", title: "C" }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "Please select an option: (A, B, C)", null);
         return false;
     }
     // If list has "audio"
