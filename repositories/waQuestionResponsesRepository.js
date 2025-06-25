@@ -572,6 +572,17 @@ const getAudioUrlForProfileIdAndQuestionIdAndLessonId = async (profileId, questi
     }
 };
 
+const getByQuestionIdAndAnswer = async (questionId, profileId) => {
+    const response = await WA_QuestionResponses.findOne({
+        where: {
+            questionId: questionId,
+            profile_id: profileId
+        }
+    });
+
+    return response;
+};
+
 
 export default {
     create,
@@ -596,5 +607,6 @@ export default {
     getLatestBotResponse,
     getAllJsonFeedbacksForProfileIdAndLessonId,
     getAudioUrlForProfileIdAndQuestionIdAndLessonId,
-    getPreviousMessagesForAgencyBot
+    getPreviousMessagesForAgencyBot,
+    getByQuestionIdAndAnswer
 };

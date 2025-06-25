@@ -307,7 +307,7 @@ const levelCourseStart = async (profileId, userMobileNumber, startingLesson, cou
     }
 };
 
-const sendCourseLessonToTeacher = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent) => {
+const sendCourseLessonToTeacher = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, buttonId = null) => {
     try {
         const activity = startingLesson.dataValues.activity;
         if (activity == 'video') {
@@ -317,7 +317,7 @@ const sendCourseLessonToTeacher = async (profileId, userMobileNumber, currentUse
             await videoEndView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
         }
         else if (activity == 'mcqs') {
-            await mcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await mcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher', buttonId);
         }
         else if (activity == 'watchAndSpeak') {
             await watchAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
@@ -365,7 +365,7 @@ const sendCourseLessonToTeacher = async (profileId, userMobileNumber, currentUse
     }
 };
 
-const sendCourseLessonToKid = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent) => {
+const sendCourseLessonToKid = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, buttonId = null) => {
     try {
         const activity = startingLesson.dataValues.activity;
         if (activity == 'video') {
@@ -375,7 +375,7 @@ const sendCourseLessonToKid = async (profileId, userMobileNumber, currentUserSta
             await videoEndView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
         }
         else if (activity == 'mcqs') {
-            await mcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
+            await mcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid', buttonId);
         }
         else if (activity == 'watchAndSpeak') {
             await watchAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
