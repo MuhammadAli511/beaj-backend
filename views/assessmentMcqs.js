@@ -78,8 +78,27 @@ const assessmentMcqsView = async (profileId, userMobileNumber, currentUserState,
                 await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["option a", "option b", "option c"]);
             }
             else {
+                // Parse question ID from button response
+                let questionIdFromButton = buttonId;
+                let userOption = null;
+                if (buttonId) {
+                    userOption = buttonId.split('_')[1];
+                    questionIdFromButton = buttonId.split('_')[0];
+                }
                 // Get current MCQ question
                 const currentMCQsQuestion = await multipleChoiceQuestionRepository.getCurrentMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+
+                // **KEY CHECK** - If button was for a different question, ignore it
+                if (questionIdFromButton && questionIdFromButton != currentMCQsQuestion.dataValues.Id) {
+                    console.log(`Ignoring late click for question ${questionIdFromButton}, user is now on question ${currentMCQsQuestion.dataValues.Id}`);
+                    return;
+                }
+                // If button was for the same and record already exists, ignore it
+                const existingRecord = await waQuestionResponsesRepository.getByQuestionIdAndAnswer(currentMCQsQuestion.dataValues.Id, profileId);
+                if (existingRecord) {
+                    console.log(`Ignoring duplicate click for question ${currentMCQsQuestion.dataValues.Id}, user already answered`);
+                    return;
+                }
 
                 // Upper and Lower case answers
                 const originalAnswer = messageContent;
@@ -272,9 +291,27 @@ const assessmentMcqsView = async (profileId, userMobileNumber, currentUserState,
                 await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["a", "b", "c"]);
             }
             else {
+                // Parse question ID from button response
+                let questionIdFromButton = buttonId;
+                let userOption = null;
+                if (buttonId) {
+                    userOption = buttonId.split('_')[1];
+                    questionIdFromButton = buttonId.split('_')[0];
+                }
                 // Get current MCQ question
                 const currentMCQsQuestion = await multipleChoiceQuestionRepository.getCurrentMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
+                // **KEY CHECK** - If button was for a different question, ignore it
+                if (questionIdFromButton && questionIdFromButton != currentMCQsQuestion.dataValues.Id) {
+                    console.log(`Ignoring late click for question ${questionIdFromButton}, user is now on question ${currentMCQsQuestion.dataValues.Id}`);
+                    return;
+                }
+                // If button was for the same and record already exists, ignore it
+                const existingRecord = await waQuestionResponsesRepository.getByQuestionIdAndAnswer(currentMCQsQuestion.dataValues.Id, profileId);
+                if (existingRecord) {
+                    console.log(`Ignoring duplicate click for question ${currentMCQsQuestion.dataValues.Id}, user already answered`);
+                    return;
+                }
                 // Upper and Lower case answers
                 const originalAnswer = messageContent;
                 const userAnswer = messageContent.toLowerCase();

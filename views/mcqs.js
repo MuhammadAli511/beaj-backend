@@ -102,8 +102,8 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                 }
 
                 // Upper and Lower case answers
-                const originalAnswer = userOption;
-                const userAnswer = userOption.toLowerCase();
+                const originalAnswer = messageContent;
+                const userAnswer = messageContent.toLowerCase();
 
                 // Get all answers against the question
                 const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(currentMCQsQuestion.dataValues.Id);
@@ -369,8 +369,8 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                 }
 
                 // Upper and Lower case answers
-                const originalAnswer = userOption;
-                const userAnswer = userOption.toLowerCase();
+                const originalAnswer = messageContent;
+                const userAnswer = messageContent.toLowerCase();
 
                 // Get all answers against the question
                 const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(currentMCQsQuestion.dataValues.Id);
