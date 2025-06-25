@@ -141,6 +141,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                     let openaiFeedbackTranscript = null;
                     let openaiFeedbackAudio = null;
                     let initialFeedbackResponse = null;
+                    let hardcodedFeedbackAudio = null;
                     if (recordExists && recordExists[0]?.dataValues?.submittedAnswerText == null) {
                         const message = `Please wait for an answer. \n\nYou said: ${recognizedText}`;
                         await sendMessage(userMobileNumber, message);
@@ -186,7 +187,6 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         openaiFeedbackTranscript = await AIServices.openaiCustomFeedback(await wrapup_prompt(), userResponse);
                         initialFeedbackResponse = openaiFeedbackTranscript;
 
-                        let hardcodedFeedbackAudio = null;
                         if (openaiFeedbackTranscript.toLowerCase().includes("can be improved")) {
                             const betterAudio = await waConstantsRepository.getByKey("BETTER_AUDIO");
                             hardcodedFeedbackAudio = betterAudio.dataValues.constantValue;
@@ -367,6 +367,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                     let openaiFeedbackTranscript = null;
                     let openaiFeedbackAudio = null;
                     let initialFeedbackResponse = null;
+                    let hardcodedFeedbackAudio = null;
                     if (recordExists && recordExists[0]?.dataValues?.submittedAnswerText?.length == 0) {
                         const message = `Please wait for an answer. \n\nYou said: ${recognizedText}`;
                         await sendMessage(userMobileNumber, message);
@@ -412,7 +413,6 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         openaiFeedbackTranscript = await AIServices.openaiCustomFeedback(await wrapup_prompt(), userResponse);
                         initialFeedbackResponse = openaiFeedbackTranscript;
 
-                        let hardcodedFeedbackAudio = null;
                         if (openaiFeedbackTranscript.toLowerCase().includes("can be improved")) {
                             const betterAudio = await waConstantsRepository.getByKey("BETTER_AUDIO");
                             hardcodedFeedbackAudio = betterAudio;

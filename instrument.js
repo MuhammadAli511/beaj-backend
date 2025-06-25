@@ -1,7 +1,6 @@
-import * as Sentry from "@sentry/node"
+import * as Sentry from "@sentry/node";
 
 Sentry.init({
-    dsn: "https://473601ab15552de9667a7ae01de158b1@o4509260580257792.ingest.us.sentry.io/4509260583665664",
-    tracesSampleRate: 1.0,
+    dsn: "https://e348721bdec5ca74b4136fef91ef1924@o4509260481560576.ingest.us.sentry.io/4509260487000064",
     sendDefaultPii: true,
 });
