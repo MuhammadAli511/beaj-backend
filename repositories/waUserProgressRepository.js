@@ -141,7 +141,7 @@ const updateTestUserProgress = async (phoneNumber, data) => {
 
 const updateDifficultyLevel = async (profileId, phoneNumber, difficultyLevel) => {
     return await WA_UserProgress.update({
-        difficultyLevel: difficultyLevel
+        currentDifficultyLevel: difficultyLevel
     }, {
         where: {
             phoneNumber: phoneNumber,

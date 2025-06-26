@@ -8,7 +8,7 @@ import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRe
 import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
-import { sleep } from "../utils/utils.js";
+import { sleep, difficultyLevelCalculation } from "../utils/utils.js";
 
 
 const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
@@ -18,6 +18,12 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
             if (currentUserState.dataValues.questionNumber === null) {
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
+
+                // Difficulty Level Calculation
+                const difficultyLevelCalculationResult = await difficultyLevelCalculation(profileId, userMobileNumber, currentUserState, messageContent);
+                if (!difficultyLevelCalculationResult) {
+                    return;
+                }
 
                 let defaultTextInstruction = "Watch the video 👇🏽 and send your response as a voice message.";
                 const lessonTextInstruction = startingLesson.dataValues.textInstruction;
@@ -154,6 +160,12 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
+                // Difficulty Level Calculation
+                const difficultyLevelCalculationResult = await difficultyLevelCalculation(profileId, userMobileNumber, currentUserState, messageContent);
+                if (!difficultyLevelCalculationResult) {
+                    return;
+                }
+
                 let defaultTextInstruction = "Watch the video 👇🏽 and send your response as a voice message.";
                 const lessonTextInstruction = startingLesson.dataValues.textInstruction;
                 let finalTextInstruction = defaultTextInstruction;
@@ -171,6 +183,7 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                 lessonMessage += "\n\n" + finalTextInstruction;
                 await sendMessage(userMobileNumber, lessonMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+                currentUserState = await waUserProgressRepository.getByProfileId(profileId);
 
                 // Send first Watch and Speak question
                 const firstWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null, currentUserState.dataValues.currentDifficultyLevel);
@@ -187,8 +200,10 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                 // Lesson Text
                 let lessonText = startingLesson.dataValues.text;
                 lessonText = lessonText.replace(/\\n/g, '\n');
-                await sendMessage(userMobileNumber, lessonText);
-                await createActivityLog(userMobileNumber, "text", "outbound", lessonText, null);
+                if (lessonText != null && lessonText != "") {
+                    await sendMessage(userMobileNumber, lessonText);
+                    await createActivityLog(userMobileNumber, "text", "outbound", lessonText, null);
+                }
 
                 // Update acceptable messages list for the user
                 await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
