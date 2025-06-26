@@ -10,6 +10,8 @@ import cors from 'cors';
 import routes from './routes/index.js';
 import etlController from './controllers/etlController.js';
 import cron from "node-cron";
+import requestIdMiddleware from './middlewares/requestIdMiddleware.js';
+import errorHandler from './middlewares/errorHandler.js';
 
 
 const port = 8080;
@@ -22,6 +24,9 @@ app.use(bodyParser.urlencoded({ limit: '500mb', extended: false }));
 app.use(express.static(path.join(path.resolve(), './public')));
 app.use(express.json());
 
+// Add request ID middleware for better error tracking
+app.use(requestIdMiddleware);
+
 app.get('/', (req, res) => {
   res.send('Welcome to Beaj!');
 });
@@ -31,6 +36,9 @@ app.use('/api', routes)
 app.get("/debug-sentry", function mainHandler(req, res) {
   throw new Error("My first Sentry error!");
 });
+
+// Add our custom error handler before Sentry
+app.use(errorHandler);
 
 Sentry.setupExpressErrorHandler(app);
 
