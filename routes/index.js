@@ -20,6 +20,7 @@ import etlRoutes from './etlRoutes.js';
 import waFeedbackRoutes from './waFeedbackRoutes.js';
 import waQuestionResponsesRoutes from './waQuestionResponsesRoutes.js';
 import userProgressRoutes from './userProgressRoutes.js';
+import waActiveSessionRoutes from './waActiveSessionRoutes.js';
 
 const router = express.Router();
 
@@ -49,5 +50,6 @@ router.use('/waFeedback', waFeedbackRoutes);
 router.use('/waQuestionResponses', waQuestionResponsesRoutes);
 router.use('/etl_pipline', etlRoutes);
 router.use('/userProgress', userProgressRoutes);
+router.use('/waActiveSession', waActiveSessionRoutes);
 
 export default router;

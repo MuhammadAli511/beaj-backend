@@ -242,9 +242,7 @@ const getCombinedUserData = async () => {
     const query = `
         SELECT 
             wum."phoneNumber",
-            wum.name,
-            wum.profile_id,
-            wual.last_message_timestamp
+            MAX(wual.last_message_timestamp) as last_message_timestamp
         FROM wa_users_metadata wum
         LEFT JOIN (
             SELECT 
@@ -255,8 +253,8 @@ const getCombinedUserData = async () => {
             GROUP BY profile_id, "phoneNumber"
         ) wual ON wum.profile_id = wual.profile_id AND wum."phoneNumber" = wual."phoneNumber"
         WHERE wum.name IS NOT NULL AND wum.name != ''
-        GROUP BY wum."phoneNumber", wum.name, wum.profile_id, wual.last_message_timestamp
-        ORDER BY wum."phoneNumber", wum."userRegistrationComplete" ASC;
+        GROUP BY wum."phoneNumber"
+        ORDER BY wum."phoneNumber";
     `;
 
     const [results] = await sequelize.query(query);

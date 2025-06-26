@@ -1211,12 +1211,19 @@ const webhookService = async (body, res) => {
                             let totalLessons = 0;
                             let courseName = await courseRepository.getCourseNameById(currentUserState.dataValues.currentCourseId);
                             if (courseName.toLowerCase().includes("assessment")) {
-                                totalLessons = 3;
+                                if (courseName.toLowerCase().includes("level 4")) {
+                                    totalLessons = 2;
+                                } else {
+                                    totalLessons = 3;
+                                }
                             } else {
                                 totalLessons = await getTotalLessonsForCourse(profileId);
                             }
                             if (lessonNumberCheck >= totalLessons) {
-                                if (totalLessons == 3) {
+                                if (
+                                    (totalLessons == 3 && courseName.toLowerCase().includes("assessment")) ||
+                                    (totalLessons == 2 && courseName.toLowerCase().includes("assessment") && courseName.toLowerCase().includes("level 4"))
+                                ) {
                                     await sendButtonMessage(userMobileNumber, 'Click on Start Now! 👇', [{ id: 'start_now', title: 'Start Now!' }, { id: 'change_user', title: 'Change User' }]);
                                     await createActivityLog(userMobileNumber, "template", "outbound", "Click on Start Now! 👇", null);
                                     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start now!", "change user"]);
