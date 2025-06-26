@@ -8,8 +8,6 @@ dotenv.config();
 import sequelize from './config/sequelize.js';
 import cors from 'cors';
 import routes from './routes/index.js';
-import etlController from './controllers/etlController.js';
-import cron from "node-cron";
 
 
 const port = 8080;

@@ -371,6 +371,27 @@ const sendCourseLessonToKid = async (profileId, userMobileNumber, currentUserSta
         else if (activity == 'assessmentWatchAndSpeak') {
             await assessmentWatchAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
         }
+        else if (activity == 'watchAndAudio') {
+            await watchAndAudioView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
+        }
+        else if (activity == 'watchAndImage') {
+            await watchAndImageView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
+        }
+        else if (activity == 'conversationalQuestionsBot') {
+            await conversationalQuestionsBotView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
+        }
+        else if (activity == 'conversationalMonologueBot') {
+            await conversationalMonologueBotView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
+        }
+        else if (activity == 'conversationalAgencyBot') {
+            await conversationalAgencyBotView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
+        }
+        else if (activity == 'feedbackAudio') {
+            await feedbackAudioView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
+        }
+        else if (activity == 'feedbackMcqs') {
+            await feedbackMcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
+        }
     } catch (error) {
         console.log('Error sending lesson to user:', error);
         error.fileName = 'chatBotService.js';
