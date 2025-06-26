@@ -10,7 +10,7 @@ import waActiveSessionRepository from "../repositories/waActiveSessionRepository
 import waProfileRepository from "../repositories/waProfileRepository.js";
 import waUserActivityLogsRepository from "../repositories/waUserActivityLogsRepository.js";
 import AIServices from "../utils/AIServices.js";
-import { removeUser, removeUserTillCourse, startCourseForUser, levelCourseStart, sendCourseLessonToTeacher, sendCourseLessonToKid, resetCourseKid } from "../utils/chatbotUtils.js";
+import { removeUser, removeUserTillCourse, startCourseForUser, sendCourseLessonToTeacher, sendCourseLessonToKid, resetCourseKid } from "../utils/chatbotUtils.js";
 import {
     greetingMessage,
     greetingMessageLoop,
@@ -1094,7 +1094,14 @@ const webhookService = async (body, res) => {
                             }
                         }
                         const startingLesson = await lessonRepository.getNextLesson(currentUserState.dataValues.currentCourseId, 1, null, null);
-                        await levelCourseStart(profileId, userMobileNumber, startingLesson, currentUserState.dataValues.currentCourseId, currentUserState.dataValues.persona);
+                        await waUserProgressRepository.update(profileId, userMobileNumber, currentUserState.dataValues.currentCourseId, startingLesson.dataValues.weekNumber, startingLesson.dataValues.dayNumber, startingLesson.dataValues.LessonId, startingLesson.dataValues.SequenceNumber, startingLesson.dataValues.activity, null, null, null);
+
+                        if (currentUserState.dataValues.persona == "teacher") {
+                            const courseName = await courseRepository.getCourseNameById(currentUserState.dataValues.currentCourseId);
+                            const level = courseName.split("-")[0].trim();
+                            await sendMessage(userMobileNumber, "Great! Let's start " + level + "! 🤩");
+                            await createActivityLog(userMobileNumber, "text", "outbound", "Great! Let's start " + level + "! 🤩", null);
+                        }
                         // Send first lesson to user
                         currentUserState = await waUserProgressRepository.getByProfileId(profileId);
                         if (currentUserState.dataValues.persona == "kid" || currentUserState.dataValues.persona == "parent or student" || currentUserState.dataValues.persona == "school admin") {

@@ -283,30 +283,6 @@ const startCourseForUser = async (profileId, userMobileNumber, numbers_to_ignore
     return true;
 };
 
-const levelCourseStart = async (profileId, userMobileNumber, startingLesson, courseId, persona) => {
-    // Update user progress
-    await waUserProgressRepository.update(
-        profileId,
-        userMobileNumber,
-        courseId,
-        startingLesson.dataValues.weekNumber,
-        startingLesson.dataValues.dayNumber,
-        startingLesson.dataValues.LessonId,
-        startingLesson.dataValues.SequenceNumber,
-        startingLesson.dataValues.activity,
-        null,
-        null,
-        null
-    );
-
-    if (persona == "teacher") {
-        const courseName = await courseRepository.getCourseNameById(courseId);
-        const level = courseName.split("-")[0].trim();
-        await sendMessage(userMobileNumber, "Great! Let's start " + level + "! 🤩");
-        await createActivityLog(userMobileNumber, "text", "outbound", "Great! Let's start " + level + "! 🤩", null);
-    }
-};
-
 const sendCourseLessonToTeacher = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, buttonId = null) => {
     try {
         const activity = startingLesson.dataValues.activity;
@@ -406,7 +382,6 @@ export {
     removeUser,
     getNextCourse,
     startCourseForUser,
-    levelCourseStart,
     sendCourseLessonToTeacher,
     sendCourseLessonToKid,
     weekEndScoreCalculation,
