@@ -280,6 +280,12 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                     // Update question number
                     await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextWatchAndSpeakQuestion.dataValues.questionNumber);
 
+                    if (nextWatchAndSpeakQuestion.dataValues.questionNumber == 6) {
+                        let skipMessage = "Continue practising\n\nOR\n\nType *next* to skip this activity!";
+                        await sendMessage(userMobileNumber, skipMessage);
+                        await createActivityLog(userMobileNumber, "text", "outbound", skipMessage, null);
+                    }
+
                     // Send question media file
                     const mediaType = nextWatchAndSpeakQuestion.dataValues.mediaFile.endsWith('.mp4') ? 'video' : 'audio';
                     await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, mediaType, null, 0, "SpeakActivityQuestion", nextWatchAndSpeakQuestion.dataValues.id, nextWatchAndSpeakQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");

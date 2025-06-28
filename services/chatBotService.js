@@ -1200,9 +1200,10 @@ const webhookService = async (body, res) => {
                         let latestUserState = await waUserProgressRepository.getByProfileId(profileId);
                         let theStartingLesson = await lessonRepository.getByLessonId(currentUserState.dataValues.currentLessonId);
 
-                        if (messageContent.toLowerCase().includes("next") && latestUserState.dataValues.activityType == "feedbackAudio") {
+                        if (messageContent.toLowerCase().includes("next") && (latestUserState.dataValues.activityType == "feedbackAudio" || latestUserState.dataValues.activityType == "watchAndAudio")) {
                             await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
                             await endingMessage(profileId, userMobileNumber, currentUserState, theStartingLesson);
+                            return;
                         }
 
                         if (!nextLesson) {
@@ -1311,6 +1312,7 @@ const webhookService = async (body, res) => {
                                 captionText = "👍 Let's start Day " + dayNumber + "!";
                                 await sendMediaMessage(userMobileNumber, imageUrl, 'image', captionText);
                                 await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null, captionText);
+                                await sleep(2000);
                             }
                         }
 

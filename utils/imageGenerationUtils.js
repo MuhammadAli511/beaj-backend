@@ -612,6 +612,13 @@ const createAndUploadKidsScoreImage = async (pronunciationAssessment, threshold,
         let youSaidText = '';
         words.forEach((wordObj, index) => {
             if (wordObj && wordObj.PronunciationAssessment) {
+                if (!['Mispronunciation', 'Omission', 'None'].includes(wordObj.PronunciationAssessment.ErrorType)) {
+                    return;
+                }
+                const errorType = wordObj.PronunciationAssessment.ErrorType;
+                if (errorType == 'Omission') {
+                    return;
+                }
                 let word = wordObj.Word;
                 if (index === 0) {
                     word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
@@ -656,26 +663,30 @@ const createAndUploadKidsScoreImage = async (pronunciationAssessment, threshold,
 
         // Add mispronounced words text
         let mispronText = '';
-        mispronouncedWordsList.forEach((wordObj, index) => {
-            let word = wordObj.Word;
-            if (index === 0) {
-                word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-            } else {
-                word = word.toLowerCase();
-            }
-            mispronText += (index > 0 ? ', ' : '') + word;
-        });
+        if (mispronouncedWordsList.length > 0) {
+            mispronouncedWordsList.forEach((wordObj, index) => {
+                let word = wordObj.Word;
+                if (index === 0) {
+                    word = word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+                } else {
+                    word = word.toLowerCase();
+                }
+                mispronText += (index > 0 ? ', ' : '') + word;
+            });
+        }
 
         // Draw wrapped mispronounced words text
         ctx.font = '24px Arial';
         ctx.fillStyle = '#ff0000';
         ctx.textAlign = 'left';
-        const mispronLines = wrapText(mispronText || 'None', mispronRectWidth - 40);
-        const mispronStartY = mispronRectY + 35;
+        if (mispronText != '') {
+            const mispronLines = wrapText(mispronText, mispronRectWidth - 40);
+            const mispronStartY = mispronRectY + 35;
 
-        mispronLines.slice(0, 4).forEach((line, index) => {
-            ctx.fillText(line, mispronRectX + 20, mispronStartY + (index * lineHeight));
-        });
+            mispronLines.slice(0, 4).forEach((line, index) => {
+                ctx.fillText(line, mispronRectX + 20, mispronStartY + (index * lineHeight));
+            });
+        }
 
         // Convert the canvas to a buffer
         const buffer = canvas.toBuffer('image/jpeg');

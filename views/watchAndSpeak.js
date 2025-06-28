@@ -358,17 +358,13 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                 const userTranscription = extractTranscript(pronunciationAssessment);
 
                 // Generate pronunciation assessment message
-                let imageUrl = null;
                 const courseName = await courseRepository.getCourseNameById(currentUserState.dataValues.currentCourseId);
                 let level = getLevelFromCourseName(courseName);
                 if (level == 4) {
                     level = 3;
                 }
-                if (!currentWatchAndSpeakQuestion?.dataValues?.answer?.[0]) {
-                    imageUrl = await createAndUploadKidsScoreImage(pronunciationAssessment, 80, level);
-                } else {
-                    imageUrl = await createAndUploadKidsScoreImage(pronunciationAssessment, 80, level);
-                }
+
+                let imageUrl = await createAndUploadKidsScoreImage(pronunciationAssessment, 70, level);
 
                 if (imageUrl) {
                     // Media message

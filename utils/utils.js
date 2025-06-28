@@ -96,6 +96,7 @@ const convertNumberToEmoji = async (number) => {
 const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber, currentUserState, messageType, messageContent) => {
     const acceptableMessagesList = currentUserState.dataValues.acceptableMessages;
     const activityType = currentUserState.dataValues.activityType;
+    const persona = currentUserState.dataValues.persona;
     if (currentUserState.dataValues.engagement_type == "Choose User") {
         const profiles = await waProfileRepository.getAllSortOnProfileId(userMobileNumber);
         const userMetadata = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
@@ -151,6 +152,8 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
         } else if (messageType == "text" && messageContent.toLowerCase() == "next" && activityType === "feedbackAudio") {
             return true;
         } else if (messageType == "text" && messageContent.toLowerCase() == "next" && (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")) {
+            return true;
+        } else if (messageType == "text" && messageContent.toLowerCase() == "next" && activityType === "watchAndAudio" && persona == "kid") {
             return true;
         }
     }

@@ -80,9 +80,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
             else {
                 // Parse question ID from button response
                 let questionIdFromButton = buttonId;
-                let userOption = null;
                 if (buttonId) {
-                    userOption = buttonId.split('_')[1];
                     questionIdFromButton = buttonId.split('_')[0];
                 }
 
@@ -90,7 +88,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                 const currentMCQsQuestion = await multipleChoiceQuestionRepository.getCurrentMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
                 // **KEY CHECK** - If button was for a different question, ignore it
-                if (questionIdFromButton && questionIdFromButton != currentMCQsQuestion.dataValues.Id) {
+                if (questionIdFromButton && questionIdFromButton != currentMCQsQuestion.dataValues.Id && buttonId.includes("_")) {
                     console.log(`Ignoring late click for question ${questionIdFromButton}, user is now on question ${currentMCQsQuestion.dataValues.Id}`);
                     return;
                 }
@@ -350,17 +348,17 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
             else {
                 // Parse question ID from button response
                 let questionIdFromButton = buttonId;
-                let userOption = null;
+                console.log(buttonId);
                 if (buttonId) {
-                    userOption = buttonId.split('_')[1];
                     questionIdFromButton = buttonId.split('_')[0];
                 }
+                console.log(questionIdFromButton);
 
                 // Get current MCQ question
                 const currentMCQsQuestion = await multipleChoiceQuestionRepository.getCurrentMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
                 // **KEY CHECK** - If button was for a different question, ignore it
-                if (questionIdFromButton && questionIdFromButton != currentMCQsQuestion.dataValues.Id) {
+                if (questionIdFromButton && questionIdFromButton != currentMCQsQuestion.dataValues.Id && buttonId.includes("_")) {
                     console.log(`Ignoring late click for question ${questionIdFromButton}, user is now on question ${currentMCQsQuestion.dataValues.Id}`);
                     return;
                 }
