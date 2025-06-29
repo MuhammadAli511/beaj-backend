@@ -565,7 +565,7 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                         // Instructions
                         const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
                         let instructions = "👉 *Question " + await convertNumberToEmoji(nextListenAndSpeakQuestion.dataValues.questionNumber) + " of " + totalQuestions + "*\n\n";
-                        instructions += "\n\n*Record a voice message.*";
+                        instructions += "*Record a voice message.*";
                         if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                             instructions += "\nOR\n" + "or Type *next* to skip this activity!";
                         }

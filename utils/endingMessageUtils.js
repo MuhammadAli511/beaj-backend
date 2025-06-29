@@ -34,7 +34,7 @@ const sendingSticker = async (profileId, userMobileNumber, currentUserState, sta
         await sendMediaMessage(userMobileNumber, activityCompleteSticker, 'sticker');
         await createActivityLog(userMobileNumber, "sticker", "outbound", activityCompleteSticker, null);
     }
-    if (!lessonLast && currentUserState.dataValues.persona == "kid") {
+    if (currentUserState.dataValues.persona == "kid") {
         if ((startingLesson.dataValues.engagement_type === "Free Trial - Kids - Level 1" || startingLesson.dataValues.engagement_type === "Free Trial - Kids - Level 3") && startingLesson.dataValues.activityType !== 'videoEnd') {
             const challengeCompleteSticker = "https://beajbloblive.blob.core.windows.net/beajdocuments/challenge_complete_with_text.webp"
             await sendMediaMessage(userMobileNumber, challengeCompleteSticker, 'sticker');
@@ -444,7 +444,7 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
             let captionText = "Day " + dayNumber + " Complete! 🥳";
             await sendMediaMessage(userMobileNumber, imageUrl, 'image', captionText);
             await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
-            await sleep(2000);
+            await sleep(3000);
             if (startingLesson.dataValues.dayNumber == daysPerWeek) {
                 let key = "LEVEL" + level + "WEEK" + startingLesson.dataValues.weekNumber;
                 const weekEndImage = await waConstantsRepository.getByKey(key);
@@ -470,9 +470,9 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
     else {
         if (
             activityAlias == "📕 *Story Time!*" ||
-            activityAlias == "🧠 *Let's Grow!*" ||
-            activityAlias == "🧮 *Maths fun!*" ||
+            activityAlias == "🧮 *Maths Fun!*" ||
             activityAlias == "🧪 *Science Fun!*" ||
+            activityAlias == "🗣 *Grammar Fun!*" ||
             activityAlias == "🌍 *Let's Explore!*"
         ) {
             let message = "👇 Click on the button below to start questions!"

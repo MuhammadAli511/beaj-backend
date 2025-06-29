@@ -1,7 +1,10 @@
 const stickerMapping = {
     "🗣️ *you can speak!*": "https://beajbloblive.blob.core.windows.net/beajdocuments/speaking_sticker.webp",
+    "*lets watch* 🎦 *and speak* 🗣️": "https://beajbloblive.blob.core.windows.net/beajdocuments/speaking_sticker.webp",
     "📕 *do you remember?*": "https://beajbloblive.blob.core.windows.net/beajdocuments/reading_sticker.webp",
+    "*what did they say?*": "https://beajbloblive.blob.core.windows.net/beajdocuments/reading_sticker.webp",
     "🔡 *lets learn new words!*": "https://beajbloblive.blob.core.windows.net/beajdocuments/reading_sticker.webp",
+    "🔠 *lets learn new words!*": "https://beajbloblive.blob.core.windows.net/beajdocuments/reading_sticker.webp",
     "🗣 *lets practise speaking!*": "https://beajbloblive.blob.core.windows.net/beajdocuments/speaking_sticker.webp",
     "📖 *lets read!*": "https://beajbloblive.blob.core.windows.net/beajdocuments/reading_sticker.webp",
     "🧠 *lets think!*": "https://beajbloblive.blob.core.windows.net/beajdocuments/self_growth_sticker.webp",
