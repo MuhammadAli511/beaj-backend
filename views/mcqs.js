@@ -251,7 +251,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                         await sendMessage(userMobileNumber, message);
                         await createActivityLog(userMobileNumber, "text", "outbound", message, null);
                     } else if (scorePercentage >= 80) {
-                        message += "\n\nExcellent 🎉";
+                        message += "\n\nExcellent! 🎉";
                         // Text message
                         await sendMessage(userMobileNumber, message);
                         await createActivityLog(userMobileNumber, "text", "outbound", message, null);
@@ -348,11 +348,9 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
             else {
                 // Parse question ID from button response
                 let questionIdFromButton = buttonId;
-                console.log(buttonId);
                 if (buttonId) {
                     questionIdFromButton = buttonId.split('_')[0];
                 }
-                console.log(questionIdFromButton);
 
                 // Get current MCQ question
                 const currentMCQsQuestion = await multipleChoiceQuestionRepository.getCurrentMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
@@ -555,7 +553,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                     } else if (scorePercentage >= 61 && scorePercentage <= 79) {
                         message += "\n\nWell done! 🌟";
                     } else if (scorePercentage >= 80) {
-                        message += "\n\nExcellent 🎉";
+                        message += "\n\nExcellent! 🎉";
                     }
 
                     // if not free trial, send message

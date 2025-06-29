@@ -72,7 +72,7 @@ const weekEndImage = async (score, week) => {
         } else if (parseInt(score) <= 79) {
             remark = "Well done!";
         } else {
-            remark = "Excellent";
+            remark = "Excellent!";
         }
         ctx.fillText(remark, centerX, centerY + 300);
 

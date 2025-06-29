@@ -276,7 +276,7 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                             await sendMessage(userMobileNumber, message);
                             await createActivityLog(userMobileNumber, "text", "outbound", message, null);
                         } else if (scorePercentage >= 80) {
-                            message += "\n\nExcellent 🎉";
+                            message += "\n\nExcellent! 🎉";
                             // Text message
                             await sendMessage(userMobileNumber, message);
                             await createActivityLog(userMobileNumber, "text", "outbound", message, null);
@@ -565,10 +565,6 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                         // Instructions
                         const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
                         let instructions = "👉 *Question " + await convertNumberToEmoji(nextListenAndSpeakQuestion.dataValues.questionNumber) + " of " + totalQuestions + "*\n\n";
-                        if (nextListenAndSpeakQuestion.dataValues.question != null && nextListenAndSpeakQuestion.dataValues.question != "") {
-                            const questionText = nextListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
-                            instructions += questionText;
-                        }
                         instructions += "\n\n*Record a voice message.*";
                         if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                             instructions += "\nOR\n" + "or Type *next* to skip this activity!";
@@ -586,7 +582,7 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                         } else if (scorePercentage >= 61 && scorePercentage <= 79) {
                             message += "\n\nWell done! 🌟";
                         } else if (scorePercentage >= 80) {
-                            message += "\n\nExcellent 🎉";
+                            message += "\n\nExcellent! 🎉";
                         }
 
                         // Reset Question Number, Retry Counter, and Activity Type

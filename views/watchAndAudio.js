@@ -124,6 +124,14 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                 return;
             }
             else if (messageContent == 'yes') {
+                const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                const customFeedbackAudio = currentWatchAndSpeakQuestion.dataValues.customFeedbackAudio;
+                if (customFeedbackAudio) {
+                    await sendMediaMessage(userMobileNumber, customFeedbackAudio, 'audio', null, 0, "SpeakActivityQuestion", currentWatchAndSpeakQuestion.dataValues.id, currentWatchAndSpeakQuestion.dataValues.customFeedbackAudioMediaId, "customFeedbackAudioMediaId");
+                    await createActivityLog(userMobileNumber, "audio", "outbound", customFeedbackAudio, null);
+                    await sleep(2000);
+                }
+
                 const nextWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber, currentUserState.dataValues.currentDifficultyLevel);
                 if (nextWatchAndSpeakQuestion) {
                     // Update question number
@@ -278,6 +286,14 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                 return;
             }
             else if (messageContent == 'yes') {
+                const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                const customFeedbackAudio = currentWatchAndSpeakQuestion.dataValues.customFeedbackAudio;
+                if (customFeedbackAudio) {
+                    await sendMediaMessage(userMobileNumber, customFeedbackAudio, 'audio', null, 0, "SpeakActivityQuestion", currentWatchAndSpeakQuestion.dataValues.id, currentWatchAndSpeakQuestion.dataValues.customFeedbackAudioMediaId, "customFeedbackAudioMediaId");
+                    await createActivityLog(userMobileNumber, "audio", "outbound", customFeedbackAudio, null);
+                    await sleep(2000);
+                }
+
                 const nextWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber, currentUserState.dataValues.currentDifficultyLevel);
                 if (nextWatchAndSpeakQuestion) {
                     // Update question number

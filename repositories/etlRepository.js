@@ -694,7 +694,6 @@ const getLessonCompletions = async (botType, rollout, level, cohort, targetGroup
              ${classLevel}
         GROUP BY m."profile_id", m."phoneNumber", m."name"
         ORDER BY m."name" ASC;`;
-        // console.log(qry);
         const res = await sequelize.query(qry);
         return res[0];
 

@@ -65,7 +65,7 @@ const videoEndView = async (profileId, userMobileNumber, currentUserState, start
             }
             finalTextInstruction += "\n\nThe video might take a few seconds to load.";
 
-            let lessonMessage = startingLesson.dataValues.activityAlias;
+            let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias;
             lessonMessage += "\n\n" + finalTextInstruction;
             await sendMessage(userMobileNumber, lessonMessage);
             await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);

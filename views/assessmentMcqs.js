@@ -197,7 +197,7 @@ const assessmentMcqsView = async (profileId, userMobileNumber, currentUserState,
                         await sendMessage(userMobileNumber, message);
                         await createActivityLog(userMobileNumber, "text", "outbound", message, null);
                     } else if (scorePercentage >= 80) {
-                        message += "\n\nExcellent 🎉";
+                        message += "\n\nExcellent! 🎉";
                         // Text message
                         await sendMessage(userMobileNumber, message);
                         await createActivityLog(userMobileNumber, "text", "outbound", message, null);
