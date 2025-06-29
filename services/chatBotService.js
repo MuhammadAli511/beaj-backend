@@ -1094,6 +1094,7 @@ const webhookService = async (body, res) => {
                                 let captionText = "💥 Let's begin your 1st adventure!";
                                 await sendMediaMessage(userMobileNumber, imageUrl, 'image', captionText);
                                 await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null, captionText);
+                                await sleep(2000);
                             }
                         }
                         const startingLesson = await lessonRepository.getNextLesson(currentUserState.dataValues.currentCourseId, 1, null, null);

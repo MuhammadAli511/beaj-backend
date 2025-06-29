@@ -160,16 +160,6 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
     if (messageType === "text" && acceptableMessagesList.includes("text")) {
         return true;
     }
-    let yes_no_list = ["yes", "no", "no, try again", "no, type again", "no, choose again", "no, go to payment"];
-    if ((messageType == "text" || messageType == "button" || messageType == "interactive") && yes_no_list.includes(messageContent.toLowerCase())) {
-        if (messageContent.toLowerCase() == "yes" || messageContent.toLowerCase() == "no" || messageContent.toLowerCase() == "no, try again" || messageContent.toLowerCase() == "no, type again" || messageContent.toLowerCase() == "no, choose again" || messageContent.toLowerCase() == "no, go to payment") {
-            return true;
-        } else {
-            await sendButtonMessage(userMobileNumber, "Please select an option:", [{ id: "yes", title: "Yes" }, { id: "no", title: "No" }]);
-            await createActivityLog(userMobileNumber, "template", "outbound", "Please select an option: (Yes or No)", null);
-            return false;
-        }
-    }
     if ((messageType == "text" || messageType == "button" || messageType == "interactive") && acceptableMessagesList.includes(messageContent.toLowerCase())) {
         return true;
     }

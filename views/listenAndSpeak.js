@@ -359,11 +359,7 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
 
                 // Instructions
                 let instructions = "👉 *Question " + await convertNumberToEmoji(firstListenAndSpeakQuestion.dataValues.questionNumber) + " of " + totalQuestions + "*\n\n";
-                if (firstListenAndSpeakQuestion.dataValues.question != null && firstListenAndSpeakQuestion.dataValues.question != "") {
-                    const questionText = firstListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
-                    instructions += questionText;
-                }
-                instructions += "\n\n*Record a voice message.*";
+                instructions += "*Record a voice message.*";
                 if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                     instructions += "\nOR\n" + "or Type *next* to skip this activity!";
                 }
