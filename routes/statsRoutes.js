@@ -22,8 +22,12 @@ router.post('/lastActiveUsers', beajFacilitatorsAuth, statsController.lastActive
 // POST api/stats/studentUserJourneyStats
 router.post('/studentUserJourneyStats', beajFacilitatorsAuth, statsController.studentUserJourneyStatsController);
 
-
+// POST api/stats/studentTrialUserJourneyStats
 router.post('/studentTrialUserJourneyStats', beajFacilitatorsAuth, statsController.studentTrialUserJourneyStatsController);
+
+// GET api/stats/studentCourseStats
+router.get('/studentCourseStats', beajFacilitatorsAuth, statsController.studentCourseStatsController);
+
 // Use error handler middleware
 router.use(errorHandler);
 

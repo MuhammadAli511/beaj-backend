@@ -325,6 +325,223 @@ const studentTrialUserJourneyStatsService = async (date) => {
     }
 };
 
+const studentCourseStatsService = async () => {
+    try {
+        // Automated Progress Report SQL Script
+        // Generates merged metrics for Main Course, Pre-Assessment, and Post-Assessment
+        // Filters results to show only counts >= 10 users
+        const courseStatsQuery = `
+            WITH 
+            -- Define course groupings
+            course_groups AS (
+                SELECT course_id, 'Main Course' as group_name
+                FROM (VALUES (119),(120),(121),(122),(123),(124),(143)) AS t(course_id)
+                
+                UNION ALL
+                
+                SELECT course_id, 'Pre-Assessment' as group_name  
+                FROM (VALUES (139),(140),(141),(142)) AS t(course_id)
+                
+                UNION ALL
+                
+                SELECT course_id, 'Post-Assessment' as group_name
+                FROM (VALUES (144),(145),(146),(147)) AS t(course_id)
+            ),
+
+            -- Find start lessons (min sequence) for each course/week/day
+            start_lessons AS (
+                SELECT 
+                    l."courseId",
+                    l."weekNumber", 
+                    l."dayNumber",
+                    MIN(l."SequenceNumber") as min_sequence
+                FROM "Lesson" l
+                JOIN course_groups cg ON l."courseId" = cg.course_id
+                WHERE l."weekNumber" IS NOT NULL 
+                  AND l."dayNumber" IS NOT NULL
+                GROUP BY l."courseId", l."weekNumber", l."dayNumber"
+            ),
+
+            -- Find end lessons (max sequence) for each course/week/day  
+            end_lessons AS (
+                SELECT 
+                    l."courseId",
+                    l."weekNumber",
+                    l."dayNumber", 
+                    MAX(l."SequenceNumber") as max_sequence
+                FROM "Lesson" l
+                JOIN course_groups cg ON l."courseId" = cg.course_id
+                WHERE l."weekNumber" IS NOT NULL 
+                  AND l."dayNumber" IS NOT NULL
+                GROUP BY l."courseId", l."weekNumber", l."dayNumber"
+            ),
+
+            -- Map sequences back to lesson IDs
+            start_lesson_ids AS (
+                SELECT 
+                    sl."courseId",
+                    sl."weekNumber",
+                    sl."dayNumber",
+                    l."LessonId" as start_lesson_id
+                FROM start_lessons sl
+                JOIN "Lesson" l ON sl."courseId" = l."courseId" 
+                               AND sl."weekNumber" = l."weekNumber"
+                               AND sl."dayNumber" = l."dayNumber" 
+                               AND sl.min_sequence = l."SequenceNumber"
+            ),
+
+            end_lesson_ids AS (
+                SELECT 
+                    el."courseId",
+                    el."weekNumber", 
+                    el."dayNumber",
+                    l."LessonId" as end_lesson_id
+                FROM end_lessons el
+                JOIN "Lesson" l ON el."courseId" = l."courseId"
+                               AND el."weekNumber" = l."weekNumber" 
+                               AND el."dayNumber" = l."dayNumber"
+                               AND el.max_sequence = l."SequenceNumber"
+            ),
+
+            -- Combine start and end lesson mappings
+            lesson_mapping AS (
+                SELECT 
+                    cg.group_name,
+                    sl."courseId",
+                    sl."weekNumber",
+                    sl."dayNumber",
+                    sl.start_lesson_id,
+                    el.end_lesson_id
+                FROM start_lesson_ids sl
+                JOIN end_lesson_ids el ON sl."courseId" = el."courseId"
+                                      AND sl."weekNumber" = el."weekNumber"
+                                      AND sl."dayNumber" = el."dayNumber"
+                JOIN course_groups cg ON sl."courseId" = cg.course_id
+            ),
+
+            -- Handle Level 4 special case: add Level 4's day 2 to day 3 for assessments
+            adjusted_lesson_mapping AS (
+                -- Keep all original lesson mappings
+                SELECT
+                    group_name,
+                    "weekNumber",
+                    "dayNumber",
+                    start_lesson_id,
+                    end_lesson_id
+                FROM lesson_mapping
+
+                UNION ALL
+
+                -- Add Level 4's day 2 data to day 3 for assessments
+                SELECT
+                    group_name,
+                    "weekNumber",
+                    3 as "dayNumber",  -- Add Level 4's day 2 to day 3
+                    start_lesson_id,
+                    end_lesson_id
+                FROM lesson_mapping
+                WHERE group_name IN ('Pre-Assessment', 'Post-Assessment')
+                  AND "dayNumber" = 2
+                  AND "courseId" IN (142, 147)  -- Level 4 courses only
+            ),
+
+            -- Aggregate metrics by group/week/day
+            aggregated_metrics AS (
+                SELECT
+                    group_name,
+                    "weekNumber",
+                    "dayNumber",
+                    ARRAY_AGG(DISTINCT start_lesson_id) as start_lesson_ids,
+                    ARRAY_AGG(DISTINCT end_lesson_id) as end_lesson_ids
+                FROM adjusted_lesson_mapping
+                GROUP BY group_name, "weekNumber", "dayNumber"
+            )
+
+            -- Generate the final report
+            SELECT description, count
+            FROM (
+                SELECT 'Total Users' as description, COUNT(*) as count, 1 as sort_order
+                FROM wa_users_metadata u
+                WHERE u."classLevel" IS NOT NULL
+                  AND u.cohort IS NOT NULL
+                  AND u.rollout = 2
+
+                UNION ALL
+
+                SELECT 'Started Users (One Message)' as description, COUNT(*) as count, 2 as sort_order
+                FROM wa_users_metadata u
+                JOIN wa_user_progress p ON u.profile_id = p.profile_id
+                WHERE u."classLevel" IS NOT NULL
+                  AND u.cohort IS NOT NULL
+                  AND u.rollout = 2
+                  AND (p."acceptableMessages" IS NULL OR p."acceptableMessages" <> ARRAY['start now!'])
+
+                UNION ALL
+
+                -- Pre-Assessment Started metrics
+                SELECT
+                    'Pre-Assessment Started Week ' || am."weekNumber" || ' Day ' || am."dayNumber" as description,
+                    COUNT(DISTINCT lc.profile_id) as count,
+                    (3 + (am."weekNumber" - 1) * 10 + (am."dayNumber" - 1) * 2) as sort_order
+                FROM aggregated_metrics am
+                JOIN wa_lessons_completed lc ON lc."lessonId" = ANY(am.start_lesson_ids)
+                WHERE am.group_name = 'Pre-Assessment'
+                GROUP BY am.group_name, am."weekNumber", am."dayNumber", am.start_lesson_ids
+                HAVING COUNT(DISTINCT lc.profile_id) >= 10
+
+                UNION ALL
+
+                -- Pre-Assessment Completed metrics
+                SELECT
+                    'Pre-Assessment Completed Week ' || am."weekNumber" || ' Day ' || am."dayNumber" as description,
+                    COUNT(DISTINCT lc.profile_id) as count,
+                    (4 + (am."weekNumber" - 1) * 10 + (am."dayNumber" - 1) * 2) as sort_order
+                FROM aggregated_metrics am
+                JOIN wa_lessons_completed lc ON lc."lessonId" = ANY(am.end_lesson_ids)
+                                             AND lc."completionStatus" = 'Completed'
+                WHERE am.group_name = 'Pre-Assessment'
+                GROUP BY am.group_name, am."weekNumber", am."dayNumber", am.end_lesson_ids
+                HAVING COUNT(DISTINCT lc.profile_id) >= 10
+
+                UNION ALL
+
+                -- Main Course Started metrics
+                SELECT
+                    'Main Course Started Week ' || am."weekNumber" || ' Day ' || am."dayNumber" as description,
+                    COUNT(DISTINCT lc.profile_id) as count,
+                    (100 + (am."weekNumber" - 1) * 10 + (am."dayNumber" - 1) * 2) as sort_order
+                FROM aggregated_metrics am
+                JOIN wa_lessons_completed lc ON lc."lessonId" = ANY(am.start_lesson_ids)
+                WHERE am.group_name = 'Main Course'
+                GROUP BY am.group_name, am."weekNumber", am."dayNumber", am.start_lesson_ids
+                HAVING COUNT(DISTINCT lc.profile_id) >= 10
+
+                UNION ALL
+
+                -- Main Course Completed metrics
+                SELECT
+                    'Main Course Completed Week ' || am."weekNumber" || ' Day ' || am."dayNumber" as description,
+                    COUNT(DISTINCT lc.profile_id) as count,
+                    (101 + (am."weekNumber" - 1) * 10 + (am."dayNumber" - 1) * 2) as sort_order
+                FROM aggregated_metrics am
+                JOIN wa_lessons_completed lc ON lc."lessonId" = ANY(am.end_lesson_ids)
+                                             AND lc."completionStatus" = 'Completed'
+                WHERE am.group_name = 'Main Course'
+                GROUP BY am.group_name, am."weekNumber", am."dayNumber", am.end_lesson_ids
+                HAVING COUNT(DISTINCT lc.profile_id) >= 10
+            ) final_results
+            ORDER BY sort_order
+        `;
+
+        const [courseStats] = await sequelize.query(courseStatsQuery);
+
+        return courseStats;
+    } catch (error) {
+        error.fileName = 'statsService.js';
+        throw error;
+    }
+};
+
 const studentUserJourneyStatsService = async (date) => {
     try {
         // Set default date if not provided
@@ -581,5 +798,6 @@ export default {
     dashboardCardsFunnelService,
     lastActiveUsersService,
     studentUserJourneyStatsService,
-    studentTrialUserJourneyStatsService
+    studentTrialUserJourneyStatsService,
+    studentCourseStatsService
 };

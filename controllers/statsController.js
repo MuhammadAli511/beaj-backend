@@ -53,11 +53,21 @@ const studentTrialUserJourneyStatsController = async (req, res, next) => {
     }
 };
 
+const studentCourseStatsController = async (req, res, next) => {
+    try {
+        const courseStats = await service.studentCourseStatsService();
+        res.status(200).send(courseStats);
+    } catch (error) {
+        error.fileName = 'statsController.js';
+        next(error);
+    }
+};
+
 export default {
     totalContentStatsController,
     dashboardCardsFunnelController,
     lastActiveUsersController,
     studentUserJourneyStatsController,
     studentTrialUserJourneyStatsController,
-
+    studentCourseStatsController,
 };
