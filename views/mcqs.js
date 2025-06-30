@@ -423,7 +423,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                     // If both image and text are available, send image with caption
                     if (customFeedbackImage && customFeedbackText) {
                         customFeedbackText = customFeedbackText.replace(/\\n/g, '\n');
-                        if (remainingQuestions > 1) {
+                        if (remainingQuestions >= 1) {
                             // if not trial
                             if (currentUserState.dataValues.engagement_type != "Free Trial - Kids - Level 1" && currentUserState.dataValues.engagement_type != "Free Trial - Kids - Level 3") {
                                 customFeedbackText += "\n\n" + remainingQuestions + " more questions to go!";
@@ -436,7 +436,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                         // Otherwise send them separately if they exist
                         if (customFeedbackText) {
                             customFeedbackText = customFeedbackText.replace(/\\n/g, '\n');
-                            if (remainingQuestions > 1) {
+                            if (remainingQuestions >= 1) {
                                 if (currentUserState.dataValues.engagement_type != "Free Trial - Kids - Level 1" && currentUserState.dataValues.engagement_type != "Free Trial - Kids - Level 3") {
                                     customFeedbackText += "\n\n" + remainingQuestions + " more questions to go!";
                                 }
@@ -461,7 +461,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                     if (!customFeedbackText && !customFeedbackImage && !customFeedbackAudio) {
                         if (isCorrectAnswer) {
                             let correctAnswerMessage = "✅ That's right!\n\n";
-                            if (remainingQuestions > 1) {
+                            if (remainingQuestions >= 1) {
                                 correctAnswerMessage += remainingQuestions + " more questions to go!";
                             }
                             await sendMessage(userMobileNumber, correctAnswerMessage);
@@ -475,7 +475,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                                     correctAnswer += String.fromCharCode(65 + i) + ": " + mcqAnswers[i].dataValues.AnswerText;
                                 }
                             }
-                            if (remainingQuestions > 1) {
+                            if (remainingQuestions >= 1) {
                                 correctAnswer += "\n\n" + remainingQuestions + " more questions to go!";
                             }
                             await sendMessage(userMobileNumber, correctAnswer);

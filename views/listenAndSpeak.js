@@ -327,7 +327,7 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                     await createActivityLog(userMobileNumber, "audio", "outbound", lessonAudioInstruction, null);
                 }
 
-                let lessonMessage = startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n') + "\n\n" + finalTextInstruction;
+                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n') + "\n\n" + finalTextInstruction;
 
                 // Text message
                 await sendMessage(userMobileNumber, lessonMessage);
@@ -359,9 +359,12 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
 
                 // Instructions
                 let instructions = "👉 *Question " + await convertNumberToEmoji(firstListenAndSpeakQuestion.dataValues.questionNumber) + " of " + totalQuestions + "*\n\n";
-                instructions += "*Record a voice message.*";
+                instructions += "Record a voice message.";
                 if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                     instructions += "\nOR\n" + "or Type *next* to skip this activity!";
+                }
+                if (currentUserState.dataValues.currentCourseId == 143) {
+                    instructions += "\n\n" + firstListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
                 }
 
                 await sendMessage(userMobileNumber, instructions);
@@ -565,9 +568,12 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                         // Instructions
                         const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
                         let instructions = "👉 *Question " + await convertNumberToEmoji(nextListenAndSpeakQuestion.dataValues.questionNumber) + " of " + totalQuestions + "*\n\n";
-                        instructions += "*Record a voice message.*";
+                        instructions += "Record a voice message.";
                         if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                             instructions += "\nOR\n" + "or Type *next* to skip this activity!";
+                        }
+                        if (currentUserState.dataValues.currentCourseId == 143) {
+                            instructions += "\n\n" + nextListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
                         }
                         await sendMessage(userMobileNumber, instructions);
                         await createActivityLog(userMobileNumber, "text", "outbound", instructions, null);
