@@ -472,7 +472,9 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
             activityAlias == "📕 *Story Time!*" ||
             activityAlias == "🧮 *Maths Fun!*" ||
             activityAlias == "🧪 *Science Fun!*" ||
-            activityAlias == "🗣 *Grammar Fun!*"
+            activityAlias == "🗣 *Grammar Fun!*" ||
+            activityAlias == "🌍 *Let's explore!*" ||
+            activityAlias == "🌍 *Let's Explore!*"
         ) {
             let message = "👇 Click on the button below to start questions!"
             await sendButtonMessage(userMobileNumber, message, [{ id: 'start_questions', title: 'Start Questions' }, { id: 'change_user', title: 'Change User' }]);
@@ -497,7 +499,15 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
             await sendButtonMessage(userMobileNumber, 'Are you ready?', [{ id: 'start_part_b', title: 'Start Part B' }, { id: 'change_user', title: 'Change User' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start Part B", null);
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start part b", "change user"]);
-        } else {
+        } else if (
+            activityAlias == "🌍 *Let's Explore Part 1!*" ||
+            activityAlias == "🌍 *Do You Remember? Part 1*"
+        ) {
+            await sendButtonMessage(userMobileNumber, '👇 Click on the button below to watch Part 2 of the video!', [{ id: 'start_part_2', title: 'Start Part 2' }, { id: 'change_user', title: 'Change User' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Start Part 2", null);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start part 2", "change user"]);
+        }
+        else {
             await sendButtonMessage(userMobileNumber, 'Are you ready to start the next activity?', [{ id: 'start_next_activity', title: 'Start Next Activity' }, { id: 'change_user', title: 'Change User' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity", null);
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next activity", "change user"]);

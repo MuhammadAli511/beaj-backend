@@ -829,15 +829,16 @@ const webhookService = async (body, res) => {
                 if (text_message_types.includes(message.type)) {
                     if (
                         messageContent.toLowerCase().includes("start next activity") ||
+                        messageContent.toLowerCase().includes("start part 2") ||
                         messageContent.toLowerCase().includes("start next game") ||
                         messageContent.toLowerCase().includes("let's start") ||
                         messageContent.toLowerCase().includes("next challenge") ||
                         messageContent.toLowerCase().includes("go to next activity") ||
-                        messageContent.toLowerCase().includes("next activity") ||
                         messageContent.toLowerCase().includes("start questions") ||
                         messageContent.toLowerCase().includes("start challenge") ||
                         messageContent.toLowerCase().includes("start part b") ||
-                        messageContent.toLowerCase().includes("next")
+                        messageContent.toLowerCase().includes("next") ||
+                        messageContent.toLowerCase().includes("next activity")
                     ) {
                         if (currentUserState.dataValues.engagement_type == "Free Trial - Teachers" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                             // Get next lesson to send user
@@ -1181,6 +1182,7 @@ const webhookService = async (body, res) => {
                 if (text_message_types.includes(message.type)) {
                     if (
                         messageContent.toLowerCase().includes("start next activity") ||
+                        messageContent.toLowerCase().includes("start part 2") ||
                         messageContent.toLowerCase().includes("start next game") ||
                         messageContent.toLowerCase().includes("start next lesson") ||
                         messageContent.toLowerCase().includes("let's start") ||
@@ -1193,7 +1195,8 @@ const webhookService = async (body, res) => {
                         messageContent.toLowerCase().includes("yes") ||
                         messageContent.toLowerCase().includes("no, try again") ||
                         messageContent.toLowerCase().includes("no") ||
-                        messageContent.toLowerCase().includes("next")
+                        messageContent.toLowerCase().includes("next") ||
+                        messageContent.toLowerCase().includes("next activity")
                     ) {
                         if (
                             messageContent.toLowerCase().includes("it was great") ||
@@ -1214,7 +1217,9 @@ const webhookService = async (body, res) => {
                         let latestUserState = await waUserProgressRepository.getByProfileId(profileId);
                         let theStartingLesson = await lessonRepository.getByLessonId(currentUserState.dataValues.currentLessonId);
 
-                        if (messageContent.toLowerCase().includes("next") && (latestUserState.dataValues.activityType == "feedbackAudio" || latestUserState.dataValues.activityType == "watchAndAudio")) {
+                        if (
+                            (messageContent.toLowerCase().includes("next") || messageContent.toLowerCase().includes("next activity"))
+                            && (latestUserState.dataValues.activityType == "feedbackAudio" || latestUserState.dataValues.activityType == "watchAndAudio")) {
                             await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
                             await endingMessage(profileId, userMobileNumber, currentUserState, theStartingLesson);
                             return;

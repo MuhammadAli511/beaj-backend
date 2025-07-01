@@ -426,7 +426,11 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                         if (remainingQuestions >= 1) {
                             // if not trial
                             if (currentUserState.dataValues.engagement_type != "Free Trial - Kids - Level 1" && currentUserState.dataValues.engagement_type != "Free Trial - Kids - Level 3") {
-                                customFeedbackText += "\n\n" + remainingQuestions + " more questions to go!";
+                                if (remainingQuestions == 1) {
+                                    customFeedbackText += "\n\n" + remainingQuestions + " more question to go!";
+                                } else {
+                                    customFeedbackText += "\n\n" + remainingQuestions + " more questions to go!";
+                                }
                             }
                         }
                         await sendMediaMessage(userMobileNumber, customFeedbackImage, 'image', customFeedbackText, 0, "MultipleChoiceQuestionAnswer", selectedAnswer.dataValues.Id, selectedAnswer.dataValues.CustomAnswerFeedbackImageMediaId, "CustomAnswerFeedbackImageMediaId");
@@ -438,7 +442,11 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                             customFeedbackText = customFeedbackText.replace(/\\n/g, '\n');
                             if (remainingQuestions >= 1) {
                                 if (currentUserState.dataValues.engagement_type != "Free Trial - Kids - Level 1" && currentUserState.dataValues.engagement_type != "Free Trial - Kids - Level 3") {
-                                    customFeedbackText += "\n\n" + remainingQuestions + " more questions to go!";
+                                    if (remainingQuestions == 1) {
+                                        customFeedbackText += "\n\n" + remainingQuestions + " more question to go!";
+                                    } else {
+                                        customFeedbackText += "\n\n" + remainingQuestions + " more questions to go!";
+                                    }
                                 }
                             }
                             await sendMessage(userMobileNumber, customFeedbackText);
@@ -462,7 +470,11 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                         if (isCorrectAnswer) {
                             let correctAnswerMessage = "✅ That's right!\n\n";
                             if (remainingQuestions >= 1) {
-                                correctAnswerMessage += remainingQuestions + " more questions to go!";
+                                if (remainingQuestions == 1) {
+                                    correctAnswerMessage += remainingQuestions + " more question to go!";
+                                } else {
+                                    correctAnswerMessage += remainingQuestions + " more questions to go!";
+                                }
                             }
                             await sendMessage(userMobileNumber, correctAnswerMessage);
                             await createActivityLog(userMobileNumber, "text", "outbound", correctAnswerMessage, null);
@@ -476,7 +488,11 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                                 }
                             }
                             if (remainingQuestions >= 1) {
-                                correctAnswer += "\n\n" + remainingQuestions + " more questions to go!";
+                                if (remainingQuestions == 1) {
+                                    correctAnswer += "\n\n" + remainingQuestions + " more question to go!";
+                                } else {
+                                    correctAnswer += "\n\n" + remainingQuestions + " more questions to go!";
+                                }
                             }
                             await sendMessage(userMobileNumber, correctAnswer);
                             await createActivityLog(userMobileNumber, "text", "outbound", correctAnswer, null);

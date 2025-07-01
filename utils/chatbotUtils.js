@@ -136,7 +136,7 @@ const resetCourseKid = async (phoneNumber, botPhoneNumberId) => {
         await waPurchasedCoursesRepository.create(purchase);
     }
 
-    await sendMessage(phoneNumber, "Test data has been created for kid profiles. You now have 3 student profiles with purchased courses.");
+    await sendMessage(phoneNumber, "Test data has been created for kid profiles. You now have 7 student profiles with purchased courses.");
 };
 
 const weekEndScoreCalculation = async (profileId, phoneNumber, weekNumber, courseId) => {

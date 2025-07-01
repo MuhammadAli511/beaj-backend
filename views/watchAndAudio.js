@@ -299,10 +299,17 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                     // Update question number
                     await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextWatchAndSpeakQuestion.dataValues.questionNumber);
 
-                    if (nextWatchAndSpeakQuestion.dataValues.questionNumber == 6) {
-                        let skipMessage = "Continue practising\n\nOR\n\nType *next* to skip this activity!";
-                        await sendMessage(userMobileNumber, skipMessage);
-                        await createActivityLog(userMobileNumber, "text", "outbound", skipMessage, null);
+                    if (nextWatchAndSpeakQuestion.dataValues.questionNumber == 7) {
+                        // Voice message here
+                        let audioMessage = "https://beajbloblive.blob.core.windows.net/beajdocuments/audio_instruction_for_phonics.mp3";
+                        await sendMediaMessage(userMobileNumber, audioMessage, 'audio');
+                        await createActivityLog(userMobileNumber, "audio", "outbound", audioMessage, null);
+                        await sleep(2000);
+
+                        // Button message
+                        let skipButtonMessage = "👇 Click on the button below to start the next activity!";
+                        await sendButtonMessage(userMobileNumber, skipButtonMessage, [{ id: "next_activity", title: "Next Activity" }]);
+                        await createActivityLog(userMobileNumber, "template", "outbound", skipButtonMessage, null);
                     }
 
                     // Send question media file
