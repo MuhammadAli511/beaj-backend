@@ -472,8 +472,7 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
             activityAlias == "📕 *Story Time!*" ||
             activityAlias == "🧮 *Maths Fun!*" ||
             activityAlias == "🧪 *Science Fun!*" ||
-            activityAlias == "🗣 *Grammar Fun!*" ||
-            activityAlias == "🌍 *Let's Explore!*"
+            activityAlias == "🗣 *Grammar Fun!*"
         ) {
             let message = "👇 Click on the button below to start questions!"
             await sendButtonMessage(userMobileNumber, message, [{ id: 'start_questions', title: 'Start Questions' }, { id: 'change_user', title: 'Change User' }]);
