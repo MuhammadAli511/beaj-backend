@@ -424,29 +424,29 @@ const webhookService = async (body, res) => {
                     return;
                 }
 
-                if (
-                    text_message_types.includes(message.type) &&
-                    (
-                        messageContent.toLowerCase() == "end now" ||
-                        // messageContent.toLowerCase() == "go to registration" ||
-                        // messageContent.toLowerCase() == "register now" ||
-                        messageContent.toLowerCase() == "skip trial"
-                    ) &&
-                    (
-                        currentUserState.dataValues.engagement_type == "Free Trial - Teachers" ||
-                        currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" ||
-                        currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3" ||
-                        currentUserState.dataValues.engagement_type == "Greeting Message - Kids" ||
-                        currentUserState.dataValues.engagement_type == "Choose Class"
-                    )
-                ) {
-                    if (botPhoneNumberId == studentBotPhoneNumberId) {
-                        await getUserProfile(profileId, userMobileNumber);
-                    } else {
-                        await endTrialTeachers(profileId, userMobileNumber);
-                    }
-                    return;
-                }
+                // if (
+                //     text_message_types.includes(message.type) &&
+                //     (
+                //         // messageContent.toLowerCase() == "end now"
+                //         // messageContent.toLowerCase() == "go to registration" ||
+                //         // messageContent.toLowerCase() == "register now" ||
+                //         // messageContent.toLowerCase() == "skip trial"
+                //     ) &&
+                //     (
+                //         currentUserState.dataValues.engagement_type == "Free Trial - Teachers" ||
+                //         currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" ||
+                //         currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3" ||
+                //         currentUserState.dataValues.engagement_type == "Greeting Message - Kids" ||
+                //         currentUserState.dataValues.engagement_type == "Choose Class"
+                //     )
+                // ) {
+                //     if (botPhoneNumberId == studentBotPhoneNumberId) {
+                //         await getUserProfile(profileId, userMobileNumber);
+                //     } else {
+                //         await endTrialTeachers(profileId, userMobileNumber);
+                //     }
+                //     return;
+                // }
 
                 if (
                     text_message_types.includes(message.type) &&

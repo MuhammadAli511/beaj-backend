@@ -112,10 +112,10 @@ const kidsChooseClass = async (profileId, userMobileNumber) => {
     const chooseClassMessage = `Take a look inside the course!\nکورس کی ایک جھلک دیکھیں۔\n\n👇Choose your class:\nاپنی کلاس منتخب کریں۔`;
     let summerIntroVideo = await waConstantsRepository.getByKey("SUMMER_INTRO_VIDEO");
     if (summerIntroVideo) {
-        await sendButtonMessage(userMobileNumber, chooseClassMessage, [{ id: 'kids_summer_camp_class_1_or_2', title: 'Class 1 or 2' }, { id: 'kids_summer_camp_class_5_or_6', title: 'Class 3 to 6' }, { id: 'skip_trial', title: 'Skip Trial' }], 0, null, summerIntroVideo.dataValues.constantValue, "WA_Constants", summerIntroVideo.dataValues.id, null, summerIntroVideo.dataValues.constantMediaId, "constantMediaId");
+        await sendButtonMessage(userMobileNumber, chooseClassMessage, [{ id: 'kids_summer_camp_class_1_or_2', title: 'Class 1 or 2' }, { id: 'kids_summer_camp_class_5_or_6', title: 'Class 3 to 6' }], 0, null, summerIntroVideo.dataValues.constantValue, "WA_Constants", summerIntroVideo.dataValues.id, null, summerIntroVideo.dataValues.constantMediaId, "constantMediaId");
         await createActivityLog(userMobileNumber, "template", "outbound", chooseClassMessage, null);
     }
-    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["class 1 or 2", "class 3 to 6", "skip trial"]);
+    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["class 1 or 2", "class 3 to 6"]);
 };
 
 const kidsConfirmClass = async (profileId, userMobileNumber, messageContent) => {

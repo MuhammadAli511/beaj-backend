@@ -129,13 +129,13 @@ const kidsTrialFlow = async (profileId, userMobileNumber, currentUserState, star
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start questions", "chat with beaj rep"]);
             buttonsArray = [{ id: 'start_questions', title: 'Start Questions' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
         } else {
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start questions", "skip trial", "chat with beaj rep"]);
-            buttonsArray = [{ id: 'start_questions', title: 'Start Questions' }, { id: 'skip_trial', title: 'Skip Trial' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start questions", "chat with beaj rep"]);
+            buttonsArray = [{ id: 'start_questions', title: 'Start Questions' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
         }
         // Reply Buttons
         if (message == null) {
             await sendButtonMessage(userMobileNumber, 'Start Questions!', buttonsArray);
-            await createActivityLog(userMobileNumber, "template", "outbound", "Start Questions or Skip Trial or Chat with Beaj Rep", null);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Start Questions or Chat with Beaj Rep", null);
         } else {
             await sendButtonMessage(userMobileNumber, message, buttonsArray);
             await createActivityLog(userMobileNumber, "template", "outbound", message, null);
@@ -157,13 +157,13 @@ const kidsTrialFlow = async (profileId, userMobileNumber, currentUserState, star
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "chat with beaj rep"]);
             buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
         } else {
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "skip trial", "chat with beaj rep"]);
-            buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'skip_trial', title: 'Skip Trial' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "chat with beaj rep"]);
+            buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
         }
         // Reply Buttons
         if (message == null) {
             await sendButtonMessage(userMobileNumber, finalTextMessage, buttonsArray);
-            await createActivityLog(userMobileNumber, "template", "outbound", "Next Activity or Skip Trial or Chat with Beaj Rep", null);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Next Activity or Chat with Beaj Rep", null);
         } else {
             await sendButtonMessage(userMobileNumber, message, buttonsArray);
             await createActivityLog(userMobileNumber, "template", "outbound", message, null);
@@ -205,14 +205,14 @@ const kidsTrialFlow = async (profileId, userMobileNumber, currentUserState, star
         return;
     } else if (!checkRegistrationComplete && !lessonLast) {
         // Update acceptable messages list for the user
-        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "skip trial", "chat with beaj rep"]);
-        let buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'skip_trial', title: 'Skip Trial' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
+        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "chat with beaj rep"]);
+        let buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
 
 
         // Reply Buttons
         if (message == null) {
             await sendButtonMessage(userMobileNumber, 'Challenge Complete! 💪🏽', buttonsArray);
-            await createActivityLog(userMobileNumber, "template", "outbound", "Next Activity or Skip Trial or Chat with Beaj Rep", null);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Next Activity or Chat with Beaj Rep", null);
         } else {
             await sendButtonMessage(userMobileNumber, message, buttonsArray);
             await createActivityLog(userMobileNumber, "template", "outbound", message, null);
