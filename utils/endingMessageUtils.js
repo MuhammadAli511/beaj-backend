@@ -173,13 +173,13 @@ const kidsTrialFlow = async (profileId, userMobileNumber, currentUserState, star
 
     if (!checkRegistrationComplete && lessonLast) {
         // Update acceptable messages list for the user
-        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial", "register now"]);
-        let buttonsArray = [{ id: 'register_now', title: 'Register Now' }, { id: 'get_another_trial', title: 'Get Another Trial' }];
+        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["get another trial"]);
+        let buttonsArray = [{ id: 'get_another_trial', title: 'Get Another Trial' }];
 
-        let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔\n\nIf you are interested in registration, click on Register Now 👇\nاگر آپ ریجسٹریشن میں دلچسپی رکھتے ہیں، تو ‘Register Now’ پر کلک کریں۔`;
+        let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔`;
         if (message == null) {
             await sendButtonMessage(userMobileNumber, trialCompleteMessage, buttonsArray, 0, trialCompleteobject.dataValues.constantValue, null, "WA_Constants", trialCompleteobject.dataValues.id, trialCompleteobject.dataValues.constantMediaId, null, "constantMediaId");
-            await createActivityLog(userMobileNumber, "template", "outbound", "get another trial or register", null);
+            await createActivityLog(userMobileNumber, "template", "outbound", "get another trial", null);
         } else {
             message += "\n\n" + trialCompleteMessage;
             await sendButtonMessage(userMobileNumber, message, buttonsArray, 0, trialCompleteobject.dataValues.constantValue, null, "WA_Constants", trialCompleteobject.dataValues.id, trialCompleteobject.dataValues.constantMediaId, null, "constantMediaId");
@@ -195,7 +195,7 @@ const kidsTrialFlow = async (profileId, userMobileNumber, currentUserState, star
         let trialCompleteMessage = `📍Your Free Trial ends here.\nیہاں آپ کا فری ٹرائل ختم ہوتا ہے۔\n\n`;
         if (message == null) {
             await sendButtonMessage(userMobileNumber, trialCompleteMessage, buttonsArray, 0, trialCompleteobject.dataValues.constantValue, null, "WA_Constants", trialCompleteobject.dataValues.id, trialCompleteobject.dataValues.constantMediaId, null, "constantMediaId");
-            await createActivityLog(userMobileNumber, "template", "outbound", "get another trial or register", null);
+            await createActivityLog(userMobileNumber, "template", "outbound", "get another trial", null);
         } else {
             message += "\n\n" + trialCompleteMessage;
             await sendButtonMessage(userMobileNumber, message, buttonsArray, 0, trialCompleteobject.dataValues.constantValue, null, "WA_Constants", trialCompleteobject.dataValues.id, trialCompleteobject.dataValues.constantMediaId, null, "constantMediaId");

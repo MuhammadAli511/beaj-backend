@@ -428,8 +428,8 @@ const webhookService = async (body, res) => {
                     text_message_types.includes(message.type) &&
                     (
                         messageContent.toLowerCase() == "end now" ||
-                        messageContent.toLowerCase() == "go to registration" ||
-                        messageContent.toLowerCase() == "register now" ||
+                        // messageContent.toLowerCase() == "go to registration" ||
+                        // messageContent.toLowerCase() == "register now" ||
                         messageContent.toLowerCase() == "skip trial"
                     ) &&
                     (
@@ -463,7 +463,12 @@ const webhookService = async (body, res) => {
 
                 if (
                     text_message_types.includes(message.type) &&
-                    (messageContent.toLowerCase() == "register" || messageContent.toLowerCase() == "camp registration" || messageContent.toLowerCase() == "go to registration" || messageContent.toLowerCase() == "register now") &&
+                    (
+                        messageContent.toLowerCase() == "register" ||
+                        messageContent.toLowerCase() == "camp registration"
+                        // messageContent.toLowerCase() == "go to registration" ||
+                        // messageContent.toLowerCase() == "register now"
+                    ) &&
                     (
                         currentUserState.dataValues.engagement_type == "End Now" ||
                         currentUserState.dataValues.engagement_type == "Free Trial - Teachers" ||
@@ -562,7 +567,10 @@ const webhookService = async (body, res) => {
 
                 if (
                     text_message_types.includes(message.type) &&
-                    (messageContent.toLowerCase() == "ready to register" || messageContent.toLowerCase() == "ready for payment") &&
+                    (
+                        // messageContent.toLowerCase() == "ready to register" ||
+                        messageContent.toLowerCase() == "ready for payment"
+                    ) &&
                     (currentUserState.dataValues.engagement_type == "Ready to Pay")
                 ) {
                     await thankyouMessageParent(profileId, userMobileNumber);
@@ -587,14 +595,14 @@ const webhookService = async (body, res) => {
                 }
 
                 // Multi User Registration
-                if (
-                    text_message_types.includes(message.type) &&
-                    (currentUserState.dataValues.engagement_type == "Parent or Student") &&
-                    (messageContent.toLowerCase() == "register on whatsapp")
-                ) {
-                    await studentNameInput(profileId, userMobileNumber);
-                    return;
-                }
+                // if (
+                //     text_message_types.includes(message.type) &&
+                //     (currentUserState.dataValues.engagement_type == "Parent or Student") &&
+                //     (messageContent.toLowerCase() == "register on whatsapp")
+                // ) {
+                //     await studentNameInput(profileId, userMobileNumber);
+                //     return;
+                // }
 
                 if (
                     text_message_types.includes(message.type) &&

@@ -57,8 +57,8 @@ const greetingMessage = async (profileId, userMobileNumber, persona) => {
                 await sendButtonMessage(userMobileNumber, videoCaption, [{ id: 'start_free_trial', title: 'Start Free Trial' }], 0, null, whyBeaj.dataValues.constantValue, "WA_Constants", whyBeaj.dataValues.id, null, whyBeaj.dataValues.constantMediaId, "constantMediaId");
                 await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start free trial", "chat with beaj rep"]);
             } else {
-                await sendButtonMessage(userMobileNumber, videoCaption, [{ id: 'start_free_trial', title: 'Start Free Trial' }, { id: 'go_to_registration', title: 'Go to Registration' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }], 0, null, whyBeaj.dataValues.constantValue, "WA_Constants", whyBeaj.dataValues.id, null, whyBeaj.dataValues.constantMediaId, "constantMediaId");
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start free trial", "go to registration", "chat with beaj rep"]);
+                await sendButtonMessage(userMobileNumber, videoCaption, [{ id: 'start_free_trial', title: 'Start Free Trial' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }], 0, null, whyBeaj.dataValues.constantValue, "WA_Constants", whyBeaj.dataValues.id, null, whyBeaj.dataValues.constantMediaId, "constantMediaId");
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start free trial", "chat with beaj rep"]);
             }
         }
         await createActivityLog(userMobileNumber, "template", "outbound", videoCaption, null);
@@ -91,8 +91,8 @@ const startOfFlow = async (profileId, userMobileNumber) => {
             await sendButtonMessage(userMobileNumber, videoCaption, [{ id: 'start_free_trial', title: 'Start Free Trial' }], 0, null, whyBeaj.dataValues.constantValue, "WA_Constants", whyBeaj.dataValues.id, null, whyBeaj.dataValues.constantMediaId, "constantMediaId");
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start free trial"]);
         } else {
-            await sendButtonMessage(userMobileNumber, videoCaption, [{ id: 'start_free_trial', title: 'Start Free Trial' }, { id: 'go_to_registration', title: 'Go to Registration' }], 0, null, whyBeaj.dataValues.constantValue, "WA_Constants", whyBeaj.dataValues.id, null, whyBeaj.dataValues.constantMediaId, "constantMediaId");
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start free trial", "go to registration"]);
+            await sendButtonMessage(userMobileNumber, videoCaption, [{ id: 'start_free_trial', title: 'Start Free Trial' }], 0, null, whyBeaj.dataValues.constantValue, "WA_Constants", whyBeaj.dataValues.id, null, whyBeaj.dataValues.constantMediaId, "constantMediaId");
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start free trial"]);
         }
     }
     await createActivityLog(userMobileNumber, "template", "outbound", videoCaption, null);
@@ -319,9 +319,9 @@ const parentOrStudentSelection = async (profileId, userMobileNumber) => {
         await sleep(2000);
     }
     let selectOptionMessage = "👆Listen to the audio instructions and select an option:\n\nآڈیو میں دی گئی ہدایت سنیں اور ایک آپشن پہ کلک کریں:";
-    await sendButtonMessage(userMobileNumber, selectOptionMessage, [{ id: 'register_on_whatsapp', title: 'Register on Whatsapp' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }, { id: 'start_again', title: 'Start Again' }]);
+    await sendButtonMessage(userMobileNumber, selectOptionMessage, [{ id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }, { id: 'start_again', title: 'Start Again' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", selectOptionMessage, null);
-    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["register on whatsapp", "chat with beaj rep", "start again"]);
+    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["chat with beaj rep", "start again"]);
 };
 
 const thankyouMessageParent = async (profileId, userMobileNumber) => {
@@ -448,9 +448,9 @@ const singleStudentRegistationComplate = async (profileId, userMobileNumber) => 
         "\n" + registrationsList +
         "\n\n\nبیج سمر کیمپ کے لئے کل رجسٹریشنز کی تعداد: " + totalRegistrations +
         "\n" + registrationsList;
-    await sendButtonMessage(userMobileNumber, totalRegistrationsSummaryMessage, [{ id: 'register_new_student', title: 'Register New Student' }, { id: 'go_to_payment', title: 'Go to Payment' }, { id: 'start_again', title: 'Start Again' }]);
+    await sendButtonMessage(userMobileNumber, totalRegistrationsSummaryMessage, [{ id: 'go_to_payment', title: 'Go to Payment' }, { id: 'start_again', title: 'Start Again' }]);
     await createActivityLog(userMobileNumber, "template", "outbound", totalRegistrationsSummaryMessage, null);
-    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["register new student", "go to payment", "start again"]);
+    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["go to payment", "start again"]);
 };
 
 const getTotalRegistrationsSummaryForUnpaidUsers = async (userMobileNumber) => {
