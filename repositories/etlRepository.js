@@ -2326,7 +2326,7 @@ const getCumulativeLessonCompletions = async () => {
         m."rollout" = 2
         AND p."profile_type" = 'student'
         AND m."classLevel" IN ('grade 1', 'grade 2', 'grade 3', 'grade 4', 'grade 5', 'grade 6', 'grade 7')
-        AND m."cohort" IS NOT NULL
+        AND m."cohort" IS NOT NULL and m."cohort" != 'Cohort 0'
 ),
 
 lesson_completions AS (
@@ -2419,7 +2419,7 @@ const getCumulativeActivityCompletions = async () => {
             m."rollout" = 2
             AND p."profile_type" = 'student'
             AND m."classLevel" IN ('grade 1', 'grade 2', 'grade 3', 'grade 4', 'grade 5', 'grade 6', 'grade 7')
-            AND m."cohort" IS NOT NULL
+            AND m."cohort" IS NOT NULL and m."cohort" != 'Cohort 0'
       ),
       activity_completions AS (
         SELECT 
