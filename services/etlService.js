@@ -11,359 +11,371 @@ import CumulativeUtils_load from "../google_sheet_utils/cumulativeUtils.js";
 import { generateCertificatesForEligibleStudents } from '../google_sheet_utils/certificate-utils.js';
 
 const runCumulativeSheets = async () => {
-  let courseId_l1 = 106;
-  let courseId_l2 = 111;
-  let courseId_l3 = 118;
 
-  let courseId_l10 = 105;
-  let courseId_l20 = 110;
-  let courseId_l30 = 112;
+  let cum_lesson_student = await etlRepository.getCumulativeLessonCompletions();
+  let cum_activity_student = await etlRepository.getCumulativeActivityCompletions();
 
-
-  let array_Lesson_List1 = await getWeeklyActivityCompleted1.getLessonCompletions(courseId_l1, courseId_l2, courseId_l3, 'T1');
-  array_Lesson_List1 = array_Lesson_List1.map(obj => Object.values(obj).map(value => value));
-
-  let array_Lesson_List2 = await getWeeklyActivityCompleted1.getLessonCompletions(courseId_l10, courseId_l20, courseId_l30, 'T2');
-  array_Lesson_List2 = array_Lesson_List2.map(obj => Object.values(obj).map(value => value));
-
-  let array_Lesson_List = array_Lesson_List1.concat(array_Lesson_List2);
-
-
-  let array_activity_List1 = await getWeeklyActivityCompleted1.getActivity_Completions(courseId_l1, courseId_l2, courseId_l3, 'T1');
-  array_activity_List1 = array_activity_List1.map(obj => Object.values(obj).map(value => value));
-
-  let array_activity_List2 = await getWeeklyActivityCompleted1.getActivity_Completions(courseId_l10, courseId_l20, courseId_l30, 'T2');
-  array_activity_List2 = array_activity_List2.map(obj => Object.values(obj).map(value => value));
-
-  let array_activity_List = array_activity_List1.concat(array_activity_List2);
-
-  let weekly_score_l1_list = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l1, 'T1');
-  let weekly_score_l2_list = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l2, 'T1');
-  let weekly_score_l3_list = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l3, 'T1');
-  let weekly_score_l1_list0 = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l10, 'T2');
-  let weekly_score_l2_list1 = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l20, 'T2');
-  let weekly_score_l3_list2 = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l30, 'T2');
-
-  let arrayT1_List2 = [];
-
-  for (let i = 0; i < weekly_score_l1_list.length; i++) {
-
-    let l1_entry = weekly_score_l1_list[i];
-    let l2_entry = weekly_score_l2_list[i];
-    let l3_entry = weekly_score_l3_list[i];
-
-    arrayT1_List2.push([
-      i + 1,
-      l1_entry.phoneNumber,
-      l1_entry.name,
-      l1_entry.final_percentage_week1,
-      l1_entry.final_percentage_week2,
-      l1_entry.final_percentage_week3,
-      l1_entry.final_percentage_week4,
-      null,
-      l2_entry.final_percentage_week1,
-      l2_entry.final_percentage_week2,
-      l2_entry.final_percentage_week3,
-      l2_entry.final_percentage_week4,
-      null,
-      l3_entry.final_percentage_week1,
-      l3_entry.final_percentage_week2,
-      l3_entry.final_percentage_week3,
-      l3_entry.final_percentage_week4,
-      null,
-      l1_entry.cohort,
-      l1_entry.targetGroup,
-    ])
-  }
-
-  for (let i = 0; i < weekly_score_l1_list0.length; i++) {
-
-    let l1_entry = weekly_score_l1_list0[i];
-    let l2_entry = weekly_score_l2_list1[i];
-    let l3_entry = weekly_score_l3_list2[i];
-
-    arrayT1_List2.push([
-      i + 1 + weekly_score_l1_list.length,
-      l1_entry.phoneNumber,
-      l1_entry.name,
-      l1_entry.final_percentage_week1,
-      l1_entry.final_percentage_week2,
-      l1_entry.final_percentage_week3,
-      l1_entry.final_percentage_week4,
-      null,
-      l2_entry.final_percentage_week1,
-      l2_entry.final_percentage_week2,
-      l2_entry.final_percentage_week3,
-      l2_entry.final_percentage_week4,
-      null,
-      l3_entry.final_percentage_week1,
-      l3_entry.final_percentage_week2,
-      l3_entry.final_percentage_week3,
-      l3_entry.final_percentage_week4,
-      null,
-      l1_entry.cohort,
-      l1_entry.targetGroup,
-    ])
-  }
-  arrayT1_List2 = arrayT1_List2.map(obj => Object.values(obj).map(value => value));
-  let cer_list = arrayT1_List2;
-
-  let ActivityCompletedCount1 = await etlRepository.getActivityNameCount(courseId_l1, courseId_l2, courseId_l3, 'T1', '');
-  let ActivityCompletedCount2 = await etlRepository.getActivityNameCount(courseId_l10, courseId_l20, courseId_l30, 'T2', '');
-
-  let individual_weekly_score_l1_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l1, 'T1');
-  let individual_weekly_score_l2_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l2, 'T1');
-  let individual_weekly_score_l3_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l3, 'T1');
-
-  let individual_weekly_score_l1_list_total = [], individual_weekly_score_l2_list_total = [];
-  let arrayT1_List01 = [];
-
-  let maxL1 = {
-    listenAndSpeak_total: 0,
-    mcqs_total: 0,
-    watchAndSpeak_total: 0,
-    read_total: 0,
-    conversationalMonologue_total: 0,
-    Speaking_practice_total: 0
-  };
-
-  let maxL2 = {
-    listenAndSpeak_total: 0,
-    mcqs_total: 0,
-    watchAndSpeak_total: 0,
-    read_total: 0,
-    conversationalMonologue_total: 0,
-    Speaking_practice_total: 0
-  };
-
-  let maxL3 = {
-    listenAndSpeak_total: 0,
-    mcqs_total: 0,
-    watchAndSpeak_total: 0,
-    read_total: 0,
-    conversationalMonologue_total: 0,
-    Speaking_practice_total: 0
-  };
-
-  for (let i = 0; i < individual_weekly_score_l1_list.length; i++) {
-    let l1_entry = individual_weekly_score_l1_list[i];
-    let l2_entry = individual_weekly_score_l2_list[i];
-    let l3_entry = individual_weekly_score_l3_list[i];
-
-    // Update max totals for L1
-    maxL1.listenAndSpeak_total = Math.max(maxL1.listenAndSpeak_total, l1_entry.listenAndSpeak_total);
-    maxL1.mcqs_total = Math.max(maxL1.mcqs_total, l1_entry.mcqs_total);
-    maxL1.watchAndSpeak_total = Math.max(maxL1.watchAndSpeak_total, l1_entry.watchAndSpeak_total);
-    maxL1.read_total = Math.max(maxL1.read_total, l1_entry.read_total);
-    maxL1.conversationalMonologue_total = Math.max(maxL1.conversationalMonologue_total, l1_entry.conversationalMonologue_total);
-    maxL1.Speaking_practice_total = Math.max(maxL1.Speaking_practice_total, l1_entry.Speaking_practice_total);
-
-    // Update max totals for L2
-    maxL2.listenAndSpeak_total = Math.max(maxL2.listenAndSpeak_total, l2_entry.listenAndSpeak_total);
-    maxL2.mcqs_total = Math.max(maxL2.mcqs_total, l2_entry.mcqs_total);
-    maxL2.watchAndSpeak_total = Math.max(maxL2.watchAndSpeak_total, l2_entry.watchAndSpeak_total);
-    maxL2.read_total = Math.max(maxL2.read_total, l2_entry.read_total);
-    maxL2.conversationalMonologue_total = Math.max(maxL2.conversationalMonologue_total, l2_entry.conversationalMonologue_total);
-    maxL2.Speaking_practice_total = Math.max(maxL2.Speaking_practice_total, l2_entry.Speaking_practice_total);
-
-    // Update max totals for L3
-    maxL3.listenAndSpeak_total = Math.max(maxL3.listenAndSpeak_total, l3_entry.listenAndSpeak_total);
-    maxL3.mcqs_total = Math.max(maxL3.mcqs_total, l3_entry.mcqs_total);
-    maxL3.watchAndSpeak_total = Math.max(maxL3.watchAndSpeak_total, l3_entry.watchAndSpeak_total);
-    maxL3.read_total = Math.max(maxL3.read_total, l3_entry.read_total);
-    maxL3.conversationalMonologue_total = Math.max(maxL3.conversationalMonologue_total, l3_entry.conversationalMonologue_total);
-    maxL3.Speaking_practice_total = Math.max(maxL3.Speaking_practice_total, l3_entry.Speaking_practice_total);
-
-    // Your existing array push
-    arrayT1_List01.push([
-      i + 1,
-      l1_entry.phoneNumber,
-      l1_entry.name,
-      l1_entry.listenAndSpeak,
-      l1_entry.mcqs,
-      l1_entry.watchAndSpeak,
-      l1_entry.read,
-      l1_entry.conversationalMonologue,
-      l1_entry.Speaking_practice,
-      null,
-      l2_entry.listenAndSpeak,
-      l2_entry.mcqs,
-      l2_entry.watchAndSpeak,
-      l2_entry.read,
-      l2_entry.conversationalMonologue,
-      l2_entry.Speaking_practice,
-      null,
-      l3_entry.listenAndSpeak,
-      l3_entry.mcqs,
-      l3_entry.watchAndSpeak,
-      l3_entry.read,
-      l3_entry.conversationalMonologue,
-      l3_entry.Speaking_practice,
-      null,
-      l1_entry.cohort
-    ]);
-  }
-
-  // Push final max row to individual_weekly_score_l1_list_total
-  individual_weekly_score_l1_list_total.push([
-    maxL1.listenAndSpeak_total,
-    maxL1.mcqs_total,
-    maxL1.watchAndSpeak_total,
-    maxL1.read_total,
-    maxL1.conversationalMonologue_total,
-    maxL1.Speaking_practice_total,
-    null,
-    maxL2.listenAndSpeak_total,
-    maxL2.mcqs_total,
-    maxL2.watchAndSpeak_total,
-    maxL2.read_total,
-    maxL2.conversationalMonologue_total,
-    maxL2.Speaking_practice_total,
-    null,
-    maxL3.listenAndSpeak_total,
-    maxL3.mcqs_total,
-    maxL3.watchAndSpeak_total,
-    maxL3.read_total,
-    maxL3.conversationalMonologue_total,
-    maxL3.Speaking_practice_total
-  ]);
-
-  individual_weekly_score_l1_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l10, 'T2');
-  individual_weekly_score_l2_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l20, 'T2');
-  individual_weekly_score_l3_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l30, 'T2');
-
-
-  maxL1 = {
-    listenAndSpeak_total: 0,
-    mcqs_total: 0,
-    watchAndSpeak_total: 0,
-    read_total: 0,
-    conversationalMonologue_total: 0,
-    Speaking_practice_total: 0
-  };
-
-  maxL2 = {
-    listenAndSpeak_total: 0,
-    mcqs_total: 0,
-    watchAndSpeak_total: 0,
-    read_total: 0,
-    conversationalMonologue_total: 0,
-    Speaking_practice_total: 0
-  };
-
-  maxL3 = {
-    listenAndSpeak_total: 0,
-    mcqs_total: 0,
-    watchAndSpeak_total: 0,
-    read_total: 0,
-    conversationalMonologue_total: 0,
-    Speaking_practice_total: 0
-  };
-
-
-  let arrayT1_List02 = [];
-
-  for (let i = 0; i < individual_weekly_score_l1_list.length; i++) {
-    let l1_entry = individual_weekly_score_l1_list[i];
-    let l2_entry = individual_weekly_score_l2_list[i];
-    let l3_entry = individual_weekly_score_l3_list[i];
-
-    // Update max totals for L1
-    maxL1.listenAndSpeak_total = Math.max(maxL1.listenAndSpeak_total, l1_entry.listenAndSpeak_total);
-    maxL1.mcqs_total = Math.max(maxL1.mcqs_total, l1_entry.mcqs_total);
-    maxL1.watchAndSpeak_total = Math.max(maxL1.watchAndSpeak_total, l1_entry.watchAndSpeak_total);
-    maxL1.read_total = Math.max(maxL1.read_total, l1_entry.read_total);
-    maxL1.conversationalMonologue_total = Math.max(maxL1.conversationalMonologue_total, l1_entry.conversationalMonologue_total);
-    maxL1.Speaking_practice_total = Math.max(maxL1.Speaking_practice_total, l1_entry.Speaking_practice_total);
-
-    // Update max totals for L2
-    maxL2.listenAndSpeak_total = Math.max(maxL2.listenAndSpeak_total, l2_entry.listenAndSpeak_total);
-    maxL2.mcqs_total = Math.max(maxL2.mcqs_total, l2_entry.mcqs_total);
-    maxL2.watchAndSpeak_total = Math.max(maxL2.watchAndSpeak_total, l2_entry.watchAndSpeak_total);
-    maxL2.read_total = Math.max(maxL2.read_total, l2_entry.read_total);
-    maxL2.conversationalMonologue_total = Math.max(maxL2.conversationalMonologue_total, l2_entry.conversationalMonologue_total);
-    maxL2.Speaking_practice_total = Math.max(maxL2.Speaking_practice_total, l2_entry.Speaking_practice_total);
-
-    // Update max totals for L3
-    maxL3.listenAndSpeak_total = Math.max(maxL3.listenAndSpeak_total, l3_entry.listenAndSpeak_total);
-    maxL3.mcqs_total = Math.max(maxL3.mcqs_total, l3_entry.mcqs_total);
-    maxL3.watchAndSpeak_total = Math.max(maxL3.watchAndSpeak_total, l3_entry.watchAndSpeak_total);
-    maxL3.read_total = Math.max(maxL3.read_total, l3_entry.read_total);
-    maxL3.conversationalMonologue_total = Math.max(maxL3.conversationalMonologue_total, l3_entry.conversationalMonologue_total);
-    maxL3.Speaking_practice_total = Math.max(maxL3.Speaking_practice_total, l3_entry.Speaking_practice_total);
-
-    // Your existing array push
-    arrayT1_List02.push([
-      i + 1,
-      l1_entry.phoneNumber,
-      l1_entry.name,
-      l1_entry.listenAndSpeak,
-      l1_entry.mcqs,
-      l1_entry.watchAndSpeak,
-      l1_entry.read,
-      l1_entry.conversationalMonologue,
-      l1_entry.Speaking_practice,
-      null,
-      l2_entry.listenAndSpeak,
-      l2_entry.mcqs,
-      l2_entry.watchAndSpeak,
-      l2_entry.read,
-      l2_entry.conversationalMonologue,
-      l2_entry.Speaking_practice,
-      null,
-      l3_entry.listenAndSpeak,
-      l3_entry.mcqs,
-      l3_entry.watchAndSpeak,
-      l3_entry.read,
-      l3_entry.conversationalMonologue,
-      l3_entry.Speaking_practice,
-      null,
-      l1_entry.cohort
-    ]);
-  }
-
-  // Push final max row to individual_weekly_score_l1_list_total
-  individual_weekly_score_l2_list_total.push([
-    maxL1.listenAndSpeak_total,
-    maxL1.mcqs_total,
-    maxL1.watchAndSpeak_total,
-    maxL1.read_total,
-    maxL1.conversationalMonologue_total,
-    maxL1.Speaking_practice_total,
-    null,
-    maxL2.listenAndSpeak_total,
-    maxL2.mcqs_total,
-    maxL2.watchAndSpeak_total,
-    maxL2.read_total,
-    maxL2.conversationalMonologue_total,
-    maxL2.Speaking_practice_total,
-    null,
-    maxL3.listenAndSpeak_total,
-    maxL3.mcqs_total,
-    maxL3.watchAndSpeak_total,
-    maxL3.read_total,
-    maxL3.conversationalMonologue_total,
-    maxL3.Speaking_practice_total
-  ]);
-
-  arrayT1_List01 = arrayT1_List01.map(obj => Object.values(obj).map(value => value));
-  arrayT1_List02 = arrayT1_List02.map(obj => Object.values(obj).map(value => value));
-
-  individual_weekly_score_l1_list_total = individual_weekly_score_l1_list_total.map(obj => Object.values(obj).map(value => value));
-  individual_weekly_score_l2_list_total = individual_weekly_score_l2_list_total.map(obj => Object.values(obj).map(value => value));
+  cum_lesson_student = cum_lesson_student.map(obj => Object.values(obj).map(value => value));
+  cum_activity_student = cum_activity_student.map(obj => Object.values(obj).map(value => value));
 
   await CumulativeUtils_load(
-    array_Lesson_List,
-    array_activity_List,
-    arrayT1_List2,
-    ActivityCompletedCount1,
-    ActivityCompletedCount2,
-    arrayT1_List01,
-    arrayT1_List02,
-    individual_weekly_score_l1_list_total,
-    individual_weekly_score_l2_list_total
+    cum_lesson_student,
+    cum_activity_student
   );
-  await generateCertificatesForEligibleStudents(cer_list, "cumulative");
+
+  // let courseId_l1 = 106;
+  // let courseId_l2 = 111;
+  // let courseId_l3 = 118;
+
+  // let courseId_l10 = 105;
+  // let courseId_l20 = 110;
+  // let courseId_l30 = 112;
+
+
+  // let array_Lesson_List1 = await getWeeklyActivityCompleted1.getLessonCompletions(courseId_l1, courseId_l2, courseId_l3, 'T1');
+  // array_Lesson_List1 = array_Lesson_List1.map(obj => Object.values(obj).map(value => value));
+
+  // let array_Lesson_List2 = await getWeeklyActivityCompleted1.getLessonCompletions(courseId_l10, courseId_l20, courseId_l30, 'T2');
+  // array_Lesson_List2 = array_Lesson_List2.map(obj => Object.values(obj).map(value => value));
+
+  // let array_Lesson_List = array_Lesson_List1.concat(array_Lesson_List2);
+
+
+  // let array_activity_List1 = await getWeeklyActivityCompleted1.getActivity_Completions(courseId_l1, courseId_l2, courseId_l3, 'T1');
+  // array_activity_List1 = array_activity_List1.map(obj => Object.values(obj).map(value => value));
+
+  // let array_activity_List2 = await getWeeklyActivityCompleted1.getActivity_Completions(courseId_l10, courseId_l20, courseId_l30, 'T2');
+  // array_activity_List2 = array_activity_List2.map(obj => Object.values(obj).map(value => value));
+
+  // let array_activity_List = array_activity_List1.concat(array_activity_List2);
+
+  // let weekly_score_l1_list = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l1, 'T1');
+  // let weekly_score_l2_list = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l2, 'T1');
+  // let weekly_score_l3_list = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l3, 'T1');
+  // let weekly_score_l1_list0 = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l10, 'T2');
+  // let weekly_score_l2_list1 = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l20, 'T2');
+  // let weekly_score_l3_list2 = await getWeeklyActivityCompleted1.getWeeklyScore(courseId_l30, 'T2');
+
+  // let arrayT1_List2 = [];
+
+  // for (let i = 0; i < weekly_score_l1_list.length; i++) {
+
+  //   let l1_entry = weekly_score_l1_list[i];
+  //   let l2_entry = weekly_score_l2_list[i];
+  //   let l3_entry = weekly_score_l3_list[i];
+
+  //   arrayT1_List2.push([
+  //     i + 1,
+  //     l1_entry.phoneNumber,
+  //     l1_entry.name,
+  //     l1_entry.final_percentage_week1,
+  //     l1_entry.final_percentage_week2,
+  //     l1_entry.final_percentage_week3,
+  //     l1_entry.final_percentage_week4,
+  //     null,
+  //     l2_entry.final_percentage_week1,
+  //     l2_entry.final_percentage_week2,
+  //     l2_entry.final_percentage_week3,
+  //     l2_entry.final_percentage_week4,
+  //     null,
+  //     l3_entry.final_percentage_week1,
+  //     l3_entry.final_percentage_week2,
+  //     l3_entry.final_percentage_week3,
+  //     l3_entry.final_percentage_week4,
+  //     null,
+  //     l1_entry.cohort,
+  //     l1_entry.targetGroup,
+  //   ])
+  // }
+
+  // for (let i = 0; i < weekly_score_l1_list0.length; i++) {
+
+  //   let l1_entry = weekly_score_l1_list0[i];
+  //   let l2_entry = weekly_score_l2_list1[i];
+  //   let l3_entry = weekly_score_l3_list2[i];
+
+  //   arrayT1_List2.push([
+  //     i + 1 + weekly_score_l1_list.length,
+  //     l1_entry.phoneNumber,
+  //     l1_entry.name,
+  //     l1_entry.final_percentage_week1,
+  //     l1_entry.final_percentage_week2,
+  //     l1_entry.final_percentage_week3,
+  //     l1_entry.final_percentage_week4,
+  //     null,
+  //     l2_entry.final_percentage_week1,
+  //     l2_entry.final_percentage_week2,
+  //     l2_entry.final_percentage_week3,
+  //     l2_entry.final_percentage_week4,
+  //     null,
+  //     l3_entry.final_percentage_week1,
+  //     l3_entry.final_percentage_week2,
+  //     l3_entry.final_percentage_week3,
+  //     l3_entry.final_percentage_week4,
+  //     null,
+  //     l1_entry.cohort,
+  //     l1_entry.targetGroup,
+  //   ])
+  // }
+  // arrayT1_List2 = arrayT1_List2.map(obj => Object.values(obj).map(value => value));
+  // let cer_list = arrayT1_List2;
+
+  // let ActivityCompletedCount1 = await etlRepository.getActivityNameCount(courseId_l1, courseId_l2, courseId_l3, 'T1', '');
+  // let ActivityCompletedCount2 = await etlRepository.getActivityNameCount(courseId_l10, courseId_l20, courseId_l30, 'T2', '');
+
+  // let individual_weekly_score_l1_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l1, 'T1');
+  // let individual_weekly_score_l2_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l2, 'T1');
+  // let individual_weekly_score_l3_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l3, 'T1');
+
+  // let individual_weekly_score_l1_list_total = [], individual_weekly_score_l2_list_total = [];
+  // let arrayT1_List01 = [];
+
+  // let maxL1 = {
+  //   listenAndSpeak_total: 0,
+  //   mcqs_total: 0,
+  //   watchAndSpeak_total: 0,
+  //   read_total: 0,
+  //   conversationalMonologue_total: 0,
+  //   Speaking_practice_total: 0
+  // };
+
+  // let maxL2 = {
+  //   listenAndSpeak_total: 0,
+  //   mcqs_total: 0,
+  //   watchAndSpeak_total: 0,
+  //   read_total: 0,
+  //   conversationalMonologue_total: 0,
+  //   Speaking_practice_total: 0
+  // };
+
+  // let maxL3 = {
+  //   listenAndSpeak_total: 0,
+  //   mcqs_total: 0,
+  //   watchAndSpeak_total: 0,
+  //   read_total: 0,
+  //   conversationalMonologue_total: 0,
+  //   Speaking_practice_total: 0
+  // };
+
+  // for (let i = 0; i < individual_weekly_score_l1_list.length; i++) {
+  //   let l1_entry = individual_weekly_score_l1_list[i];
+  //   let l2_entry = individual_weekly_score_l2_list[i];
+  //   let l3_entry = individual_weekly_score_l3_list[i];
+
+  //   // Update max totals for L1
+  //   maxL1.listenAndSpeak_total = Math.max(maxL1.listenAndSpeak_total, l1_entry.listenAndSpeak_total);
+  //   maxL1.mcqs_total = Math.max(maxL1.mcqs_total, l1_entry.mcqs_total);
+  //   maxL1.watchAndSpeak_total = Math.max(maxL1.watchAndSpeak_total, l1_entry.watchAndSpeak_total);
+  //   maxL1.read_total = Math.max(maxL1.read_total, l1_entry.read_total);
+  //   maxL1.conversationalMonologue_total = Math.max(maxL1.conversationalMonologue_total, l1_entry.conversationalMonologue_total);
+  //   maxL1.Speaking_practice_total = Math.max(maxL1.Speaking_practice_total, l1_entry.Speaking_practice_total);
+
+  //   // Update max totals for L2
+  //   maxL2.listenAndSpeak_total = Math.max(maxL2.listenAndSpeak_total, l2_entry.listenAndSpeak_total);
+  //   maxL2.mcqs_total = Math.max(maxL2.mcqs_total, l2_entry.mcqs_total);
+  //   maxL2.watchAndSpeak_total = Math.max(maxL2.watchAndSpeak_total, l2_entry.watchAndSpeak_total);
+  //   maxL2.read_total = Math.max(maxL2.read_total, l2_entry.read_total);
+  //   maxL2.conversationalMonologue_total = Math.max(maxL2.conversationalMonologue_total, l2_entry.conversationalMonologue_total);
+  //   maxL2.Speaking_practice_total = Math.max(maxL2.Speaking_practice_total, l2_entry.Speaking_practice_total);
+
+  //   // Update max totals for L3
+  //   maxL3.listenAndSpeak_total = Math.max(maxL3.listenAndSpeak_total, l3_entry.listenAndSpeak_total);
+  //   maxL3.mcqs_total = Math.max(maxL3.mcqs_total, l3_entry.mcqs_total);
+  //   maxL3.watchAndSpeak_total = Math.max(maxL3.watchAndSpeak_total, l3_entry.watchAndSpeak_total);
+  //   maxL3.read_total = Math.max(maxL3.read_total, l3_entry.read_total);
+  //   maxL3.conversationalMonologue_total = Math.max(maxL3.conversationalMonologue_total, l3_entry.conversationalMonologue_total);
+  //   maxL3.Speaking_practice_total = Math.max(maxL3.Speaking_practice_total, l3_entry.Speaking_practice_total);
+
+  //   // Your existing array push
+  //   arrayT1_List01.push([
+  //     i + 1,
+  //     l1_entry.phoneNumber,
+  //     l1_entry.name,
+  //     l1_entry.listenAndSpeak,
+  //     l1_entry.mcqs,
+  //     l1_entry.watchAndSpeak,
+  //     l1_entry.read,
+  //     l1_entry.conversationalMonologue,
+  //     l1_entry.Speaking_practice,
+  //     null,
+  //     l2_entry.listenAndSpeak,
+  //     l2_entry.mcqs,
+  //     l2_entry.watchAndSpeak,
+  //     l2_entry.read,
+  //     l2_entry.conversationalMonologue,
+  //     l2_entry.Speaking_practice,
+  //     null,
+  //     l3_entry.listenAndSpeak,
+  //     l3_entry.mcqs,
+  //     l3_entry.watchAndSpeak,
+  //     l3_entry.read,
+  //     l3_entry.conversationalMonologue,
+  //     l3_entry.Speaking_practice,
+  //     null,
+  //     l1_entry.cohort
+  //   ]);
+  // }
+
+  // // Push final max row to individual_weekly_score_l1_list_total
+  // individual_weekly_score_l1_list_total.push([
+  //   maxL1.listenAndSpeak_total,
+  //   maxL1.mcqs_total,
+  //   maxL1.watchAndSpeak_total,
+  //   maxL1.read_total,
+  //   maxL1.conversationalMonologue_total,
+  //   maxL1.Speaking_practice_total,
+  //   null,
+  //   maxL2.listenAndSpeak_total,
+  //   maxL2.mcqs_total,
+  //   maxL2.watchAndSpeak_total,
+  //   maxL2.read_total,
+  //   maxL2.conversationalMonologue_total,
+  //   maxL2.Speaking_practice_total,
+  //   null,
+  //   maxL3.listenAndSpeak_total,
+  //   maxL3.mcqs_total,
+  //   maxL3.watchAndSpeak_total,
+  //   maxL3.read_total,
+  //   maxL3.conversationalMonologue_total,
+  //   maxL3.Speaking_practice_total
+  // ]);
+
+  // individual_weekly_score_l1_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l10, 'T2');
+  // individual_weekly_score_l2_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l20, 'T2');
+  // individual_weekly_score_l3_list = await getWeeklyActivityCompleted1.getActivtyWiseWeeklyScore(courseId_l30, 'T2');
+
+
+  // maxL1 = {
+  //   listenAndSpeak_total: 0,
+  //   mcqs_total: 0,
+  //   watchAndSpeak_total: 0,
+  //   read_total: 0,
+  //   conversationalMonologue_total: 0,
+  //   Speaking_practice_total: 0
+  // };
+
+  // maxL2 = {
+  //   listenAndSpeak_total: 0,
+  //   mcqs_total: 0,
+  //   watchAndSpeak_total: 0,
+  //   read_total: 0,
+  //   conversationalMonologue_total: 0,
+  //   Speaking_practice_total: 0
+  // };
+
+  // maxL3 = {
+  //   listenAndSpeak_total: 0,
+  //   mcqs_total: 0,
+  //   watchAndSpeak_total: 0,
+  //   read_total: 0,
+  //   conversationalMonologue_total: 0,
+  //   Speaking_practice_total: 0
+  // };
+
+
+  // let arrayT1_List02 = [];
+
+  // for (let i = 0; i < individual_weekly_score_l1_list.length; i++) {
+  //   let l1_entry = individual_weekly_score_l1_list[i];
+  //   let l2_entry = individual_weekly_score_l2_list[i];
+  //   let l3_entry = individual_weekly_score_l3_list[i];
+
+  //   // Update max totals for L1
+  //   maxL1.listenAndSpeak_total = Math.max(maxL1.listenAndSpeak_total, l1_entry.listenAndSpeak_total);
+  //   maxL1.mcqs_total = Math.max(maxL1.mcqs_total, l1_entry.mcqs_total);
+  //   maxL1.watchAndSpeak_total = Math.max(maxL1.watchAndSpeak_total, l1_entry.watchAndSpeak_total);
+  //   maxL1.read_total = Math.max(maxL1.read_total, l1_entry.read_total);
+  //   maxL1.conversationalMonologue_total = Math.max(maxL1.conversationalMonologue_total, l1_entry.conversationalMonologue_total);
+  //   maxL1.Speaking_practice_total = Math.max(maxL1.Speaking_practice_total, l1_entry.Speaking_practice_total);
+
+  //   // Update max totals for L2
+  //   maxL2.listenAndSpeak_total = Math.max(maxL2.listenAndSpeak_total, l2_entry.listenAndSpeak_total);
+  //   maxL2.mcqs_total = Math.max(maxL2.mcqs_total, l2_entry.mcqs_total);
+  //   maxL2.watchAndSpeak_total = Math.max(maxL2.watchAndSpeak_total, l2_entry.watchAndSpeak_total);
+  //   maxL2.read_total = Math.max(maxL2.read_total, l2_entry.read_total);
+  //   maxL2.conversationalMonologue_total = Math.max(maxL2.conversationalMonologue_total, l2_entry.conversationalMonologue_total);
+  //   maxL2.Speaking_practice_total = Math.max(maxL2.Speaking_practice_total, l2_entry.Speaking_practice_total);
+
+  //   // Update max totals for L3
+  //   maxL3.listenAndSpeak_total = Math.max(maxL3.listenAndSpeak_total, l3_entry.listenAndSpeak_total);
+  //   maxL3.mcqs_total = Math.max(maxL3.mcqs_total, l3_entry.mcqs_total);
+  //   maxL3.watchAndSpeak_total = Math.max(maxL3.watchAndSpeak_total, l3_entry.watchAndSpeak_total);
+  //   maxL3.read_total = Math.max(maxL3.read_total, l3_entry.read_total);
+  //   maxL3.conversationalMonologue_total = Math.max(maxL3.conversationalMonologue_total, l3_entry.conversationalMonologue_total);
+  //   maxL3.Speaking_practice_total = Math.max(maxL3.Speaking_practice_total, l3_entry.Speaking_practice_total);
+
+  //   // Your existing array push
+  //   arrayT1_List02.push([
+  //     i + 1,
+  //     l1_entry.phoneNumber,
+  //     l1_entry.name,
+  //     l1_entry.listenAndSpeak,
+  //     l1_entry.mcqs,
+  //     l1_entry.watchAndSpeak,
+  //     l1_entry.read,
+  //     l1_entry.conversationalMonologue,
+  //     l1_entry.Speaking_practice,
+  //     null,
+  //     l2_entry.listenAndSpeak,
+  //     l2_entry.mcqs,
+  //     l2_entry.watchAndSpeak,
+  //     l2_entry.read,
+  //     l2_entry.conversationalMonologue,
+  //     l2_entry.Speaking_practice,
+  //     null,
+  //     l3_entry.listenAndSpeak,
+  //     l3_entry.mcqs,
+  //     l3_entry.watchAndSpeak,
+  //     l3_entry.read,
+  //     l3_entry.conversationalMonologue,
+  //     l3_entry.Speaking_practice,
+  //     null,
+  //     l1_entry.cohort
+  //   ]);
+  // }
+
+  // // Push final max row to individual_weekly_score_l1_list_total
+  // individual_weekly_score_l2_list_total.push([
+  //   maxL1.listenAndSpeak_total,
+  //   maxL1.mcqs_total,
+  //   maxL1.watchAndSpeak_total,
+  //   maxL1.read_total,
+  //   maxL1.conversationalMonologue_total,
+  //   maxL1.Speaking_practice_total,
+  //   null,
+  //   maxL2.listenAndSpeak_total,
+  //   maxL2.mcqs_total,
+  //   maxL2.watchAndSpeak_total,
+  //   maxL2.read_total,
+  //   maxL2.conversationalMonologue_total,
+  //   maxL2.Speaking_practice_total,
+  //   null,
+  //   maxL3.listenAndSpeak_total,
+  //   maxL3.mcqs_total,
+  //   maxL3.watchAndSpeak_total,
+  //   maxL3.read_total,
+  //   maxL3.conversationalMonologue_total,
+  //   maxL3.Speaking_practice_total
+  // ]);
+
+  // arrayT1_List01 = arrayT1_List01.map(obj => Object.values(obj).map(value => value));
+  // arrayT1_List02 = arrayT1_List02.map(obj => Object.values(obj).map(value => value));
+
+  // individual_weekly_score_l1_list_total = individual_weekly_score_l1_list_total.map(obj => Object.values(obj).map(value => value));
+  // individual_weekly_score_l2_list_total = individual_weekly_score_l2_list_total.map(obj => Object.values(obj).map(value => value));
+
+  // await CumulativeUtils_load(
+  //   array_Lesson_List,
+  //   array_activity_List,
+  //   arrayT1_List2,
+  //   ActivityCompletedCount1,
+  //   ActivityCompletedCount2,
+  //   arrayT1_List01,
+  //   arrayT1_List02,
+  //   individual_weekly_score_l1_list_total,
+  //   individual_weekly_score_l2_list_total
+  // );
+  // await generateCertificatesForEligibleStudents(cer_list, "cumulative");
 }
 
 const runETL = async () => {
@@ -805,4 +817,4 @@ const runETL_Dashboard = async () => {
   }
 };
 
-export default { runETL, runETL_Dashboard };
+export default { runETL, runETL_Dashboard, runCumulativeSheets };
