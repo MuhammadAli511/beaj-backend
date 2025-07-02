@@ -792,6 +792,59 @@ const studentUserJourneyStatsService = async (date) => {
     }
 };
 
+const clearingCacheService = async () => {
+    try {
+        const queries = [
+            `UPDATE "MultipleChoiceQuestionAnswers"
+             SET
+                 "AnswerImageMediaId" = NULL,
+                 "AnswerAudioMediaId" = NULL,
+                 "CustomAnswerFeedbackImageMediaId" = NULL,
+                 "CustomAnswerFeedbackAudioMediaId" = NULL;`,
+
+            `UPDATE "speakActivityQuestions"
+             SET
+                 "mediaFileMediaId" = NULL,
+                 "mediaFileSecondMediaId" = NULL,
+                 "customFeedbackImageMediaId" = NULL,
+                 "customFeedbackAudioMediaId" = NULL;`,
+
+            `UPDATE "MultipleChoiceQuesions"
+             SET
+                 "QuestionImageMediaId" = NULL,
+                 "QuestionAudioMediaId" = NULL,
+                 "QuestionVideoMediaId" = NULL;`,
+
+            `UPDATE "DocumentFiles"
+             SET
+                 "videoMediaId" = NULL,
+                 "audioMediaId" = NULL,
+                 "imageMediaId" = NULL;`
+        ];
+
+        const results = [];
+
+        // Execute queries sequentially to ensure proper execution
+        for (const query of queries) {
+            const [result] = await sequelize.query(query);
+            results.push(result);
+        }
+
+        return {
+            success: true,
+            message: 'Cache cleared successfully',
+            affectedRows: {
+                multipleChoiceQuestionAnswers: results[0],
+                speakActivityQuestions: results[1],
+                multipleChoiceQuestions: results[2],
+                documentFiles: results[3]
+            }
+        };
+    } catch (error) {
+        error.fileName = 'statsService.js';
+        throw error;
+    }
+};
 
 export default {
     totalContentStatsService,
@@ -799,5 +852,6 @@ export default {
     lastActiveUsersService,
     studentUserJourneyStatsService,
     studentTrialUserJourneyStatsService,
-    studentCourseStatsService
+    studentCourseStatsService,
+    clearingCacheService
 };

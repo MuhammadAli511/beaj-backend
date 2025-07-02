@@ -63,6 +63,16 @@ const studentCourseStatsController = async (req, res, next) => {
     }
 };
 
+const clearingCacheController = async (req, res, next) => {
+    try {
+        const result = await service.clearingCacheService();
+        res.status(200).send(result);
+    } catch (error) {
+        error.fileName = 'statsController.js';
+        next(error);
+    }
+};
+
 export default {
     totalContentStatsController,
     dashboardCardsFunnelController,
@@ -70,4 +80,5 @@ export default {
     studentUserJourneyStatsController,
     studentTrialUserJourneyStatsController,
     studentCourseStatsController,
+    clearingCacheController,
 };

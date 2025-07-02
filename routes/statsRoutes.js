@@ -1,5 +1,6 @@
 import express from 'express';
 import beajFacilitatorsAuth from '../middlewares/beajFacilitatorsAuth.js';
+import beajEmployeesAuth from '../middlewares/beajEmployeesAuth.js';
 import statsController from '../controllers/statsController.js';
 import errorHandler from '../middlewares/errorHandler.js';
 
@@ -27,6 +28,9 @@ router.post('/studentTrialUserJourneyStats', beajFacilitatorsAuth, statsControll
 
 // GET api/stats/studentCourseStats
 router.get('/studentCourseStats', beajFacilitatorsAuth, statsController.studentCourseStatsController);
+
+// POST api/stats/clearingCache
+router.post('/clearingCache', beajEmployeesAuth, statsController.clearingCacheController);
 
 // Use error handler middleware
 router.use(errorHandler);
