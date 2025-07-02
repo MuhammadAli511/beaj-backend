@@ -8,15 +8,8 @@ const creds = JSON.parse(
 const sheets = google.sheets("v4");
 
 const CumulativeUtils_load = async (
-  array_Lesson_List,
-  array_activity_List,
-  arrayT1_List2,
-  ActivityCompletedCount1,
-  ActivityCompletedCount2,
-  arrayT1_List01,
-  arrayT1_List02,
-  individual_weekly_score_l1_list_total,
-  individual_weekly_score_l2_list_total,
+  cum_lesson_student,
+    cum_activity_student
 ) => {
   try {
     const auth = new google.auth.GoogleAuth({
@@ -30,13 +23,13 @@ const CumulativeUtils_load = async (
 
       const resource_clear = {
         ranges: [
-            `Rollout Lesson!A3:U`, 
-            `Rollout Activity!A3:U`, 
-            `Rollout Week!A3:T`,
-            `Rollout-T1 Activity Count!A3:Z`,
-            `Rollout-T2 Activity Count!A3:Z`,
-            `Rollout-T1 Activity Score!A4:Z`,
-            `Rollout-T2 Activity Score!A4:Z`,
+            `Student Lesson!A3:N`, 
+            `Student Activity!A3:N`, 
+            // `Rollout Week!A3:T`,
+            // `Rollout-T1 Activity Count!A3:Z`,
+            // `Rollout-T2 Activity Count!A3:Z`,
+            // `Rollout-T1 Activity Score!A4:Z`,
+            // `Rollout-T2 Activity Score!A4:Z`,
         ],
     };
 
@@ -50,41 +43,41 @@ const CumulativeUtils_load = async (
       valueInputOption: "RAW",
       data: [
         {
-          range: `Rollout Lesson!A3:U`, 
-          values: array_Lesson_List
+          range: `Student Lesson!A3:N`, 
+          values: cum_lesson_student
         },
         {
-          range: `Rollout Activity!A3:U`, 
-          values: array_activity_List
+          range: `Student Activity!A3:N`, 
+          values: cum_activity_student
         },
-        {
-          range: `Rollout Week!A3:T`, 
-          values: arrayT1_List2,
-        },
-        {
-          range: `Rollout-T1 Activity Count!A1`, 
-          values: ActivityCompletedCount1,
-        },
-        {
-          range: `Rollout-T2 Activity Count!A1`, 
-          values: ActivityCompletedCount2,
-        },
-        {
-          range: `Rollout-T1 Activity Score!A4`, 
-          values: arrayT1_List01,
-        },
-        {
-          range: `Rollout-T2 Activity Score!A4`, 
-          values: arrayT1_List02,
-        },
-        {
-          range: `Rollout-T1 Activity Score!D2`, 
-          values: individual_weekly_score_l1_list_total,
-        },
-        {
-          range: `Rollout-T2 Activity Score!D2`, 
-          values: individual_weekly_score_l2_list_total,
-        },
+        // {
+        //   range: `Rollout Week!A3:T`, 
+        //   values: arrayT1_List2,
+        // },
+        // {
+        //   range: `Rollout-T1 Activity Count!A1`, 
+        //   values: ActivityCompletedCount1,
+        // },
+        // {
+        //   range: `Rollout-T2 Activity Count!A1`, 
+        //   values: ActivityCompletedCount2,
+        // },
+        // {
+        //   range: `Rollout-T1 Activity Score!A4`, 
+        //   values: arrayT1_List01,
+        // },
+        // {
+        //   range: `Rollout-T2 Activity Score!A4`, 
+        //   values: arrayT1_List02,
+        // },
+        // {
+        //   range: `Rollout-T1 Activity Score!D2`, 
+        //   values: individual_weekly_score_l1_list_total,
+        // },
+        // {
+        //   range: `Rollout-T2 Activity Score!D2`, 
+        //   values: individual_weekly_score_l2_list_total,
+        // },
       ],
     };
     

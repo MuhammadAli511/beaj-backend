@@ -2298,7 +2298,193 @@ const getLastActivityCompleted_DropOff = async (course_id1) => {
     }
 };
 
+const getCumulativeLessonCompletions = async () => {
+    try {
+        const qry = `
+        WITH student_courses AS (
+    -- Get each student's actual assigned courses (one per grade)
+    SELECT DISTINCT
+        m."profile_id",
+        m."phoneNumber",
+        m."name",
+        m."classLevel" AS grade,
+        m."cohort",
+        m."rollout",
+        -- Map grade to course (adjust these mappings as needed)
+        CASE m."classLevel"
+            WHEN 'grade 1' THEN 119
+            WHEN 'grade 2' THEN 120
+            WHEN 'grade 3' THEN 121
+            WHEN 'grade 4' THEN 122
+            WHEN 'grade 5' THEN 123
+            WHEN 'grade 6' THEN 124
+            WHEN 'grade 7' THEN 143
+        END AS "courseId"
+    FROM "wa_users_metadata" m
+    INNER JOIN "wa_profiles" p ON m."profile_id" = p."profile_id"
+    WHERE
+        m."rollout" = 2
+        AND p."profile_type" = 'student'
+        AND m."classLevel" IN ('grade 1', 'grade 2', 'grade 3', 'grade 4', 'grade 5', 'grade 6', 'grade 7')
+        AND m."cohort" IS NOT NULL and m."cohort" != 'Cohort 0'
+),
+
+lesson_completions AS (
+    -- Get completion data for all relevant courses
+    SELECT 
+        wlc."profile_id",
+        wlc."phoneNumber",
+        l."courseId",
+        l."weekNumber",
+        COUNT(DISTINCT l."dayNumber") AS days_completed
+    FROM "wa_lessons_completed" wlc
+    INNER JOIN "Lesson" l ON l."LessonId" = wlc."lessonId"
+        AND l."courseId" = wlc."courseId"
+        AND l."status" = 'Active'
+    WHERE wlc."completionStatus" = 'Completed'
+        AND l."courseId" IN (119,120,121,122,123,124,143)
+    GROUP BY wlc."profile_id", wlc."phoneNumber", l."courseId", l."weekNumber"
+),
+
+user_weekly_progress AS (
+    -- Pivot weekly completion data
+    SELECT
+        lc."profile_id",
+        lc."phoneNumber",
+        lc."courseId",
+        MAX(CASE WHEN lc."weekNumber" = 1 THEN lc."days_completed" END) AS week1,
+        MAX(CASE WHEN lc."weekNumber" = 2 THEN lc."days_completed" END) AS week2,
+        MAX(CASE WHEN lc."weekNumber" = 3 THEN lc."days_completed" END) AS week3,
+        MAX(CASE WHEN lc."weekNumber" = 4 THEN lc."days_completed" END) AS week4
+    FROM lesson_completions lc
+    GROUP BY lc."profile_id", lc."phoneNumber", lc."courseId"
+)
+
+-- Final result with all students and their completion data
+SELECT
+    ROW_NUMBER() OVER (ORDER BY sc.grade, sc."cohort", sc."name") AS sr_no,
+    sc."profile_id",
+    sc."phoneNumber",
+    sc."name",
+    COALESCE(up.week1, null) AS week1,
+    COALESCE(up.week2, null) AS week2,
+    COALESCE(up.week3, null) AS week3,
+    COALESCE(up.week4, null) AS week4,
+    nullif(COALESCE(up.week1, 0) + COALESCE(up.week2, 0) + 
+    COALESCE(up.week3, 0) + COALESCE(up.week4, 0),0) AS total,
+    sc."courseId",
+    sc.grade,
+    sc."cohort",
+    sc."rollout"
+FROM student_courses sc
+LEFT JOIN user_weekly_progress up ON sc."profile_id" = up."profile_id"
+    AND sc."phoneNumber" = up."phoneNumber"
+    AND sc."courseId" = up."courseId"
+ORDER BY sc.grade, sc."cohort", sc."name";
+        `;
+
+        // console.log("Cumulative Weekly Completion Query (All Users):", qry);
+        const res = await sequelize.query(qry);
+        return res[0];
+    } catch (error) {
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
+};
+
+
+const getCumulativeActivityCompletions = async () => {
+  try {
+    const qry = `
+      WITH student_courses AS (
+        SELECT DISTINCT
+            m."profile_id",
+            m."phoneNumber",
+            m."name",
+            m."classLevel" AS grade,
+            m."cohort",
+            m."rollout",
+            CASE m."classLevel"
+                WHEN 'grade 1' THEN 119
+                WHEN 'grade 2' THEN 120
+                WHEN 'grade 3' THEN 121
+                WHEN 'grade 4' THEN 122
+                WHEN 'grade 5' THEN 123
+                WHEN 'grade 6' THEN 124
+                WHEN 'grade 7' THEN 143
+            END AS "courseId"
+        FROM "wa_users_metadata" m
+        INNER JOIN "wa_profiles" p ON m."profile_id" = p."profile_id"
+        WHERE 
+            m."rollout" = 2
+            AND p."profile_type" = 'student'
+            AND m."classLevel" IN ('grade 1', 'grade 2', 'grade 3', 'grade 4', 'grade 5', 'grade 6', 'grade 7')
+            AND m."cohort" IS NOT NULL and m."cohort" != 'Cohort 0'
+      ),
+      activity_completions AS (
+        SELECT 
+            wlc."profile_id",
+            wlc."phoneNumber",
+            l."courseId",
+            l."weekNumber",
+            COUNT(*) AS activities_completed
+        FROM "wa_lessons_completed" wlc
+        INNER JOIN "Lesson" l ON l."LessonId" = wlc."lessonId"
+            AND l."courseId" = wlc."courseId"
+            AND l."status" = 'Active'
+        WHERE wlc."completionStatus" = 'Completed'
+            AND l."courseId" IN (119,120,121,122,123,124,143)
+        GROUP BY wlc."profile_id", wlc."phoneNumber", l."courseId", l."weekNumber"
+      ),
+      user_weekly_activities AS (
+        SELECT
+            ac."profile_id",
+            ac."phoneNumber",
+            ac."courseId",
+            MAX(CASE WHEN ac."weekNumber" = 1 THEN ac."activities_completed" END) AS week1,
+            MAX(CASE WHEN ac."weekNumber" = 2 THEN ac."activities_completed" END) AS week2,
+            MAX(CASE WHEN ac."weekNumber" = 3 THEN ac."activities_completed" END) AS week3,
+            MAX(CASE WHEN ac."weekNumber" = 4 THEN ac."activities_completed" END) AS week4
+        FROM activity_completions ac
+        GROUP BY ac."profile_id", ac."phoneNumber", ac."courseId"
+      )
+      SELECT
+          ROW_NUMBER() OVER (ORDER BY sc.grade, sc."cohort", sc."name") AS sr_no,
+          sc."profile_id",
+          sc."phoneNumber",
+          sc."name",
+          COALESCE(uwa.week1, null) AS week1,
+          COALESCE(uwa.week2, null) AS week2,
+          COALESCE(uwa.week3, null) AS week3,
+          COALESCE(uwa.week4, null) AS week4,
+          NULLIF(
+            COALESCE(uwa.week1, 0) + 
+            COALESCE(uwa.week2, 0) + 
+            COALESCE(uwa.week3, 0) + 
+            COALESCE(uwa.week4, 0), 0
+          ) AS total,
+           sc."courseId",
+          sc."grade",
+          sc."cohort",
+          sc."rollout"
+      FROM student_courses sc
+      LEFT JOIN user_weekly_activities uwa 
+        ON sc."profile_id" = uwa."profile_id" 
+        AND sc."phoneNumber" = uwa."phoneNumber"
+        AND sc."courseId" = uwa."courseId"
+      ORDER BY sc.grade, sc."cohort", sc."name";
+    `;
+
+    const res = await sequelize.query(qry);
+    return res[0];
+  } catch (error) {
+    error.fileName = "etlRepository.js";
+    throw error;
+  }
+};
+
+
 export default {
     getDataFromPostgres, getSuccessRate, getActivityTotalCount, getCompletedActivity, getLessonCompletion, getLastActivityCompleted, getWeeklyScore, getPhoneNumber_userNudges, getWeeklyScore_pilot, getCount_NotStartedActivity, getLessonCompletions, getActivity_Completions, getActivityNameCount,
-    getLastActivityCompleted_DropOff, getActivtyAssessmentScore,
+    getLastActivityCompleted_DropOff, getActivtyAssessmentScore,getCumulativeLessonCompletions,getCumulativeActivityCompletions
 };
