@@ -53,7 +53,7 @@ const assessmentWatchAndSpeakView = async (profileId, userMobileNumber, currentU
                 await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null, videoCaptionText);
 
                 if (firstWatchAndSpeakQuestion.dataValues.mediaFileSecond && firstWatchAndSpeakQuestion.dataValues.mediaFileSecond != null && firstWatchAndSpeakQuestion.dataValues.mediaFileSecond != "" && firstWatchAndSpeakQuestion.dataValues.mediaFileSecond != "null") {
-                    await sleep(4000);
+                    await sleep(5000);
                     await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFileSecond, 'image', null, 0, "SpeakActivityQuestion", firstWatchAndSpeakQuestion.dataValues.id, firstWatchAndSpeakQuestion.dataValues.mediaFileSecondMediaId, "mediaFileSecondMediaId");
                     await createActivityLog(userMobileNumber, "image", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFileSecond, null);
                 }
@@ -190,7 +190,7 @@ const assessmentWatchAndSpeakView = async (profileId, userMobileNumber, currentU
                     await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null, videoCaptionText);
 
                     if (nextWatchAndSpeakQuestion.dataValues.mediaFileSecond && nextWatchAndSpeakQuestion.dataValues.mediaFileSecond != null && nextWatchAndSpeakQuestion.dataValues.mediaFileSecond != "" && nextWatchAndSpeakQuestion.dataValues.mediaFileSecond != "null") {
-                        await sleep(4000);
+                        await sleep(5000);
                         await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, 'image', null, 0, "SpeakActivityQuestion", nextWatchAndSpeakQuestion.dataValues.id, nextWatchAndSpeakQuestion.dataValues.mediaFileSecondMediaId, "mediaFileSecondMediaId");
                         await createActivityLog(userMobileNumber, "image", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, null);
                     }
@@ -255,7 +255,7 @@ const assessmentWatchAndSpeakView = async (profileId, userMobileNumber, currentU
                 await createActivityLog(userMobileNumber, "video", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
 
                 if (firstWatchAndSpeakQuestion.dataValues.mediaFileSecond && firstWatchAndSpeakQuestion.dataValues.mediaFileSecond != null && firstWatchAndSpeakQuestion.dataValues.mediaFileSecond != "" && firstWatchAndSpeakQuestion.dataValues.mediaFileSecond != "null") {
-                    await sleep(4000);
+                    await sleep(5000);
                     await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFileSecond, 'image', null, 0, "SpeakActivityQuestion", firstWatchAndSpeakQuestion.dataValues.id, firstWatchAndSpeakQuestion.dataValues.mediaFileSecondMediaId, "mediaFileSecondMediaId");
                     await createActivityLog(userMobileNumber, "image", "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFileSecond, null);
                 }
@@ -398,7 +398,7 @@ const assessmentWatchAndSpeakView = async (profileId, userMobileNumber, currentU
                     await createActivityLog(userMobileNumber, "video", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
 
                     if (nextWatchAndSpeakQuestion.dataValues.mediaFileSecond && nextWatchAndSpeakQuestion.dataValues.mediaFileSecond != null && nextWatchAndSpeakQuestion.dataValues.mediaFileSecond != "" && nextWatchAndSpeakQuestion.dataValues.mediaFileSecond != "null") {
-                        await sleep(4000);
+                        await sleep(5000);
                         await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, 'image', null, 0, "SpeakActivityQuestion", nextWatchAndSpeakQuestion.dataValues.id, nextWatchAndSpeakQuestion.dataValues.mediaFileSecondMediaId, "mediaFileSecondMediaId");
                         await createActivityLog(userMobileNumber, "image", "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, null);
                     }

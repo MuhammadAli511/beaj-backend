@@ -322,7 +322,7 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
 
 
         // Sleep
-        await sleep(4000);
+        await sleep(5000);
 
         if (lessonNumber == totalLessons && strippedCourseName == "Level 3") {
             const congratsImage = await waConstantsRepository.getByKey("LEVEL_3_CONGRATULATIONS");

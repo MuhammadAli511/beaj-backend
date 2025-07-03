@@ -263,7 +263,7 @@ const startCourseForUser = async (profileId, userMobileNumber, numbers_to_ignore
             if (demoVideo) {
                 await sendMediaMessage(userMobileNumber, demoVideo.dataValues.constantValue, 'video', null, 0, "WA_Constants", demoVideo.dataValues.id, demoVideo.dataValues.constantMediaId, "constantMediaId");
                 await createActivityLog(userMobileNumber, "video", "outbound", demoVideo.dataValues.constantValue, null);
-                await sleep(4000);
+                await sleep(5000);
             }
         }
         await sendButtonMessage(userMobileNumber, "Are you ready to start " + level + "?", [{ id: "lets_start", title: "Start" }]);

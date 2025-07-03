@@ -17,7 +17,6 @@ import {
     kidsChooseClass,
     kidsChooseClassLoop,
     demoCourseStart,
-    endTrialTeachers,
     confirmSchoolName,
     thankyouMessageSchoolOwner,
     getUserProfile,
@@ -509,7 +508,7 @@ const webhookService = async (body, res) => {
                         let prospectusPdf = await waConstantsRepository.getByKey("SUMMER_CAMP_PROSPECTUS_PDF");
                         if (prospectusPdf) {
                             await sendMediaMessage(userMobileNumber, prospectusPdf.dataValues.constantValue, "pdf", "Summer Camp Prospectus for Schools", 0, "WA_Constants", prospectusPdf.dataValues.id, prospectusPdf.dataValues.constantMediaId, "constantMediaId");
-                            await sleep(4000);
+                            await sleep(5000);
                         }
                         await waUserProgressRepository.updatePersona(profileId, userMobileNumber, "school admin");
                         await getSchoolName(profileId, userMobileNumber);
