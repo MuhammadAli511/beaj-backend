@@ -846,6 +846,226 @@ const clearingCacheService = async () => {
     }
 };
 
+const studentAnalyticsService = async (courseIds, grades, cohorts, graphType) => {
+    try {
+        // Set default date if not provided
+        let grade = grades, courseId = courseIds, qry1 = ``, qry2 = ``, cohort = ``;
+        if(cohorts){
+            cohort = `and m.cohort = '${cohorts}'`
+        }
+
+        // console.log('courseIds', courseIds, 'grades', grades, 'cohorts', cohorts, 'graphType', graphType);
+
+        if(graphType === 'graph1'){
+           qry1 = `WITH "TargetGroup" AS (
+                SELECT 
+                    "m"."profile_id"
+                FROM 
+                    "wa_users_metadata" AS "m"
+                inner join "wa_profiles" p on m."profile_id" = p."profile_id"
+                WHERE 
+                    p."profile_type" = 'student' and
+                            m."rollout" = 2 and
+                            m."classLevel" = '${grade}' 
+                            ${cohort}
+            ),
+            "user_progress" AS (
+                SELECT 
+                    "p"."profile_id",
+                    "p"."currentWeek",
+                    "p"."currentDay",
+                    "p"."acceptableMessages",
+                    CASE 
+                        WHEN 'start next lesson' = ANY("p"."acceptableMessages") THEN 1 
+                        ELSE 0 
+                    END AS "lesson_completed_count"
+                FROM 
+                    "wa_user_progress" AS "p"
+                INNER JOIN 
+                    "TargetGroup" AS "t" 
+                ON 
+                    "p"."profile_id" = "t"."profile_id" 
+                    AND "p"."currentCourseId" = ${courseId}
+            ),
+            get_dayCount as (
+            SELECT 
+                "currentWeek",
+                "currentDay",
+                "lesson_completed_count",
+                -- (("currentWeek" - 1) * 6 + "currentDay") as day
+                CASE 
+                    WHEN ("lesson_completed_count" = 1) 
+                    THEN (("currentWeek" - 1) * 5 + "currentDay") 
+                    ELSE (("currentWeek" - 1) * 5 + "currentDay" ) - 1
+                END AS "day"
+            FROM 
+                "user_progress"
+                WHERE 
+                "currentWeek" IS NOT NULL 
+                AND "currentDay" IS NOT NULL
+            ORDER BY 
+                "currentWeek", "currentDay"
+                ),
+            dayseries as (SELECT generate_series(0, 24) AS "day"),
+            getvalues as (select "day",count(*) from get_dayCount g group by g."day")
+            select CONCAT('day ', d."day") as "day",v."count" from dayseries d left join getvalues v 
+            on d."day" = v."day" ORDER BY 
+                d."day";`;
+
+            qry2 = `WITH TargetGroup AS (
+                    SELECT 
+                        m."profile_id"
+                    FROM 
+                        "wa_users_metadata" m
+                    inner join "wa_profiles" p on m."profile_id" = p."profile_id"
+                    WHERE 
+                        p."profile_type" = 'student' and
+                                m."rollout" = 2 and
+                                m."classLevel" = '${grade}' 
+                                ${cohort}
+                ),
+                UnattemptedPhoneNumbers AS (
+                    SELECT 
+                        tg."profile_id"
+                    FROM 
+                        TargetGroup tg
+                    LEFT JOIN 
+                        "wa_lessons_completed" l 
+                    ON 
+                        tg."profile_id" = l."profile_id" 
+                        AND l."courseId" = ${courseId}
+                    WHERE 
+                        l."lessonId" IS NULL
+                )
+                SELECT 
+                    (SELECT COUNT(*) FROM TargetGroup) AS "total_count",
+                    (SELECT COUNT(*) FROM UnattemptedPhoneNumbers) AS "total_not_started";`;
+        }
+
+        
+        if(graphType === 'graph2'){
+             qry1 = `WITH TargetGroup AS (
+                SELECT 
+                    m."profile_id"
+                FROM 
+                    "wa_users_metadata" m
+                    inner join "wa_profiles" p on m."profile_id" = p."profile_id"
+                WHERE 
+                    p."profile_type" = 'student' and
+                            m."rollout" = 2 and
+                            m."classLevel" = '${grade}' 
+                           ${cohort}
+            ),
+            get_lessonIds AS (
+                SELECT 
+                    "LessonId", 
+                    "activity",
+                    "activityAlias",
+                    "weekNumber", 
+                    "dayNumber",
+                    "SequenceNumber" 
+                FROM 
+                    "Lesson" 
+                WHERE 
+                    "courseId" = ${courseId} and "status" = 'Active'
+            ),
+            LessonWithMaxTimestamp AS (
+                SELECT 
+                    l."profile_id",
+                    l."lessonId",
+                    l."endTime",
+                    ROW_NUMBER() OVER (
+                        PARTITION BY l."profile_id" 
+                        ORDER BY l."endTime" DESC
+                    ) AS row_num
+                FROM 
+                    "wa_lessons_completed" l
+                INNER JOIN 
+                    TargetGroup tg 
+                ON 
+                    l."profile_id" = tg."profile_id"
+                WHERE 
+                    l."completionStatus" = 'Completed'
+                    AND l."courseId" = ${courseId}
+            ),
+            LessonCompletionCounts AS (
+                SELECT 
+                    lw."lessonId",
+                    COUNT(lw."profile_id") AS "completionCount"
+                FROM 
+                    LessonWithMaxTimestamp lw
+                WHERE 
+                    lw.row_num = 1
+                GROUP BY 
+                    lw."lessonId"
+            )
+            SELECT 
+                g."LessonId",
+               -- CONCAT(g."LessonId", ' (', g."activity", ')') AS "LessonId",
+                COALESCE(lcc."completionCount", null) AS "total_students_completed"
+            FROM 
+                get_lessonIds g
+            LEFT JOIN 
+                LessonCompletionCounts lcc 
+            ON 
+                g."LessonId" = lcc."lessonId"
+            ORDER BY 
+                g."weekNumber",g."dayNumber",g."SequenceNumber";`
+
+
+                 qry2 = `WITH TargetGroup AS (
+                    SELECT 
+                        m."profile_id"
+                    FROM 
+                        "wa_users_metadata" m
+                    inner join "wa_profiles" p on m."profile_id" = p."profile_id"
+                    WHERE 
+                        p."profile_type" = 'student' and
+                                m."rollout" = 2 and
+                                m."classLevel" = '${grade}' 
+                                ${cohort}
+                ),
+                UnattemptedPhoneNumbers AS (
+                    SELECT 
+                        tg."profile_id"
+                    FROM 
+                        TargetGroup tg
+                    LEFT JOIN 
+                        "wa_lessons_completed" l 
+                    ON 
+                        tg."profile_id" = l."profile_id" 
+                        AND l."courseId" = ${courseId}
+                    WHERE 
+                        l."lessonId" IS NULL
+                )
+                SELECT 
+                    (SELECT COUNT(*) FROM TargetGroup) AS "total_count",
+                    (SELECT COUNT(*) FROM UnattemptedPhoneNumbers) AS "total_not_started";`;
+        }
+
+       
+
+
+        // Execute all queries concurrently
+         let [lastLesson1, lastLesson2] = await Promise.all([
+            sequelize.query(qry1),
+            sequelize.query(qry2)
+        ]).then(results => results.map(result => result[0]));
+
+        if(lastLesson2){
+            lastLesson2 = lastLesson2.map(obj => Object.values(obj).map(value => parseInt(value, 10)));
+        }
+
+        return {
+            lastLesson: lastLesson1,
+            lastLesssonTotal: lastLesson2
+        };
+    } catch (error) {
+        error.fileName = 'statsService.js';
+        throw error;
+    }
+};
+
 export default {
     totalContentStatsService,
     dashboardCardsFunnelService,
@@ -853,5 +1073,6 @@ export default {
     studentUserJourneyStatsService,
     studentTrialUserJourneyStatsService,
     studentCourseStatsService,
-    clearingCacheService
+    clearingCacheService,
+    studentAnalyticsService
 };
