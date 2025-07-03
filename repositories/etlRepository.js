@@ -2204,8 +2204,6 @@ const getActivityNameCount = async (course_id1, course_id2, course_id3, grp, coh
     }
 };
 
-
-
 const getPhoneNumber_userNudges = async (course_id, grp, cohort, date) => {
     try {
         const qry = `
@@ -2226,7 +2224,6 @@ const getPhoneNumber_userNudges = async (course_id, grp, cohort, date) => {
         throw error;
     }
 };
-
 
 const getLastActivityCompleted_DropOff = async (course_id1) => {
     try {
@@ -2392,7 +2389,6 @@ ORDER BY sc.grade, sc."cohort", sc."name";
     }
 };
 
-
 const getCumulativeActivityCompletions = async () => {
   try {
     const qry = `
@@ -2482,7 +2478,6 @@ const getCumulativeActivityCompletions = async () => {
     throw error;
   }
 };
-
 
 export default {
     getDataFromPostgres, getSuccessRate, getActivityTotalCount, getCompletedActivity, getLessonCompletion, getLastActivityCompleted, getWeeklyScore, getPhoneNumber_userNudges, getWeeklyScore_pilot, getCount_NotStartedActivity, getLessonCompletions, getActivity_Completions, getActivityNameCount,
