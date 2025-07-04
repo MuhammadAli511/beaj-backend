@@ -1043,9 +1043,99 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType) =>
                     (SELECT COUNT(*) FROM UnattemptedPhoneNumbers) AS "total_not_started";`;
         }
 
-       
+        if(graphType === 'graph3'){
 
+            qry1 = `WITH "TargetGroup" AS (
+                SELECT 
+                    "m"."profile_id"
+                FROM 
+                    "wa_users_metadata" AS "m"
+                inner join "wa_profiles" p on m."profile_id" = p."profile_id"
+                WHERE 
+                    p."profile_type" = 'student' and
+                            m."rollout" = 2 
+            ),
+            "user_progress" AS (
+                SELECT 
+                    "p"."profile_id",
+                    "p"."currentWeek",
+                    "p"."currentDay",
+                    "p"."acceptableMessages",
+                    CASE 
+                        WHEN 'start next lesson' = ANY("p"."acceptableMessages") THEN 1 
+                        ELSE 0 
+                    END AS "lesson_completed_count"
+                FROM 
+                    "wa_user_progress" AS "p"
+                INNER JOIN 
+                    "TargetGroup" AS "t" 
+                ON 
+                    "p"."profile_id" = "t"."profile_id" 
+                    AND "p"."currentCourseId" in (119,120,121,122,123,124,143)
+            ),
+            get_dayCount as (
+            SELECT 
+                "currentWeek",
+                "currentDay",
+                "lesson_completed_count",
+                -- (("currentWeek" - 1) * 6 + "currentDay") as day
+                CASE 
+                    WHEN ("lesson_completed_count" = 1) 
+                    THEN (("currentWeek" - 1) * 5 + "currentDay") 
+                    ELSE (("currentWeek" - 1) * 5 + "currentDay" ) - 1
+                END AS "day"
+            FROM 
+                "user_progress"
+                WHERE 
+                "currentWeek" IS NOT NULL 
+                AND "currentDay" IS NOT NULL
+            ORDER BY 
+                "currentWeek", "currentDay"
+                ),
+            dayseries as (SELECT generate_series(0, 24) AS "day"),
+            getvalues as (select "day",count(*) from get_dayCount g group by g."day")
+            select CONCAT('day ', d."day") as "day",v."count" from dayseries d left join getvalues v 
+            on d."day" = v."day" ORDER BY 
+                d."day";`;
+        }
 
+        if(graphType === 'graph4'){
+
+            qry1 = `WITH TargetGroup AS (
+            SELECT 
+                m."profile_id",
+                m."cohort"
+            FROM 
+                "wa_users_metadata" m
+            inner join "wa_profiles" p on m."profile_id" = p."profile_id"
+                            WHERE 
+                                p."profile_type" = 'student' and
+                                        m."rollout" = 2 
+                                        and
+                                        m."classLevel" = '${grade}' 
+                                        and
+                                        m."cohort" is not null and m."cohort" != 'Cohort 0'
+            ),
+            UnattemptedPhoneNumbers AS (
+                SELECT 
+                    tg."profile_id",
+                    tg."cohort"
+                FROM 
+                    TargetGroup tg
+                LEFT JOIN 
+                    "wa_lessons_completed" l 
+                ON 
+                    tg."profile_id" = l."profile_id" 
+                    AND l."courseId" = ${courseId} and l."completionStatus" = 'Completed'
+                WHERE 
+                    l."lessonId" IS  NULL
+            )
+            SELECT 
+            t."cohort", count(*) FROM UnattemptedPhoneNumbers t group by t."cohort"
+            order by CAST(SPLIT_PART(t."cohort", ' ', 2) AS INTEGER);`;
+        }
+
+    
         // Execute all queries concurrently
          let [lastLesson1, lastLesson2] = await Promise.all([
             sequelize.query(qry1),
