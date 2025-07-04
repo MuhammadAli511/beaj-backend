@@ -15,6 +15,7 @@ const stickerMapping = {
     "🧮 *maths challenge!*": "https://beajbloblive.blob.core.windows.net/beajdocuments/maths_sticker.webp",
     "🔤 *phonics*": "https://beajbloblive.blob.core.windows.net/beajdocuments/speaking_sticker1.webp",
     "🧪 *do you remember?*": "https://beajbloblive.blob.core.windows.net/beajdocuments/science_and_arts_sticker.webp",
+    "🧪 *what do you remember?*": "https://beajbloblive.blob.core.windows.net/beajdocuments/global_knowledge_sticker.webp",
     "🎙 *you can speak!*": "https://beajbloblive.blob.core.windows.net/beajdocuments/speaking_sticker1.webp",
     "🌍 *do you remember?*": "https://beajbloblive.blob.core.windows.net/beajdocuments/global_knowledge_sticker.webp",
     "🎨 *project time!*": "https://beajbloblive.blob.core.windows.net/beajdocuments/science_and_arts_sticker.webp",

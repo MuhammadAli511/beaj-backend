@@ -530,7 +530,8 @@ const getLatestBotResponse = async (profileId, phoneNumber, lessonId) => {
             profile_id: profileId,
             phoneNumber: phoneNumber,
             lessonId: lessonId
-        }
+        },
+        order: [['submissionDate', 'DESC']]
     });
 
     return response.dataValues.submittedFeedbackText[0];

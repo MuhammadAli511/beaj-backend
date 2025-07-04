@@ -353,9 +353,13 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
             else if (messageContent == 'yes') {
                 // Get the current Conversation Bot question
                 const currentConversationBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
-
-                // Get the uploaded audio
                 const audioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(profileId, currentConversationBotQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
+
+                if (!audioUrl) {
+                    await sendMessage(userMobileNumber, "Audio not found. Please try recording again.");
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                    return;
+                }
 
                 // Get audio buffer for processing
                 const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
@@ -368,7 +372,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                     let openaiFeedbackAudio = null;
                     let initialFeedbackResponse = null;
                     let hardcodedFeedbackAudio = null;
-                    if (recordExists && recordExists[0]?.dataValues?.submittedAnswerText?.length == 0) {
+                    if (recordExists && recordExists[0]?.dataValues?.submittedAnswerText == null) {
                         const message = `Please wait for an answer. \n\nYou said: ${recognizedText}`;
                         await sendMessage(userMobileNumber, message);
                         await createActivityLog(userMobileNumber, "text", "outbound", message, null);

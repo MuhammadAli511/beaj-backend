@@ -322,7 +322,7 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
 
 
         // Sleep
-        await sleep(4000);
+        await sleep(5000);
 
         if (lessonNumber == totalLessons && strippedCourseName == "Level 3") {
             const congratsImage = await waConstantsRepository.getByKey("LEVEL_3_CONGRATULATIONS");
@@ -401,7 +401,7 @@ const assessmentPuzzleImages = async (userMobileNumber, activityAlias, courseNam
         const finalKey = "LEVEL" + level + "PUZZLE2";
         const puzzle2 = await waConstantsRepository.getByKey(finalKey);
         if (puzzle2) {
-            let captionText = "Woooh! Congratulations on unlocking 1/4th of the puzzle! 🧩";
+            let captionText = "Woooh! Congratulations on unlocking 2/4th of the puzzle! 🧩";
             await sendMediaMessage(userMobileNumber, puzzle2.dataValues.constantValue, 'image', captionText, 0, "WA_Constants", puzzle2.dataValues.id, puzzle2.dataValues.constantMediaId, "constantMediaId");
             await createActivityLog(userMobileNumber, "image", "outbound", puzzle2.dataValues.constantValue, null, captionText);
             await sleep(2000);
@@ -446,6 +446,10 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
             await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
             await sleep(3000);
             if (startingLesson.dataValues.dayNumber == daysPerWeek) {
+                const semalKidsWeekComplete = await waConstantsRepository.getByKey("SEMAL_KIDS_WEEK_COMPLETE");
+                await sendMediaMessage(userMobileNumber, semalKidsWeekComplete.dataValues.constantValue, 'audio', null, 0, "WA_Constants", semalKidsWeekComplete.dataValues.id, semalKidsWeekComplete.dataValues.constantMediaId, "constantMediaId");
+                await createActivityLog(userMobileNumber, "audio", "outbound", semalKidsWeekComplete.dataValues.constantValue, null);
+                await sleep(3000);
                 let key = "LEVEL" + level + "WEEK" + startingLesson.dataValues.weekNumber;
                 const weekEndImage = await waConstantsRepository.getByKey(key);
                 await sendMediaMessage(userMobileNumber, weekEndImage.dataValues.constantValue, 'image', null, 0, "WA_Constants", weekEndImage.dataValues.id, weekEndImage.dataValues.constantMediaId, "constantMediaId");

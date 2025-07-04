@@ -73,6 +73,10 @@ WA_UsersMetadata.init({
     rollout: {
         type: DataTypes.INTEGER,
         allowNull: true,
+    },
+    customerSource: {
+        type: DataTypes.TEXT,
+        allowNull: true,
     }
 }, {
     sequelize,
