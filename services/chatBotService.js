@@ -1273,13 +1273,14 @@ const webhookService = async (body, res) => {
                                 const lessonDayNumber = (nextLesson.dataValues.weekNumber - 1) * daysPerWeek + nextLesson.dataValues.dayNumber;
                                 const daysRequiredForCurrentLesson = lessonDayNumber - 1; // As before
 
-                                // Add days to course start date, skipping Sundays
+                                // Add days to course start date, skipping Saturdays and Sundays
                                 let dayUnlockDate = new Date(courseStartDate);
                                 let daysAdded = 0;
 
                                 while (daysAdded < daysRequiredForCurrentLesson) {
                                     dayUnlockDate.setDate(dayUnlockDate.getDate() + 1);
-                                    if (dayUnlockDate.getDay() !== 0) {
+                                    // Skip weekends: Saturday (6) and Sunday (0)
+                                    if (dayUnlockDate.getDay() !== 0 && dayUnlockDate.getDay() !== 6) {
                                         daysAdded++;
                                     }
                                 }
