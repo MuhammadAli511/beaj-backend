@@ -440,7 +440,7 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
         else {
             const level = getLevelFromCourseName(courseName);
             const dayNumber = (startingLesson.dataValues.weekNumber - 1) * daysPerWeek + startingLesson.dataValues.dayNumber;
-            const imageUrl = "https://beajbloblive.blob.core.windows.net/beajdocuments/kids_badges_level" + level + "_day_" + dayNumber + "_end.jpg";
+            const imageUrl = "https://beajbloblive.blob.core.windows.net/beajdocuments/kids_updated_badges_level" + level + "_day_" + dayNumber + "_end.jpg";
             let captionText = "Day " + dayNumber + " Complete! 🥳";
             await sendMediaMessage(userMobileNumber, imageUrl, 'image', captionText);
             await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
