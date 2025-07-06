@@ -478,7 +478,8 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
             activityAlias == "🧪 *Science Fun!*" ||
             activityAlias == "🗣 *Grammar Fun!*" ||
             activityAlias == "🌍 *Let's explore!*" ||
-            activityAlias == "🌍 *Let's Explore!*"
+            activityAlias == "🌍 *Let's Explore!*" ||
+            activityAlias == "🧠 *Let's Grow!*"
         ) {
             let message = "👇 Click on the button below to start questions!"
             await sendButtonMessage(userMobileNumber, message, [{ id: 'start_questions', title: 'Start Questions' }, { id: 'change_user', title: 'Change User' }]);
@@ -506,7 +507,8 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
         } else if (
             activityAlias == "🌍 *Let's Explore Part 1!*" ||
             activityAlias == "🌍 *Do You Remember? Part 1*" ||
-            activityAlias == "🧮 *Maths Fun Part 1!*"
+            activityAlias == "🧮 *Maths Fun Part 1!*" ||
+            activityAlias == "🧠 *Let's Grow Part 1!*"
         ) {
             await sendButtonMessage(userMobileNumber, '👇 Click on the button below to watch Part 2 of the video!', [{ id: 'start_part_2', title: 'Start Part 2' }, { id: 'change_user', title: 'Change User' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start Part 2", null);

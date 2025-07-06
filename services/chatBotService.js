@@ -1324,10 +1324,10 @@ const webhookService = async (body, res) => {
                         if ((currentUserState.dataValues.currentDay != nextLesson.dataValues.dayNumber) && currentUserState.dataValues.persona == "kid") {
                             const courseName = await courseRepository.getCourseNameById(currentUserState.dataValues.currentCourseId);
                             if (!courseName.toLowerCase().includes("assessment")) {
-                                const level = getLevelFromCourseName(courseName);
-                                let imageUrl = "https://beajbloblive.blob.core.windows.net/beajdocuments/kids_badges_level" + level + "_day_" + nextLesson.dataValues.dayNumber + "_start.jpg";
-                                let captionText = "";
                                 const dayNumber = (nextLesson.dataValues.weekNumber - 1) * daysPerWeek + nextLesson.dataValues.dayNumber;
+                                const level = getLevelFromCourseName(courseName);
+                                let imageUrl = "https://beajbloblive.blob.core.windows.net/beajdocuments/kids_badges_level" + level + "_day_" + dayNumber + "_start.jpg";
+                                let captionText = "";
                                 captionText = "👍 Let's start Day " + dayNumber + "!";
                                 await sendMediaMessage(userMobileNumber, imageUrl, 'image', captionText);
                                 await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null, captionText);
