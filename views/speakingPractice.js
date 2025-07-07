@@ -11,6 +11,7 @@ import { sleep, extractMispronouncedWords, getAudioBufferFromAudioFileUrl } from
 import AIServices from "../utils/AIServices.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import { createAndUploadSpeakingPracticeScoreImage } from "../utils/imageGenerationUtils.js";
+import courseRepository from "../repositories/courseRepository.js";
 
 const speakingPracticeView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
@@ -174,33 +175,33 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                     const imageUrl = await createAndUploadSpeakingPracticeScoreImage(pronunciationAssessments, 70);
 
                     // Media message
-                    if (imageUrl) {
-                        await sendMediaMessage(userMobileNumber, imageUrl, 'image');
-                        await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
-                        await sleep(5000);
-                    }
-
-                    // Extract mispronounced words in a loop using pronunciationAssessments and extractMispronouncedWords function
-                    let mispronouncedWords = [];
-                    for (const assessment of pronunciationAssessments) {
-                        const singleMispronouncedWords = extractMispronouncedWords(assessment);
-                        mispronouncedWords.push(...singleMispronouncedWords);
-                    }
-
-                    // Remove duplicates from mispronouncedWords
-                    mispronouncedWords = [...new Set(mispronouncedWords)];
-
-
-                    let correctedAudio = "";
-                    if (mispronouncedWords.length > 0) {
-                        let modelResponse = "It looks like you've mispronounced a few words in your response. Here are the corrections:\n\n";
-                        for (const word of mispronouncedWords) {
-                            modelResponse += word.Word + (word === mispronouncedWords[mispronouncedWords.length - 1] ? "" : "...");
+                    const courseName = await courseRepository.getCourseNameById(currentUserState.dataValues.currentCourseId);
+                    const level = courseName.split("-")[0].trim();
+                    if (level == "Level 1" || level == "Level 2" || level == "Level 3") {
+                        if (imageUrl) {
+                            await sendMediaMessage(userMobileNumber, imageUrl, 'image');
+                            await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
+                            await sleep(5000);
                         }
-                        correctedAudio = await AIServices.openaiTextToSpeechAndUpload(modelResponse);
-                        await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
-                        await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
-                        await sleep(5000);
+
+                        let mispronouncedWords = [];
+                        for (const assessment of pronunciationAssessments) {
+                            const singleMispronouncedWords = extractMispronouncedWords(assessment);
+                            mispronouncedWords.push(...singleMispronouncedWords);
+                        }
+                        mispronouncedWords = [...new Set(mispronouncedWords)];
+
+                        let correctedAudio = "";
+                        if (mispronouncedWords.length > 0) {
+                            let modelResponse = "It looks like you've mispronounced a few words in your response. Here are the corrections:\n\n";
+                            for (const word of mispronouncedWords) {
+                                modelResponse += word.Word + (word === mispronouncedWords[mispronouncedWords.length - 1] ? "" : "...");
+                            }
+                            correctedAudio = await AIServices.openaiTextToSpeechAndUpload(modelResponse);
+                            await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
+                            await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
+                            await sleep(5000);
+                        }
                     }
 
 

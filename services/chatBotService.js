@@ -1111,10 +1111,10 @@ const webhookService = async (body, res) => {
                         await waUserProgressRepository.update(profileId, userMobileNumber, currentUserState.dataValues.currentCourseId, startingLesson.dataValues.weekNumber, startingLesson.dataValues.dayNumber, startingLesson.dataValues.LessonId, startingLesson.dataValues.SequenceNumber, startingLesson.dataValues.activity, null, null, null);
 
                         if (currentUserState.dataValues.persona == "teacher") {
-                            const courseName = await courseRepository.getCourseNameById(currentUserState.dataValues.currentCourseId);
-                            const level = courseName.split("-")[0].trim();
-                            await sendMessage(userMobileNumber, "Great! Let's start " + level + "! 🤩");
-                            await createActivityLog(userMobileNumber, "text", "outbound", "Great! Let's start " + level + "! 🤩", null);
+                            // const courseName = await courseRepository.getCourseNameById(currentUserState.dataValues.currentCourseId);
+                            // const level = courseName.split("-")[0].trim();
+                            await sendMessage(userMobileNumber, "Great! Let's start! 🤩");
+                            await createActivityLog(userMobileNumber, "text", "outbound", "Great! Let's start! 🤩", null);
                         }
                         // Send first lesson to user
                         currentUserState = await waUserProgressRepository.getByProfileId(profileId);

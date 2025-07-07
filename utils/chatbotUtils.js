@@ -251,23 +251,23 @@ const startCourseForUser = async (profileId, userMobileNumber, numbers_to_ignore
     if (profileType == "teacher") {
         const courseName = nextCourse.dataValues.courseName.split("-");
         const level = courseName[0].trim();
-
-        let intro_message = "Assalam o Alaikum 👋\n\nWelcome to Beaj Self Development Course for Teachers " + level + "!";
-        if (level == "Level 1") {
-            intro_message += "\n\nMa'am Zainab Qureshi, Ma'am Fizza Hasan and Ma'am Sameen Shahid will be your instructors.";
-        }
-        await sendMessage(userMobileNumber, intro_message);
-        await createActivityLog(userMobileNumber, "text", "outbound", intro_message, null);
-        if (level == "Level 1") {
+        if (level == "Level 0") {
+            let intro_message = "Assalam o Alaikum 👋\n\nWelcome to Beaj Self Development Course.\n\nMa'am Zainab Qureshi, Ma'am Fizza Hasan and Ma'am Sameen Shahid will be your instructors.";
+            await sendMessage(userMobileNumber, intro_message);
+            await createActivityLog(userMobileNumber, "text", "outbound", intro_message, null);
             const demoVideo = await waConstantsRepository.getByKey("DEMO_VIDEO");
             if (demoVideo) {
                 await sendMediaMessage(userMobileNumber, demoVideo.dataValues.constantValue, 'video', null, 0, "WA_Constants", demoVideo.dataValues.id, demoVideo.dataValues.constantMediaId, "constantMediaId");
                 await createActivityLog(userMobileNumber, "video", "outbound", demoVideo.dataValues.constantValue, null);
                 await sleep(5000);
             }
+            await sendButtonMessage(userMobileNumber, "Are you ready to start the survey?", [{ id: "lets_start", title: "Start" }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start the survey?", null);
+        } else {
+            await sendButtonMessage(userMobileNumber, "Are you ready to start " + level + "?", [{ id: "lets_start", title: "Start" }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start " + level + "?", null);
         }
-        await sendButtonMessage(userMobileNumber, "Are you ready to start " + level + "?", [{ id: "lets_start", title: "Start" }]);
-        await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start " + level + "?", null);
+
         await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start"]);
     } else {
         const courseName = nextCourse.dataValues.courseName;

@@ -41,21 +41,31 @@ const assessmentMcqsView = async (profileId, userMobileNumber, currentUserState,
 
                 // Update question number
                 await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstMCQsQuestion.dataValues.QuestionNumber);
+                const totalQuestions = await multipleChoiceQuestionRepository.getTotalQuestions(currentUserState.dataValues.currentLessonId);
 
                 // Send question
                 const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(firstMCQsQuestion.dataValues.Id);
                 const questionText = firstMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
-                let mcqMessage = questionText + "\n\n";
+
+                const mcqType = firstMCQsQuestion.dataValues.QuestionType;
+
+                let mcqMessage = "";
+                if (mcqType == 'Text') {
+                    mcqMessage = "👉 *Question " + await convertNumberToEmoji(firstMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n" + questionText + "\n\n";
+                } else {
+                    mcqMessage = "👉 *Question " + await convertNumberToEmoji(firstMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n";
+                }
                 if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
                     mcqMessage += "Choose the correct answer:\n";
                 }
-                for (let i = 0; i < mcqAnswers.length; i++) {
-                    mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
+                if (mcqType == 'Text') {
+                    for (let i = 0; i < mcqAnswers.length; i++) {
+                        mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
+                    }
                 }
 
                 const mcqImage = firstMCQsQuestion.dataValues.QuestionImageUrl;
                 const mcqVideo = firstMCQsQuestion.dataValues.QuestionVideoUrl;
-                const mcqType = firstMCQsQuestion.dataValues.QuestionType;
 
                 if (mcqType == 'Text') {
                     await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `${firstMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })));
@@ -144,22 +154,32 @@ const assessmentMcqsView = async (profileId, userMobileNumber, currentUserState,
                 if (nextMCQsQuestion) {
                     // Update question number
                     await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextMCQsQuestion.dataValues.QuestionNumber);
+                    const totalQuestions = await multipleChoiceQuestionRepository.getTotalQuestions(currentUserState.dataValues.currentLessonId);
 
                     // Send question
                     const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(nextMCQsQuestion.dataValues.Id);
                     const questionText = nextMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
-                    let mcqMessage = questionText + "\n\n";
+
+                    const mcqType = nextMCQsQuestion.dataValues.QuestionType;
+
+                    let mcqMessage = "";
+                    if (mcqType == 'Text') {
+                        mcqMessage = "👉 *Question " + await convertNumberToEmoji(nextMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n" + questionText + "\n\n";
+                    } else {
+                        mcqMessage = "👉 *Question " + await convertNumberToEmoji(nextMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n";
+                    }
                     if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
                         mcqMessage += "Choose the correct answer:\n";
                     }
-                    for (let i = 0; i < mcqAnswers.length; i++) {
-                        mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
+                    if (mcqType == 'Text') {
+                        for (let i = 0; i < mcqAnswers.length; i++) {
+                            mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
+                        }
                     }
 
                     // Reply buttons to answer
                     const mcqImage = nextMCQsQuestion.dataValues.QuestionImageUrl;
                     const mcqVideo = nextMCQsQuestion.dataValues.QuestionVideoUrl;
-                    const mcqType = nextMCQsQuestion.dataValues.QuestionType;
 
                     if (mcqType == 'Text') {
                         await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `${nextMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })));

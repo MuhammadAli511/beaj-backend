@@ -351,8 +351,19 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
         await sleep(2000);
 
         // Reply Buttons
-        await sendButtonMessage(userMobileNumber, 'Are you ready to start the next activity?', [{ id: 'start_next_activity', title: 'Start Next Activity' }]);
-        await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity", null);
+        if (
+            startingLesson.dataValues.activityAlias == "*English Survey Part A - Let's Listen*" ||
+            startingLesson.dataValues.activityAlias == "*English Survey Part A - Let’s Listen*" ||
+            startingLesson.dataValues.activityAlias == "*Self-Growth Survey Part A*"
+        ) {
+            let message = "Are you ready to start questions?"
+            await sendButtonMessage(userMobileNumber, message, [{ id: 'start_questions', title: 'Start Questions' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", message, null);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start questions"]);
+        } else {
+            await sendButtonMessage(userMobileNumber, 'Are you ready to start the next activity?', [{ id: 'start_next_activity', title: 'Start Next Activity' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity", null);
+        }
     }
 };
 
@@ -479,7 +490,8 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
             activityAlias == "🗣 *Grammar Fun!*" ||
             activityAlias == "🌍 *Let's explore!*" ||
             activityAlias == "🌍 *Let's Explore!*" ||
-            activityAlias == "🧠 *Let's Grow!*"
+            activityAlias == "🧠 *Let's Grow!*" ||
+            activityAlias == "*Let's Listen* 🎧"
         ) {
             let message = "👇 Click on the button below to start questions!"
             await sendButtonMessage(userMobileNumber, message, [{ id: 'start_questions', title: 'Start Questions' }, { id: 'change_user', title: 'Change User' }]);

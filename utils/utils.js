@@ -191,8 +191,8 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
         return false;
     }
     if (acceptableMessagesList.includes("start")) {
-        await sendButtonMessage(userMobileNumber, "Please click on the start button: \n\nstart", [{ id: "start", title: "Start" }]);
-        await createActivityLog(userMobileNumber, "template", "outbound", "Please click on the start button: \n\nstart", null);
+        await sendButtonMessage(userMobileNumber, "Please click on the start button:", [{ id: "start", title: "Start" }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "Please click on the start button:", null);
         return false;
     }
     if (acceptableMessagesList.includes("start now!") && acceptableMessagesList.includes("change user")) {
