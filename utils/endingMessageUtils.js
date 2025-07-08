@@ -29,7 +29,13 @@ const sendingSticker = async (profileId, userMobileNumber, currentUserState, sta
     const lessonLast = await lessonRepository.isLastLessonOfDay(startingLesson.dataValues.LessonId);
 
     // Activity Complete Sticker - only send if not last lesson
-    if (!lessonLast && currentUserState.dataValues.persona == "teacher") {
+    if (
+        !lessonLast &&
+        currentUserState.dataValues.persona == "teacher" &&
+        startingLesson.dataValues.activityAlias !== "*English Survey Part A - Let's Listen!*" &&
+        startingLesson.dataValues.activityAlias !== "*English Survey Part A - Let’s Listen!*" &&
+        startingLesson.dataValues.activityAlias !== "*Self-Growth Survey Part A*"
+    ) {
         const activityCompleteSticker = "https://beajbloblive.blob.core.windows.net/beajdocuments/activity_complete.webp";
         await sendMediaMessage(userMobileNumber, activityCompleteSticker, 'sticker');
         await createActivityLog(userMobileNumber, "sticker", "outbound", activityCompleteSticker, null);
@@ -266,19 +272,20 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
 
         // Lesson Complete Image
         // Gold Bars
-        const smallCourseName = strippedCourseName.replace(/\s/g, '').toLowerCase();
-        const imageTag = "lesson_complete_image_lesson_" + lessonNumber.toString() + "_" + smallCourseName;
-        let fileExtnesion = ".jpg";
-        let lessonCompleteImage = "";
-        if (lessonNumber == totalLessons && strippedCourseName == "Level 3") {
-            lessonCompleteImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/course_end_gold_bars" + fileExtnesion;
-        } else {
-            lessonCompleteImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/" + imageTag + fileExtnesion;
+        if (strippedCourseName != "Level 0") {
+            const smallCourseName = strippedCourseName.replace(/\s/g, '').toLowerCase();
+            const imageTag = "lesson_complete_image_lesson_" + lessonNumber.toString() + "_" + smallCourseName;
+            let fileExtnesion = ".jpg";
+            let lessonCompleteImage = "";
+            if (lessonNumber == totalLessons && strippedCourseName == "Level 3") {
+                lessonCompleteImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/course_end_gold_bars" + fileExtnesion;
+            } else {
+                lessonCompleteImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/" + imageTag + fileExtnesion;
+            }
+            await sendMediaMessage(userMobileNumber, lessonCompleteImage, 'image', goldBarCaption);
+            await createActivityLog(userMobileNumber, "image", "outbound", lessonCompleteImage, null, goldBarCaption);
+            await sleep(5000);
         }
-        await sendMediaMessage(userMobileNumber, lessonCompleteImage, 'image', goldBarCaption);
-        await createActivityLog(userMobileNumber, "image", "outbound", lessonCompleteImage, null, goldBarCaption);
-        // Sleep
-        await sleep(5000);
 
         // Week end score image
         if (startingLesson.dataValues.dayNumber == daysPerWeek) {
@@ -307,16 +314,18 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
         }
 
         // Feedback Message
-        if (lessonNumber != totalLessons && lessonNumber != 3) {
-            const randomNumber = Math.floor(Math.random() * 100) + 1;
-            if (randomNumber >= 75) {
-                let cleanedAlias = startingLesson.dataValues.activityAlias.replace(/\?/g, '');
-                let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + cleanedAlias + " activity?";
-                await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
-                await createActivityLog(userMobileNumber, "template", "outbound", feedbackMessage, null);
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next lesson", "it was great 😁", "it can be improved 🤔"]);
-            } else {
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next lesson"]);
+        if (strippedCourseName == "Level 1" || strippedCourseName == "Level 2" || strippedCourseName == "Level 3") {
+            if (lessonNumber != totalLessons && lessonNumber != 3) {
+                const randomNumber = Math.floor(Math.random() * 100) + 1;
+                if (randomNumber >= 75) {
+                    let cleanedAlias = startingLesson.dataValues.activityAlias.replace(/\?/g, '');
+                    let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + cleanedAlias + " activity?";
+                    await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
+                    await createActivityLog(userMobileNumber, "template", "outbound", feedbackMessage, null);
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next lesson", "it was great 😁", "it can be improved 🤔"]);
+                } else {
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next lesson"]);
+                }
             }
         }
 
@@ -329,22 +338,33 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
             await sendMediaMessage(userMobileNumber, congratsImage.dataValues.constantValue, 'image', null, 0, "WA_Constants", congratsImage.dataValues.id, congratsImage.dataValues.constantMediaId, "constantMediaId");
             await createActivityLog(userMobileNumber, "image", "outbound", congratsImage.dataValues.constantValue, null);
             await sleep(5000);
+        } else if (strippedCourseName == "Level 0") {
+            const surveyCompleteImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/survey_complete.jpeg";
+            await sendMediaMessage(userMobileNumber, surveyCompleteImage, 'image', null);
+            await createActivityLog(userMobileNumber, "image", "outbound", surveyCompleteImage, null);
+            await sleep(2000);
+            await sendButtonMessage(userMobileNumber, 'Are you ready to start your first level?', [{ id: 'start_level_1', title: 'Start Level 1' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Start Level 1", null);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start level 1"]);
         } else {
             await sendButtonMessage(userMobileNumber, 'Are you ready to start your next lesson?', [{ id: 'start_next_lesson', title: 'Start Next Lesson' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Lesson", null);
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next lesson"]);
         }
     } else {
-        // Feedback Message
-        const randomNumber = Math.floor(Math.random() * 100) + 1;
-        if (randomNumber >= 75) {
-            let cleanedAlias = startingLesson.dataValues.activityAlias.replace(/\?/g, '');
-            let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + cleanedAlias + " activity?";
-            await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
-            await createActivityLog(userMobileNumber, "template", "outbound", feedbackMessage, null);
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next activity", "it was great 😁", "it can be improved 🤔"]);
-        } else {
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next activity"]);
+        const courseName = await courseRepository.getCourseNameById(currentUserState.currentCourseId);
+        const strippedCourseName = courseName.split("-")[0].trim();
+        if (strippedCourseName == "Level 1" || strippedCourseName == "Level 2" || strippedCourseName == "Level 3") {
+            const randomNumber = Math.floor(Math.random() * 100) + 1;
+            if (randomNumber >= 75) {
+                let cleanedAlias = startingLesson.dataValues.activityAlias.replace(/\?/g, '');
+                let feedbackMessage = "We need your feedback to keep improving our course. How would you rate " + cleanedAlias + " activity?";
+                await sendButtonMessage(userMobileNumber, feedbackMessage, [{ id: 'feedback_1', title: 'It was great 😁' }, { id: 'feedback_2', title: 'It can be improved 🤔' }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", feedbackMessage, null);
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next activity", "it was great 😁", "it can be improved 🤔"]);
+            } else {
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next activity"]);
+            }
         }
 
         // Sleep
@@ -352,8 +372,8 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
 
         // Reply Buttons
         if (
-            startingLesson.dataValues.activityAlias == "*English Survey Part A - Let's Listen*" ||
-            startingLesson.dataValues.activityAlias == "*English Survey Part A - Let’s Listen*" ||
+            startingLesson.dataValues.activityAlias == "*English Survey Part A - Let's Listen!*" ||
+            startingLesson.dataValues.activityAlias == "*English Survey Part A - Let’s Listen!*" ||
             startingLesson.dataValues.activityAlias == "*Self-Growth Survey Part A*"
         ) {
             let message = "Are you ready to start questions?"
@@ -363,6 +383,7 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
         } else {
             await sendButtonMessage(userMobileNumber, 'Are you ready to start the next activity?', [{ id: 'start_next_activity', title: 'Start Next Activity' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity", null);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next activity"]);
         }
     }
 };

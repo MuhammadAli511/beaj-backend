@@ -1083,6 +1083,7 @@ const webhookService = async (body, res) => {
                     text_message_types.includes(message.type) &&
                     (messageContent.toLowerCase().includes("start my course") ||
                         messageContent.toLowerCase().includes("start next level") ||
+                        messageContent.toLowerCase().includes("start level 1") ||
                         messageContent.toLowerCase().includes("start now!")
                     )
                 ) {
@@ -1236,6 +1237,8 @@ const webhookService = async (body, res) => {
                                 } else {
                                     totalLessons = 3;
                                 }
+                            } else if (courseName.toLowerCase().includes("level 0") || courseName.toLowerCase().includes("level 4")) {
+                                totalLessons = 1;
                             } else {
                                 totalLessons = await getTotalLessonsForCourse(profileId);
                             }
