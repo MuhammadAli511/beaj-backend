@@ -22,19 +22,20 @@ const assessmentMcqsView = async (profileId, userMobileNumber, currentUserState,
                 if (lessonTextInstruction != null && lessonTextInstruction != "") {
                     finalTextInstruction = lessonTextInstruction.replace(/\\n/g, '\n');
                 }
+                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n');
+                lessonMessage += "\n\n" + finalTextInstruction;
+
+                // Text message
+                await sendMessage(userMobileNumber, lessonMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+
+                // Audio message
                 const lessonAudioInstruction = startingLesson.dataValues.audioInstructionUrl;
                 if (lessonAudioInstruction != null && lessonAudioInstruction != "") {
                     await sendMediaMessage(userMobileNumber, lessonAudioInstruction, 'audio', null, 0, "Lesson", startingLesson.dataValues.LessonId, startingLesson.dataValues.audioInstructionMediaId, "audioInstructionMediaId");
                     await createActivityLog(userMobileNumber, "audio", "outbound", lessonAudioInstruction, null);
                 }
 
-                // Send lesson message
-                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n');;
-                lessonMessage += "\n\n" + finalTextInstruction;
-
-                // Text message
-                await sendMessage(userMobileNumber, lessonMessage);
-                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
                 // Send first MCQs question
                 const firstMCQsQuestion = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, null);
