@@ -51,11 +51,11 @@ const feedbackMcqsView = async (profileId, userMobileNumber, currentUserState, s
                     mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
                 }
 
-                await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `${currentMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })));
+                await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `${currentMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })));
                 await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
 
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["option a", "option b", "option c"]);
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["a", "b", "c"]);
             }
             else {
                 // Get current MCQ question
@@ -103,11 +103,11 @@ const feedbackMcqsView = async (profileId, userMobileNumber, currentUserState, s
                     }
 
                     // Reply buttons to answer
-                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `${currentMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })));
+                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `${currentMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })));
                     await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
 
                     // Update acceptable messages list for the user
-                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["option a", "option b", "option c"]);
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["a", "b", "c"]);
                 } else {
                     // Reset Question Number, Retry Counter, and Activity Type
                     await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
@@ -158,11 +158,11 @@ const feedbackMcqsView = async (profileId, userMobileNumber, currentUserState, s
                     mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
                 }
 
-                await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `${currentMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })));
+                await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `${currentMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })));
                 await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
 
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["option a", "option b", "option c"]);
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["a", "b", "c"]);
             }
             else {
                 // Get current MCQ question
@@ -210,11 +210,11 @@ const feedbackMcqsView = async (profileId, userMobileNumber, currentUserState, s
                     }
 
                     // Reply buttons to answer
-                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `${currentMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: "Option " + String.fromCharCode(65 + index) })));
+                    await sendButtonMessage(userMobileNumber, mcqMessage, mcqAnswers.map((answer, index) => ({ id: `${currentMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })));
                     await createActivityLog(userMobileNumber, "template", "outbound", mcqMessage, null);
 
                     // Update acceptable messages list for the user
-                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["option a", "option b", "option c"]);
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["a", "b", "c"]);
                 } else {
                     // Reset Question Number, Retry Counter, and Activity Type
                     await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);

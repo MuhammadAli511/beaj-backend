@@ -220,7 +220,7 @@ const startCourseForUser = async (profileId, userMobileNumber, numbers_to_ignore
     if (todayYear < courseStartYear || (todayYear === courseStartYear && todayMonth < courseStartMonth) || (todayYear === courseStartYear && todayMonth === courseStartMonth && todayDate < courseStartDateOnly)) {
         if (!numbers_to_ignore.includes(userMobileNumber)) {
             const formattedStartDate = format(new Date(nextCourse.dataValues.courseStartDate), 'MMMM do, yyyy');
-            const message = "Your course will start on " + formattedStartDate + ". Please wait for the course to start.";
+            const message = "We will start on " + formattedStartDate + "! See you then!";
             await sendMessage(userMobileNumber, message);
             await createActivityLog(userMobileNumber, "text", "outbound", message, null);
             return false;
@@ -261,8 +261,8 @@ const startCourseForUser = async (profileId, userMobileNumber, numbers_to_ignore
                 await createActivityLog(userMobileNumber, "video", "outbound", demoVideo.dataValues.constantValue, null);
                 await sleep(5000);
             }
-            await sendButtonMessage(userMobileNumber, "Are you ready to start the survey?", [{ id: "lets_start", title: "Start" }]);
-            await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start the survey?", null);
+            await sendButtonMessage(userMobileNumber, "Are you ready to start the warm up activity?", [{ id: "lets_start", title: "Start" }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start the warm up activity?", null);
         } else {
             await sendButtonMessage(userMobileNumber, "Are you ready to start " + level + "?", [{ id: "lets_start", title: "Start" }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start " + level + "?", null);

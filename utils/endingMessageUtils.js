@@ -32,9 +32,8 @@ const sendingSticker = async (profileId, userMobileNumber, currentUserState, sta
     if (
         !lessonLast &&
         currentUserState.dataValues.persona == "teacher" &&
-        startingLesson.dataValues.activityAlias !== "*English Survey Part A - Let's Listen!*" &&
-        startingLesson.dataValues.activityAlias !== "*English Survey Part A - Let’s Listen!*" &&
-        startingLesson.dataValues.activityAlias !== "*Self-Growth Survey Part A*"
+        startingLesson.dataValues.activityAlias !== "*Part A*" &&
+        startingLesson.dataValues.activityAlias !== "*Part C*"
     ) {
         const activityCompleteSticker = "https://beajbloblive.blob.core.windows.net/beajdocuments/activity_complete.webp";
         await sendMediaMessage(userMobileNumber, activityCompleteSticker, 'sticker');
@@ -331,7 +330,9 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
 
 
         // Sleep
-        await sleep(5000);
+        if (strippedCourseName != "Level 0") {
+            await sleep(5000);
+        }
 
         if (lessonNumber == totalLessons && strippedCourseName == "Level 3") {
             const congratsImage = await waConstantsRepository.getByKey("LEVEL_3_CONGRATULATIONS");
@@ -339,9 +340,9 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
             await createActivityLog(userMobileNumber, "image", "outbound", congratsImage.dataValues.constantValue, null);
             await sleep(5000);
         } else if (strippedCourseName == "Level 0") {
-            const surveyCompleteImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/survey_complete.jpeg";
-            await sendMediaMessage(userMobileNumber, surveyCompleteImage, 'image', null);
-            await createActivityLog(userMobileNumber, "image", "outbound", surveyCompleteImage, null);
+            const warmupCompleteImage = "https://beajbloblive.blob.core.windows.net/beajdocuments/warmup_complete.jpeg";
+            await sendMediaMessage(userMobileNumber, warmupCompleteImage, 'image', null);
+            await createActivityLog(userMobileNumber, "image", "outbound", warmupCompleteImage, null);
             await sleep(2000);
             await sendButtonMessage(userMobileNumber, 'Are you ready to start your first level?', [{ id: 'start_level_1', title: 'Start Level 1' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start Level 1", null);
@@ -372,9 +373,8 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
 
         // Reply Buttons
         if (
-            startingLesson.dataValues.activityAlias == "*English Survey Part A - Let's Listen!*" ||
-            startingLesson.dataValues.activityAlias == "*English Survey Part A - Let’s Listen!*" ||
-            startingLesson.dataValues.activityAlias == "*Self-Growth Survey Part A*"
+            startingLesson.dataValues.activityAlias == "*Part A*" ||
+            startingLesson.dataValues.activityAlias == "*Part C*"
         ) {
             let message = "Are you ready to start questions?"
             await sendButtonMessage(userMobileNumber, message, [{ id: 'start_questions', title: 'Start Questions' }]);
