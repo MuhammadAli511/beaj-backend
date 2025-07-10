@@ -261,8 +261,8 @@ const startCourseForUser = async (profileId, userMobileNumber, numbers_to_ignore
                 await createActivityLog(userMobileNumber, "video", "outbound", demoVideo.dataValues.constantValue, null);
                 await sleep(5000);
             }
-            await sendButtonMessage(userMobileNumber, "Are you ready to start the warm up activity?", [{ id: "lets_start", title: "Start" }]);
-            await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start the warm up activity?", null);
+            await sendButtonMessage(userMobileNumber, "Are you ready to start the Warmup Activity?", [{ id: "lets_start", title: "Start" }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start the Warmup Activity?", null);
         } else {
             await sendButtonMessage(userMobileNumber, "Are you ready to start " + level + "?", [{ id: "lets_start", title: "Start" }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start " + level + "?", null);

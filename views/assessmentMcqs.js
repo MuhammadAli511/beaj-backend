@@ -174,7 +174,7 @@ const assessmentMcqsView = async (profileId, userMobileNumber, currentUserState,
                     }
                     if (mcqType == 'Text') {
                         for (let i = 0; i < mcqAnswers.length; i++) {
-                            mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
+                            mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n\n`;
                         }
                     }
 

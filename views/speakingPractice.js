@@ -132,7 +132,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                 // Extract user transcription
                 const userTranscription = await AIServices.azureOpenAISpeechToText(audioBuffer);
 
-                let disclaimerAndUserTranscriptionMessage = "This chatbot's speech-to-text may not recognize proper nouns accurately or may skip some words—please bear with us while we improve it.";
+                let disclaimerAndUserTranscriptionMessage = "This chatbot may not recognize some names accurately or may skip some words—please bear with us as we improve it.";
                 disclaimerAndUserTranscriptionMessage += "\n\nYou said: " + userTranscription;
                 await sendMessage(userMobileNumber, disclaimerAndUserTranscriptionMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", disclaimerAndUserTranscriptionMessage, null);
