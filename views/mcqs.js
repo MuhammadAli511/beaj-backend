@@ -120,30 +120,30 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                     }
                 }
 
-                // Save user response to the database
-                const submissionDate = new Date();
-                const response = await waQuestionResponsesRepository.create(
-                    profileId,
-                    userMobileNumber,
-                    currentUserState.dataValues.currentLessonId,
-                    currentMCQsQuestion.dataValues.Id,
-                    activity,
-                    startingLesson.dataValues.activityAlias,
-                    [originalAnswer],
-                    null,
-                    null,
-                    null,
-                    null,
-                    [isCorrectAnswer],
-                    1,
-                    submissionDate
-                );
-                if (!response) {
-                    return;
-                }
 
                 // Check if custom feedback exists for the selected answer
                 if (selectedAnswerIndex !== -1) {
+                    // Save user response to the database
+                    const submissionDate = new Date();
+                    const response = await waQuestionResponsesRepository.create(
+                        profileId,
+                        userMobileNumber,
+                        currentUserState.dataValues.currentLessonId,
+                        currentMCQsQuestion.dataValues.Id,
+                        activity,
+                        startingLesson.dataValues.activityAlias,
+                        [originalAnswer],
+                        null,
+                        null,
+                        null,
+                        null,
+                        [isCorrectAnswer],
+                        1,
+                        submissionDate
+                    );
+                    if (!response) {
+                        return;
+                    }
                     const selectedAnswer = mcqAnswers[selectedAnswerIndex];
                     let customFeedbackText = selectedAnswer.dataValues.CustomAnswerFeedbackText;
                     const customFeedbackImage = selectedAnswer.dataValues.CustomAnswerFeedbackImage;
@@ -388,30 +388,30 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                     }
                 }
 
-                // Save user response to the database
-                const submissionDate = new Date();
-                const response = await waQuestionResponsesRepository.create(
-                    profileId,
-                    userMobileNumber,
-                    currentUserState.dataValues.currentLessonId,
-                    currentMCQsQuestion.dataValues.Id,
-                    activity,
-                    startingLesson.dataValues.activityAlias,
-                    [originalAnswer],
-                    null,
-                    null,
-                    null,
-                    null,
-                    [isCorrectAnswer],
-                    1,
-                    submissionDate
-                );
-                if (!response) {
-                    return;
-                }
 
                 // Check if custom feedback exists for the selected answer
                 if (selectedAnswerIndex !== -1) {
+                    // Save user response to the database
+                    const submissionDate = new Date();
+                    const response = await waQuestionResponsesRepository.create(
+                        profileId,
+                        userMobileNumber,
+                        currentUserState.dataValues.currentLessonId,
+                        currentMCQsQuestion.dataValues.Id,
+                        activity,
+                        startingLesson.dataValues.activityAlias,
+                        [originalAnswer],
+                        null,
+                        null,
+                        null,
+                        null,
+                        [isCorrectAnswer],
+                        1,
+                        submissionDate
+                    );
+                    if (!response) {
+                        return;
+                    }
                     const selectedAnswer = mcqAnswers[selectedAnswerIndex];
                     let customFeedbackText = selectedAnswer.dataValues.CustomAnswerFeedbackText;
                     const customFeedbackImage = selectedAnswer.dataValues.CustomAnswerFeedbackImage;
