@@ -2,3 +2,5 @@
 node_modules/
 my_cred.json
 cert_cred.json
+.zencoder
+.vscode
