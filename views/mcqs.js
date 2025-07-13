@@ -110,7 +110,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                 let isCorrectAnswer = false;
                 let selectedAnswerIndex = -1;
                 for (let i = 0; i < mcqAnswers.length; i++) {
-                    let matchWith = `option ${String.fromCharCode(65 + i)}`.toLowerCase();
+                    let matchWith = `${String.fromCharCode(65 + i)}`.toLowerCase();
                     if (userAnswer == matchWith) {
                         selectedAnswerIndex = i;
                         if (mcqAnswers[i].dataValues.IsCorrect === true) {
