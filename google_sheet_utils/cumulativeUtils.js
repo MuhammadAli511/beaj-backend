@@ -9,7 +9,8 @@ const sheets = google.sheets("v4");
 
 const CumulativeUtils_load = async (
   cum_lesson_student,
-    cum_activity_student
+    cum_activity_student,
+    cum_activity_assessment
 ) => {
   try {
     const auth = new google.auth.GoogleAuth({
@@ -25,6 +26,8 @@ const CumulativeUtils_load = async (
         ranges: [
             `Student Lesson!A3:N`, 
             `Student Activity!A3:N`, 
+            `Student Assessment!A4:Z`,
+            // Uncomment the following lines if you want to clear these ranges as well
             // `Rollout Week!A3:T`,
             // `Rollout-T1 Activity Count!A3:Z`,
             // `Rollout-T2 Activity Count!A3:Z`,
@@ -49,6 +52,10 @@ const CumulativeUtils_load = async (
         {
           range: `Student Activity!A3:N`, 
           values: cum_activity_student
+        },
+        {
+          range: `Student Assessment!A4:Z`, 
+          values: cum_activity_assessment
         },
         // {
         //   range: `Rollout Week!A3:T`, 

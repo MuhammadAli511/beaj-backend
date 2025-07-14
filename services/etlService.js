@@ -14,13 +14,16 @@ const runCumulativeSheets = async () => {
 
   let cum_lesson_student = await etlRepository.getCumulativeLessonCompletions();
   let cum_activity_student = await etlRepository.getCumulativeActivityCompletions();
+  let cum_activity_assessment = await etlRepository.getActivityAssessmentCumulative();
 
   cum_lesson_student = cum_lesson_student.map(obj => Object.values(obj).map(value => value));
   cum_activity_student = cum_activity_student.map(obj => Object.values(obj).map(value => value));
+  cum_activity_assessment = cum_activity_assessment.map(obj => Object.values(obj).map(value => value));
 
   await CumulativeUtils_load(
     cum_lesson_student,
-    cum_activity_student
+    cum_activity_student,
+    cum_activity_assessment,
   );
 
   // let courseId_l1 = 106;

@@ -1254,6 +1254,7 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType) =>
                         AND m."rollout" = 2
                         AND m."classLevel" = '${grade}'
                         AND l."courseId" = ${courseId}
+                        ${cohortCond}
                     GROUP BY m."profile_id", m."phoneNumber", l."courseId"
                 ),
 
@@ -1286,6 +1287,7 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType) =>
                         p."profile_type" = 'student'
                         AND m."rollout" = 2
                         AND m."classLevel" = '${grade}'
+                        ${cohortCond}
                 ),
 
                 FinalResults AS (
