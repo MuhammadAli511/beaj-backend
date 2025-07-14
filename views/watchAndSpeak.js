@@ -22,7 +22,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
-                let defaultTextInstruction = "Watch the videos. Then practice speaking by sending voice messages. 💬";
+                let defaultTextInstruction = "Watch the videos. Then practise speaking by sending voice messages. 💬";
                 const lessonTextInstruction = startingLesson.dataValues.textInstruction;
                 let finalTextInstruction = defaultTextInstruction;
                 if (lessonTextInstruction != null && lessonTextInstruction != "") {
@@ -226,7 +226,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
-                let defaultTextInstruction = "Watch the videos. Then practice speaking by sending voice messages. 💬";
+                let defaultTextInstruction = "Watch the videos. Then practise speaking by sending voice messages. 💬";
                 const lessonTextInstruction = startingLesson.dataValues.textInstruction;
                 let finalTextInstruction = defaultTextInstruction;
                 if (lessonTextInstruction != null && lessonTextInstruction != "") {
