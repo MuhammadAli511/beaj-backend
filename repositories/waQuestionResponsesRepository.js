@@ -439,11 +439,26 @@ const monologueScoreForList = async (profileId, phoneNumber, lessonIdList) => {
     };
 };
 
-const getByActivityType = async (activityType) => {
+const getByActivityType = async (activityType, courseId = null) => {
+    const whereCondition = {
+        activityType: activityType
+    };
+
+    if (courseId) {
+        return await sequelize.query(`
+            SELECT wr.* 
+            FROM wa_question_responses wr
+            JOIN "Lesson" l ON wr."lessonId" = l."LessonId"
+            WHERE wr."activityType" = :activityType 
+            AND l."courseId" = :courseId
+        `, {
+            replacements: { activityType, courseId },
+            type: sequelize.QueryTypes.SELECT
+        });
+    }
+
     return await WA_QuestionResponses.findAll({
-        where: {
-            activityType: activityType
-        }
+        where: whereCondition
     });
 };
 

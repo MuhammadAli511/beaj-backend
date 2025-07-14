@@ -9,8 +9,8 @@ const getAllWaQuestionResponsesService = async () => {
     return await waQuestionResponsesRepository.getAll();
 };
 
-const getWaQuestionResponsesByActivityTypeService = async (activityType) => {
-    const waQuestionResponses = await waQuestionResponsesRepository.getByActivityType(activityType);
+const getWaQuestionResponsesByActivityTypeService = async (activityType, courseId = null) => {
+    const waQuestionResponses = await waQuestionResponsesRepository.getByActivityType(activityType, courseId);
     // Lesson Details
     const lessonIds = waQuestionResponses.map(response => response.lessonId);
     const lessons = await lessonRepository.getByLessonIds(lessonIds);
@@ -46,7 +46,7 @@ const getWaQuestionResponsesByActivityTypeService = async (activityType) => {
         let userSelectedAnswerText = null;
 
         if (multipleChoiceQuestions) {
-            multipleChoiceQuestion = multipleChoiceQuestions.find(multipleChoiceQuestion => multipleChoiceQuestion.Id == response.dataValues.questionId);
+            multipleChoiceQuestion = multipleChoiceQuestions.find(multipleChoiceQuestion => multipleChoiceQuestion.Id == responseData.questionId);
 
             // Map the user's selected option to the actual answer text
             if (multipleChoiceQuestion && mcqAnswers[multipleChoiceQuestion.Id] && responseData.submittedAnswerText && responseData.submittedAnswerText.length > 0) {
@@ -69,7 +69,7 @@ const getWaQuestionResponsesByActivityTypeService = async (activityType) => {
                 }
             }
         } else {
-            speakActivityQuestion = speakActivityQuestions.find(speakActivityQuestion => speakActivityQuestion.id == response.dataValues.questionId);
+            speakActivityQuestion = speakActivityQuestions.find(speakActivityQuestion => speakActivityQuestion.id == responseData.questionId);
         }
         return {
             id: responseData.id,
