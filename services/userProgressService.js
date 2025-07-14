@@ -91,7 +91,7 @@ const getAllUserProgressService = async (botType, rollout, level, cohort, target
       day3_mcqs_total: 0,
     };
 
-    if (level === 'grade 7') {
+    if (level === 'grade 7' || botType === 'teacher') {
       maxL1.total_speaking_practice = 0;
       maxL2.total_speaking_practice = 0;
     }
@@ -112,7 +112,7 @@ const getAllUserProgressService = async (botType, rollout, level, cohort, target
       // Update max totals for L2
       maxL2.total_mcqs = Math.max(maxL2.total_mcqs, l2_entry.total_mcqs);
 
-      if (level === 'grade 7') {
+      if (level === 'grade 7' || botType === 'teacher') {
         maxL1.total_speaking_practice = Math.max(maxL1.total_speaking_practice, l1_entry.total_speaking_practice);
         maxL2.total_speaking_practice = Math.max(maxL2.total_speaking_practice, l2_entry.total_speaking_practice);
         // Your existing array push
@@ -149,7 +149,7 @@ const getAllUserProgressService = async (botType, rollout, level, cohort, target
         ]);
       }
     }
-    if (level === 'grade 7') {
+    if (level === 'grade 7' || botType === 'teacher') {
       totalRow = [
         null,
         null,
@@ -198,7 +198,7 @@ const getAllUserProgressService = async (botType, rollout, level, cohort, target
       maxL2.day3_mcqs_total = Math.max(maxL2.day3_mcqs_total, l2_entry.day3_mcqs_total);
       maxL2.total_mcqs = Math.max(maxL2.total_mcqs, l2_entry.total_mcqs);
 
-      if (level === 'grade 7') {
+      if (level === 'grade 7' || botType === 'teacher') {
         maxL1.total_speaking_practice = Math.max(maxL1.total_speaking_practice, l1_entry.total_speaking_practice);
         maxL2.total_speaking_practice = Math.max(maxL2.total_speaking_practice, l2_entry.total_speaking_practice);
         // Your existing array push
@@ -247,7 +247,7 @@ const getAllUserProgressService = async (botType, rollout, level, cohort, target
         ]);
       }
     }
-    if (level === 'grade 7') {
+    if (level === 'grade 7' || botType === 'teacher') {
       totalRow = [
         null,
         null,
@@ -557,7 +557,16 @@ const getTopPerformersWithNames = (data, columnIndex) => {
   return sortedScores;
 };
 
+const getcohortListService = async (botType,rollout,level,targetGroup) => {
+
+    let cohort_list = await etlRepository.getcohortList(botType,rollout,level,targetGroup);
+    cohort_list = cohort_list.map(obj => Object.values(obj).map(value => value));
+
+    return cohort_list;
+};
+
 export default {
   getAllUserProgressService,
-  getUserProgressLeaderboardService
+  getUserProgressLeaderboardService,
+  getcohortListService,
 };
