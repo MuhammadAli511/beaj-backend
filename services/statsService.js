@@ -332,6 +332,17 @@ const studentCourseStatsService = async () => {
         // Filters results to show only counts >= 10 users
         const courseStatsQuery = `
             WITH
+                -- 0. Define the filtered user group
+                filtered_users AS (
+                    SELECT
+                        u.profile_id
+                    FROM wa_users_metadata u
+                    WHERE u.rollout = 2
+                      AND u."classLevel" IN ('grade 1', 'grade 2', 'grade 3', 'grade 4', 'grade 5', 'grade 6', 'grade 7')
+                      AND u.cohort IS NOT NULL
+                      AND u.cohort NOT IN ('Cohort 0')
+                ),
+
                 -- 1. Define course groupings
                 course_groups AS (
                 SELECT course_id, 'Main Course' AS group_name
@@ -481,77 +492,159 @@ const studentCourseStatsService = async () => {
                                     AND dl."weekNumber" = alm."weekNumber"
                                     AND dl."dayNumber" = alm."dayNumber"
                 GROUP BY alm.group_name, alm."weekNumber", alm."dayNumber", dl.all_lesson_ids
+                ),
+
+                -- 8. Get all relevant lesson completions for our filtered users
+                user_completions AS (
+                    SELECT
+                        lc.profile_id,
+                        lc."lessonId",
+                        lc."completionStatus"
+                    FROM wa_lessons_completed lc
+                    JOIN filtered_users fu ON lc.profile_id = fu.profile_id
+                ),
+
+                -- 9. A calendar of all possible days for each group
+                day_calendar AS (
+                    SELECT DISTINCT
+                        group_name,
+                        "weekNumber",
+                        "dayNumber"
+                    FROM aggregated_metrics
+                ),
+
+                -- 10. Cross join users with the calendar to create a full grid
+                user_day_grid AS (
+                    SELECT
+                        fu.profile_id,
+                        dc.group_name,
+                        dc."weekNumber",
+                        dc."dayNumber"
+                    FROM filtered_users fu
+                    CROSS JOIN day_calendar dc
+                ),
+
+                -- 11. Join the grid with actual completions to get raw status
+                user_daily_status AS (
+                    SELECT
+                        udg.profile_id,
+                        udg.group_name,
+                        udg."weekNumber",
+                        udg."dayNumber",
+                        MAX(CASE WHEN uc."lessonId" = ANY(am.start_lesson_ids) THEN 1 ELSE 0 END) AS has_started_day,
+                        MAX(CASE WHEN uc."lessonId" = ANY(am.end_lesson_ids) AND uc."completionStatus" = 'Completed' THEN 1 ELSE 0 END) AS has_completed_day
+                    FROM user_day_grid udg
+                    JOIN aggregated_metrics am
+                        ON udg.group_name = am.group_name
+                        AND udg."weekNumber" = am."weekNumber"
+                        AND udg."dayNumber" = am."dayNumber"
+                    LEFT JOIN user_completions uc
+                        ON udg.profile_id = uc.profile_id
+                        AND uc."lessonId" = ANY(am.all_lesson_ids)
+                    GROUP BY
+                        udg.profile_id,
+                        udg.group_name,
+                        udg."weekNumber",
+                        udg."dayNumber"
+                ),
+
+                -- 12. Apply the funnel logic using LAG to enforce sequential progress
+                sequential_progress AS (
+                    SELECT
+                        profile_id,
+                        group_name,
+                        "weekNumber",
+                        "dayNumber",
+                        has_started_day,
+                        (has_started_day * has_completed_day) as is_truly_completed
+                    FROM user_daily_status
+                ),
+
+                funnel AS (
+                    SELECT
+                        profile_id,
+                        group_name,
+                        "weekNumber",
+                        "dayNumber",
+                        has_started_day,
+                        is_truly_completed,
+                        COALESCE(MIN(is_truly_completed) OVER (
+                            PARTITION BY profile_id, group_name
+                            ORDER BY "weekNumber", "dayNumber"
+                            ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+                        ), 1) as prerequisite_met
+                    FROM sequential_progress
+                ),
+
+                -- 13. Aggregate the final counts based on valid sequential progress
+                final_counts AS (
+                    SELECT
+                        group_name,
+                        "weekNumber",
+                        "dayNumber",
+                        COUNT(profile_id) FILTER (WHERE has_started_day = 1 AND prerequisite_met = 1) AS started_count,
+                        COUNT(profile_id) FILTER (WHERE is_truly_completed = 1 AND prerequisite_met = 1) AS completed_count
+                    FROM funnel
+                    GROUP BY group_name, "weekNumber", "dayNumber"
                 )
 
-                -- 8. Final report
+                -- 14. Final report
                 SELECT description, count
                 FROM (
                 -- Total Users
                 SELECT 'Total Users' AS description, COUNT(*) AS count, 1 AS sort_order
-                FROM wa_users_metadata u
-                WHERE u."classLevel" IS NOT NULL AND u.cohort IS NOT NULL AND u.rollout = 2
+                FROM filtered_users
 
                 UNION ALL
 
                 -- Users with one message
                 SELECT 'Started Users (One Message)' AS description, COUNT(*) AS count, 2 AS sort_order
-                FROM wa_users_metadata u
-                JOIN wa_user_progress p ON u.profile_id = p.profile_id
-                WHERE u."classLevel" IS NOT NULL AND u.cohort IS NOT NULL AND u.rollout = 2
-                    AND (p."acceptableMessages" IS NULL OR p."acceptableMessages" <> ARRAY['start now!'])
+                FROM filtered_users fu
+                JOIN wa_user_progress p ON fu.profile_id = p.profile_id
+                WHERE (p."acceptableMessages" IS NULL OR p."acceptableMessages" <> ARRAY['start now!'])
 
                 UNION ALL
 
                 -- Pre-Assessment: Started
                 SELECT
-                    'Pre-Assessment Started Week ' || am."weekNumber" || ' Day ' || am."dayNumber" AS description,
-                    COUNT(DISTINCT lc.profile_id) AS count,
-                    (3 + (am."weekNumber" - 1)*10 + (am."dayNumber" - 1)*2) AS sort_order
-                FROM aggregated_metrics am
-                JOIN wa_lessons_completed lc ON lc."lessonId" = ANY(am.all_lesson_ids)
-                WHERE am.group_name = 'Pre-Assessment'
-                GROUP BY am."weekNumber", am."dayNumber"
+                    'Pre-Assessment Started Week ' || fc."weekNumber" || ' Day ' || fc."dayNumber" AS description,
+                    fc.started_count AS count,
+                    (3 + (fc."weekNumber" - 1)*10 + (fc."dayNumber" - 1)*2) AS sort_order
+                FROM final_counts fc
+                WHERE fc.group_name = 'Pre-Assessment'
+
 
                 UNION ALL
 
                 -- Pre-Assessment: Completed
                 SELECT
-                    'Pre-Assessment Completed Week ' || am."weekNumber" || ' Day ' || am."dayNumber" AS description,
-                    COUNT(DISTINCT lc.profile_id) AS count,
-                    (4 + (am."weekNumber" - 1)*10 + (am."dayNumber" - 1)*2) AS sort_order
-                FROM aggregated_metrics am
-                JOIN wa_lessons_completed lc ON lc."lessonId" = ANY(am.end_lesson_ids)
-                                            AND lc."completionStatus" = 'Completed'
-                WHERE am.group_name = 'Pre-Assessment'
-                GROUP BY am."weekNumber", am."dayNumber"
+                    'Pre-Assessment Completed Week ' || fc."weekNumber" || ' Day ' || fc."dayNumber" AS description,
+                    fc.completed_count AS count,
+                    (4 + (fc."weekNumber" - 1)*10 + (fc."dayNumber" - 1)*2) AS sort_order
+                FROM final_counts fc
+                WHERE fc.group_name = 'Pre-Assessment'
 
                 UNION ALL
 
                 -- Main Course: Started
                 SELECT
-                    'Main Course Started Week ' || am."weekNumber" || ' Day ' || am."dayNumber" AS description,
-                    COUNT(DISTINCT lc.profile_id) AS count,
-                    (100 + (am."weekNumber" - 1)*10 + (am."dayNumber" - 1)*2) AS sort_order
-                FROM aggregated_metrics am
-                JOIN wa_lessons_completed lc ON lc."lessonId" = ANY(am.all_lesson_ids)
-                WHERE am.group_name = 'Main Course'
-                GROUP BY am."weekNumber", am."dayNumber"
+                    'Main Course Started Week ' || fc."weekNumber" || ' Day ' || fc."dayNumber" AS description,
+                    fc.started_count AS count,
+                    (100 + (fc."weekNumber" - 1)*10 + (fc."dayNumber" - 1)*2) AS sort_order
+                FROM final_counts fc
+                WHERE fc.group_name = 'Main Course'
 
                 UNION ALL
 
                 -- Main Course: Completed
                 SELECT
-                    'Main Course Completed Week ' || am."weekNumber" || ' Day ' || am."dayNumber" AS description,
-                    COUNT(DISTINCT lc.profile_id) AS count,
-                    (101 + (am."weekNumber" - 1)*10 + (am."dayNumber" - 1)*2) AS sort_order
-                FROM aggregated_metrics am
-                JOIN wa_lessons_completed lc ON lc."lessonId" = ANY(am.end_lesson_ids)
-                                            AND lc."completionStatus" = 'Completed'
-                WHERE am.group_name = 'Main Course'
-                GROUP BY am."weekNumber", am."dayNumber"
+                    'Main Course Completed Week ' || fc."weekNumber" || ' Day ' || fc."dayNumber" AS description,
+                    fc.completed_count AS count,
+                    (101 + (fc."weekNumber" - 1)*10 + (fc."dayNumber" - 1)*2) AS sort_order
+                FROM final_counts fc
+                WHERE fc.group_name = 'Main Course'
                 ) final_results
                 ORDER BY sort_order;
-
         `;
 
         const [courseStats] = await sequelize.query(courseStatsQuery);
