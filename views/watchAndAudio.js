@@ -299,17 +299,35 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                     // Update question number
                     await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextWatchAndSpeakQuestion.dataValues.questionNumber);
 
-                    if (nextWatchAndSpeakQuestion.dataValues.questionNumber == 7) {
-                        // Voice message here
-                        let audioMessage = "https://beajbloblive.blob.core.windows.net/beajdocuments/audio_instruction_for_phonics.mp3";
-                        await sendMediaMessage(userMobileNumber, audioMessage, 'audio');
-                        await createActivityLog(userMobileNumber, "audio", "outbound", audioMessage, null);
-                        await sleep(2000);
+                    if (currentUserState.dataValues.currentCourseId == 119 || currentUserState.dataValues.currentCourseId == 120) {
+                        if (currentUserState.dataValues.currentWeek == 3 && currentUserState.dataValues.currentDay == 3) {
+                            if (nextWatchAndSpeakQuestion.dataValues.questionNumber == 9) {
+                                // Voice message here
+                                let audioMessage = "https://beajbloblive.blob.core.windows.net/beajdocuments/final_instruction_audio1.mp3";
+                                await sendMediaMessage(userMobileNumber, audioMessage, 'audio');
+                                await createActivityLog(userMobileNumber, "audio", "outbound", audioMessage, null);
+                                await sleep(2000);
 
-                        // Button message
-                        let skipButtonMessage = "👇 Click on the button below to start the next activity!";
-                        await sendButtonMessage(userMobileNumber, skipButtonMessage, [{ id: "next_activity", title: "Next Activity" }]);
-                        await createActivityLog(userMobileNumber, "template", "outbound", skipButtonMessage, null);
+                                // Button message
+                                let skipButtonMessage = "👇 Click on the button below to start the next activity!";
+                                await sendButtonMessage(userMobileNumber, skipButtonMessage, [{ id: "next_activity", title: "Next Activity" }]);
+                                await createActivityLog(userMobileNumber, "template", "outbound", skipButtonMessage, null);
+                            }
+                        }
+                    }
+                    else if (currentUserState.dataValues.currentCourseId != 119 && currentUserState.dataValues.currentCourseId != 120) {
+                        if (nextWatchAndSpeakQuestion.dataValues.questionNumber == 7) {
+                            // Voice message here
+                            let audioMessage = "https://beajbloblive.blob.core.windows.net/beajdocuments/final_instruction_audio1.mp3";
+                            await sendMediaMessage(userMobileNumber, audioMessage, 'audio');
+                            await createActivityLog(userMobileNumber, "audio", "outbound", audioMessage, null);
+                            await sleep(2000);
+
+                            // Button message
+                            let skipButtonMessage = "👇 Click on the button below to start the next activity!";
+                            await sendButtonMessage(userMobileNumber, skipButtonMessage, [{ id: "next_activity", title: "Next Activity" }]);
+                            await createActivityLog(userMobileNumber, "template", "outbound", skipButtonMessage, null);
+                        }
                     }
 
                     // Send question media file
