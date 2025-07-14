@@ -8,7 +8,7 @@ import { et } from "date-fns/locale";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const getAllUserProgressService = async (botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3, courseId4, courseId5, module) => {
+const getAllUserProgressService = async (botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3, courseId4, courseId5, module, assessmentView) => {
   let array_list = [];
 
   if (module === 'lesson') {
@@ -70,75 +70,180 @@ const getAllUserProgressService = async (botType, rollout, level, cohort, target
     array_list = await etlRepository.getActivity_Completions(botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3);
   }
   else if (module === 'assessment') {
-    let array_list_Pre = await etlRepository.getActivtyAssessmentScore(botType, rollout, level, cohort, targetGroup, courseId4);
-    let array_listt_Post = await etlRepository.getActivtyAssessmentScore(botType, rollout, level, cohort, targetGroup, courseId5);
+    let array_list_Pre = await etlRepository.getActivityAssessmentScoreDay(botType, rollout, level, cohort, targetGroup, courseId4, assessmentView);
+    let array_listt_Post = await etlRepository.getActivityAssessmentScoreDay(botType, rollout, level, cohort, targetGroup, courseId5, assessmentView);
+    
     let totalRow = [], arrayT1_List01 = [];
 
-
-
     let maxL1 = {
-      mcqs_total: 0,
-      both_total: 0
+      total_mcqs: 0,
+      total_mcqs: 0,
+      day1_mcqs_total: 0,
+      day2_mcqs_total: 0,
+      day3_mcqs_total: 0,
     };
 
     let maxL2 = {
-      mcqs_total: 0,
-      both_total: 0
+      total_mcqs: 0,
+      total_mcqs: 0,
+      day1_mcqs_total: 0,
+      day2_mcqs_total: 0,
+      day3_mcqs_total: 0,
     };
 
     if (level === 'grade 7') {
-      maxL1.speaking_practice_total = 0;
-      maxL2.speaking_practice_total = 0;
+      maxL1.total_speaking_practice = 0;
+      maxL2.total_speaking_practice = 0;
     }
     else {
-      maxL1.watchAndSpeak_total = 0;
-      maxL2.watchAndSpeak_total = 0;
+      maxL1.total_watchandspeak = 0;
+      maxL2.total_watchandspeak = 0;
     }
+
+    if(assessmentView === 'week') {
+     
+    for (let i = 0; i < array_list_Pre.length; i++) {
+      let l1_entry = array_list_Pre[i];
+      let l2_entry = array_listt_Post[i];
+
+      // Update max totals for L1
+      maxL1.total_mcqs = Math.max(maxL1.total_mcqs, l1_entry.total_mcqs);
+
+      // Update max totals for L2
+      maxL2.total_mcqs = Math.max(maxL2.total_mcqs, l2_entry.total_mcqs);
+
+      if (level === 'grade 7') {
+        maxL1.total_speaking_practice = Math.max(maxL1.total_speaking_practice, l1_entry.total_speaking_practice);
+        maxL2.total_speaking_practice = Math.max(maxL2.total_speaking_practice, l2_entry.total_speaking_practice);
+        // Your existing array push
+        arrayT1_List01.push([
+          i + 1,
+          l1_entry.profile_id,
+          l1_entry.phoneNumber,
+          l1_entry.name,
+          l1_entry.total_mcqs_score,
+          l1_entry.day1_sp,
+          l1_entry.total_score,
+          null,
+          l2_entry.total_mcqs_score,
+          l2_entry.day1_sp,
+          l2_entry.total_score,
+        ]);
+      }
+      else {
+        maxL1.total_watchandspeak = Math.max(maxL1.total_watchandspeak, l1_entry.total_watchandspeak);
+        maxL2.total_watchandspeak = Math.max(maxL2.total_watchandspeak, l2_entry.total_watchandspeak);
+        // Your existing array push
+        arrayT1_List01.push([
+          i + 1,
+          l1_entry.profile_id,
+          l1_entry.phoneNumber,
+          l1_entry.name,
+          l1_entry.total_mcqs_score,
+          l1_entry.day1_ws,
+          l1_entry.total_score,
+          null,
+          l2_entry.total_mcqs_score,
+          l2_entry.day1_ws,
+          l2_entry.total_score,
+        ]);
+      }
+    }
+    if (level === 'grade 7') {
+      totalRow = [
+        null,
+        null,
+        null,
+        null,
+        maxL1.total_mcqs,
+        maxL1.total_speaking_practice,
+        maxL1.total_mcqs + maxL1.total_speaking_practice,
+        null,
+        maxL2.total_mcqs,
+        maxL2.total_speaking_practice,
+        maxL2.total_mcqs + maxL2.total_speaking_practice,
+      ];
+    }
+    else {
+      totalRow = [
+        null,
+        null,
+        null,
+        null,
+        maxL1.total_mcqs,
+        maxL1.total_watchandspeak,
+        maxL1.total_mcqs + maxL1.total_watchandspeak,
+        null,
+        maxL2.total_mcqs,
+        maxL2.total_watchandspeak,
+        maxL2.total_mcqs + maxL2.total_watchandspeak,
+      ];
+    }
+    }
+    else{
 
     for (let i = 0; i < array_list_Pre.length; i++) {
       let l1_entry = array_list_Pre[i];
       let l2_entry = array_listt_Post[i];
 
       // Update max totals for L1
-      maxL1.mcqs_total = Math.max(maxL1.mcqs_total, l1_entry.mcqs_total);
+      maxL1.day1_mcqs_total = Math.max(maxL1.day1_mcqs_total, l1_entry.day1_mcqs_total);
+      maxL1.day2_mcqs_total = Math.max(maxL1.day2_mcqs_total, l1_entry.day2_mcqs_total);
+      maxL1.day3_mcqs_total = Math.max(maxL1.day3_mcqs_total, l1_entry.day3_mcqs_total);
+      maxL1.total_mcqs = Math.max(maxL1.total_mcqs, l1_entry.total_mcqs);
 
       // Update max totals for L2
-      maxL2.mcqs_total = Math.max(maxL2.mcqs_total, l2_entry.mcqs_total);
+      maxL2.day1_mcqs_total = Math.max(maxL2.day1_mcqs_total, l2_entry.day1_mcqs_total);
+      maxL2.day2_mcqs_total = Math.max(maxL2.day2_mcqs_total, l2_entry.day2_mcqs_total);
+      maxL2.day3_mcqs_total = Math.max(maxL2.day3_mcqs_total, l2_entry.day3_mcqs_total);
+      maxL2.total_mcqs = Math.max(maxL2.total_mcqs, l2_entry.total_mcqs);
 
       if (level === 'grade 7') {
-        maxL1.speaking_practice_total = Math.max(maxL1.speaking_practice_total, l1_entry.speaking_practice_total);
-        maxL2.speaking_practice_total = Math.max(maxL2.speaking_practice_total, l2_entry.speaking_practice_total);
+        maxL1.total_speaking_practice = Math.max(maxL1.total_speaking_practice, l1_entry.total_speaking_practice);
+        maxL2.total_speaking_practice = Math.max(maxL2.total_speaking_practice, l2_entry.total_speaking_practice);
         // Your existing array push
         arrayT1_List01.push([
           i + 1,
           l1_entry.profile_id,
           l1_entry.phoneNumber,
           l1_entry.name,
-          l1_entry.mcqs,
-          l1_entry.speaking_practice,
-          l1_entry.total_activity_score,
+          l1_entry.day1_mcqs,
+          l1_entry.day2_mcqs,
+          l1_entry.day3_mcqs,
+          l1_entry.total_mcqs_score,
+          l1_entry.day1_sp,
+          l1_entry.total_score,
           null,
-          l2_entry.mcqs,
-          l2_entry.speaking_practice,
-          l2_entry.total_activity_score,
+          l2_entry.day1_mcqs,
+          l2_entry.day2_mcqs,
+          l2_entry.day3_mcqs,
+          l2_entry.total_mcqs_score,
+          l2_entry.day1_sp,
+          l2_entry.total_score,
         ]);
       }
       else {
-        maxL1.watchAndSpeak_total = Math.max(maxL1.watchAndSpeak_total, l1_entry.watchAndSpeak_total);
-        maxL2.watchAndSpeak_total = Math.max(maxL2.watchAndSpeak_total, l2_entry.watchAndSpeak_total);
+        maxL1.total_watchandspeak = Math.max(maxL1.total_watchandspeak, l1_entry.total_watchandspeak);
+        maxL2.total_watchandspeak = Math.max(maxL2.total_watchandspeak, l2_entry.total_watchandspeak);
         // Your existing array push
         arrayT1_List01.push([
           i + 1,
           l1_entry.profile_id,
           l1_entry.phoneNumber,
           l1_entry.name,
-          l1_entry.mcqs,
-          l1_entry.watchAndSpeak,
-          l1_entry.total_activity_score,
+          l1_entry.day1_mcqs,
+          l1_entry.day2_mcqs,
+          l1_entry.day3_mcqs,
+          l1_entry.total_mcqs_score,
+          l1_entry.day1_ws,
+          l1_entry.total_score,
           null,
-          l2_entry.mcqs,
-          l2_entry.watchAndSpeak,
-          l2_entry.total_activity_score,
+          l2_entry.day1_mcqs,
+          l2_entry.day2_mcqs,
+          l2_entry.day3_mcqs,
+          l2_entry.total_mcqs_score,
+          l2_entry.day1_ws,
+          l2_entry.total_score,
         ]);
       }
     }
@@ -148,13 +253,19 @@ const getAllUserProgressService = async (botType, rollout, level, cohort, target
         null,
         null,
         null,
-        maxL1.mcqs_total,
-        maxL1.speaking_practice_total,
-        maxL1.mcqs_total + maxL1.speaking_practice_total,
+        maxL1.day1_mcqs_total,
+        maxL1.day2_mcqs_total,
+        maxL1.day3_mcqs_total,
+        maxL1.total_mcqs,
+        maxL1.total_speaking_practice,
+        maxL1.total_mcqs + maxL1.total_speaking_practice,
         null,
-        maxL2.mcqs_total,
-        maxL2.speaking_practice_total,
-        maxL2.mcqs_total + maxL2.speaking_practice_total,
+        maxL2.day1_mcqs_total,
+        maxL2.day2_mcqs_total,
+        maxL2.day3_mcqs_total,
+        maxL2.total_mcqs,
+        maxL2.total_speaking_practice,
+        maxL2.total_mcqs + maxL2.total_speaking_practice,
       ];
     }
     else {
@@ -163,21 +274,28 @@ const getAllUserProgressService = async (botType, rollout, level, cohort, target
         null,
         null,
         null,
-        maxL1.mcqs_total,
-        maxL1.watchAndSpeak_total,
-        maxL1.mcqs_total + maxL1.watchAndSpeak_total,
+        maxL1.day1_mcqs_total,
+        maxL1.day2_mcqs_total,
+        maxL1.day3_mcqs_total,
+        maxL1.total_mcqs,
+        maxL1.total_watchandspeak,
+        maxL1.total_mcqs + maxL1.total_watchandspeak,
         null,
-        maxL2.mcqs_total,
-        maxL2.watchAndSpeak_total,
-        maxL2.mcqs_total + maxL2.watchAndSpeak_total,
+        maxL2.day1_mcqs_total,
+        maxL2.day2_mcqs_total,
+        maxL2.day3_mcqs_total,
+        maxL2.total_mcqs,
+        maxL2.total_watchandspeak,
+        maxL2.total_mcqs + maxL2.total_watchandspeak,
       ];
     }
-
+    }
     array_list = [totalRow, ...arrayT1_List01];
-
   }
   array_list = array_list.map(obj => Object.values(obj).map(value => value));
   array_list = capitalizeNames(array_list);
+
+  // console.log(array_list);
   return {
     array_list: array_list
   };

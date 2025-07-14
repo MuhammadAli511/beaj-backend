@@ -2104,6 +2104,10 @@ WHERE
 ORDER BY 
     m."name" ASC;
 `;
+if(courseId == 139) {
+            console.log("Executing query for courseId 139:", query);
+        }
+
 
         // Execute the query
         const result = await sequelize.query(query);
@@ -2483,8 +2487,483 @@ const getCumulativeActivityCompletions = async () => {
   }
 };
 
+// const getActivityAssessmentScoreDay = async (botType, rollout, level, cohort, targetGroup, courseId) => {
+//   try {
+//     let classLevel = '', targetGrpCondition = '', joinString = '';
+//     let speakingPracticeCTE = '', endColumns = '';
+
+//     if (botType === 'teacher' && (rollout == 1 || rollout == 0)) {
+//       targetGrpCondition = `m."targetGroup" = '${targetGroup}' AND`;
+//     }
+
+//     if (botType === 'teacher') {
+//       classLevel = `AND m."classLevel" IS NULL AND m."cohort" = '${cohort}'`;
+//     } else if (botType === 'student') {
+//       classLevel = `AND m."classLevel" = '${level}' AND m."cohort" = '${cohort}'`;
+//     }
+
+//     const commonCTEs = `
+// WITH target_group_users AS (
+//   SELECT m."phoneNumber", m."profile_id", m."name"
+//   FROM "wa_users_metadata" m
+//   INNER JOIN "wa_profiles" p ON m."profile_id" = p."profile_id"
+//   WHERE ${targetGrpCondition}
+//         m."rollout" = ${rollout}
+//         AND p."profile_type" = '${botType}'
+//         ${classLevel}
+// ),
+// course_activities AS (
+//   SELECT "LessonId", "activity", "courseId", "weekNumber", "dayNumber"
+//   FROM "Lesson"
+//   WHERE "courseId" = ${courseId}
+//     AND "weekNumber" IN (1)
+//     AND "status" = 'Active'
+// ),
+// mcqs AS (
+//   SELECT q."phoneNumber", q."profile_id",
+//     COUNT(CASE WHEN l."weekNumber" = 1 AND l."dayNumber" = 1 AND element = TRUE THEN 1 ELSE NULL END) AS mcqs_week1_correct_count,
+//     COUNT(CASE WHEN l."weekNumber" = 1 AND l."dayNumber" = 1 THEN 1 ELSE NULL END) AS mcqs_week1_total,
+//     COUNT(CASE WHEN l."weekNumber" = 1 AND l."dayNumber" = 2 AND element = TRUE THEN 1 ELSE NULL END) AS mcqs_week2_correct_count,
+//     COUNT(CASE WHEN l."weekNumber" = 1 AND l."dayNumber" = 2 THEN 1 ELSE NULL END) AS mcqs_week2_total,
+//     COUNT(CASE WHEN l."weekNumber" = 1 AND l."dayNumber" = 3 AND element = TRUE THEN 1 ELSE NULL END) AS mcqs_week3_correct_count,
+//     COUNT(CASE WHEN l."weekNumber" = 1 AND l."dayNumber" = 3 THEN 1 ELSE NULL END) AS mcqs_week3_total
+//   FROM "wa_question_responses" q
+//   LEFT JOIN course_activities l ON q."lessonId" = l."LessonId",
+//   UNNEST(q."correct") AS element
+//   WHERE l."activity" = 'assessmentMcqs'
+//     AND q."profile_id" IN (SELECT "profile_id" FROM target_group_users)
+//   GROUP BY q."phoneNumber", q."profile_id"
+// ),
+// watch_and_speak AS (
+//   SELECT q."phoneNumber", q."profile_id",
+//     COUNT(CASE WHEN l."weekNumber" = 1 AND l."dayNumber" = 1 THEN 1 ELSE NULL END) * 2 AS watchAndSpeak_week1_total,
+//     COALESCE(SUM(
+//       CASE WHEN l."weekNumber" = 1 AND l."dayNumber" = 1 THEN
+//         COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
+//         COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
+//         COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
+//       END
+//     ) / 300 * 2, 0) AS watchAndSpeak_week1_score
+//   FROM "wa_question_responses" q
+//   LEFT JOIN course_activities l ON l."LessonId" = q."lessonId"
+//   WHERE l."activity" = 'assessmentWatchAndSpeak'
+//     AND q."profile_id" IN (SELECT "profile_id" FROM target_group_users)
+//   GROUP BY q."phoneNumber", q."profile_id"
+// )`;
+
+//     if (botType === 'student' && level === 'grade 7') {
+//       speakingPracticeCTE = `,
+// speaking_practice AS (
+//   SELECT q."phoneNumber", q."profile_id",
+//     COALESCE(SUM(
+//       CASE WHEN l."weekNumber" = 1 AND l."dayNumber" = 1 THEN
+//         COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
+//         COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
+//         COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
+//       END
+//     ) / 300 * 5, 0) AS speaking_practice_week1_correct_count
+//   FROM "wa_question_responses" q
+//   LEFT JOIN course_activities l ON l."LessonId" = q."lessonId"
+//   WHERE l."activity" = 'speakingPractice'
+//     AND q."profile_id" IN (SELECT "profile_id" FROM target_group_users)
+//   GROUP BY q."phoneNumber", q."profile_id"
+// )`;
+
+//       joinString = `LEFT JOIN speaking_practice sp ON m."profile_id" = sp."profile_id"`;
+
+//       endColumns = `
+//   ROUND(COALESCE(mc.mcqs_week1_correct_count, 0), 2) AS day1_mcqs,
+//   ROUND(COALESCE(mc.mcqs_week2_correct_count, 0), 2) AS day2_mcqs,
+//   ROUND(COALESCE(mc.mcqs_week3_correct_count, 0), 2) AS day3_mcqs,
+//   ROUND(COALESCE(sp.speaking_practice_week1_correct_count, 0), 2) AS day1_sp,
+//   CASE 
+//     WHEN (mc.mcqs_week1_correct_count + mc.mcqs_week2_correct_count + mc.mcqs_week3_correct_count) = 0 THEN NULL
+//     ELSE ROUND(COALESCE(mc.mcqs_week1_correct_count, 0) + COALESCE(mc.mcqs_week2_correct_count, 0) + COALESCE(mc.mcqs_week3_correct_count, 0), 2)
+//   END AS mcqs,
+//   ROUND(COALESCE(mc.mcqs_week1_total, 0) + COALESCE(mc.mcqs_week2_total, 0) + COALESCE(mc.mcqs_week3_total, 0), 2) AS mcqs_total,
+//   CASE
+//     WHEN sp.speaking_practice_week1_correct_count = 0 THEN NULL
+//     ELSE ROUND(sp.speaking_practice_week1_correct_count, 2)
+//   END AS speaking_practice,
+//   ROUND(COALESCE(sp.speaking_practice_week1_correct_count, 0), 2) AS speaking_practice_total,
+//   NULLIF(ROUND(COALESCE(
+//     mc.mcqs_week1_correct_count + mc.mcqs_week2_correct_count + mc.mcqs_week3_correct_count, 0
+//   ) + COALESCE(sp.speaking_practice_week1_correct_count, 0), 2), 0) AS total_activity_score`;
+//     } else {
+//       joinString = `LEFT JOIN watch_and_speak ws ON m."profile_id" = ws."profile_id"`;
+
+//       endColumns = `
+//   ROUND(COALESCE(mc.mcqs_week1_correct_count, 0), 2) AS day1_mcqs,
+//   ROUND(COALESCE(mc.mcqs_week2_correct_count, 0), 2) AS day2_mcqs,
+//   ROUND(COALESCE(mc.mcqs_week3_correct_count, 0), 2) AS day3_mcqs,
+//   ROUND(COALESCE(ws.watchAndSpeak_week1_score, 0), 2) AS day1_ws,
+//   ROUND(COALESCE(ws.watchAndSpeak_week1_total, 0), 2) AS watchAndSpeak_total,
+//   CASE 
+//     WHEN (mc.mcqs_week1_correct_count + mc.mcqs_week2_correct_count + mc.mcqs_week3_correct_count) = 0 THEN NULL
+//     ELSE ROUND(COALESCE(mc.mcqs_week1_correct_count, 0) + COALESCE(mc.mcqs_week2_correct_count, 0) + COALESCE(mc.mcqs_week3_correct_count, 0), 2)
+//   END AS mcqs,
+//   ROUND(COALESCE(mc.mcqs_week1_total, 0) + COALESCE(mc.mcqs_week2_total, 0) + COALESCE(mc.mcqs_week3_total, 0), 2) AS mcqs_total,
+//   NULLIF(ROUND(
+//     COALESCE(
+//       mc.mcqs_week1_correct_count + mc.mcqs_week2_correct_count + mc.mcqs_week3_correct_count, 0
+//     ) + COALESCE(ws.watchAndSpeak_week1_score, 0), 2
+//   ), 0) AS total_activity_score`;
+//     }
+
+//     const query = `
+// ${commonCTEs}
+// ${speakingPracticeCTE}
+// SELECT 
+//   ROW_NUMBER() OVER (ORDER BY m."name") AS sr_no,
+//   m."phoneNumber", 
+//   m."profile_id",
+//   m."name",
+//   ${endColumns}
+// FROM 
+//   "wa_users_metadata" m 
+// INNER JOIN 
+//   "wa_profiles" p ON m."profile_id" = p."profile_id"
+// LEFT JOIN 
+//   mcqs mc ON m."profile_id" = mc."profile_id"
+// ${joinString}
+// WHERE 
+//   ${targetGrpCondition}
+//   m."rollout" = ${rollout}
+//   AND p."profile_type" = '${botType}' 
+//   ${classLevel}
+// ORDER BY m."name" ASC;
+// `;
+
+//     if (courseId == 142) {
+//       console.log("Executing query for courseId 139:", query);
+//     }
+
+//     const result = await sequelize.query(query);
+//     // console.log(result[0]);
+//     return result[0];
+//   } catch (error) {
+//     console.error("Error in getActivityAssessmentScoreDay:", error);
+//     error.fileName = "etlRepository.js";
+//     throw error;
+//   }
+// };
+
+const getActivityAssessmentScoreDay = async (botType, rollout, level, cohort, targetGroup, courseId, module) => {
+  try {
+    let classLevel = '', targetGrpCondition = '', joinString = '';
+    let speakingPracticeCTE = '', endColumns = '';
+
+    if (botType === 'teacher' && (rollout == 1 || rollout == 0)) {
+      targetGrpCondition = `m."targetGroup" = '${targetGroup}' AND`;
+    }
+
+    if (botType === 'teacher') {
+      classLevel = `AND m."classLevel" IS NULL AND m."cohort" = '${cohort}'`;
+    } else if (botType === 'student') {
+      classLevel = `AND m."classLevel" = '${level}' AND m."cohort" = '${cohort}'`;
+    }
+
+    const commonCTEs = `
+        WITH target_group_users AS (
+        SELECT m."phoneNumber", m."profile_id", m."name"
+        FROM "wa_users_metadata" m
+        INNER JOIN "wa_profiles" p ON m."profile_id" = p."profile_id"
+        WHERE ${targetGrpCondition}
+                m."rollout" = ${rollout}
+                AND p."profile_type" = '${botType}'
+                ${classLevel}
+        ),
+        course_activities AS (
+        SELECT "LessonId", "activity", "courseId", "weekNumber", "dayNumber"
+        FROM "Lesson"
+        WHERE "courseId" = ${courseId}
+            AND "weekNumber" IN (1)
+            AND "status" = 'Active'
+        ),
+        mcqs AS (
+        SELECT q."phoneNumber", q."profile_id",
+            COUNT(CASE WHEN l."weekNumber" = 1 AND l."dayNumber" = 1 AND element = TRUE THEN 1 ELSE NULL END) AS mcqs_week1_correct_count,
+            COUNT(CASE WHEN l."weekNumber" = 1 AND l."dayNumber" = 1 THEN 1 ELSE NULL END) AS mcqs_week1_total,
+            COUNT(CASE WHEN l."weekNumber" = 1 AND l."dayNumber" = 2 AND element = TRUE THEN 1 ELSE NULL END) AS mcqs_week2_correct_count,
+            COUNT(CASE WHEN l."weekNumber" = 1 AND l."dayNumber" = 2 THEN 1 ELSE NULL END) AS mcqs_week2_total,
+            COUNT(CASE WHEN l."weekNumber" = 1 AND l."dayNumber" = 3 AND element = TRUE THEN 1 ELSE NULL END) AS mcqs_week3_correct_count,
+            COUNT(CASE WHEN l."weekNumber" = 1 AND l."dayNumber" = 3 THEN 1 ELSE NULL END) AS mcqs_week3_total
+        FROM "wa_question_responses" q
+        LEFT JOIN course_activities l ON q."lessonId" = l."LessonId",
+        UNNEST(q."correct") AS element
+        WHERE l."activity" = 'assessmentMcqs'
+            AND q."profile_id" IN (SELECT "profile_id" FROM target_group_users)
+        GROUP BY q."phoneNumber", q."profile_id"
+        ),
+        watch_and_speak AS (
+        SELECT q."phoneNumber", q."profile_id",
+            COUNT(CASE WHEN l."weekNumber" = 1 AND l."dayNumber" = 1 THEN 1 ELSE NULL END) * 2 AS watchAndSpeak_week1_total,
+            COALESCE(SUM(
+            CASE WHEN l."weekNumber" = 1 AND l."dayNumber" = 1 THEN
+                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
+                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
+                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
+            END
+            ) / 300 * 2, 0) AS watchAndSpeak_week1_score
+        FROM "wa_question_responses" q
+        LEFT JOIN course_activities l ON l."LessonId" = q."lessonId"
+        WHERE l."activity" = 'assessmentWatchAndSpeak'
+            AND q."profile_id" IN (SELECT "profile_id" FROM target_group_users)
+        GROUP BY q."phoneNumber", q."profile_id"
+        )`;
+
+            if (botType === 'student' && level === 'grade 7') {
+            speakingPracticeCTE = `,
+        speaking_practice AS (
+        SELECT q."phoneNumber", q."profile_id",
+            COUNT(CASE WHEN l."weekNumber" = 1 AND l."dayNumber" = 1 THEN 1 ELSE NULL END) * 5 AS speaking_practice_week1_total,
+            COALESCE(SUM(
+            CASE WHEN l."weekNumber" = 1 AND l."dayNumber" = 1 THEN
+                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
+                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
+                COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
+            END
+            ) / 300 * 5, 0) AS speaking_practice_week1_correct_count
+        FROM "wa_question_responses" q
+        LEFT JOIN course_activities l ON l."LessonId" = q."lessonId"
+        WHERE l."activity" = 'speakingPractice'
+            AND q."profile_id" IN (SELECT "profile_id" FROM target_group_users)
+        GROUP BY q."phoneNumber", q."profile_id"
+        )`;
+
+            joinString = `LEFT JOIN speaking_practice sp ON m."profile_id" = sp."profile_id"`;
+
+            if (module === 'day') {
+                endColumns = `
+        NULLIF(ROUND(COALESCE(mc.mcqs_week1_correct_count, 0), 2),0) AS day1_mcqs,
+        NULLIF(ROUND(COALESCE(mc.mcqs_week2_correct_count, 0), 2),0) AS day2_mcqs,
+        NULLIF(ROUND(COALESCE(mc.mcqs_week3_correct_count, 0), 2),0) AS day3_mcqs,
+        NULLIF(ROUND(COALESCE(mc.mcqs_week1_total, 0), 2),0) AS day1_mcqs_total,
+        NULLIF(ROUND(COALESCE(mc.mcqs_week2_total, 0), 2),0) AS day2_mcqs_total,
+        NULLIF(ROUND(COALESCE(mc.mcqs_week3_total, 0), 2),0) AS day3_mcqs_total,
+        NULLIF(ROUND(COALESCE(mc.mcqs_week1_correct_count + mc.mcqs_week2_correct_count + mc.mcqs_week3_correct_count, 0), 2),0) AS total_mcqs_score,
+        ROUND(COALESCE(mc.mcqs_week1_total + mc.mcqs_week2_total + mc.mcqs_week3_total, 0), 2) AS total_mcqs,
+         NULLIF(ROUND(COALESCE(sp.speaking_practice_week1_correct_count, 0), 2),0) AS day1_sp,
+        ROUND(COALESCE(sp.speaking_practice_week1_total, 0), 2) AS total_speaking_practice,
+        NULLIF(ROUND(
+            COALESCE(mc.mcqs_week1_correct_count + mc.mcqs_week2_correct_count + mc.mcqs_week3_correct_count, 0)
+            + COALESCE(sp.speaking_practice_week1_correct_count, 0), 2), 0) AS total_score,
+        NULLIF(ROUND(
+            COALESCE(mc.mcqs_week1_total + mc.mcqs_week2_total + mc.mcqs_week3_total, 0)
+            + COALESCE(sp.speaking_practice_week1_total, 0), 2), 0) AS total_total
+                `;
+            } else {
+                endColumns = `
+        NULLIF(ROUND(COALESCE(mc.mcqs_week1_correct_count + mc.mcqs_week2_correct_count + mc.mcqs_week3_correct_count, 0), 2),0) AS total_mcqs_score,
+        ROUND(COALESCE(mc.mcqs_week1_total + mc.mcqs_week2_total + mc.mcqs_week3_total, 0), 2) AS total_mcqs,
+        NULLIF(ROUND(COALESCE(sp.speaking_practice_week1_correct_count, 0), 2),0) AS day1_sp,
+        ROUND(COALESCE(sp.speaking_practice_week1_total, 0), 2) AS total_speaking_practice,
+        NULLIF(ROUND(
+            COALESCE(mc.mcqs_week1_correct_count + mc.mcqs_week2_correct_count + mc.mcqs_week3_correct_count, 0)
+            + COALESCE(sp.speaking_practice_week1_correct_count, 0), 2), 0) AS total_score,
+        NULLIF(ROUND(
+            COALESCE(mc.mcqs_week1_total + mc.mcqs_week2_total + mc.mcqs_week3_total, 0)
+            + COALESCE(sp.speaking_practice_week1_total, 0), 2), 0) AS total_total
+                `;
+            }
+            } else {
+            joinString = `LEFT JOIN watch_and_speak ws ON m."profile_id" = ws."profile_id"`;
+
+            if (module === 'day') {
+                endColumns = `
+        NULLIF(ROUND(COALESCE(mc.mcqs_week1_correct_count, 0), 2),0) AS day1_mcqs,
+        NULLIF(ROUND(COALESCE(mc.mcqs_week2_correct_count, 0), 2),0) AS day2_mcqs,
+        NULLIF(ROUND(COALESCE(mc.mcqs_week3_correct_count, 0), 2),0) AS day3_mcqs,
+        NULLIF(ROUND(COALESCE(mc.mcqs_week1_total, 0), 2),0) AS day1_mcqs_total,
+        NULLIF(ROUND(COALESCE(mc.mcqs_week2_total, 0), 2),0) AS day2_mcqs_total,
+        NULLIF(ROUND(COALESCE(mc.mcqs_week3_total, 0), 2),0) AS day3_mcqs_total,
+        NULLIF(ROUND(COALESCE(mc.mcqs_week1_correct_count + mc.mcqs_week2_correct_count + mc.mcqs_week3_correct_count, 0), 2),0) AS total_mcqs_score,
+        ROUND(COALESCE(mc.mcqs_week1_total + mc.mcqs_week2_total + mc.mcqs_week3_total, 0), 2) AS total_mcqs,
+        NULLIF(ROUND(COALESCE(ws.watchAndSpeak_week1_score, 0), 2),0) AS day1_ws,
+        ROUND(COALESCE(ws.watchAndSpeak_week1_total, 0), 2) AS total_watchAndSpeak,
+        NULLIF(ROUND(
+            COALESCE(mc.mcqs_week1_correct_count + mc.mcqs_week2_correct_count + mc.mcqs_week3_correct_count, 0)
+            + COALESCE(ws.watchAndSpeak_week1_score, 0), 2), 0) AS total_score,
+        NULLIF(ROUND(
+            COALESCE(mc.mcqs_week1_total + mc.mcqs_week2_total + mc.mcqs_week3_total, 0)
+            + COALESCE(ws.watchAndSpeak_week1_total, 0), 2), 0) AS total_total
+                `;
+            } else {
+                endColumns = `
+        NULLIF(ROUND(COALESCE(mc.mcqs_week1_correct_count + mc.mcqs_week2_correct_count + mc.mcqs_week3_correct_count, 0), 2),0) AS total_mcqs_score,
+        ROUND(COALESCE(mc.mcqs_week1_total + mc.mcqs_week2_total + mc.mcqs_week3_total, 0), 2) AS total_mcqs,
+        NULLIF(ROUND(COALESCE(ws.watchAndSpeak_week1_score, 0), 2),0) AS day1_ws,
+        ROUND(COALESCE(ws.watchAndSpeak_week1_total, 0), 2) AS total_watchAndSpeak,
+        NULLIF(ROUND(
+            COALESCE(mc.mcqs_week1_correct_count + mc.mcqs_week2_correct_count + mc.mcqs_week3_correct_count, 0)
+            + COALESCE(ws.watchAndSpeak_week1_score, 0), 2), 0) AS total_score,
+        NULLIF(ROUND(
+            COALESCE(mc.mcqs_week1_total + mc.mcqs_week2_total + mc.mcqs_week3_total, 0)
+            + COALESCE(ws.watchAndSpeak_week1_total, 0), 2), 0) AS total_total
+        `;
+      }
+    }
+
+    const query = `
+        ${commonCTEs}
+        ${speakingPracticeCTE}
+        SELECT 
+        ROW_NUMBER() OVER (ORDER BY m."name") AS sr_no,
+        m."profile_id",
+        m."phoneNumber", 
+        m."name",
+        ${endColumns}
+        FROM 
+        "wa_users_metadata" m 
+        INNER JOIN 
+        "wa_profiles" p ON m."profile_id" = p."profile_id"
+        LEFT JOIN 
+        mcqs mc ON m."profile_id" = mc."profile_id"
+        ${joinString}
+        WHERE 
+        ${targetGrpCondition}
+        m."rollout" = ${rollout}
+        AND p."profile_type" = '${botType}' 
+        ${classLevel}
+        ORDER BY m."name" ASC;
+        `;
+
+    const result = await sequelize.query(query);
+   
+    return result[0];
+  } catch (error) {
+    console.error("Error in getActivityAssessmentScoreDay:", error);
+    error.fileName = "etlRepository.js";
+    throw error;
+  }
+};
+
+
+const getActivityAssessmentCumulative = async () => {
+  try {
+
+    const query = `
+            WITH target_group_users AS (
+            SELECT m."phoneNumber", m."profile_id", m."name"
+            FROM "wa_users_metadata" m
+            INNER JOIN "wa_profiles" p ON m."profile_id" = p."profile_id"
+            WHERE m."rollout" = 2
+                AND p."profile_type" = 'student'
+                AND m."classLevel" IN ('grade 1', 'grade 2', 'grade 3', 'grade 4', 'grade 5', 'grade 6', 'grade 7')
+                AND m."cohort" != 'Cohort 0'
+            ),
+            course_activities AS (
+            SELECT "LessonId", "activity", "courseId", "weekNumber", "dayNumber"
+            FROM "Lesson"
+            WHERE "courseId" IN (139,140,141,142)
+                AND "weekNumber" = 1
+                AND "status" = 'Active'
+            ),
+            mcqs AS (
+            SELECT q."phoneNumber", q."profile_id",
+                COUNT(CASE WHEN l."dayNumber" = 1 AND element = TRUE THEN 1 END) AS mcqs_week1_correct_count,
+                COUNT(CASE WHEN l."dayNumber" = 1 THEN 1 END) AS mcqs_week1_total,
+                COUNT(CASE WHEN l."dayNumber" = 2 AND element = TRUE THEN 1 END) AS mcqs_week2_correct_count,
+                COUNT(CASE WHEN l."dayNumber" = 2 THEN 1 END) AS mcqs_week2_total,
+                COUNT(CASE WHEN l."dayNumber" = 3 AND element = TRUE THEN 1 END) AS mcqs_week3_correct_count,
+                COUNT(CASE WHEN l."dayNumber" = 3 THEN 1 END) AS mcqs_week3_total
+            FROM "wa_question_responses" q
+            LEFT JOIN course_activities l ON q."lessonId" = l."LessonId",
+            UNNEST(q."correct") AS element
+            WHERE l."activity" = 'assessmentMcqs'
+                AND q."profile_id" IN (SELECT "profile_id" FROM target_group_users)
+            GROUP BY q."phoneNumber", q."profile_id"
+            ),
+            watch_and_speak AS (
+            SELECT q."phoneNumber", q."profile_id",
+                COUNT(CASE WHEN l."dayNumber" = 1 THEN 1 END) * 2 AS watchAndSpeak_week1_total,
+                COALESCE(SUM(
+                CASE WHEN l."dayNumber" = 1 THEN
+                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
+                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
+                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
+                END
+                ) / 300 * 2, 0) AS watchAndSpeak_week1_score
+            FROM "wa_question_responses" q
+            LEFT JOIN course_activities l ON l."LessonId" = q."lessonId"
+            WHERE l."activity" = 'assessmentWatchAndSpeak'
+                AND q."profile_id" IN (SELECT "profile_id" FROM target_group_users)
+            GROUP BY q."phoneNumber", q."profile_id"
+            ),
+            speaking_practice AS (
+            SELECT q."phoneNumber", q."profile_id",
+                COUNT(CASE WHEN l."dayNumber" = 1 THEN 1 END) * 5 AS speaking_practice_week1_total,
+                COALESCE(SUM(
+                CASE WHEN l."dayNumber" = 1 THEN
+                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
+                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
+                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
+                END
+                ) / 300 * 5, 0) AS speaking_practice_week1_correct_count
+            FROM "wa_question_responses" q
+            LEFT JOIN course_activities l ON l."LessonId" = q."lessonId"
+            WHERE l."activity" = 'speakingPractice'
+                AND q."profile_id" IN (SELECT "profile_id" FROM target_group_users)
+            GROUP BY q."phoneNumber", q."profile_id"
+            )
+            SELECT
+            ROW_NUMBER() OVER (ORDER BY m."classLevel", m."cohort") AS sr_no, m."profile_id",
+            m."phoneNumber", m."name",
+
+            -- MCQs Day-wise
+            CASE WHEN mc.mcqs_week1_correct_count = 0 THEN NULL ELSE ROUND(mc.mcqs_week1_correct_count, 2) END AS day1_mcqs,
+            CASE WHEN mc.mcqs_week2_correct_count = 0 THEN NULL ELSE ROUND(mc.mcqs_week2_correct_count, 2) END AS day2_mcqs,
+            CASE WHEN mc.mcqs_week3_correct_count = 0 THEN NULL ELSE ROUND(mc.mcqs_week3_correct_count, 2) END AS day3_mcqs,
+
+            -- MCQs Total
+            CASE WHEN (mc.mcqs_week1_correct_count + mc.mcqs_week2_correct_count + mc.mcqs_week3_correct_count) = 0 THEN NULL
+                ELSE ROUND(mc.mcqs_week1_correct_count + mc.mcqs_week2_correct_count + mc.mcqs_week3_correct_count, 2)
+            END AS mcqs,
+
+           -- CASE WHEN (mc.mcqs_week1_total + mc.mcqs_week2_total + mc.mcqs_week3_total) = 0 THEN NULL
+            --    ELSE ROUND(mc.mcqs_week1_total + mc.mcqs_week2_total + mc.mcqs_week3_total, 2)
+          --  END AS mcqs_total,
+
+            -- Watch and Speak
+            CASE WHEN ws.watchAndSpeak_week1_score = 0 THEN NULL ELSE ROUND(ws.watchAndSpeak_week1_score, 2) END AS day1_ws,
+          --  CASE WHEN ws.watchAndSpeak_week1_total = 0 THEN NULL ELSE ROUND(ws.watchAndSpeak_week1_total, 2) END AS watchAndSpeak_total,
+
+            -- Speaking Practice
+            CASE WHEN sp.speaking_practice_week1_correct_count = 0 THEN NULL ELSE ROUND(sp.speaking_practice_week1_correct_count, 2) END AS speaking_practice,
+          --  CASE WHEN sp.speaking_practice_week1_total = 0 THEN NULL ELSE ROUND(sp.speaking_practice_week1_total, 2) END AS speaking_practice_total,
+
+            -- Final Score and Total
+            NULLIF(ROUND(
+                COALESCE(mc.mcqs_week1_correct_count, 0) + COALESCE(mc.mcqs_week2_correct_count, 0) + COALESCE(mc.mcqs_week3_correct_count, 0) +
+                COALESCE(ws.watchAndSpeak_week1_score, 0) + COALESCE(sp.speaking_practice_week1_correct_count, 0), 2), 0) AS total_activity_score,
+
+          --  NULLIF(ROUND(
+            --    COALESCE(mc.mcqs_week1_total, 0) + COALESCE(mc.mcqs_week2_total, 0) + COALESCE(mc.mcqs_week3_total, 0) +
+            --    COALESCE(ws.watchAndSpeak_week1_total, 0) + COALESCE(sp.speaking_practice_week1_total, 0), 2), 0) AS total_activity_total,
+            m."classLevel", m."cohort", m."rollout"
+            FROM "wa_users_metadata" m
+            INNER JOIN "wa_profiles" p ON m."profile_id" = p."profile_id"
+            LEFT JOIN mcqs mc ON m."profile_id" = mc."profile_id"
+            LEFT JOIN watch_and_speak ws ON m."profile_id" = ws."profile_id"
+            LEFT JOIN speaking_practice sp ON m."profile_id" = sp."profile_id"
+            WHERE m."rollout" = 2
+            AND p."profile_type" = 'student'
+            AND m."classLevel" IN ('grade 1', 'grade 2', 'grade 3', 'grade 4', 'grade 5', 'grade 6', 'grade 7')
+            AND m."cohort" != 'Cohort 0'
+            ORDER BY m."classLevel", m."cohort" ASC;
+            `;
+
+    const result = await sequelize.query(query);
+
+    return result[0];
+  } catch (error) {
+    console.error("Error in getActivityAssessmentCumulative:", error);
+    error.fileName = "etlRepository.js";
+    throw error;
+  }
+};
 
 export default {
     getDataFromPostgres, getSuccessRate, getActivityTotalCount, getCompletedActivity, getLessonCompletion, getLastActivityCompleted, getWeeklyScore, getPhoneNumber_userNudges, getWeeklyScore_pilot, getCount_NotStartedActivity, getLessonCompletions, getActivity_Completions, getActivityNameCount,
-    getLastActivityCompleted_DropOff, getActivtyAssessmentScore,getCumulativeLessonCompletions,getCumulativeActivityCompletions
+    getLastActivityCompleted_DropOff, getActivtyAssessmentScore,getCumulativeLessonCompletions,getCumulativeActivityCompletions, getActivityAssessmentScoreDay, getActivityAssessmentCumulative
 };
