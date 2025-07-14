@@ -20,7 +20,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.dataValues.currentCourseId, 'Started', new Date(), profileId);
 
-                let defaultTextInstruction = "Watch the video 👇🏽 and practice speaking by sending a voice message.💬";
+                let defaultTextInstruction = "Watch the video 👇🏽 and practise speaking by sending a voice message.💬";
                 const lessonTextInstruction = startingLesson.dataValues.textInstruction;
                 let finalTextInstruction = defaultTextInstruction;
                 if (lessonTextInstruction != null && lessonTextInstruction != "") {
@@ -219,7 +219,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
-                let defaultTextInstruction = "Watch the video 👇🏽 and practice speaking by sending a voice message.💬";
+                let defaultTextInstruction = "Watch the video 👇🏽 and practise speaking by sending a voice message.💬";
                 const lessonTextInstruction = startingLesson.dataValues.textInstruction;
                 let finalTextInstruction = defaultTextInstruction;
                 if (lessonTextInstruction != null && lessonTextInstruction != "") {

@@ -52,9 +52,9 @@ const assessmentMcqsView = async (profileId, userMobileNumber, currentUserState,
 
                 let mcqMessage = "";
                 if (mcqType == 'Text') {
-                    mcqMessage = "*Question " + await convertNumberToEmoji(firstMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n👉 " + questionText + "\n\n\n";
+                    mcqMessage = "*Q" + await convertNumberToEmoji(firstMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n👉 " + questionText + "\n\n\n";
                 } else {
-                    mcqMessage = "*Question " + await convertNumberToEmoji(firstMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n\n";
+                    mcqMessage = "*Q" + await convertNumberToEmoji(firstMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n\n";
                 }
                 if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
                     mcqMessage += "Choose the correct answer:\n";

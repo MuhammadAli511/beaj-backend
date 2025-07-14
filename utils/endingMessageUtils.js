@@ -12,17 +12,6 @@ import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import stickerMapping from "../constants/stickerMapping.js";
 
 
-const getDayEndingMessage = (dayNumber) => {
-    if (dayNumber == 1) {
-        return "Now go to your class-group to *practise vocabulary with your teacher and group!* See you tomorrow!👋🏽";
-    } else if (dayNumber == 2 || dayNumber == 3) {
-        return "Now go to your class-group to *learn 'Teaching Expressions' with your teacher and group!* See you tomorrow!👋🏽";
-    } else if (dayNumber == 4) {
-        return "See you tomorrow!👋🏽";
-    } else if (dayNumber == 5) {
-        return "Now go to your class-group to *reflect with your teacher and group!* See you tomorrow!👋🏽";
-    }
-};
 
 const sendingSticker = async (profileId, userMobileNumber, currentUserState, startingLesson, message = null) => {
     // Check if the lesson is the last lesson of the day
@@ -263,12 +252,6 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
         }
         goldBarCaption = lessonCompleteMessage;
 
-        // Day Ending Message
-        if (startingLesson.dataValues.dayNumber >= 1 && startingLesson.dataValues.dayNumber <= (daysPerWeek - 1)) {
-            const dayEndingMessage = getDayEndingMessage(startingLesson.dataValues.dayNumber);
-            goldBarCaption += "\n\n" + dayEndingMessage;
-        }
-
         // Lesson Complete Image
         // Gold Bars
         if (strippedCourseName != "Level 0") {
@@ -313,7 +296,11 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
         }
 
         // Feedback Message
-        if (strippedCourseName == "Level 1" || strippedCourseName == "Level 2" || strippedCourseName == "Level 3") {
+        if (
+            (strippedCourseName == "Level 1" && lessonNumber > 10) ||
+            (strippedCourseName == "Level 2" && lessonNumber > 0) ||
+            (strippedCourseName == "Level 3" && lessonNumber > 0)
+        ) {
             if (lessonNumber != totalLessons && lessonNumber != 3) {
                 const randomNumber = Math.floor(Math.random() * 100) + 1;
                 if (randomNumber >= 75) {
@@ -353,9 +340,15 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next lesson"]);
         }
     } else {
+        const daysPerWeek = await getDaysPerWeek(profileId);
+        const lessonNumber = (startingLesson.dataValues.weekNumber - 1) * daysPerWeek + startingLesson.dataValues.dayNumber;
         const courseName = await courseRepository.getCourseNameById(currentUserState.currentCourseId);
         const strippedCourseName = courseName.split("-")[0].trim();
-        if (strippedCourseName == "Level 1" || strippedCourseName == "Level 2" || strippedCourseName == "Level 3") {
+        if (
+            (strippedCourseName == "Level 1" && lessonNumber > 10) ||
+            (strippedCourseName == "Level 2" && lessonNumber > 0) ||
+            (strippedCourseName == "Level 3" && lessonNumber > 0)
+        ) {
             const randomNumber = Math.floor(Math.random() * 100) + 1;
             if (randomNumber >= 75) {
                 let cleanedAlias = startingLesson.dataValues.activityAlias.replace(/\?/g, '');
@@ -549,7 +542,7 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start part 2", "change user"]);
         }
         else {
-            await sendButtonMessage(userMobileNumber, 'Are you ready to start the next activity?', [{ id: 'start_next_activity', title: 'Start Next Activity' }, { id: 'change_user', title: 'Change User' }]);
+            await sendButtonMessage(userMobileNumber, 'Are you ready to start the next activity? 👊', [{ id: 'start_next_activity', title: 'Start Next Activity' }, { id: 'change_user', title: 'Change User' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity", null);
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next activity", "change user"]);
         }

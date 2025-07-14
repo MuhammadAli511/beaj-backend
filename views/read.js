@@ -45,20 +45,16 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
                 const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
                 let videoURL = documentFile[0].dataValues.video;
 
+                const lessonText = startingLesson.dataValues.text;
+
+                let finalCaptionText = "Send us a voice message of you reading this passage:\n\n" + lessonText;
+
                 // Media message
-                await sendMediaMessage(userMobileNumber, videoURL, 'video', null, 0, "DocumentFile", documentFile[0].dataValues.id, documentFile[0].dataValues.videoMediaId, "videoMediaId");
-                await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
+                await sendMediaMessage(userMobileNumber, videoURL, 'video', finalCaptionText, 0, "DocumentFile", documentFile[0].dataValues.id, documentFile[0].dataValues.videoMediaId, "videoMediaId");
+                await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null, finalCaptionText);
 
                 // Update acceptable messages list for the user
                 await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
-                await sleep(12000);
-
-                // Remove html tags from the text
-                const lessonText = startingLesson.dataValues.text;
-
-                // Text message
-                await sendMessage(userMobileNumber, "Send us a voice message of you reading this passage:\n\n" + lessonText);
-                await createActivityLog(userMobileNumber, "text", "outbound", "Send us a voice message of you reading this passage:\n\n" + lessonText, null);
             }
             else if (messageType == 'audio') {
                 // Upload audio
