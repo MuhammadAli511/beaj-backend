@@ -41,7 +41,13 @@ const conversationalAgencyBotView = async (profileId, userMobileNumber, currentU
                 const firstConversationalAgencyBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null, currentUserState.dataValues.currentDifficultyLevel);
 
                 // Extract text between <question></question> tags from firstConversationalAgencyBotQuestion.question
-                const questionText = firstConversationalAgencyBotQuestion.dataValues.question.match(/<question>(.*?)<\/question>/s)[1].trim();
+                let match = firstConversationalAgencyBotQuestion.dataValues.question.match(/<question>(.*?)<\/question>/s);
+                let questionText;
+                if (match == null || match[1] == null) {
+                    questionText = firstConversationalAgencyBotQuestion.dataValues.question;
+                } else {
+                    questionText = match[1].trim();
+                }
                 let questionAudio = "";
                 if (firstConversationalAgencyBotQuestion?.dataValues?.mediaFile?.includes("http")) {
                     questionAudio = firstConversationalAgencyBotQuestion.dataValues.mediaFile;
@@ -197,24 +203,9 @@ const conversationalAgencyBotView = async (profileId, userMobileNumber, currentU
                             // Update question number
                             await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextConversationalAgencyBotQuestion.dataValues.questionNumber);
 
-                            // Extract text between <question></question> tags from nextConversationalAgencyBotQuestion.question
-                            let questionText = nextConversationalAgencyBotQuestion.dataValues.question.match(/<question>(.*?)<\/question>/s)[1].trim();
-                            if (questionText == null) {
-                                questionText = nextConversationalAgencyBotQuestion.dataValues.question;
-                            }
-                            let questionAudio = "";
-                            if (nextConversationalAgencyBotQuestion?.dataValues?.mediaFile?.includes("http")) {
-                                questionAudio = nextConversationalAgencyBotQuestion.dataValues.mediaFile;
-                            } else {
-                                questionAudio = await AIServices.openaiTextToSpeechAndUpload(questionText);
-                            }
-
-                            // Send question media file
-                            await sendMediaMessage(userMobileNumber, questionAudio, 'audio');
-                            await createActivityLog(userMobileNumber, "audio", "outbound", questionAudio, null);
-
                             // Update acceptable messages list for the user
                             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                            return;
                         } else {
                             // Reset Question Number, Retry Counter, and Activity Type
                             await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
@@ -285,21 +276,9 @@ const conversationalAgencyBotView = async (profileId, userMobileNumber, currentU
                             // Update question number
                             await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextConversationalAgencyBotQuestion.dataValues.questionNumber);
 
-                            // Extract text between <question></question> tags from nextConversationalAgencyBotQuestion.question
-                            const questionText = nextConversationalAgencyBotQuestion.dataValues.question.match(/<question>(.*?)<\/question>/s)[1].trim();
-                            let questionAudio = "";
-                            if (nextConversationalAgencyBotQuestion?.dataValues?.mediaFile?.includes("http")) {
-                                questionAudio = nextConversationalAgencyBotQuestion.dataValues.mediaFile;
-                            } else {
-                                questionAudio = await AIServices.openaiTextToSpeechAndUpload(questionText);
-                            }
-
-                            // Send question media file
-                            await sendMediaMessage(userMobileNumber, questionAudio, 'audio');
-                            await createActivityLog(userMobileNumber, "audio", "outbound", questionAudio, null);
-
                             // Update acceptable messages list for the user
                             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                            return;
                         } else {
                             // Reset Question Number, Retry Counter, and Activity Type
                             await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
