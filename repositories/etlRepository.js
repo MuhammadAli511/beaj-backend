@@ -14,6 +14,34 @@ const getDataFromPostgres = async () => {
     }
 };
 
+const getcohortList = async (botType,rollout,level,targetGroup) => {
+    try {
+        let grp =``, grade = ``;
+        if(targetGroup != ''){
+            grp = ` and m."targetGroup" = '${targetGroup}'`;
+        }
+        if(level != ''){
+             grade = ` and m."classLevel" = '${level}'`;
+        }
+        const qry = `SELECT m."cohort"
+            FROM "wa_users_metadata" m
+            INNER JOIN "wa_profiles" p ON p."profile_id" = m."profile_id"
+            WHERE p."profile_type" = '${botType}' 
+            AND m."rollout" = ${rollout} ${grp} ${grade} and m."cohort" != 'Cohort 0' and m."cohort" != 'Cohort 00' group by m."cohort" 
+            ORDER BY 
+            CAST(regexp_replace(m."cohort", '[^0-9]', '', 'g') AS INTEGER);`;
+
+            // console.log(qry)
+        const res = await sequelize.query(qry);
+
+        return res[0];
+    } catch (error) {
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
+};
+
+
 const getSuccessRate = async (course_id, grp, cohort) => {
     try {
         let cohortCondition = '';
@@ -2208,8 +2236,6 @@ const getActivityNameCount = async (course_id1, course_id2, course_id3, grp, coh
     }
 };
 
-
-
 const getPhoneNumber_userNudges = async (course_id, grp, cohort, date) => {
     try {
         const qry = `
@@ -2712,7 +2738,7 @@ const getActivityAssessmentScoreDay = async (botType, rollout, level, cohort, ta
         GROUP BY q."phoneNumber", q."profile_id"
         )`;
 
-            if (botType === 'student' && level === 'grade 7') {
+            if (botType === 'student' && level === 'grade 7' || botType === 'teacher') {
             speakingPracticeCTE = `,
         speaking_practice AS (
         SELECT q."phoneNumber", q."profile_id",
@@ -2964,6 +2990,6 @@ const getActivityAssessmentCumulative = async () => {
 };
 
 export default {
-    getDataFromPostgres, getSuccessRate, getActivityTotalCount, getCompletedActivity, getLessonCompletion, getLastActivityCompleted, getWeeklyScore, getPhoneNumber_userNudges, getWeeklyScore_pilot, getCount_NotStartedActivity, getLessonCompletions, getActivity_Completions, getActivityNameCount,
+    getcohortList, getDataFromPostgres, getSuccessRate, getActivityTotalCount, getCompletedActivity, getLessonCompletion, getLastActivityCompleted, getWeeklyScore, getPhoneNumber_userNudges, getWeeklyScore_pilot, getCount_NotStartedActivity, getLessonCompletions, getActivity_Completions, getActivityNameCount,
     getLastActivityCompleted_DropOff, getActivtyAssessmentScore,getCumulativeLessonCompletions,getCumulativeActivityCompletions, getActivityAssessmentScoreDay, getActivityAssessmentCumulative
 };

@@ -23,7 +23,20 @@ const getUserProgressLeaderboardController = async (req, res, next) => {
   }
 };
 
+const getcohortListController = async (req, res, next) => {
+  try {
+    const { botType,rollout,level,targetGroup  } = req.query;
+    const result = await service.getcohortListService(botType,rollout,level,targetGroup);
+    // console.log(result)
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    error.fileName = 'userProgressController.js';
+    next(error);
+  }
+};
+
 export default {
   getAllUserProgressController,
-  getUserProgressLeaderboardController
+  getUserProgressLeaderboardController,
+  getcohortListController,
 };
