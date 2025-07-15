@@ -198,7 +198,10 @@ const conversationalAgencyBotView = async (profileId, userMobileNumber, currentU
                             await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextConversationalAgencyBotQuestion.dataValues.questionNumber);
 
                             // Extract text between <question></question> tags from nextConversationalAgencyBotQuestion.question
-                            const questionText = nextConversationalAgencyBotQuestion.dataValues.question.match(/<question>(.*?)<\/question>/s)[1].trim();
+                            let questionText = nextConversationalAgencyBotQuestion.dataValues.question.match(/<question>(.*?)<\/question>/s)[1].trim();
+                            if (questionText == null) {
+                                questionText = nextConversationalAgencyBotQuestion.dataValues.question;
+                            }
                             let questionAudio = "";
                             if (nextConversationalAgencyBotQuestion?.dataValues?.mediaFile?.includes("http")) {
                                 questionAudio = nextConversationalAgencyBotQuestion.dataValues.mediaFile;
