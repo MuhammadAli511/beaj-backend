@@ -837,6 +837,7 @@ const webhookService = async (body, res) => {
                         messageContent.toLowerCase().includes("start challenge") ||
                         messageContent.toLowerCase().includes("start part b") ||
                         messageContent.toLowerCase().includes("next") ||
+                        messageContent.toLowerCase().includes("start practice") ||
                         messageContent.toLowerCase().includes("next activity")
                     ) {
                         if (currentUserState.dataValues.engagement_type == "Free Trial - Teachers" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
@@ -1198,6 +1199,7 @@ const webhookService = async (body, res) => {
                         messageContent.toLowerCase().includes("no, try again") ||
                         messageContent.toLowerCase().includes("no") ||
                         messageContent.toLowerCase().includes("next") ||
+                        messageContent.toLowerCase().includes("start practice") ||
                         messageContent.toLowerCase().includes("next activity")
                     ) {
                         if (

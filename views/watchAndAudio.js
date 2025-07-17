@@ -300,7 +300,12 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                     await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextWatchAndSpeakQuestion.dataValues.questionNumber);
 
                     if (currentUserState.dataValues.currentCourseId == 119 || currentUserState.dataValues.currentCourseId == 120) {
-                        if (currentUserState.dataValues.currentWeek == 3 && currentUserState.dataValues.currentDay == 3) {
+                        if (
+                            (currentUserState.dataValues.currentWeek == 3 && currentUserState.dataValues.currentDay == 3) ||
+                            (currentUserState.dataValues.currentWeek == 3 && currentUserState.dataValues.currentDay == 4) ||
+                            (currentUserState.dataValues.currentWeek == 4 && currentUserState.dataValues.currentDay == 3) ||
+                            (currentUserState.dataValues.currentWeek == 4 && currentUserState.dataValues.currentDay == 4)
+                        ) {
                             if (nextWatchAndSpeakQuestion.dataValues.questionNumber == 9) {
                                 // Voice message here
                                 let audioMessage = "https://beajbloblive.blob.core.windows.net/beajdocuments/final_instruction_audio1.mp3";
@@ -327,7 +332,12 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
 
 
                     if (currentUserState.dataValues.currentCourseId == 119 || currentUserState.dataValues.currentCourseId == 120) {
-                        if (currentUserState.dataValues.currentWeek == 3 && currentUserState.dataValues.currentDay == 3) {
+                        if (
+                            (currentUserState.dataValues.currentWeek == 3 && currentUserState.dataValues.currentDay == 3) ||
+                            (currentUserState.dataValues.currentWeek == 3 && currentUserState.dataValues.currentDay == 4) ||
+                            (currentUserState.dataValues.currentWeek == 4 && currentUserState.dataValues.currentDay == 3) ||
+                            (currentUserState.dataValues.currentWeek == 4 && currentUserState.dataValues.currentDay == 4)
+                        ) {
                             if (nextWatchAndSpeakQuestion.dataValues.questionNumber == 9) {
                                 // Button message
                                 await sleep(3000);

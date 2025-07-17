@@ -221,6 +221,11 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
         await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start your next lesson?", null);
         return false;
     }
+    if (acceptableMessagesList.includes("start practice") && acceptableMessagesList.includes("change user")) {
+        await sendButtonMessage(userMobileNumber, "Are you ready to start practice?", [{ id: "start_practice", title: "Start Practice" }, { id: "change_user", title: "Change User" }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start practice?", null);
+        return false;
+    }
     if (acceptableMessagesList.includes("start questions") && acceptableMessagesList.includes("change user")) {
         await sendButtonMessage(userMobileNumber, "👇 Click on the button below to start questions!", [{ id: "start_questions", title: "Start Questions" }, { id: "change_user", title: "Change User" }]);
         await createActivityLog(userMobileNumber, "template", "outbound", "👇 Click on the button below to start questions!", null);

@@ -540,8 +540,13 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
             await sendButtonMessage(userMobileNumber, '👇 Click on the button below to watch Part 2 of the video!', [{ id: 'start_part_2', title: 'Start Part 2' }, { id: 'change_user', title: 'Change User' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start Part 2", null);
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start part 2", "change user"]);
-        }
-        else {
+        } else if (
+            activityAlias == "🔤 *Phonics Fun!*"
+        ) {
+            await sendButtonMessage(userMobileNumber, 'Are you ready to start practice?', [{ id: 'start_practice', title: 'Start Practice' }, { id: 'change_user', title: 'Change User' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start practice?", null);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start practice", "change user"]);
+        } else {
             await sendButtonMessage(userMobileNumber, 'Are you ready to start the next activity? 👊', [{ id: 'start_next_activity', title: 'Start Next Activity' }, { id: 'change_user', title: 'Change User' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity", null);
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next activity", "change user"]);
