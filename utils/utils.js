@@ -97,6 +97,9 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
     const acceptableMessagesList = currentUserState.dataValues.acceptableMessages;
     const activityType = currentUserState.dataValues.activityType;
     const persona = currentUserState.dataValues.persona;
+    if (!acceptableMessagesList) {
+        return true;
+    }
     if (currentUserState.dataValues.engagement_type == "Choose User") {
         const profiles = await waProfileRepository.getAllSortOnProfileId(userMobileNumber);
         const userMetadata = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);

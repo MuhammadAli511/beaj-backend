@@ -17,7 +17,7 @@ import { watchAndAudioView } from "../views/watchAndAudio.js";
 import { readView } from "../views/read.js";
 import { videoView } from "../views/video.js";
 import { videoEndView } from "../views/videoEnd.js";
-import { getLevelFromCourseName, sleep } from "./utils.js";
+import { getLevelFromCourseName, sleep, checkUserMessageAndAcceptableMessages } from "./utils.js";
 import { conversationalQuestionsBotView } from "../views/conversationalQuestionsBot.js";
 import { conversationalMonologueBotView } from "../views/conversationalMonologueBot.js";
 import { watchAndSpeakView } from "../views/watchAndSpeak.js";
@@ -294,6 +294,10 @@ const startCourseForUser = async (profileId, userMobileNumber, numbers_to_ignore
 const sendCourseLessonToTeacher = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, buttonId = null) => {
     try {
         const activity = startingLesson.dataValues.activity;
+        const isAcceptableMessage = await checkUserMessageAndAcceptableMessages(profileId, userMobileNumber, currentUserState, messageType, messageContent);
+        if (!isAcceptableMessage) {
+            return;
+        }
         if (activity == 'video') {
             await videoView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
         }
@@ -352,6 +356,10 @@ const sendCourseLessonToTeacher = async (profileId, userMobileNumber, currentUse
 const sendCourseLessonToKid = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, buttonId = null) => {
     try {
         const activity = startingLesson.dataValues.activity;
+        const isAcceptableMessage = await checkUserMessageAndAcceptableMessages(profileId, userMobileNumber, currentUserState, messageType, messageContent);
+        if (!isAcceptableMessage) {
+            return;
+        }
         if (activity == 'video') {
             await videoView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
         }

@@ -1171,7 +1171,10 @@ const webhookService = async (body, res) => {
 
                 if (text_message_types.includes(message.type)) {
                     const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
-                    if (messageContent.toLowerCase().includes("yes") || messageContent.toLowerCase().includes("no") || messageContent.toLowerCase().includes("easy") || messageContent.toLowerCase().includes("hard")) {
+                    if (
+                        ((messageContent.toLowerCase().includes("yes") || messageContent.toLowerCase().includes("no")) && (currentUserState.dataValues.activityType && currentUserState.dataValues.questionNumber)) ||
+                        ((messageContent.toLowerCase().includes("easy") || messageContent.toLowerCase().includes("hard")) && (currentUserState.dataValues.activityType))
+                    ) {
                         if (currentUserState.dataValues.persona == "kid" || currentUserState.dataValues.persona == "parent or student" || currentUserState.dataValues.persona == "school admin") {
                             await sendCourseLessonToKid(profileId, userMobileNumber, currentUserState, currentLesson, messageType, messageContent, buttonId);
                         } else {
