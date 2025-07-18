@@ -1115,8 +1115,6 @@ const webhookService = async (body, res) => {
                         await waUserProgressRepository.update(profileId, userMobileNumber, currentUserState.dataValues.currentCourseId, startingLesson.dataValues.weekNumber, startingLesson.dataValues.dayNumber, startingLesson.dataValues.LessonId, startingLesson.dataValues.SequenceNumber, startingLesson.dataValues.activity, null, null, null);
 
                         if (currentUserState.dataValues.persona == "teacher") {
-                            // const courseName = await courseRepository.getCourseNameById(currentUserState.dataValues.currentCourseId);
-                            // const level = courseName.split("-")[0].trim();
                             await sendMessage(userMobileNumber, "Great! Let's start! 🤩");
                             await createActivityLog(userMobileNumber, "text", "outbound", "Great! Let's start! 🤩", null);
                         }
@@ -1198,9 +1196,6 @@ const webhookService = async (body, res) => {
                         messageContent.toLowerCase().includes("it can be improved 🤔") ||
                         messageContent.toLowerCase().includes("start questions") ||
                         messageContent.toLowerCase().includes("start part b") ||
-                        messageContent.toLowerCase().includes("yes") ||
-                        messageContent.toLowerCase().includes("no, try again") ||
-                        messageContent.toLowerCase().includes("no") ||
                         messageContent.toLowerCase().includes("next") ||
                         messageContent.toLowerCase().includes("start practice") ||
                         messageContent.toLowerCase().includes("next activity")

@@ -294,10 +294,6 @@ const startCourseForUser = async (profileId, userMobileNumber, numbers_to_ignore
 const sendCourseLessonToTeacher = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, buttonId = null) => {
     try {
         const activity = startingLesson.dataValues.activity;
-        const isAcceptableMessage = await checkUserMessageAndAcceptableMessages(profileId, userMobileNumber, currentUserState, messageType, messageContent);
-        if (!isAcceptableMessage) {
-            return;
-        }
         if (activity == 'video') {
             await videoView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
         }
@@ -356,10 +352,6 @@ const sendCourseLessonToTeacher = async (profileId, userMobileNumber, currentUse
 const sendCourseLessonToKid = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, buttonId = null) => {
     try {
         const activity = startingLesson.dataValues.activity;
-        const isAcceptableMessage = await checkUserMessageAndAcceptableMessages(profileId, userMobileNumber, currentUserState, messageType, messageContent);
-        if (!isAcceptableMessage) {
-            return;
-        }
         if (activity == 'video') {
             await videoView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
         }
