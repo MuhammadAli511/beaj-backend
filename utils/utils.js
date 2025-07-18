@@ -18,7 +18,7 @@ const extractTranscript = (results) => {
     const words = Object.values(results.words);
     const transcriptWords = words.filter(word => word?.PronunciationAssessment?.ErrorType !== 'Omission');
 
-    const transcript = transcriptWords.map(word => word.Word).join(" ");
+    const transcript = transcriptWords.map(word => word?.Word ?? "").join(" ");
 
     // Capitalize first letter of the first word if it's alphabetic
     if (transcript.length > 0 && /[a-zA-Z]/.test(transcript[0])) {

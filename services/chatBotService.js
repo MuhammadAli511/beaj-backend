@@ -1258,10 +1258,18 @@ const webhookService = async (body, res) => {
                                     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start now!", "change user"]);
                                     return;
                                 } else {
-                                    await sendButtonMessage(userMobileNumber, 'You have completed all the lessons in this course. Click the button below to proceed', [{ id: 'start_next_level', title: 'Start Next Level' }, { id: 'change_user', title: 'Change User' }]);
-                                    await createActivityLog(userMobileNumber, "template", "outbound", "You have completed all the lessons in this course. Click the button below to proceed", null);
-                                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next level", "change user"]);
-                                    return;
+                                    // if teacher
+                                    if (currentUserState.dataValues.persona == "teacher") {
+                                        await sendButtonMessage(userMobileNumber, 'You have completed all the lessons in this course. Click the button below to proceed', [{ id: 'start_next_level', title: 'Start Next Level' }]);
+                                        await createActivityLog(userMobileNumber, "template", "outbound", "You have completed all the lessons in this course. Click the button below to proceed", null);
+                                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next level"]);
+                                        return;
+                                    } else {
+                                        await sendButtonMessage(userMobileNumber, 'You have completed all the lessons in this course. Click the button below to proceed', [{ id: 'start_next_level', title: 'Start Next Level' }, { id: 'change_user', title: 'Change User' }]);
+                                        await createActivityLog(userMobileNumber, "template", "outbound", "You have completed all the lessons in this course. Click the button below to proceed", null);
+                                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next level", "change user"]);
+                                        return;
+                                    }
                                 }
                             }
                             await sendMessage(userMobileNumber, "Please wait for the next lesson to start.");
