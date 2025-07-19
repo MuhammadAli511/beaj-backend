@@ -64,6 +64,19 @@ const studentAnalyticsController = async (req, res, next) => {
         next(error);
     }
 };
+
+const studentBarAnalyticsController = async (req, res, next) => {
+    try {
+        const { courseId, grade, cohort, graphType, parameterId } = req.body;
+        const userJourneyStats = await service.studentBarAnalyticsService(courseId, grade, cohort, graphType, parameterId);
+        res.status(200).send(userJourneyStats);
+    } catch (error) {
+        error.fileName = 'statsController.js';
+        next(error);
+    }
+};
+
+
 const studentCourseStatsController = async (req, res, next) => {
     try {
         const courseStats = await service.studentCourseStatsService();
@@ -92,5 +105,6 @@ export default {
     studentTrialUserJourneyStatsController,
     studentCourseStatsController,
     clearingCacheController,
-    studentAnalyticsController
+    studentAnalyticsController,
+    studentBarAnalyticsController,
 };

@@ -13,11 +13,12 @@ const getAll = async () => {
     return await WA_UserActivityLogs.findAll();
 };
 
-const getByPhoneNumber = async (phoneNumber, botPhoneNumberId, limit = 15, offset = 0) => {
+const getByPhoneNumber = async (phoneNumber, botPhoneNumberId, limit = 15, offset = 0, profile_id) => {
     return await WA_UserActivityLogs.findAll({
         where: {
             phoneNumber: phoneNumber,
-            bot_phone_number_id: botPhoneNumberId
+            bot_phone_number_id: botPhoneNumberId,
+            profile_id : profile_id,
         },
         order: [
             ['timestamp', 'DESC']

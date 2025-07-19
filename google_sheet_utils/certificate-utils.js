@@ -5,6 +5,7 @@ import path from 'path';
 import { createCanvas, loadImage } from 'canvas';
 import { fileURLToPath } from 'url';
 import { Readable } from 'stream';
+import azureBlobStorage from '../utils/azureBlobStorage.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -149,11 +150,10 @@ const generateCertificate = async (name) => {
 
     // Draw the name
     ctx.fillText(name.toUpperCase(), nameX, nameY);
-
-    // Convert to buffer
-    const buffer = canvas.toBuffer('image/png');
+    const buffer = canvas.toBuffer('image/jpeg');
+    const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer, name);
     console.log(`Certificate generated successfully for ${name}`);
-    return buffer;
+    return imageUrl;
   } catch (error) {
     console.error("Error generating certificate:", error);
     throw error;

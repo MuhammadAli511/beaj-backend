@@ -34,6 +34,8 @@ router.post('/clearingCache', beajEmployeesAuth, statsController.clearingCacheCo
 
 router.post('/studentAnalyticsStats', beajFacilitatorsAuth, statsController.studentAnalyticsController);
 
+router.post('/studentBarAnalyticsStats', beajFacilitatorsAuth, statsController.studentBarAnalyticsController);
+
 // Use error handler middleware
 router.use(errorHandler);
 
