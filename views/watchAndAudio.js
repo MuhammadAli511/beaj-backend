@@ -300,18 +300,18 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                     await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextWatchAndSpeakQuestion.dataValues.questionNumber);
 
                     if (currentUserState.dataValues.currentCourseId == 119 || currentUserState.dataValues.currentCourseId == 120) {
-                        if (currentUserState.dataValues.currentWeek == 3 && currentUserState.dataValues.currentDay == 3) {
+                        if (
+                            (currentUserState.dataValues.currentWeek == 3 && currentUserState.dataValues.currentDay == 3) ||
+                            (currentUserState.dataValues.currentWeek == 3 && currentUserState.dataValues.currentDay == 4) ||
+                            (currentUserState.dataValues.currentWeek == 4 && currentUserState.dataValues.currentDay == 3) ||
+                            (currentUserState.dataValues.currentWeek == 4 && currentUserState.dataValues.currentDay == 4)
+                        ) {
                             if (nextWatchAndSpeakQuestion.dataValues.questionNumber == 9) {
                                 // Voice message here
                                 let audioMessage = "https://beajbloblive.blob.core.windows.net/beajdocuments/final_instruction_audio1.mp3";
                                 await sendMediaMessage(userMobileNumber, audioMessage, 'audio');
                                 await createActivityLog(userMobileNumber, "audio", "outbound", audioMessage, null);
-                                await sleep(2000);
-
-                                // Button message
-                                let skipButtonMessage = "👇 Click on the button below to start the next activity!";
-                                await sendButtonMessage(userMobileNumber, skipButtonMessage, [{ id: "next_activity", title: "Next Activity" }]);
-                                await createActivityLog(userMobileNumber, "template", "outbound", skipButtonMessage, null);
+                                await sleep(4000);
                             }
                         }
                     }
@@ -321,12 +321,7 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                             let audioMessage = "https://beajbloblive.blob.core.windows.net/beajdocuments/final_instruction_audio1.mp3";
                             await sendMediaMessage(userMobileNumber, audioMessage, 'audio');
                             await createActivityLog(userMobileNumber, "audio", "outbound", audioMessage, null);
-                            await sleep(2000);
-
-                            // Button message
-                            let skipButtonMessage = "👇 Click on the button below to start the next activity!";
-                            await sendButtonMessage(userMobileNumber, skipButtonMessage, [{ id: "next_activity", title: "Next Activity" }]);
-                            await createActivityLog(userMobileNumber, "template", "outbound", skipButtonMessage, null);
+                            await sleep(4000);
                         }
                     }
 
@@ -334,6 +329,33 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                     const mediaType = nextWatchAndSpeakQuestion.dataValues.mediaFile.endsWith('.mp4') ? 'video' : 'audio';
                     await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, mediaType, null, 0, "SpeakActivityQuestion", nextWatchAndSpeakQuestion.dataValues.id, nextWatchAndSpeakQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
                     await createActivityLog(userMobileNumber, mediaType, "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
+
+
+                    if (currentUserState.dataValues.currentCourseId == 119 || currentUserState.dataValues.currentCourseId == 120) {
+                        if (
+                            (currentUserState.dataValues.currentWeek == 3 && currentUserState.dataValues.currentDay == 3) ||
+                            (currentUserState.dataValues.currentWeek == 3 && currentUserState.dataValues.currentDay == 4) ||
+                            (currentUserState.dataValues.currentWeek == 4 && currentUserState.dataValues.currentDay == 3) ||
+                            (currentUserState.dataValues.currentWeek == 4 && currentUserState.dataValues.currentDay == 4)
+                        ) {
+                            if (nextWatchAndSpeakQuestion.dataValues.questionNumber == 9) {
+                                // Button message
+                                await sleep(3000);
+                                let skipButtonMessage = "👇 Click on the button below to start the next activity!";
+                                await sendButtonMessage(userMobileNumber, skipButtonMessage, [{ id: "next_activity", title: "Next Activity" }]);
+                                await createActivityLog(userMobileNumber, "template", "outbound", skipButtonMessage, null);
+                            }
+                        }
+                    } else if (currentUserState.dataValues.currentCourseId != 119 && currentUserState.dataValues.currentCourseId != 120) {
+                        if (nextWatchAndSpeakQuestion.dataValues.questionNumber == 7) {
+                            // Button message
+                            await sleep(3000);
+                            let skipButtonMessage = "👇 Click on the button below to start the next activity!";
+                            await sendButtonMessage(userMobileNumber, skipButtonMessage, [{ id: "next_activity", title: "Next Activity" }]);
+                            await createActivityLog(userMobileNumber, "template", "outbound", skipButtonMessage, null);
+                        }
+                    }
+
 
                     // Update acceptable messages list for the user
                     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);

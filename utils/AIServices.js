@@ -151,7 +151,7 @@ async function azureOpenAISpeechToText(audioBuffer) {
             language: 'en',
         });
 
-        return result.choices[0].message.content;
+        return result.text;
     } catch {
         return await openaiSpeechToText(audioBuffer);
     }
@@ -172,7 +172,7 @@ async function azureOpenAISpeechToTextWithPrompt(audioBuffer, prompt) {
             prompt: prompt
         });
 
-        return result.choices[0].message.content;
+        return result.text;
     } catch {
         return await openaiSpeechToTextWithPrompt(audioBuffer, prompt);
     }

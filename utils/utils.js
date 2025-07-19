@@ -18,7 +18,7 @@ const extractTranscript = (results) => {
     const words = Object.values(results.words);
     const transcriptWords = words.filter(word => word?.PronunciationAssessment?.ErrorType !== 'Omission');
 
-    const transcript = transcriptWords.map(word => word.Word).join(" ");
+    const transcript = transcriptWords.map(word => word?.Word ?? "").join(" ");
 
     // Capitalize first letter of the first word if it's alphabetic
     if (transcript.length > 0 && /[a-zA-Z]/.test(transcript[0])) {
@@ -97,6 +97,9 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
     const acceptableMessagesList = currentUserState.dataValues.acceptableMessages;
     const activityType = currentUserState.dataValues.activityType;
     const persona = currentUserState.dataValues.persona;
+    if (!acceptableMessagesList) {
+        return true;
+    }
     if (currentUserState.dataValues.engagement_type == "Choose User") {
         const profiles = await waProfileRepository.getAllSortOnProfileId(userMobileNumber);
         const userMetadata = await waUsersMetadataRepository.getByPhoneNumber(userMobileNumber);
@@ -153,7 +156,7 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
             return true;
         } else if (messageType == "text" && messageContent.toLowerCase() == "next" && (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")) {
             return true;
-        } else if (messageType == "text" && messageContent.toLowerCase() == "next activity" && activityType === "watchAndAudio" && persona == "kid") {
+        } else if ((messageType == "text" || messageType == "button" || messageType == "interactive") && messageContent.toLowerCase() == "next activity" && activityType === "watchAndAudio" && persona == "kid") {
             return true;
         }
     }
@@ -219,6 +222,11 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
     if (acceptableMessagesList.includes("start next lesson") && acceptableMessagesList.includes("change user")) {
         await sendButtonMessage(userMobileNumber, "Are you ready to start your next lesson?", [{ id: "start_next_lesson", title: "Start Next Lesson" }, { id: "change_user", title: "Change User" }]);
         await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start your next lesson?", null);
+        return false;
+    }
+    if (acceptableMessagesList.includes("start practice") && acceptableMessagesList.includes("change user")) {
+        await sendButtonMessage(userMobileNumber, "Are you ready to start practice?", [{ id: "start_practice", title: "Start Practice" }, { id: "change_user", title: "Change User" }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start practice?", null);
         return false;
     }
     if (acceptableMessagesList.includes("start questions") && acceptableMessagesList.includes("change user")) {

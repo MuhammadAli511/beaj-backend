@@ -144,7 +144,7 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
 
                 const answersArray = currentListenAndSpeakQuestion.dataValues.answer;
-                let prompt = answersArray[0];
+                let prompt = "Transcribe the audio, if it is empty return nothing";
                 let recognizedText = await AIServices.azureOpenAISpeechToTextWithPrompt(audioBuffer, prompt);
                 if (recognizedText) {
                     // Checking if user response is correct or not
@@ -289,8 +289,8 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                         await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
                     }
                 } else {
-                    let logger = `No speech recognized or an error occurred. User: ${userMobileNumber}, Message Type: ${messageType}, Message Content: ${messageContent}`;
-                    console.log(logger);
+                    await sendMessage(userMobileNumber, "No speech recognized or an error occurred. Please try again.");
+                    await createActivityLog(userMobileNumber, "text", "outbound", "No speech recognized or an error occurred. Please try again.", null);
                 }
                 return;
             }
@@ -448,7 +448,7 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
 
                 const answersArray = currentListenAndSpeakQuestion.dataValues.answer;
-                let prompt = answersArray[0];
+                let prompt = "Transcribe the audio, if it is empty return nothing";
                 let recognizedText = await AIServices.azureOpenAISpeechToTextWithPrompt(audioBuffer, prompt);
                 if (recognizedText) {
                     // Checking if user response is correct or not
@@ -595,8 +595,8 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                         await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson, message);
                     }
                 } else {
-                    let logger = `No speech recognized or an error occurred. User: ${userMobileNumber}, Message Type: ${messageType}, Message Content: ${messageContent}`;
-                    console.log(logger);
+                    await sendMessage(userMobileNumber, "No speech recognized or an error occurred. Please try again.");
+                    await createActivityLog(userMobileNumber, "text", "outbound", "No speech recognized or an error occurred. Please try again.", null);
                 }
                 return;
             }

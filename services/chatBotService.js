@@ -833,6 +833,7 @@ const webhookService = async (body, res) => {
                         messageContent.toLowerCase().includes("start challenge") ||
                         messageContent.toLowerCase().includes("start part b") ||
                         messageContent.toLowerCase().includes("next") ||
+                        messageContent.toLowerCase().includes("start practice") ||
                         messageContent.toLowerCase().includes("next activity")
                     ) {
                         if (currentUserState.dataValues.engagement_type == "Free Trial - Teachers" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
@@ -1021,6 +1022,7 @@ const webhookService = async (body, res) => {
                     "+923325551465",
                     "+261320220186",
                     "+12028123335",
+                    "+923232658153"
                 ];
 
                 // User switching a profile
@@ -1106,8 +1108,6 @@ const webhookService = async (body, res) => {
                         await waUserProgressRepository.update(profileId, userMobileNumber, currentUserState.dataValues.currentCourseId, startingLesson.dataValues.weekNumber, startingLesson.dataValues.dayNumber, startingLesson.dataValues.LessonId, startingLesson.dataValues.SequenceNumber, startingLesson.dataValues.activity, null, null, null);
 
                         if (currentUserState.dataValues.persona == "teacher") {
-                            // const courseName = await courseRepository.getCourseNameById(currentUserState.dataValues.currentCourseId);
-                            // const level = courseName.split("-")[0].trim();
                             await sendMessage(userMobileNumber, "Great! Let's start! 🤩");
                             await createActivityLog(userMobileNumber, "text", "outbound", "Great! Let's start! 🤩", null);
                         }
@@ -1162,7 +1162,10 @@ const webhookService = async (body, res) => {
 
                 if (text_message_types.includes(message.type)) {
                     const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
-                    if (messageContent.toLowerCase().includes("yes") || messageContent.toLowerCase().includes("no") || messageContent.toLowerCase().includes("easy") || messageContent.toLowerCase().includes("hard")) {
+                    if (
+                        ((messageContent.toLowerCase().includes("yes") || messageContent.toLowerCase().includes("no")) && (currentUserState.dataValues.activityType && currentUserState.dataValues.questionNumber)) ||
+                        ((messageContent.toLowerCase().includes("easy") || messageContent.toLowerCase().includes("hard")) && (currentUserState.dataValues.activityType))
+                    ) {
                         if (currentUserState.dataValues.persona == "kid" || currentUserState.dataValues.persona == "parent or student" || currentUserState.dataValues.persona == "school admin") {
                             await sendCourseLessonToKid(profileId, userMobileNumber, currentUserState, currentLesson, messageType, messageContent, buttonId);
                         } else {
@@ -1186,10 +1189,8 @@ const webhookService = async (body, res) => {
                         messageContent.toLowerCase().includes("it can be improved 🤔") ||
                         messageContent.toLowerCase().includes("start questions") ||
                         messageContent.toLowerCase().includes("start part b") ||
-                        messageContent.toLowerCase().includes("yes") ||
-                        messageContent.toLowerCase().includes("no, try again") ||
-                        messageContent.toLowerCase().includes("no") ||
                         messageContent.toLowerCase().includes("next") ||
+                        messageContent.toLowerCase().includes("start practice") ||
                         messageContent.toLowerCase().includes("next activity")
                     ) {
                         if (
@@ -1245,10 +1246,18 @@ const webhookService = async (body, res) => {
                                     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start now!", "change user"]);
                                     return;
                                 } else {
-                                    await sendButtonMessage(userMobileNumber, 'You have completed all the lessons in this course. Click the button below to proceed', [{ id: 'start_next_level', title: 'Start Next Level' }, { id: 'change_user', title: 'Change User' }]);
-                                    await createActivityLog(userMobileNumber, "template", "outbound", "You have completed all the lessons in this course. Click the button below to proceed", null);
-                                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next level", "change user"]);
-                                    return;
+                                    // if teacher
+                                    if (currentUserState.dataValues.persona == "teacher") {
+                                        await sendButtonMessage(userMobileNumber, 'You have completed all the lessons in this course. Click the button below to proceed', [{ id: 'start_next_level', title: 'Start Next Level' }]);
+                                        await createActivityLog(userMobileNumber, "template", "outbound", "You have completed all the lessons in this course. Click the button below to proceed", null);
+                                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next level"]);
+                                        return;
+                                    } else {
+                                        await sendButtonMessage(userMobileNumber, 'You have completed all the lessons in this course. Click the button below to proceed', [{ id: 'start_next_level', title: 'Start Next Level' }, { id: 'change_user', title: 'Change User' }]);
+                                        await createActivityLog(userMobileNumber, "template", "outbound", "You have completed all the lessons in this course. Click the button below to proceed", null);
+                                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next level", "change user"]);
+                                        return;
+                                    }
                                 }
                             }
                             await sendMessage(userMobileNumber, "Please wait for the next lesson to start.");

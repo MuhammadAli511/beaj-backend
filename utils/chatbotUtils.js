@@ -17,7 +17,7 @@ import { watchAndAudioView } from "../views/watchAndAudio.js";
 import { readView } from "../views/read.js";
 import { videoView } from "../views/video.js";
 import { videoEndView } from "../views/videoEnd.js";
-import { getLevelFromCourseName, sleep } from "./utils.js";
+import { getLevelFromCourseName, sleep, checkUserMessageAndAcceptableMessages } from "./utils.js";
 import { conversationalQuestionsBotView } from "../views/conversationalQuestionsBot.js";
 import { conversationalMonologueBotView } from "../views/conversationalMonologueBot.js";
 import { watchAndSpeakView } from "../views/watchAndSpeak.js";
