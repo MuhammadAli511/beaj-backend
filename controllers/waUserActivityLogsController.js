@@ -15,9 +15,10 @@ const getWaUserActivityLogByPhoneNumberController = async (req, res, next) => {
     try {
         const phoneNumber = req.params.phoneNumber;
         const botPhoneNumberId = req.query.botPhoneNumberId || null;
+        const profile_id = req.query.profile_id;
         const page = parseInt(req.query.page) || 1;
         const pageSize = parseInt(req.query.pageSize) || 15;
-        const result = await service.getWaUserActivityLogByPhoneNumberService(phoneNumber,botPhoneNumberId, page, pageSize);
+        const result = await service.getWaUserActivityLogByPhoneNumberService(phoneNumber,botPhoneNumberId, page, pageSize, profile_id);
         res.status(200).send(result);
     } catch (error) {
         error.fileName = 'waUserActivityLogsController.js';

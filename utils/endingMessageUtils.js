@@ -10,6 +10,7 @@ import { weekEndImage } from "./imageGenerationUtils.js";
 import { sleep, getDaysPerWeek, getTotalLessonsForCourse, getLevelFromCourseName } from "./utils.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import stickerMapping from "../constants/stickerMapping.js";
+import { generateCertificate } from '../google_sheet_utils/certificate-utils.js';
 
 
 
@@ -282,8 +283,9 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
             await createActivityLog(userMobileNumber, "image", "outbound", weekEndScoreImage, null, weekMessage);
             await sleep(5000);
         }
-
+        console.log("Outside Fizza Video");
         if (lessonNumber == totalLessons && strippedCourseName == "Level 3") {
+            console.log("Fizza Video");
             const fizza_level3 = await waConstantsRepository.getByKey("FIZZA_LEVEL_3");
             await sendMediaMessage(userMobileNumber, fizza_level3.dataValues.constantValue, 'video', null, 0, "WA_Constants", fizza_level3.dataValues.id, fizza_level3.dataValues.constantMediaId, "constantMediaId");
             await createActivityLog(userMobileNumber, "video", "outbound", fizza_level3.dataValues.constantValue, null);
@@ -293,6 +295,12 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
             let endingImageLevel3 = level3Ender.dataValues.constantValue;
             await sendMediaMessage(userMobileNumber, endingImageLevel3, 'image', endingMessageLevel3, 0, "WA_Constants", level3Ender.dataValues.id, level3Ender.dataValues.constantMediaId, "constantMediaId");
             await createActivityLog(userMobileNumber, "image", "outbound", endingImageLevel3, null, endingMessageLevel3);
+            const username = await waUsersMetadataRepository.getByProfileId(profileId);
+            if(username.name){
+                const cert_url = await generateCertificate(username.name);
+                await sendMediaMessage(userMobileNumber, cert_url, 'image', "Course Completion Certificate");
+                await createActivityLog(userMobileNumber, "image", "outbound", cert_url, "Course Completion Certificate");
+            }
         }
 
         // Feedback Message

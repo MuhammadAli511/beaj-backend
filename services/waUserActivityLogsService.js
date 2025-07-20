@@ -4,9 +4,9 @@ const getAllWaUserActivityLogsService = async () => {
     return await waUserActivityLogsRepository.getAll();
 };
 
-const getWaUserActivityLogByPhoneNumberService = async (phoneNumber,botPhoneNumberId, page = 1, pageSize = 15) => {
+const getWaUserActivityLogByPhoneNumberService = async (phoneNumber,botPhoneNumberId, page = 1, pageSize = 15,profile_id) => {
     const offset = (page - 1) * pageSize;
-    return await waUserActivityLogsRepository.getByPhoneNumber(phoneNumber,botPhoneNumberId, pageSize, offset);
+    return await waUserActivityLogsRepository.getByPhoneNumber(phoneNumber,botPhoneNumberId, pageSize, offset, profile_id);
 };
 
 const getLastMessageTimeService = async () => {

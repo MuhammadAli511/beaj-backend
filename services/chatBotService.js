@@ -738,10 +738,6 @@ const webhookService = async (body, res) => {
                     return;
                 }
 
-
-
-
-
                 // Teacher Training Trial
                 if (
                     text_message_types.includes(message.type) &&
@@ -950,9 +946,6 @@ const webhookService = async (body, res) => {
                         return;
                     }
                 }
-
-
-
 
                 // Actual Course
                 // User Switching

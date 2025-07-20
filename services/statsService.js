@@ -1433,6 +1433,162 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType) =>
     }
 };
 
+const studentBarAnalyticsService = async (courseIds, grades, cohorts, graphType, parameterId) => {
+    try {
+        // Set default date if not provided
+        let grade = grades, courseId = courseIds, qry1 = ``, qry2 = ``, cohort = ``, cohortCond = ``;
+        if (cohorts) {
+            cohort = ` and m.cohort = '${cohorts}' AND m.cohort != 'Cohort 0' `
+
+        }
+        else {
+            cohort = ` AND m.cohort IS NOT NULL AND m.cohort != 'Cohort 0' `;
+        }
+
+        console.log('courseIds', courseIds, 'grades', grades, 'cohorts', cohorts, 'graphType', graphType);
+
+        if (graphType === 'graph1') {
+
+            qry1 = `WITH "TargetGroup" AS (
+                    SELECT 
+                        m."profile_id",
+                        m."phoneNumber",
+                        m."name",
+                        m."city",
+                        m."schoolName"
+                    FROM 
+                        "wa_users_metadata" AS m
+                    INNER JOIN 
+                        "wa_profiles" p ON m."profile_id" = p."profile_id"
+                    WHERE 
+                        p."profile_type" = 'student' and
+                            m."rollout" = 2 and
+                            m."classLevel" = '${grade}' 
+                            ${cohort}
+                ),
+                "user_progress" AS (
+                    SELECT 
+                        p."profile_id",
+                        tg."phoneNumber",
+                        tg."name",
+                        tg."city",
+                        tg."schoolName",
+                        p."currentWeek",
+                        p."currentDay",
+                        p."acceptableMessages",
+                        CASE 
+                            WHEN 'start next lesson' = ANY(p."acceptableMessages") THEN 1 
+                            ELSE 0 
+                        END AS "lesson_completed_count"
+                    FROM 
+                        "wa_user_progress" AS p
+                    INNER JOIN 
+                        "TargetGroup" AS tg 
+                        ON p."profile_id" = tg."profile_id"
+                    WHERE 
+                        p."currentCourseId" = ${courseId}
+                ),
+                "get_dayCount" AS (
+                    SELECT 
+                        "profile_id",
+                        "phoneNumber",
+                        "name",
+                        "city",
+                        "schoolName",
+                        "currentWeek",
+                        "currentDay",
+                        CASE 
+                            WHEN ("lesson_completed_count" = 1) 
+                                THEN (("currentWeek" - 1) * 5 + "currentDay") 
+                            ELSE (("currentWeek" - 1) * 5 + "currentDay") - 1
+                        END AS "day"
+                    FROM 
+                        "user_progress"
+                    WHERE 
+                        "currentWeek" IS NOT NULL 
+                        AND "currentDay" IS NOT NULL
+                )
+                SELECT 
+                    "profile_id",
+                    "phoneNumber",
+                    "name",
+                    "city",
+                    "schoolName"
+                FROM 
+                    "get_dayCount"
+                WHERE 
+                    "day" = ${parameterId};`;
+        }
+
+
+        if (graphType === 'graph2') {
+            
+            qry1 = `WITH TargetGroup AS (
+                SELECT 
+                    m."profile_id",
+                    m."phoneNumber",
+                    m."name",
+                    m."city",
+                    m."schoolName"
+                FROM 
+                    "wa_users_metadata" m
+                    INNER JOIN "wa_profiles" p ON m."profile_id" = p."profile_id"
+                WHERE 
+                    p."profile_type" = 'student' AND
+                    m."rollout" = 2 AND
+                   m."classLevel" = '${grade}' 
+                    ${cohort}
+            ),
+            LessonWithMaxTimestamp AS (
+                SELECT 
+                    l."profile_id",
+                    tg."phoneNumber",
+                    tg."name",
+                    tg."city",
+                    tg."schoolName",
+                    l."lessonId",
+                    l."endTime",
+                    ROW_NUMBER() OVER (
+                        PARTITION BY l."profile_id" 
+                        ORDER BY l."endTime" DESC
+                    ) AS row_num
+                FROM 
+                    "wa_lessons_completed" l
+                INNER JOIN 
+                    TargetGroup tg ON l."profile_id" = tg."profile_id"
+                WHERE 
+                    l."completionStatus" = 'Completed' AND 
+                    l."courseId" = ${courseId}
+            )
+            SELECT 
+                l."profile_id",
+                l."phoneNumber",
+                l."name",
+                l."city",
+                l."schoolName",
+                l."lessonId"
+            FROM 
+                LessonWithMaxTimestamp l
+            WHERE 
+                l."lessonId" = ${parameterId} AND 
+                l.row_num = 1;`;
+        }
+
+        // Execute all queries concurrently
+        let [lastLesson1] = await Promise.all([
+            sequelize.query(qry1),
+        ]).then(results => results.map(result => result[0]));
+
+
+        return {
+            users: lastLesson1,
+        };
+    } catch (error) {
+        error.fileName = 'statsService.js';
+        throw error;
+    }
+};
+
 export default {
     totalContentStatsService,
     dashboardCardsFunnelService,
@@ -1441,5 +1597,6 @@ export default {
     studentTrialUserJourneyStatsService,
     studentCourseStatsService,
     clearingCacheService,
-    studentAnalyticsService
+    studentAnalyticsService,
+    studentBarAnalyticsService,
 };
