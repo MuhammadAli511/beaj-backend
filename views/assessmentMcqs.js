@@ -56,7 +56,9 @@ const assessmentMcqsView = async (profileId, userMobileNumber, currentUserState,
                 } else {
                     mcqMessage = "*Q" + await convertNumberToEmoji(firstMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n\n";
                 }
-                if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
+                if (startingLesson.dataValues.activityAlias == "🧠 *Self Growth Activities Complete!*" || startingLesson.dataValues.activityAlias == "🧠 *Let's Think - Final Task!*") {
+                    mcqMessage += "Choose one option:\n";
+                } else if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
                     mcqMessage += "Choose the correct answer:\n";
                 }
                 if (mcqType == 'Text') {
@@ -169,7 +171,10 @@ const assessmentMcqsView = async (profileId, userMobileNumber, currentUserState,
                     } else {
                         mcqMessage = "*Question " + await convertNumberToEmoji(nextMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n\n";
                     }
-                    if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
+                    // if alias is "Choose the correct sentence"
+                    if (startingLesson.dataValues.activityAlias == "🧠 *Self Growth Activities Complete!*" || startingLesson.dataValues.activityAlias == "🧠 *Let's Think - Final Task!*") {
+                        mcqMessage += "Choose one option:\n";
+                    } else if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
                         mcqMessage += "Choose the correct answer:\n";
                     }
                     if (mcqType == 'Text') {
@@ -254,7 +259,9 @@ const assessmentMcqsView = async (profileId, userMobileNumber, currentUserState,
                 } else {
                     mcqMessage = "👉 *Question " + await convertNumberToEmoji(firstMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n";
                 }
-                if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
+                if (startingLesson.dataValues.activityAlias == "🧠 *Self Growth Activities Complete!*" || startingLesson.dataValues.activityAlias == "🧠 *Let's Think - Final Task!*") {
+                    mcqMessage += "Choose one option:\n";
+                } else if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
                     mcqMessage += "Choose the correct answer:\n";
                     if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                         mcqMessage += "\nor Type *next* to skip this activity!";
@@ -368,7 +375,9 @@ const assessmentMcqsView = async (profileId, userMobileNumber, currentUserState,
                     } else {
                         mcqMessage = "👉 *Question " + await convertNumberToEmoji(nextMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n";
                     }
-                    if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
+                    if (startingLesson.dataValues.activityAlias == "🧠 *Self Growth Activities Complete!*" || startingLesson.dataValues.activityAlias == "🧠 *Let's Think - Final Task!*") {
+                        mcqMessage += "Choose one option:\n";
+                    } else if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
                         mcqMessage += "Choose the correct answer:\n";
                         if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
                             mcqMessage += "\nor Type *next* to skip this activity!";
