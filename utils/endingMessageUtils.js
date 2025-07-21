@@ -295,11 +295,11 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
             await sendMediaMessage(userMobileNumber, endingImageLevel3, 'image', endingMessageLevel3, 0, "WA_Constants", level3Ender.dataValues.id, level3Ender.dataValues.constantMediaId, "constantMediaId");
             await createActivityLog(userMobileNumber, "image", "outbound", endingImageLevel3, null, endingMessageLevel3);
             const username = await waUsersMetadataRepository.getByProfileId(profileId);
-            // if (username.name) {
-            //     const cert_url = await generateCertificate(username.name);
-            //     await sendMediaMessage(userMobileNumber, cert_url, 'image', "Course Completion Certificate");
-            //     await createActivityLog(userMobileNumber, "image", "outbound", cert_url, "Course Completion Certificate");
-            // }
+            if (username.name) {
+                const cert_url = await generateCertificate(username.name);
+                await sendMediaMessage(userMobileNumber, cert_url, 'image', "Course Completion Certificate");
+                await createActivityLog(userMobileNumber, "image", "outbound", cert_url, "Course Completion Certificate");
+            }
         }
 
         // Feedback Message
