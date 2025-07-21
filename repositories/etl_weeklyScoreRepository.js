@@ -97,7 +97,7 @@ const getUserMetadataAll = async (cohort) => {
         "schoolName",
         TO_CHAR("freeDemoStarted" AT TIME ZONE 'UTC', 'MM/DD/YYYY HH12:MI:SS AM') AS "freeDemoStarted_utc",
         TO_CHAR("freeDemoEnded" AT TIME ZONE 'UTC', 'MM/DD/YYYY HH12:MI:SS AM') AS "freeDemoEnded_utc",
-        scholarshipvalue, 
+        amountPaid, 
         "timingPreference"
       FROM 
         "wa_users_metadata"

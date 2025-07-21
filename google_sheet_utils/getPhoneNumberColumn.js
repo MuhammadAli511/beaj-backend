@@ -16,7 +16,7 @@ const getPhoneNumberColumn = async (data) => {
       row.city,
       row.timingPreference,
       row.targetGroup,
-      row.scholarshipvalue,
+      row.amountPaid,
       row.freeDemoStarted
         ? new Date(
           new Date(row.freeDemoStarted).getTime() + 5 * 60 * 60 * 1000

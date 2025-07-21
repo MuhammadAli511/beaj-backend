@@ -34,7 +34,7 @@ WA_UsersMetadata.init({
         type: DataTypes.TEXT,
         allowNull: true,
     },
-    scholarshipvalue: {
+    amountPaid: {
         type: DataTypes.TEXT,
         allowNull: true,
     },
@@ -75,6 +75,10 @@ WA_UsersMetadata.init({
         allowNull: true,
     },
     customerSource: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    customerChannel: {
         type: DataTypes.TEXT,
         allowNull: true,
     }
