@@ -246,7 +246,7 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
 
         // Lesson Complete Message
         let lessonCompleteMessage = "";
-        if (lessonNumber == totalLessons && strippedCourseName == "Level 3") {
+        if (lessonNumber == totalLessons && strippedCourseName == "Level 4") {
             lessonCompleteMessage = "You have completed all 3 levels of the Beaj Self-Development Course! 🌟";
         } else {
             lessonCompleteMessage = "You have completed *" + lessonNumber + " out of " + totalLessons + "* lessons in " + strippedCourseName + "!⭐️";
@@ -273,7 +273,7 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
         // Week end score image
         if (startingLesson.dataValues.dayNumber == daysPerWeek) {
             let weekMessage = ""
-            if (strippedCourseName == "Level 3") {
+            if (strippedCourseName == "Level 4") {
                 weekMessage = "Thank You for staying with us till the end! 👍🏽";
             }
 
@@ -284,7 +284,7 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
             await sleep(5000);
         }
 
-        if (lessonNumber == totalLessons && strippedCourseName == "Level 3") {
+        if (lessonNumber == totalLessons && strippedCourseName == "Level 4") {
             const fizza_level3 = await waConstantsRepository.getByKey("FIZZA_LEVEL_3");
             await sendMediaMessage(userMobileNumber, fizza_level3.dataValues.constantValue, 'video', null, 0, "WA_Constants", fizza_level3.dataValues.id, fizza_level3.dataValues.constantMediaId, "constantMediaId");
             await createActivityLog(userMobileNumber, "video", "outbound", fizza_level3.dataValues.constantValue, null);
@@ -295,11 +295,11 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
             await sendMediaMessage(userMobileNumber, endingImageLevel3, 'image', endingMessageLevel3, 0, "WA_Constants", level3Ender.dataValues.id, level3Ender.dataValues.constantMediaId, "constantMediaId");
             await createActivityLog(userMobileNumber, "image", "outbound", endingImageLevel3, null, endingMessageLevel3);
             const username = await waUsersMetadataRepository.getByProfileId(profileId);
-            if (username.name) {
-                const cert_url = await generateCertificate(username.name);
-                await sendMediaMessage(userMobileNumber, cert_url, 'image', "Course Completion Certificate");
-                await createActivityLog(userMobileNumber, "image", "outbound", cert_url, "Course Completion Certificate");
-            }
+            // if (username.name) {
+            //     const cert_url = await generateCertificate(username.name);
+            //     await sendMediaMessage(userMobileNumber, cert_url, 'image', "Course Completion Certificate");
+            //     await createActivityLog(userMobileNumber, "image", "outbound", cert_url, "Course Completion Certificate");
+            // }
         }
 
         // Feedback Message
@@ -328,7 +328,7 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
             await sleep(5000);
         }
 
-        if (lessonNumber == totalLessons && strippedCourseName == "Level 3") {
+        if (lessonNumber == totalLessons && strippedCourseName == "Level 4") {
             const congratsImage = await waConstantsRepository.getByKey("LEVEL_3_CONGRATULATIONS");
             await sendMediaMessage(userMobileNumber, congratsImage.dataValues.constantValue, 'image', null, 0, "WA_Constants", congratsImage.dataValues.id, congratsImage.dataValues.constantMediaId, "constantMediaId");
             await createActivityLog(userMobileNumber, "image", "outbound", congratsImage.dataValues.constantValue, null);
