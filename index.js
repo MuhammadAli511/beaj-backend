@@ -10,6 +10,7 @@ import cors from 'cors';
 import cron from 'node-cron';
 import routes from './routes/index.js';
 import runCumulativeSheets1 from './services/etlService.js';
+import { studentReportCardCalculation } from './utils/chatbotUtils.js';
 
 
 const port = 8080;

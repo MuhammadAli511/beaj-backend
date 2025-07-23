@@ -1189,6 +1189,435 @@ const generateInvoiceImage = async (userMobileNumber, registrationsSummary) => {
     }
 };
 
+const level4ReportCard = async (details) => {
+    const { name, grade, section, English } = details;
+    const width = 594;
+    const height = 810;
+
+    const canvas = createCanvas(width, height);
+    const ctx = canvas.getContext('2d');
+
+    const backgroundImage = await loadImage('https://beajbloblive.blob.core.windows.net/beajdocuments/base_report_card.png');
+    ctx.drawImage(backgroundImage, 0, 0, width, height);
+
+    // Helper function to draw rounded rectangle
+    function drawRoundedRect(x, y, width, height, radius, fillStyle, strokeStyle, lineWidth = 2) {
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + width - radius, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        ctx.lineTo(x + radius, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+
+        if (fillStyle) {
+            ctx.fillStyle = fillStyle;
+            ctx.fill();
+        }
+
+        if (strokeStyle) {
+            ctx.strokeStyle = strokeStyle;
+            ctx.lineWidth = lineWidth;
+            ctx.stroke();
+        }
+    }
+
+    // Student Information Cards (headers removed as they're in background)
+    const infoStartY = 220;
+
+    // Student Name Card
+    drawRoundedRect(50, infoStartY, 494, 45, 12, '#FFFFFF', '#e0e0e0', 2);
+    ctx.font = '14px Mont';
+    ctx.fillStyle = '#666666';
+    ctx.textAlign = 'left';
+    ctx.fillText('Student Name', 70, infoStartY + 20);
+    ctx.font = 'bold 20px Mont';
+    ctx.fillStyle = '#000000';
+    ctx.fillText(name, 70, infoStartY + 38);
+
+    // Grade and Section Cards
+    drawRoundedRect(50, infoStartY + 55, 240, 45, 12, '#FFFFFF', '#e0e0e0', 2);
+    ctx.font = '14px Mont';
+    ctx.fillStyle = '#666666';
+    ctx.fillText('Grade', 70, infoStartY + 75);
+    ctx.font = 'bold 18px Mont';
+    ctx.fillStyle = '#000000';
+    ctx.fillText(`Grade ${grade}`, 70, infoStartY + 93);
+
+    drawRoundedRect(304, infoStartY + 55, 240, 45, 12, '#FFFFFF', '#e0e0e0', 2);
+    ctx.font = '14px Mont';
+    ctx.fillStyle = '#666666';
+    ctx.fillText('Section', 324, infoStartY + 75);
+    ctx.font = 'bold 18px Mont';
+    ctx.fillStyle = '#000000';
+    ctx.fillText(`Section ${section}`, 324, infoStartY + 93);
+
+    // Colors
+    const redColor = '#f94e6b';
+    const purpleColor = '#8c52ff';
+
+    // Helper function for progress bars
+    function drawProgressBar(x, y, width, height, percentage, color) {
+        // Background
+        drawRoundedRect(x, y, width, height, height / 2, '#f0f0f0', null);
+
+        // Progress fill
+        const fillWidth = (percentage / 100) * width;
+        if (fillWidth > 0) {
+            drawRoundedRect(x, y, fillWidth, height, height / 2, color, null);
+        }
+
+        // Percentage text - aligned to a fixed position for consistency
+        const originalFont = ctx.font;
+        ctx.font = 'bold 16px Mont';
+        ctx.fillStyle = '#000000';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${percentage}%`, x + width + 35, y + height / 2 + 4);
+        ctx.textAlign = 'left';
+        ctx.font = originalFont; // Reset font
+    }
+
+    // Helper function to draw subject section
+    function drawSubjectSection(x, y, cardWidth, cardHeight, subjectName, subjectData, color) {
+        drawRoundedRect(x, y, cardWidth, cardHeight, 15, '#FFFFFF', '#e0e0e0', 2);
+
+        // Subject header
+        const headerWidth = subjectName.length * 10 + 20; // Dynamic width based on text length
+        drawRoundedRect(x + 10, y + 10, headerWidth, 30, 15, color, null);
+        ctx.font = 'bold 16px Mont';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.fillText(subjectName, x + 10 + headerWidth / 2, y + 29);
+
+        // Total percentage
+        ctx.font = 'bold 36px Mont';
+        ctx.fillStyle = color;
+        ctx.textAlign = 'center';
+        ctx.fillText(`${subjectData.Total}%`, x + cardWidth - 65, y + 32);
+
+        ctx.font = '12px Mont';
+        ctx.fillStyle = '#666666';
+        ctx.textAlign = 'center';
+        ctx.fillText('Total Score', x + cardWidth - 65, y + 47);
+
+        // Skills with progress bars (exclude "Total" from skills)
+        const skills = Object.keys(subjectData).filter(key => key !== 'Total');
+        ctx.font = '14px Mont';
+        ctx.fillStyle = '#000000';
+        ctx.textAlign = 'left';
+
+        skills.forEach((skill, index) => {
+            const skillY = y + 70 + (index * 32);
+            ctx.fillText(skill, x + 15, skillY);
+            drawProgressBar(x + 15, skillY + 5, 120, 8, subjectData[skill], color);
+        });
+    }
+
+    // Academic and Activity Sections - centered layout for 2 cards
+    const sectionsY = 380;
+    const cardWidth = 240;
+    const cardHeight = 230;
+    const leftCardX = 50; // Center the two cards
+    const rightCardX = 304; // Center the two cards
+
+    // English Section
+    drawSubjectSection(leftCardX, sectionsY, cardWidth, cardHeight, 'English', English, redColor);
+
+    // Life Skills Section
+    const lifeSkillsY = sectionsY;
+    drawRoundedRect(rightCardX, lifeSkillsY, cardWidth, cardHeight, 15, '#FFFFFF', '#e0e0e0', 2);
+
+    // Life Skills header
+    drawRoundedRect(rightCardX + 10, lifeSkillsY + 10, 100, 30, 15, purpleColor, null);
+    ctx.font = 'bold 16px Mont';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    ctx.fillText('Life Skills', rightCardX + 60, lifeSkillsY + 29);
+
+    // Activity count - properly aligned
+    ctx.font = 'bold 36px Mont';
+    ctx.fillStyle = purpleColor;
+    ctx.textAlign = 'center';
+    ctx.fillText('23', rightCardX + 175, lifeSkillsY + 40);
+
+    ctx.font = '12px Mont';
+    ctx.fillStyle = '#666666';
+    ctx.textAlign = 'center';
+    ctx.fillText('Activities Completed', rightCardX + 175, lifeSkillsY + 55);
+
+    // Topics
+    ctx.font = '14px Mont';
+    ctx.fillStyle = '#000000';
+    ctx.textAlign = 'left';
+
+    // Green checkmarks
+    ctx.fillStyle = '#00d084';
+    ctx.fillText('✓', rightCardX + 15, lifeSkillsY + 85);
+    ctx.fillText('✓', rightCardX + 15, lifeSkillsY + 105);
+    ctx.fillText('✓', rightCardX + 15, lifeSkillsY + 125);
+    ctx.fillText('✓', rightCardX + 15, lifeSkillsY + 145);
+    ctx.fillText('✓', rightCardX + 15, lifeSkillsY + 165);
+    ctx.fillText('✓', rightCardX + 15, lifeSkillsY + 185);
+    ctx.fillText('✓', rightCardX + 15, lifeSkillsY + 205);
+
+    // Topic text
+    ctx.fillStyle = '#000000';
+    ctx.fillText('Growth Mindset', rightCardX + 30, lifeSkillsY + 85);
+    ctx.fillText('How to Manage Anger', rightCardX + 30, lifeSkillsY + 105);
+    ctx.fillText('Helping Others', rightCardX + 30, lifeSkillsY + 125);
+    ctx.fillText('Dealing with Bullying', rightCardX + 30, lifeSkillsY + 145);
+    ctx.fillText('Modern Technology', rightCardX + 30, lifeSkillsY + 165);
+    ctx.fillText('Media Literacy', rightCardX + 30, lifeSkillsY + 185);
+    ctx.fillText('Caring for Environment', rightCardX + 30, lifeSkillsY + 205);
+
+    // Save the image
+    const buffer = canvas.toBuffer('image/png');
+    const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
+    return imageUrl;
+}
+
+const kidsReportCard = async (details) => {
+    const { name, grade, section, Maths, English } = details;
+    const width = 594;
+    const height = 810;
+
+    const canvas = createCanvas(width, height);
+    const ctx = canvas.getContext('2d');
+
+    const backgroundImage = await loadImage('https://beajbloblive.blob.core.windows.net/beajdocuments/base_report_card.png');
+    ctx.drawImage(backgroundImage, 0, 0, width, height);
+
+    // Helper function to draw rounded rectangle
+    function drawRoundedRect(x, y, width, height, radius, fillStyle, strokeStyle, lineWidth = 2) {
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + width - radius, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        ctx.lineTo(x + radius, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+
+        if (fillStyle) {
+            ctx.fillStyle = fillStyle;
+            ctx.fill();
+        }
+
+        if (strokeStyle) {
+            ctx.strokeStyle = strokeStyle;
+            ctx.lineWidth = lineWidth;
+            ctx.stroke();
+        }
+    }
+
+    // Student Information Cards (headers removed as they're in background)
+    const infoStartY = 180;
+
+    // Student Name Card
+    drawRoundedRect(50, infoStartY, 494, 45, 12, '#FFFFFF', '#e0e0e0', 2);
+    ctx.font = '14px Mont';
+    ctx.fillStyle = '#666666';
+    ctx.textAlign = 'left';
+    ctx.fillText('Student Name', 70, infoStartY + 20);
+    ctx.font = 'bold 20px Mont';
+    ctx.fillStyle = '#000000';
+    ctx.fillText(name, 70, infoStartY + 38);
+
+    // Grade and Section Cards
+    drawRoundedRect(50, infoStartY + 55, 240, 45, 12, '#FFFFFF', '#e0e0e0', 2);
+    ctx.font = '14px Mont';
+    ctx.fillStyle = '#666666';
+    ctx.fillText('Grade', 70, infoStartY + 75);
+    ctx.font = 'bold 18px Mont';
+    ctx.fillStyle = '#000000';
+    ctx.fillText(`Grade ${grade}`, 70, infoStartY + 93);
+
+    drawRoundedRect(304, infoStartY + 55, 240, 45, 12, '#FFFFFF', '#e0e0e0', 2);
+    ctx.font = '14px Mont';
+    ctx.fillStyle = '#666666';
+    ctx.fillText('Section', 324, infoStartY + 75);
+    ctx.font = 'bold 18px Mont';
+    ctx.fillStyle = '#000000';
+    ctx.fillText(`Section ${section}`, 324, infoStartY + 93);
+
+    // Colors
+    const redColor = '#f94e6b';
+    const purpleColor = '#8c52ff';
+
+    // Helper function for progress bars
+    function drawProgressBar(x, y, width, height, percentage, color) {
+        // Background
+        drawRoundedRect(x, y, width, height, height / 2, '#f0f0f0', null);
+
+        // Progress fill
+        const fillWidth = (percentage / 100) * width;
+        if (fillWidth > 0) {
+            drawRoundedRect(x, y, fillWidth, height, height / 2, color, null);
+        }
+
+        // Percentage text - aligned to a fixed position for consistency
+        const originalFont = ctx.font;
+        ctx.font = 'bold 16px Mont';
+        ctx.fillStyle = '#000000';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${percentage}%`, x + width + 35, y + height / 2 + 4);
+        ctx.textAlign = 'left';
+        ctx.font = originalFont; // Reset font
+    }
+
+    // Helper function to draw subject section
+    function drawSubjectSection(x, y, cardWidth, cardHeight, subjectName, subjectData, color) {
+        drawRoundedRect(x, y, cardWidth, cardHeight, 15, '#FFFFFF', '#e0e0e0', 2);
+
+        // Subject header
+        const headerWidth = subjectName.length * 10 + 20; // Dynamic width based on text length
+        drawRoundedRect(x + 10, y + 10, headerWidth, 30, 15, color, null);
+        ctx.font = 'bold 16px Mont';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.fillText(subjectName, x + 10 + headerWidth / 2, y + 29);
+
+        // Total percentage
+        ctx.font = 'bold 36px Mont';
+        ctx.fillStyle = color;
+        ctx.textAlign = 'center';
+        ctx.fillText(`${subjectData.Total}%`, x + cardWidth - 65, y + 32);
+
+        ctx.font = '12px Mont';
+        ctx.fillStyle = '#666666';
+        ctx.textAlign = 'center';
+        ctx.fillText('Total Score', x + cardWidth - 65, y + 47);
+
+        // Skills with progress bars (exclude "Total" from skills)
+        const skills = Object.keys(subjectData).filter(key => key !== 'Total');
+        ctx.font = '14px Mont';
+        ctx.fillStyle = '#000000';
+        ctx.textAlign = 'left';
+
+        skills.forEach((skill, index) => {
+            const skillY = y + 70 + (index * 32);
+            ctx.fillText(skill, x + 15, skillY);
+            drawProgressBar(x + 15, skillY + 5, 120, 8, subjectData[skill], color);
+        });
+    }
+
+    // Academic Sections
+    const sectionsY = 290;
+    const cardWidth = 240;
+    const cardHeight = 230;
+
+    // English Section
+    drawSubjectSection(50, sectionsY, cardWidth, cardHeight, 'English', English, redColor);
+
+    // Math Section
+    drawSubjectSection(304, sectionsY, cardWidth, cardHeight, 'Math', Maths, redColor);
+
+    // Activity Sections
+    const activitiesY = sectionsY + 240;
+
+    // Science Section
+    drawRoundedRect(50, activitiesY, cardWidth, cardHeight, 15, '#FFFFFF', '#e0e0e0', 2);
+
+    // Science header
+    drawRoundedRect(60, activitiesY + 10, 90, 30, 15, purpleColor, null);
+    ctx.font = 'bold 16px Mont';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    ctx.fillText('Science', 105, activitiesY + 29);
+
+    // Activity count - properly aligned
+    ctx.font = 'bold 36px Mont';
+    ctx.fillStyle = purpleColor;
+    ctx.textAlign = 'center';
+    ctx.fillText('12', 225, activitiesY + 40);
+
+    ctx.font = '12px Mont';
+    ctx.fillStyle = '#666666';
+    ctx.textAlign = 'center';
+    ctx.fillText('Activities Completed', 225, activitiesY + 55);
+
+    // Topics
+    ctx.font = '14px Mont';
+    ctx.fillStyle = '#000000';
+    ctx.textAlign = 'left';
+
+    // Green checkmarks
+    ctx.fillStyle = '#00d084';
+    ctx.fillText('✓', 65, activitiesY + 85);
+    ctx.fillText('✓', 65, activitiesY + 105);
+    ctx.fillText('✓', 65, activitiesY + 125);
+    ctx.fillText('✓', 65, activitiesY + 145);
+    ctx.fillText('✓', 65, activitiesY + 165);
+    ctx.fillText('✓', 65, activitiesY + 185);
+
+    // Topic text
+    ctx.fillStyle = '#000000';
+    ctx.fillText('Natural Materials', 80, activitiesY + 85);
+    ctx.fillText('Chemical Reactions', 80, activitiesY + 105);
+    ctx.fillText('Forces', 80, activitiesY + 125);
+    ctx.fillText('Gravity', 80, activitiesY + 145);
+    ctx.fillText('Liquids and Gasses', 80, activitiesY + 165);
+    ctx.fillText('Colour Mixing', 80, activitiesY + 185);
+
+    // Life Skills Section
+    drawRoundedRect(304, activitiesY, cardWidth, cardHeight, 15, '#FFFFFF', '#e0e0e0', 2);
+
+    // Life Skills header
+    drawRoundedRect(314, activitiesY + 10, 100, 30, 15, purpleColor, null);
+    ctx.font = 'bold 16px Mont';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    ctx.fillText('Life Skills', 364, activitiesY + 29);
+
+    // Activity count - properly aligned
+    ctx.font = 'bold 36px Mont';
+    ctx.fillStyle = purpleColor;
+    ctx.textAlign = 'center';
+    ctx.fillText('23', 479, activitiesY + 40);
+
+    ctx.font = '12px Mont';
+    ctx.fillStyle = '#666666';
+    ctx.textAlign = 'center';
+    ctx.fillText('Activities Completed', 479, activitiesY + 55);
+
+    // Topics
+    ctx.font = '14px Mont';
+    ctx.fillStyle = '#000000';
+    ctx.textAlign = 'left';
+
+    // Green checkmarks
+    ctx.fillStyle = '#00d084';
+    ctx.fillText('✓', 319, activitiesY + 85);
+    ctx.fillText('✓', 319, activitiesY + 105);
+    ctx.fillText('✓', 319, activitiesY + 125);
+    ctx.fillText('✓', 319, activitiesY + 145);
+    ctx.fillText('✓', 319, activitiesY + 165);
+    ctx.fillText('✓', 319, activitiesY + 185);
+    ctx.fillText('✓', 319, activitiesY + 205);
+
+    // Topic text
+    ctx.fillStyle = '#000000';
+    ctx.fillText('Growth Mindset', 334, activitiesY + 85);
+    ctx.fillText('How to Manage Anger', 334, activitiesY + 105);
+    ctx.fillText('Helping Others', 334, activitiesY + 125);
+    ctx.fillText('Dealing with Bullying', 334, activitiesY + 145);
+    ctx.fillText('Modern Technology', 334, activitiesY + 165);
+    ctx.fillText('Media Literacy', 334, activitiesY + 185);
+    ctx.fillText('Caring for Environment', 334, activitiesY + 205);
+
+    // Save the image
+    const buffer = canvas.toBuffer('image/png');
+    const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
+    return imageUrl;
+}
+
 export {
     weekEndImage,
     createAndUploadScoreImage,
@@ -1196,5 +1625,7 @@ export {
     createAndUploadSpeakingPracticeScoreImage,
     generateInvoiceImage,
     createAndUploadScoreImageNoAnswer,
-    createAndUploadKidsScoreImage
+    createAndUploadKidsScoreImage,
+    level4ReportCard,
+    kidsReportCard
 };

@@ -1078,6 +1078,7 @@ const webhookService = async (body, res) => {
                     text_message_types.includes(message.type) &&
                     (messageContent.toLowerCase().includes("start my course") ||
                         messageContent.toLowerCase().includes("start next level") ||
+                        messageContent.toLowerCase().includes("complete final task") ||
                         messageContent.toLowerCase().includes("start level 1") ||
                         messageContent.toLowerCase().includes("start now!")
                     )
@@ -1248,10 +1249,21 @@ const webhookService = async (body, res) => {
                                 } else {
                                     // if teacher
                                     if (currentUserState.dataValues.persona == "teacher") {
-                                        await sendButtonMessage(userMobileNumber, 'You have completed all the lessons in this course. Click the button below to proceed', [{ id: 'start_next_level', title: 'Start Next Level' }]);
-                                        await createActivityLog(userMobileNumber, "template", "outbound", "You have completed all the lessons in this course. Click the button below to proceed", null);
-                                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next level"]);
-                                        return;
+                                        if (courseName.toLowerCase().includes("level 3")) {
+                                            const audioUrl = "https://beajbloblive.blob.core.windows.net/beajdocuments/complete_final_task.mp3";
+                                            await sendMediaMessage(userMobileNumber, audioUrl, 'audio', null);
+                                            await createActivityLog(userMobileNumber, "audio", "outbound", audioUrl, null);
+                                            await sleep(3000);
+                                            await sendButtonMessage(userMobileNumber, 'Click on the button below to complete the final task and get your certificate', [{ id: 'complete_final_task', title: 'Complete Final Task' }]);
+                                            await createActivityLog(userMobileNumber, "template", "outbound", "Click on the button below to complete the final task and get your certificate", null);
+                                            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["complete final task"]);
+                                            return;
+                                        } else {
+                                            await sendButtonMessage(userMobileNumber, 'You have completed all the lessons in this course. Click the button below to proceed', [{ id: 'start_next_level', title: 'Start Next Level' }]);
+                                            await createActivityLog(userMobileNumber, "template", "outbound", "You have completed all the lessons in this course. Click the button below to proceed", null);
+                                            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next level"]);
+                                            return;
+                                        }
                                     } else {
                                         await sendButtonMessage(userMobileNumber, 'You have completed all the lessons in this course. Click the button below to proceed', [{ id: 'start_next_level', title: 'Start Next Level' }, { id: 'change_user', title: 'Change User' }]);
                                         await createActivityLog(userMobileNumber, "template", "outbound", "You have completed all the lessons in this course. Click the button below to proceed", null);
