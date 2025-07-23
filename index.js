@@ -10,8 +10,6 @@ import cors from 'cors';
 import cron from 'node-cron';
 import routes from './routes/index.js';
 import runCumulativeSheets1 from './services/etlService.js';
-import { studentReportCardCalculation } from './utils/chatbotUtils.js';
-
 
 const port = 8080;
 
@@ -65,13 +63,6 @@ async function startETLProcess() {
 app.listen(port, async () => {
   console.log(`Server running on port ${port}`);
   if (process.env.ENVIRONMENT != 'DEV') {
-    // startETLProcess();
-    // calculate time to run the function
-    const startTime = new Date();
-    // await studentReportCardCalculation(30575, '+923209794572');
-    await studentReportCardCalculation(30187, '+923335830900');
-    const endTime = new Date();
-    const timeTaken = endTime - startTime;
-    console.log(`Time taken: ${timeTaken} milliseconds`);
+    startETLProcess();
   }
 });

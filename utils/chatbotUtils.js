@@ -175,9 +175,12 @@ const weekEndScoreCalculation = async (profileId, phoneNumber, weekNumber, cours
 };
 
 const studentReportCardCalculation = async (profileId, phoneNumber) => {
-    // Get all purchased courses for the profile
-    const purchasedCourses = await waPurchasedCoursesRepository.getPurchasedCoursesByProfileId(profileId);
-    const courses = await courseRepository.getAll();
+    // Parallel fetch of initial data
+    const [purchasedCourses, courses, userMetadata] = await Promise.all([
+        waPurchasedCoursesRepository.getPurchasedCoursesByProfileId(profileId),
+        courseRepository.getAll(),
+        waUsersMetadataRepository.getByProfileId(profileId)
+    ]);
 
     // Match purchased courses with course details to get course names
     const purchasedCoursesWithNames = purchasedCourses.map(purchasedCourse => {
@@ -198,167 +201,158 @@ const studentReportCardCalculation = async (profileId, phoneNumber) => {
     const gradeCourseId = gradeCourse[0].courseId;
     const gradeCourseName = gradeCourse[0].courseName;
 
+    // Prepare all lesson ID fetching operations based on grade
+    const lessonFetchPromises = [];
+    let mathsSubjects = [];
+    let englishSubjects = [];
 
-    // MATHS (Grade 1,2,3,4,5,6)
-    let placeValueQuestions = [], additionQuestions = [], subtractionQuestions = [], patternsQuestions = [], multiplicationQuestions = [], additionAndSubtractionQuestions = [], fractionsQuestions = [];
-    // Grade 1 & 2 Maths: Place Value (W1D2, W1D4, W2D2), Addition (W2D4, W3D2, W4D2), Subtraction (W3D4), Patterns (W4D4)
+    // MATHS lesson fetching based on grade
     if (gradeCourseName.toLowerCase().includes("grade 1") || gradeCourseName.toLowerCase().includes("grade 2")) {
-        [placeValueQuestions, additionQuestions, subtractionQuestions, patternsQuestions] = await Promise.all([
-            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[1, 2], [1, 4], [2, 2]]),
-            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[2, 4], [3, 2], [4, 2]]),
-            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[3, 4]]),
-            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[4, 4]])
-        ]);
+        mathsSubjects = ['placeValue', 'addition', 'subtraction', 'patterns'];
+        lessonFetchPromises.push(
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[1, 2], [1, 4], [2, 2]]), // placeValue
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[2, 4], [3, 2], [4, 2]]), // addition
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[3, 4]]), // subtraction
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[4, 4]]) // patterns
+        );
+    } else if (gradeCourseName.toLowerCase().includes("grade 3") || gradeCourseName.toLowerCase().includes("grade 4")) {
+        mathsSubjects = ['placeValue', 'addition', 'subtraction', 'multiplication'];
+        lessonFetchPromises.push(
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[1, 2], [1, 4]]), // placeValue
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[2, 2], [3, 4]]), // addition
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[2, 4], [3, 2], [4, 2]]), // subtraction
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[4, 4]]) // multiplication
+        );
+    } else if (gradeCourseName.toLowerCase().includes("grade 5") || gradeCourseName.toLowerCase().includes("grade 6")) {
+        mathsSubjects = ['placeValue', 'additionAndSubtraction', 'multiplication', 'fractions'];
+        lessonFetchPromises.push(
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[1, 2], [1, 4]]), // placeValue
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[1, 4]]), // additionAndSubtraction
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[2, 2], [2, 4], [3, 2], [3, 4]]), // multiplication
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[4, 2], [4, 4]]) // fractions
+        );
     }
 
-    // Grade 3 & 4 Maths: Place Value (W1D2, W1D4), Addition (W2D2, W3D4), Subtraction (W2D4, W3D2, W4D2), Multiplication (W4D4)
-    if (gradeCourseName.toLowerCase().includes("grade 3") || gradeCourseName.toLowerCase().includes("grade 4")) {
-        [placeValueQuestions, additionQuestions, subtractionQuestions, multiplicationQuestions] = await Promise.all([
-            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[1, 2], [1, 4]]),
-            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[2, 2], [3, 4]]),
-            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[2, 4], [3, 2], [4, 2]]),
-            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[4, 4]])
-        ]);
-    }
-
-    // Grade 5 & 6 Maths: Place Value (W1D2, W1D4), Addition and Subtraction mixed (W1D4), Multiplication (W2D2, W2D4, W3D2, W3D4), Division (W3D4), Fractions (W4D2, W4D4)
-    if (gradeCourseName.toLowerCase().includes("grade 5") || gradeCourseName.toLowerCase().includes("grade 6")) {
-        [placeValueQuestions, additionAndSubtractionQuestions, multiplicationQuestions, fractionsQuestions] = await Promise.all([
-            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[1, 2], [1, 4]]),
-            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[1, 4]]),
-            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[2, 2], [2, 4], [3, 2], [3, 4]]),
-            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[4, 2], [4, 4]])
-        ]);
-    }
-
-    // if place value is not empty
-    let totalPlaceValueQuestions = 0, totalPlaceValueCorrect = 0, placeValuePercentage = 0;
-    if (placeValueQuestions.length > 0) {
-        totalPlaceValueQuestions = await waQuestionResponsesRepository.getTotalQuestionsForList(profileId, phoneNumber, placeValueQuestions);
-        totalPlaceValueCorrect = await waQuestionResponsesRepository.getTotalScoreForList(profileId, phoneNumber, placeValueQuestions);
-        placeValuePercentage = Math.round((totalPlaceValueCorrect / totalPlaceValueQuestions) * 100);
-    }
-
-    // if addition is not empty
-    let totalAdditionQuestions = 0, totalAdditionCorrect = 0, additionPercentage = 0;
-    if (additionQuestions.length > 0) {
-        totalAdditionQuestions = await waQuestionResponsesRepository.getTotalQuestionsForList(profileId, phoneNumber, additionQuestions);
-        totalAdditionCorrect = await waQuestionResponsesRepository.getTotalScoreForList(profileId, phoneNumber, additionQuestions);
-        additionPercentage = Math.round((totalAdditionCorrect / totalAdditionQuestions) * 100);
-    }
-
-    // if subtraction is not empty
-    let totalSubtractionQuestions = 0, totalSubtractionCorrect = 0, subtractionPercentage = 0;
-    if (subtractionQuestions.length > 0) {
-        totalSubtractionQuestions = await waQuestionResponsesRepository.getTotalQuestionsForList(profileId, phoneNumber, subtractionQuestions);
-        totalSubtractionCorrect = await waQuestionResponsesRepository.getTotalScoreForList(profileId, phoneNumber, subtractionQuestions);
-        subtractionPercentage = Math.round((totalSubtractionCorrect / totalSubtractionQuestions) * 100);
-    }
-
-    // if patterns is not empty
-    let totalPatternsQuestions = 0, totalPatternsCorrect = 0, patternsPercentage = 0;
-    if (patternsQuestions.length > 0) {
-        totalPatternsQuestions = await waQuestionResponsesRepository.getTotalQuestionsForList(profileId, phoneNumber, patternsQuestions);
-        totalPatternsCorrect = await waQuestionResponsesRepository.getTotalScoreForList(profileId, phoneNumber, patternsQuestions);
-        patternsPercentage = Math.round((totalPatternsCorrect / totalPatternsQuestions) * 100);
-    }
-
-    // if multiplication is not empty
-    let totalMultiplicationQuestions = 0, totalMultiplicationCorrect = 0, multiplicationPercentage = 0;
-    if (multiplicationQuestions.length > 0) {
-        totalMultiplicationQuestions = await waQuestionResponsesRepository.getTotalQuestionsForList(profileId, phoneNumber, multiplicationQuestions);
-        totalMultiplicationCorrect = await waQuestionResponsesRepository.getTotalScoreForList(profileId, phoneNumber, multiplicationQuestions);
-        multiplicationPercentage = Math.round((totalMultiplicationCorrect / totalMultiplicationQuestions) * 100);
-    }
-
-    // if addition and subtraction is not empty
-    let totalAdditionAndSubtractionQuestions = 0, totalAdditionAndSubtractionCorrect = 0, additionAndSubtractionPercentage = 0;
-    if (additionAndSubtractionQuestions.length > 0) {
-        totalAdditionAndSubtractionQuestions = await waQuestionResponsesRepository.getTotalQuestionsForList(profileId, phoneNumber, additionAndSubtractionQuestions);
-        totalAdditionAndSubtractionCorrect = await waQuestionResponsesRepository.getTotalScoreForList(profileId, phoneNumber, additionAndSubtractionQuestions);
-        additionAndSubtractionPercentage = Math.round((totalAdditionAndSubtractionCorrect / totalAdditionAndSubtractionQuestions) * 100);
-    }
-
-    // if fractions is not empty
-    let totalFractionsQuestions = 0, totalFractionsCorrect = 0, fractionsPercentage = 0;
-    if (fractionsQuestions.length > 0) {
-        totalFractionsQuestions = await waQuestionResponsesRepository.getTotalQuestionsForList(profileId, phoneNumber, fractionsQuestions);
-        totalFractionsCorrect = await waQuestionResponsesRepository.getTotalScoreForList(profileId, phoneNumber, fractionsQuestions);
-        fractionsPercentage = Math.round((totalFractionsCorrect / totalFractionsQuestions) * 100);
-    }
-
-
-
-
-    // ENGLISH (Grade 1,2,3,4,5,6)
-    let comprehensionQuestions = [], vocabularyQuestions = [], readingQuestions = [], speakingQuestions1 = [], speakingQuestions2 = [];
+    // ENGLISH lesson fetching
     if (gradeCourseName.toLowerCase().includes("grade 7")) {
-        comprehensionQuestions = await lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["*What Did They Say?*", "What Did They Say?"]); // mcqs
-        vocabularyQuestions = await lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["*End of Week Challenge!* 💪🏽"]); // mcqs
-        readingQuestions = await lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["📖 *Let's Read!*"]); // watchAndSpeak
-        speakingQuestions1 = await lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["*Let's Listen and Speak*"]); // listenAndSpeak
-        speakingQuestions2 = await lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["*Let’s Watch* 🎦 *and Speak* 🗣️", "*Let's Watch* 🎦 *and Speak* 🗣️"]); // watchAndSpeak
-    }
-    else {
-        comprehensionQuestions = await lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["📕 *Do you Remember?*"]); // mcqs
-        vocabularyQuestions = await lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["🔡 *Let’s Learn New Words!*", "🔡 *Let's Learn New Words!*", "🔠 *Let's Learn New Words!*", "🔠 *Let’s Learn New Words!*"]); // mcqs
-        readingQuestions = await lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["📖 *Let's Read!*"]); // watchAndSpeak
-        speakingQuestions1 = await lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["🗣️ *You Can Speak!*", "🗣️ *You Can Speak!* ", "🗣 *Let’s Practise Speaking!*", "🗣 *Let's Practise Speaking!*"]); // listenAndSpeak
-    }
-
-
-
-    // if comprehension is not empty
-    let totalComprehensionQuestions = 0, totalComprehensionCorrect = 0, comprehensionPercentage = 0;
-    if (comprehensionQuestions.length > 0) {
-        totalComprehensionQuestions = await waQuestionResponsesRepository.getTotalQuestionsForList(profileId, phoneNumber, comprehensionQuestions);
-        totalComprehensionCorrect = await waQuestionResponsesRepository.getTotalScoreForList(profileId, phoneNumber, comprehensionQuestions);
-        comprehensionPercentage = Math.round((totalComprehensionCorrect / totalComprehensionQuestions) * 100);
-    }
-
-    // if vocabulary is not empty
-    let totalVocabularyQuestions = 0, totalVocabularyCorrect = 0, vocabularyPercentage = 0;
-    if (vocabularyQuestions.length > 0) {
-        totalVocabularyQuestions = await waQuestionResponsesRepository.getTotalQuestionsForList(profileId, phoneNumber, vocabularyQuestions);
-        totalVocabularyCorrect = await waQuestionResponsesRepository.getTotalScoreForList(profileId, phoneNumber, vocabularyQuestions);
-        vocabularyPercentage = Math.round((totalVocabularyCorrect / totalVocabularyQuestions) * 100);
-    }
-
-    // if speaking1 is not empty
-    let totalSpeaking1Questions = 0, totalSpeaking1Correct = 0, speaking1Percentage = 0;
-    if (speakingQuestions1.length > 0) {
-        totalSpeaking1Questions = await waQuestionResponsesRepository.getTotalQuestionsForList(profileId, phoneNumber, speakingQuestions1);
-        totalSpeaking1Correct = await waQuestionResponsesRepository.getTotalScoreForList(profileId, phoneNumber, speakingQuestions1);
-        speaking1Percentage = Math.round((totalSpeaking1Correct / totalSpeaking1Questions) * 100);
-    }
-
-    // if speaking2 is not empty
-    let speaking2Percentage = null;
-    if (speakingQuestions2.length > 0) {
-        let speaking2Score = await waQuestionResponsesRepository.watchAndSpeakScoreForList(profileId, phoneNumber, speakingQuestions2);
-        speaking2Percentage = Math.round((speaking2Score.score / speaking2Score.total) * 100);
-    }
-    // if speaking2 is not empty merge both into speaking
-    let speakingPercentage = 0;
-    if (speakingQuestions1.length > 0 && speakingQuestions2.length > 0) {
-        speakingPercentage = Math.round((speaking1Percentage + speaking2Percentage) / 2);
+        englishSubjects = ['comprehension', 'vocabulary', 'reading', 'speaking1', 'speaking2'];
+        lessonFetchPromises.push(
+            lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["*What Did They Say?*", "What Did They Say?"]), // comprehension
+            lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["*End of Week Challenge!* 💪🏽"]), // vocabulary
+            lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["📖 *Let's Read!*"]), // reading
+            lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["*Let's Listen and Speak*"]), // speaking1
+            lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["*Let's Watch* 🎦 *and Speak* 🗣️", "*Let's Watch* 🎦 *and Speak* 🗣️"]) // speaking2
+        );
     } else {
-        speakingPercentage = speaking1Percentage;
+        englishSubjects = ['comprehension', 'vocabulary', 'reading', 'speaking1'];
+        lessonFetchPromises.push(
+            lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["📕 *Do you Remember?*"]), // comprehension
+            lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["🔡 *Let's Learn New Words!*", "🔡 *Let's Learn New Words!*", "🔠 *Let's Learn New Words!*", "🔠 *Let's Learn New Words!*"]), // vocabulary
+            lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["📖 *Let's Read!*"]), // reading
+            lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["🗣️ *You Can Speak!*", "🗣️ *You Can Speak!* ", "🗣 *Let's Practise Speaking!*", "🗣 *Let's Practise Speaking!*"]) // speaking1
+        );
     }
 
+    // Execute all lesson ID fetching in parallel
+    const lessonResults = await Promise.all(lessonFetchPromises);
 
+    // Map results to appropriate variables
+    const mathsLessonIds = lessonResults.slice(0, mathsSubjects.length);
+    const englishLessonIds = lessonResults.slice(mathsSubjects.length);
 
-    // if reading is not empty (watchAndSpeakScoreForList)
-    let readingScore = null;
-    if (readingQuestions.length > 0) {
-        readingScore = await waQuestionResponsesRepository.watchAndSpeakScoreForList(profileId, phoneNumber, readingQuestions);
-    }
+    // Prepare all score calculation promises
+    const scorePromises = [];
+    const scoreTypes = [];
 
+    // Add maths score calculations
+    mathsLessonIds.forEach((lessonIds, index) => {
+        if (lessonIds.length > 0) {
+            scorePromises.push(
+                waQuestionResponsesRepository.getTotalQuestionsForList(profileId, phoneNumber, lessonIds),
+                waQuestionResponsesRepository.getTotalScoreForList(profileId, phoneNumber, lessonIds)
+            );
+            scoreTypes.push(`maths_${mathsSubjects[index]}_total`, `maths_${mathsSubjects[index]}_correct`);
+        }
+    });
 
-    // Calculate reading percentage
-    let readingPercentage = 0;
-    if (readingScore && readingScore.total > 0) {
-        readingPercentage = Math.round((readingScore.score / readingScore.total) * 100);
+    // Add english score calculations
+    englishLessonIds.forEach((lessonIds, index) => {
+        if (lessonIds.length > 0) {
+            if (englishSubjects[index] === 'reading') {
+                // Special case for reading (watchAndSpeak)
+                scorePromises.push(waQuestionResponsesRepository.watchAndSpeakScoreForList(profileId, phoneNumber, lessonIds));
+                scoreTypes.push(`english_reading_score`);
+            } else if (englishSubjects[index] === 'speaking2') {
+                // Special case for speaking2 (watchAndSpeak)
+                scorePromises.push(waQuestionResponsesRepository.watchAndSpeakScoreForList(profileId, phoneNumber, lessonIds));
+                scoreTypes.push(`english_speaking2_score`);
+            } else {
+                // Regular MCQ scoring
+                scorePromises.push(
+                    waQuestionResponsesRepository.getTotalQuestionsForList(profileId, phoneNumber, lessonIds),
+                    waQuestionResponsesRepository.getTotalScoreForList(profileId, phoneNumber, lessonIds)
+                );
+                scoreTypes.push(`english_${englishSubjects[index]}_total`, `english_${englishSubjects[index]}_correct`);
+            }
+        }
+    });
+
+    // Execute all score calculations in parallel
+    const scoreResults = await Promise.all(scorePromises);
+
+    // Process results and calculate percentages
+    const scores = {};
+    let resultIndex = 0;
+
+    scoreTypes.forEach(scoreType => {
+        scores[scoreType] = scoreResults[resultIndex++];
+    });
+
+    // Calculate Maths percentages
+    const mathsPercentages = {};
+    mathsSubjects.forEach(subject => {
+        const totalKey = `maths_${subject}_total`;
+        const correctKey = `maths_${subject}_correct`;
+
+        if (scores[totalKey] && scores[totalKey] > 0) {
+            mathsPercentages[subject] = Math.round((scores[correctKey] / scores[totalKey]) * 100);
+        }
+    });
+
+    // Calculate English percentages
+    const englishPercentages = {};
+    englishSubjects.forEach(subject => {
+        if (subject === 'reading') {
+            const scoreKey = `english_reading_score`;
+            if (scores[scoreKey] && scores[scoreKey].total > 0) {
+                englishPercentages.reading = Math.round((scores[scoreKey].score / scores[scoreKey].total) * 100);
+            }
+        } else if (subject === 'speaking2') {
+            const scoreKey = `english_speaking2_score`;
+            if (scores[scoreKey] && scores[scoreKey].total > 0) {
+                englishPercentages.speaking2 = Math.round((scores[scoreKey].score / scores[scoreKey].total) * 100);
+            }
+        } else {
+            const totalKey = `english_${subject}_total`;
+            const correctKey = `english_${subject}_correct`;
+
+            if (scores[totalKey] && scores[totalKey] > 0) {
+                englishPercentages[subject] = Math.round((scores[correctKey] / scores[totalKey]) * 100);
+            }
+        }
+    });
+
+    // Handle combined speaking percentage - check if both have questions (lesson IDs), not just if percentages are truthy
+    const speaking1HasQuestions = englishLessonIds[englishSubjects.indexOf('speaking1')] && englishLessonIds[englishSubjects.indexOf('speaking1')].length > 0;
+    const speaking2HasQuestions = englishSubjects.includes('speaking2') && englishLessonIds[englishSubjects.indexOf('speaking2')] && englishLessonIds[englishSubjects.indexOf('speaking2')].length > 0;
+
+    if (speaking1HasQuestions && speaking2HasQuestions) {
+        englishPercentages.speaking = Math.round((englishPercentages.speaking1 + englishPercentages.speaking2) / 2);
+        delete englishPercentages.speaking1;
+        delete englishPercentages.speaking2;
+    } else if (englishPercentages.speaking1 !== undefined) {
+        englishPercentages.speaking = englishPercentages.speaking1;
+        delete englishPercentages.speaking1;
     }
 
     // Create report card object with non-zero percentages only
@@ -367,20 +361,36 @@ const studentReportCardCalculation = async (profileId, phoneNumber) => {
         English: {}
     };
 
-    // Add non-zero Maths percentages
-    if (placeValuePercentage > 0) reportCard.Maths["Place Value"] = placeValuePercentage;
-    if (additionPercentage > 0) reportCard.Maths["Addition"] = additionPercentage;
-    if (subtractionPercentage > 0) reportCard.Maths["Subtraction"] = subtractionPercentage;
-    if (patternsPercentage > 0) reportCard.Maths["Patterns"] = patternsPercentage;
-    if (multiplicationPercentage > 0) reportCard.Maths["Multiplication"] = multiplicationPercentage;
-    if (additionAndSubtractionPercentage > 0) reportCard.Maths["Addition/Subtraction"] = additionAndSubtractionPercentage;
-    if (fractionsPercentage > 0) reportCard.Maths["Fractions"] = fractionsPercentage;
+    // Add non-zero Maths percentages with proper labels
+    const mathsLabels = {
+        placeValue: "Place Value",
+        addition: "Addition",
+        subtraction: "Subtraction",
+        patterns: "Patterns",
+        multiplication: "Multiplication",
+        additionAndSubtraction: "Addition/Subtraction",
+        fractions: "Fractions"
+    };
 
-    // Add non-zero English percentages
-    if (comprehensionPercentage > 0) reportCard.English["Comprehension"] = comprehensionPercentage;
-    if (vocabularyPercentage > 0) reportCard.English["Vocabulary"] = vocabularyPercentage;
-    if (speakingPercentage > 0) reportCard.English["Speaking"] = speakingPercentage;
-    if (readingPercentage > 0) reportCard.English["Reading"] = readingPercentage;
+    Object.entries(mathsPercentages).forEach(([key, percentage]) => {
+        if (percentage > 0) {
+            reportCard.Maths[mathsLabels[key]] = percentage;
+        }
+    });
+
+    // Add non-zero English percentages with proper labels
+    const englishLabels = {
+        comprehension: "Comprehension",
+        vocabulary: "Vocabulary",
+        speaking: "Speaking",
+        reading: "Reading"
+    };
+
+    Object.entries(englishPercentages).forEach(([key, percentage]) => {
+        if (percentage > 0) {
+            reportCard.English[englishLabels[key]] = percentage;
+        }
+    });
 
     // Calculate totals for each category
     const mathsScores = Object.values(reportCard.Maths);
@@ -398,7 +408,7 @@ const studentReportCardCalculation = async (profileId, phoneNumber) => {
     if (Object.keys(reportCard.Maths).length === 0) delete reportCard.Maths;
     if (Object.keys(reportCard.English).length === 0) delete reportCard.English;
 
-    const userMetadata = await waUsersMetadataRepository.getByProfileId(profileId);
+    // Process user metadata
     const userMetadataData = userMetadata.dataValues;
     let name = userMetadataData.name;
     let grade = userMetadataData.classLevel ? userMetadataData.classLevel.replace(/\D/g, '') : undefined;
@@ -410,6 +420,7 @@ const studentReportCardCalculation = async (profileId, phoneNumber) => {
         section = userMetadataData.cohort;
     }
 
+    // Generate report card image
     let reportCardImage;
     if (grade == 7) {
         reportCardImage = await level4ReportCard({ name, grade, section, ...reportCard });
