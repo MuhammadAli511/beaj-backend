@@ -335,9 +335,9 @@ const studentReportCardCalculation = async (profileId, phoneNumber) => {
     // if speaking2 is not empty
     let speaking2Percentage = null;
     if (speakingQuestions2.length > 0) {
-        speaking2Percentage = await waQuestionResponsesRepository.getTotalScoreForList(profileId, phoneNumber, speakingQuestions2);
+        let speaking2Score = await waQuestionResponsesRepository.watchAndSpeakScoreForList(profileId, phoneNumber, speakingQuestions2);
+        speaking2Percentage = Math.round((speaking2Score.score / speaking2Score.total) * 100);
     }
-
     // if speaking2 is not empty merge both into speaking
     let speakingPercentage = 0;
     if (speakingQuestions1.length > 0 && speakingQuestions2.length > 0) {

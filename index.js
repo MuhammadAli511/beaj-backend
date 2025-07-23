@@ -62,9 +62,16 @@ async function startETLProcess() {
   }
 }
 
-app.listen(port, () => {
+app.listen(port, async () => {
   console.log(`Server running on port ${port}`);
   if (process.env.ENVIRONMENT != 'DEV') {
-    startETLProcess();
+    // startETLProcess();
+    // calculate time to run the function
+    const startTime = new Date();
+    // await studentReportCardCalculation(30575, '+923209794572');
+    await studentReportCardCalculation(30187, '+923335830900');
+    const endTime = new Date();
+    const timeTaken = endTime - startTime;
+    console.log(`Time taken: ${timeTaken} milliseconds`);
   }
 });
