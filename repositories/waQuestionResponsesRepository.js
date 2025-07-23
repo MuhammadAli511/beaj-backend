@@ -191,6 +191,9 @@ const getTotalScoreForList = async (profileId, phoneNumber, lessonIdList) => {
             },
             correct: {
                 [Sequelize.Op.contains]: [true]
+            },
+            activityType: {
+                [Sequelize.Op.in]: ["mcqs", "listenAndSpeak"]
             }
         }
     });
@@ -215,6 +218,9 @@ const getTotalQuestionsForList = async (profileId, phoneNumber, lessonIdList) =>
             phoneNumber: phoneNumber,
             lessonId: {
                 [Sequelize.Op.in]: lessonIdList
+            },
+            activityType: {
+                [Sequelize.Op.in]: ["mcqs", "listenAndSpeak"]
             }
         }
     });

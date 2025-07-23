@@ -267,6 +267,42 @@ const getLessonIdsByCourseAndWeekAndActivityType = async (courseId, weekNumber, 
     return lessons.map(lesson => lesson.LessonId);
 };
 
+const getLessonIdsByCourseAndAliasAndWeekAndDay = async (courseId, alias, weekDayPairs) => {
+    let whereClause = {
+        courseId: courseId,
+        activityAlias: alias
+    };
+
+    if (weekDayPairs && weekDayPairs.length > 0) {
+        // Create OR conditions for each [week, day] pair
+        const orConditions = weekDayPairs.map(pair => ({
+            weekNumber: pair[0],
+            dayNumber: pair[1]
+        }));
+
+        whereClause[Sequelize.Op.or] = orConditions;
+    }
+
+    const lessons = await Lesson.findAll({
+        where: whereClause,
+        attributes: ['LessonId']
+    });
+
+    return lessons.map(lesson => lesson.LessonId);
+};
+
+const getLessonIdsByCourseAndAlias = async (courseId, aliasArray) => {
+    const lessons = await Lesson.findAll({
+        where: {
+            courseId: courseId,
+            activityAlias: {
+                [Sequelize.Op.in]: aliasArray
+            }
+        }
+    });
+    return lessons.map(lesson => lesson.LessonId);
+};
+
 const getActivityByLessonId = async (lessonId) => {
     const lesson = await Lesson.findByPk(lessonId);
     return lesson.activity;
@@ -315,4 +351,6 @@ export default {
     getByLessonIds,
     getByLessonId,
     getLessonsByCourseOrdered,
+    getLessonIdsByCourseAndAliasAndWeekAndDay,
+    getLessonIdsByCourseAndAlias,
 };
