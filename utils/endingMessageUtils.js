@@ -1,6 +1,6 @@
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import lessonRepository from "../repositories/lessonRepository.js";
-import { sendMediaMessage, sendButtonMessage } from "./whatsappUtils.js";
+import { sendMediaMessage, sendButtonMessage, sendMessage } from "./whatsappUtils.js";
 import { createActivityLog } from "./createActivityLogUtils.js";
 import waUsersMetadataRepository from "../repositories/waUsersMetadataRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
@@ -539,12 +539,12 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
             await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start practice?", null);
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start practice", "change user"]);
         } else if (
-            activityAlias.toLowerCase().includes("complete") && dayNumber == 20
+            activityAlias.toLowerCase().includes("speaking activities complete") && dayNumber == 20
         ) {
             const userMetadata = await waUsersMetadataRepository.getByProfileId(profileId);
             const name = userMetadata.dataValues.name;
             let loadingMessage = "Loading your report card!\n\nPlease give us a few seconds..";
-            await sendMediaMessage(userMobileNumber, loadingMessage, 'text');
+            await sendMessage(userMobileNumber, loadingMessage);
             await createActivityLog(userMobileNumber, "text", "outbound", loadingMessage);
             const reportCard = await studentReportCardCalculation(profileId, userMobileNumber);
             await sendMediaMessage(userMobileNumber, reportCard, 'image');
@@ -556,9 +556,9 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
             await sendMediaMessage(userMobileNumber, pdfUrl, 'pdf', "Certificate");
             await createActivityLog(userMobileNumber, "pdf", "outbound", pdfUrl);
             await sleep(6000);
-            const beajSummerCampEnd = "https://beajbloblive.blob.core.windows.net/beajdocuments/beaj_summer_camp_end.mp3";
-            await sendMediaMessage(userMobileNumber, beajSummerCampEnd, 'audio')
-            await createActivityLog(userMobileNumber, "audio", "outbound", beajSummerCampEnd, null);
+            const audioUrl = "https://beajbloblive.blob.core.windows.net/beajdocuments/beaj_summer_camp_end.mp3";
+            await sendMediaMessage(userMobileNumber, audioUrl, 'audio', null);
+            await createActivityLog(userMobileNumber, "audio", "outbound", audioUrl, null);
             await sleep(3000);
             await sendButtonMessage(userMobileNumber, 'Are you ready to start the next activity? 👊', [{ id: 'start_next_activity', title: 'Start Next Activity' }, { id: 'change_user', title: 'Change User' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity", null);
