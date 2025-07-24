@@ -2513,6 +2513,110 @@ const getCumulativeActivityCompletions = async () => {
   }
 };
 
+
+const getUserProgressStats = async (botType, grade, cohort, rollout, courseId1, courseId2) => {
+    try {
+       let level =  ``;
+        if (botType === 'teacher'){
+          level =  ` `;
+        }
+        else{
+            level =  ` AND m."classLevel" = '${grade}' `;
+        }
+        const qry = `
+                    WITH target_group AS (
+            SELECT m.profile_id
+            FROM wa_users_metadata m
+            INNER JOIN wa_profiles p ON m.profile_id = p.profile_id
+            WHERE p.profile_type = '${botType}'
+            AND m.rollout = ${rollout}
+            ${level}
+            AND m.cohort = '${cohort}'
+            ),
+
+            -- First lesson of actual course (used to detect course start)
+            actual_course_start_lesson AS (
+                SELECT "LessonId"
+                FROM "Lesson"
+                WHERE "courseId" = ${courseId1} AND "weekNumber" = 1 AND "dayNumber" = 1 AND "SequenceNumber" = 1
+                LIMIT 1
+            ),
+
+            -- Last lesson of actual course (used to detect course completion)
+            actual_course_last_lesson AS (
+                SELECT "LessonId"
+                FROM "Lesson"
+                WHERE "courseId" = ${courseId1}
+                ORDER BY "weekNumber" DESC, "dayNumber" DESC, "SequenceNumber" DESC
+                LIMIT 1
+            ),
+
+            -- First lesson of assessment course (used to detect assessment start)
+            assessment_course_start_lesson AS (
+                SELECT "LessonId"
+                FROM "Lesson"
+                WHERE "courseId" = ${courseId2} AND "weekNumber" = 1 AND "dayNumber" = 1 AND "SequenceNumber" = 1
+                LIMIT 1
+            ),
+
+            -- Last lesson of assessment course (used to detect assessment completion)
+            assessment_course_last_lesson AS (
+                SELECT "LessonId"
+                FROM "Lesson"
+                WHERE "courseId" = ${courseId2}
+                ORDER BY "weekNumber" DESC, "dayNumber" DESC, "SequenceNumber" DESC
+                LIMIT 1
+            )
+
+            SELECT
+                -- Total users in target group
+                (SELECT COUNT(*) FROM target_group) AS totalUsers,
+
+                -- Started actual course (completed any lesson of course 119)
+                (
+                    SELECT COUNT(DISTINCT c.profile_id)
+                    FROM wa_lessons_completed c
+                    JOIN "Lesson" l ON l."LessonId" = c."lessonId"
+                    JOIN target_group tg ON tg."profile_id" = c."profile_id"
+                    WHERE l."courseId" = ${courseId1}
+                ) AS startedMainCourse,
+
+                -- Completed actual course (completed the last lesson of course 119)
+                (
+                    SELECT COUNT(DISTINCT c.profile_id)
+                    FROM wa_lessons_completed c
+                    JOIN actual_course_last_lesson last_lesson ON last_lesson."LessonId" = c."lessonId"
+                    JOIN target_group tg ON tg."profile_id" = c."profile_id"
+                    WHERE c."completionStatus" = 'Completed'
+                ) AS completedMainCourse,
+
+                -- Started assessment (completed any lesson of course 139)
+                (
+                    SELECT COUNT(DISTINCT c.profile_id)
+                    FROM wa_lessons_completed c
+                    JOIN "Lesson" l ON l."LessonId" = c."lessonId"
+                    JOIN target_group tg ON tg."profile_id" = c."profile_id"
+                    WHERE l."courseId" = ${courseId2}
+                ) AS startedPreAssessment,
+
+                -- Completed assessment (completed the last lesson of course 139)
+                (
+                    SELECT COUNT(DISTINCT c.profile_id)
+                    FROM wa_lessons_completed c
+                    JOIN assessment_course_last_lesson last_lesson ON last_lesson."LessonId" = c."lessonId"
+                    JOIN target_group tg ON tg."profile_id" = c."profile_id"
+                    WHERE c."completionStatus" = 'Completed'
+                ) AS completedPreAssessment;
+        `;
+
+        const res = await sequelize.query(qry);
+        return res[0];
+    } catch (error) {
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
+};
+
 // const getActivityAssessmentScoreDay = async (botType, rollout, level, cohort, targetGroup, courseId) => {
 //   try {
 //     let classLevel = '', targetGrpCondition = '', joinString = '';
@@ -2991,5 +3095,5 @@ const getActivityAssessmentCumulative = async () => {
 
 export default {
     getcohortList, getDataFromPostgres, getSuccessRate, getActivityTotalCount, getCompletedActivity, getLessonCompletion, getLastActivityCompleted, getWeeklyScore, getPhoneNumber_userNudges, getWeeklyScore_pilot, getCount_NotStartedActivity, getLessonCompletions, getActivity_Completions, getActivityNameCount,
-    getLastActivityCompleted_DropOff, getActivtyAssessmentScore,getCumulativeLessonCompletions,getCumulativeActivityCompletions, getActivityAssessmentScoreDay, getActivityAssessmentCumulative
+    getLastActivityCompleted_DropOff, getActivtyAssessmentScore,getCumulativeLessonCompletions,getCumulativeActivityCompletions, getActivityAssessmentScoreDay, getActivityAssessmentCumulative, getUserProgressStats
 };

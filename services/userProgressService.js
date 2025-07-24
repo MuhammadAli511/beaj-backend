@@ -9,7 +9,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const getAllUserProgressService = async (botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3, courseId4, courseId5, module, assessmentView) => {
-  let array_list = [];
+  let array_list = [], userStats = [];
+
+  userStats = await etlRepository.getUserProgressStats(botType, level, cohort, rollout, courseId1, courseId4);
 
   if (module === 'lesson') {
     array_list = await etlRepository.getLessonCompletions(botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3);
@@ -293,11 +295,14 @@ const getAllUserProgressService = async (botType, rollout, level, cohort, target
     array_list = [totalRow, ...arrayT1_List01];
   }
   array_list = array_list.map(obj => Object.values(obj).map(value => value));
+  userStats = userStats.map(obj => Object.values(obj).map(value => value));
   array_list = capitalizeNames(array_list);
 
+  
   // console.log(array_list);
   return {
-    array_list: array_list
+    array_list: array_list,
+    userStats : userStats,
   };
 };
 
