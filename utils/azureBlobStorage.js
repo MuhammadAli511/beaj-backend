@@ -34,6 +34,31 @@ async function uploadImageToBlobStorage(imageBuffer, imageName = 'output-score.j
     }
 }
 
+async function uploadPdfToBlobStorage(pdfBuffer, pdfName = 'output-score.pdf') {
+    try {
+        const containerName = "beajdocuments";
+        const azureBlobConnectionString = process.env.AZURE_BLOB_CONNECTION_STRING;
+        const blobServiceClient = BlobServiceClient.fromConnectionString(azureBlobConnectionString);
+
+        const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
+        const uniqueID = uuidv4();
+        const filename = `${timestamp}-${uniqueID}-${pdfName}`;
+
+        const containerClient = blobServiceClient.getContainerClient(containerName);
+        const blobClient = containerClient.getBlobClient(filename);
+        const blockBlobClient = blobClient.getBlockBlobClient();
+
+        await blockBlobClient.upload(pdfBuffer, pdfBuffer.byteLength, {
+            blobHTTPHeaders: { blobContentType: 'application/pdf' }
+        });
+
+        return `https://${blobServiceClient.accountName}.blob.core.windows.net/${containerName}/${filename}`;
+    } catch (ex) {
+        console.error(`uploadPdfToBlobStorage: ${ex.message}`);
+        throw new Error('Failed to upload PDF to Blob Storage');
+    }
+}
+
 
 async function uploadToBlobStorage(exact_file, originalName = null) {
     try {
@@ -86,4 +111,4 @@ async function deleteFromBlobStorage(fileUrl) {
     }
 }
 
-export default { uploadToBlobStorage, deleteFromBlobStorage, uploadImageToBlobStorage };
+export default { uploadToBlobStorage, deleteFromBlobStorage, uploadImageToBlobStorage, uploadPdfToBlobStorage };

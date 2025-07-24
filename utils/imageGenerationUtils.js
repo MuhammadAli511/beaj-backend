@@ -1618,6 +1618,45 @@ const kidsReportCard = async (details) => {
     return imageUrl;
 }
 
+const generateKidsCertificate = async (name, level) => {
+    const width = 1080;
+    const height = 720;
+
+    // Helper function to draw certificate content
+    const drawCertificate = async (ctx) => {
+        // Load the background image
+        const backgroundImage = await loadImage(`https://beajbloblive.blob.core.windows.net/beajdocuments/level${level}_certificate.jpeg`);
+        ctx.drawImage(backgroundImage, 0, 0, width, height);
+
+        // Write the name in the white box
+        // The white box appears to be centered horizontally and positioned around the middle-upper area
+        ctx.font = 'bold 30px Arial';
+        ctx.fillStyle = '#000000';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Position the text in the center of the white box
+        // Based on the image, the white box appears to be around x: 540, y: 360 (center of canvas)
+        ctx.fillText(name, 540, 459);
+    };
+
+    // Create image version
+    const imageCanvas = createCanvas(width, height);
+    const imageCtx = imageCanvas.getContext('2d');
+    await drawCertificate(imageCtx);
+    const imageBuffer = imageCanvas.toBuffer('image/png');
+    const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(imageBuffer);
+
+    // Create PDF version
+    const pdfCanvas = createCanvas(width, height, 'pdf');
+    const pdfCtx = pdfCanvas.getContext('2d');
+    await drawCertificate(pdfCtx);
+    const pdfBuffer = pdfCanvas.toBuffer('application/pdf');
+    const pdfUrl = await azureBlobStorage.uploadPdfToBlobStorage(pdfBuffer);
+
+    return { imageUrl, pdfUrl };
+}
+
 export {
     weekEndImage,
     createAndUploadScoreImage,
@@ -1627,5 +1666,6 @@ export {
     createAndUploadScoreImageNoAnswer,
     createAndUploadKidsScoreImage,
     level4ReportCard,
-    kidsReportCard
+    kidsReportCard,
+    generateKidsCertificate
 };

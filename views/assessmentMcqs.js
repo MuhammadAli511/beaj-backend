@@ -52,9 +52,9 @@ const assessmentMcqsView = async (profileId, userMobileNumber, currentUserState,
 
                 let mcqMessage = "";
                 if (mcqType == 'Text') {
-                    mcqMessage = "*Q" + await convertNumberToEmoji(firstMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n👉 " + questionText + "\n\n\n";
+                    mcqMessage = "*Question " + await convertNumberToEmoji(firstMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n👉 " + questionText + "\n\n\n";
                 } else {
-                    mcqMessage = "*Q" + await convertNumberToEmoji(firstMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n\n";
+                    mcqMessage = "*Question " + await convertNumberToEmoji(firstMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n\n";
                 }
                 if (startingLesson.dataValues.activityAlias == "🧠 *Self Growth Activities Complete!*" || startingLesson.dataValues.activityAlias == "🧠 *Let's Think - Final Task!*") {
                     mcqMessage += "Choose one option:\n";

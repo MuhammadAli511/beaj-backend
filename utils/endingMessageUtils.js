@@ -5,8 +5,8 @@ import { createActivityLog } from "./createActivityLogUtils.js";
 import waUsersMetadataRepository from "../repositories/waUsersMetadataRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
 import courseRepository from "../repositories/courseRepository.js";
-import { weekEndScoreCalculation } from "./chatbotUtils.js";
-import { weekEndImage } from "./imageGenerationUtils.js";
+import { weekEndScoreCalculation, studentReportCardCalculation } from "./chatbotUtils.js";
+import { weekEndImage, generateKidsCertificate } from "./imageGenerationUtils.js";
 import { sleep, getDaysPerWeek, getTotalLessonsForCourse, getLevelFromCourseName } from "./utils.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import stickerMapping from "../constants/stickerMapping.js";
@@ -255,7 +255,7 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
 
         // Lesson Complete Image
         // Gold Bars
-        if (strippedCourseName != "Level 0") {
+        if (strippedCourseName != "Level 0" && strippedCourseName != "Level 4") {
             const smallCourseName = strippedCourseName.replace(/\s/g, '').toLowerCase();
             const imageTag = "lesson_complete_image_lesson_" + lessonNumber.toString() + "_" + smallCourseName;
             let fileExtnesion = ".jpg";
@@ -268,28 +268,23 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
             await sendMediaMessage(userMobileNumber, lessonCompleteImage, 'image', goldBarCaption);
             await createActivityLog(userMobileNumber, "image", "outbound", lessonCompleteImage, null, goldBarCaption);
             await sleep(5000);
-        }
 
-        // Week end score image
-        if (startingLesson.dataValues.dayNumber == daysPerWeek) {
-            let weekMessage = ""
-            if (strippedCourseName == "Level 4") {
-                weekMessage = "Thank You for staying with us till the end! 👍🏽";
+            // Week end score image
+            if (startingLesson.dataValues.dayNumber == daysPerWeek) {
+                const weekEndScore = await weekEndScoreCalculation(profileId, userMobileNumber, startingLesson.dataValues.weekNumber, currentUserState.currentCourseId);
+                const weekEndScoreImage = await weekEndImage(weekEndScore, startingLesson.dataValues.weekNumber);
+                await sendMediaMessage(userMobileNumber, weekEndScoreImage, 'image');
+                await createActivityLog(userMobileNumber, "image", "outbound", weekEndScoreImage, null);
+                await sleep(5000);
             }
-
-            const weekEndScore = await weekEndScoreCalculation(profileId, userMobileNumber, startingLesson.dataValues.weekNumber, currentUserState.currentCourseId);
-            const weekEndScoreImage = await weekEndImage(weekEndScore, startingLesson.dataValues.weekNumber);
-            await sendMediaMessage(userMobileNumber, weekEndScoreImage, 'image', weekMessage);
-            await createActivityLog(userMobileNumber, "image", "outbound", weekEndScoreImage, null, weekMessage);
-            await sleep(5000);
         }
 
-        if (lessonNumber == totalLessons && strippedCourseName == "Level 4") {
+        if (strippedCourseName == "Level 4") {
             const fizza_level3 = await waConstantsRepository.getByKey("FIZZA_LEVEL_3");
             await sendMediaMessage(userMobileNumber, fizza_level3.dataValues.constantValue, 'video', null, 0, "WA_Constants", fizza_level3.dataValues.id, fizza_level3.dataValues.constantMediaId, "constantMediaId");
             await createActivityLog(userMobileNumber, "video", "outbound", fizza_level3.dataValues.constantValue, null);
             await sleep(12000);
-            let endingMessageLevel3 = "🎓 This brings us to the end of Beaj Education's Self Development Course! \n\nPlease note: \n\n📳 A Beaj team member will call you in the next few weeks for a short phone survey. Please pick up and share your valuable feedback.\n\n🏆 You will recieve your certificate within one week.\n\n🎁 Winners of the Lucky Draw will be announced after May 10th!\n\nPlease do not forget to join our Teacher Leaders community. Links to the community have been shared in your class groups.\n\nWe thank you for your time and dedication and hope your learning journey continues!\n\nBest wishes,\nTeam Beaj"
+            let endingMessageLevel3 = "🎓 This brings us to the end of Beaj Education's Self Development Course! \n\nWe thank you for your time and dedication and hope your learning journey continues!\n\nBest wishes,\nTeam Beaj"
             const level3Ender = await waConstantsRepository.getByKey("LEVEL_3_ENDER");
             let endingImageLevel3 = level3Ender.dataValues.constantValue;
             await sendMediaMessage(userMobileNumber, endingImageLevel3, 'image', endingMessageLevel3, 0, "WA_Constants", level3Ender.dataValues.id, level3Ender.dataValues.constantMediaId, "constantMediaId");
@@ -328,7 +323,7 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
             await sleep(5000);
         }
 
-        if (lessonNumber == totalLessons && strippedCourseName == "Level 4") {
+        if (strippedCourseName == "Level 4") {
             const congratsImage = await waConstantsRepository.getByKey("LEVEL_3_CONGRATULATIONS");
             await sendMediaMessage(userMobileNumber, congratsImage.dataValues.constantValue, 'image', null, 0, "WA_Constants", congratsImage.dataValues.id, congratsImage.dataValues.constantMediaId, "constantMediaId");
             await createActivityLog(userMobileNumber, "image", "outbound", congratsImage.dataValues.constantValue, null);
@@ -458,8 +453,10 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
         await assessmentPuzzleImages(userMobileNumber, activityAlias, courseName);
     }
     const daysPerWeek = await getDaysPerWeek(profileId);
+    const dayNumber = (startingLesson.dataValues.weekNumber - 1) * daysPerWeek + startingLesson.dataValues.dayNumber;
+    const level = getLevelFromCourseName(courseName);
     // Lesson Ending Message
-    if (lessonLast) {
+    if (lessonLast && dayNumber != 20) {
         if (courseName.toLowerCase().includes("assessment")) {
             const comeBackTomorrowAudio = await waConstantsRepository.getByKey("COME_BACK_TOMORROW");
             await sendMediaMessage(userMobileNumber, comeBackTomorrowAudio.dataValues.constantValue, 'audio', null, 0, "WA_Constants", comeBackTomorrowAudio.dataValues.id, comeBackTomorrowAudio.dataValues.constantMediaId, "constantMediaId");
@@ -470,8 +467,6 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next game", "change user"]);
         }
         else {
-            const level = getLevelFromCourseName(courseName);
-            const dayNumber = (startingLesson.dataValues.weekNumber - 1) * daysPerWeek + startingLesson.dataValues.dayNumber;
             const imageUrl = "https://beajbloblive.blob.core.windows.net/beajdocuments/kids_updated_badges_level" + level + "_day_" + dayNumber + "_end.jpg";
             let captionText = "Day " + dayNumber + " Complete! 🥳";
             await sendMediaMessage(userMobileNumber, imageUrl, 'image', captionText);
@@ -488,19 +483,9 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
                 await createActivityLog(userMobileNumber, "image", "outbound", weekEndImage.dataValues.constantValue, null);
                 await sleep(2000);
             }
-            if (dayNumber == 20) {
-                const winImageUrl = "https://beajbloblive.blob.core.windows.net/beajdocuments/win_image_level" + level + ".jpg";
-                await sendMediaMessage(userMobileNumber, winImageUrl, 'image', null);
-                await createActivityLog(userMobileNumber, "image", "outbound", winImageUrl, null);
-                await sleep(2000);
-                await sendButtonMessage(userMobileNumber, 'You have completed the course! 🥳', [{ id: 'start_next_lesson', title: 'Start Next Lesson' }, { id: 'change_user', title: 'Change User' }]);
-                await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Lesson", null);
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next lesson", "change user"]);
-            } else {
-                await sendButtonMessage(userMobileNumber, 'Are you ready to start your next lesson?', [{ id: 'start_next_lesson', title: 'Start Next Lesson' }, { id: 'change_user', title: 'Change User' }]);
-                await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Lesson", null);
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next lesson", "change user"]);
-            }
+            await sendButtonMessage(userMobileNumber, 'Are you ready to start your next lesson?', [{ id: 'start_next_lesson', title: 'Start Next Lesson' }, { id: 'change_user', title: 'Change User' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Lesson", null);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next lesson", "change user"]);
         }
     }
     else {
@@ -553,6 +538,31 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
             await sendButtonMessage(userMobileNumber, 'Are you ready to start practice?', [{ id: 'start_practice', title: 'Start Practice' }, { id: 'change_user', title: 'Change User' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start practice?", null);
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start practice", "change user"]);
+        } else if (
+            activityAlias.toLowerCase().includes("complete") && dayNumber == 20
+        ) {
+            const userMetadata = await waUsersMetadataRepository.getByProfileId(profileId);
+            const name = userMetadata.dataValues.name;
+            let loadingMessage = "Loading your report card!\n\nPlease give us a few seconds..";
+            await sendMediaMessage(userMobileNumber, loadingMessage, 'text');
+            await createActivityLog(userMobileNumber, "text", "outbound", loadingMessage);
+            const reportCard = await studentReportCardCalculation(profileId, userMobileNumber);
+            await sendMediaMessage(userMobileNumber, reportCard, 'image');
+            await createActivityLog(userMobileNumber, "image", "outbound", reportCard);
+            await sleep(2000);
+            const { imageUrl, pdfUrl } = await generateKidsCertificate(name, level);
+            await sendMediaMessage(userMobileNumber, imageUrl, 'image');
+            await createActivityLog(userMobileNumber, "image", "outbound", imageUrl);
+            await sendMediaMessage(userMobileNumber, pdfUrl, 'pdf', "Certificate");
+            await createActivityLog(userMobileNumber, "pdf", "outbound", pdfUrl);
+            await sleep(6000);
+            const beajSummerCampEnd = "https://beajbloblive.blob.core.windows.net/beajdocuments/beaj_summer_camp_end.mp3";
+            await sendMediaMessage(userMobileNumber, beajSummerCampEnd, 'audio')
+            await createActivityLog(userMobileNumber, "audio", "outbound", beajSummerCampEnd, null);
+            await sleep(3000);
+            await sendButtonMessage(userMobileNumber, 'Are you ready to start the next activity? 👊', [{ id: 'start_next_activity', title: 'Start Next Activity' }, { id: 'change_user', title: 'Change User' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity", null);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next activity", "change user"]);
         } else {
             await sendButtonMessage(userMobileNumber, 'Are you ready to start the next activity? 👊', [{ id: 'start_next_activity', title: 'Start Next Activity' }, { id: 'change_user', title: 'Change User' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity", null);

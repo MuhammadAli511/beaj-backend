@@ -1265,9 +1265,10 @@ const webhookService = async (body, res) => {
                                             return;
                                         }
                                     } else {
-                                        await sendButtonMessage(userMobileNumber, 'You have completed all the lessons in this course. Click the button below to proceed', [{ id: 'start_next_level', title: 'Start Next Level' }, { id: 'change_user', title: 'Change User' }]);
-                                        await createActivityLog(userMobileNumber, "template", "outbound", "You have completed all the lessons in this course. Click the button below to proceed", null);
-                                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next level", "change user"]);
+                                        let finalKidsMessage = "This is the end of your Beaj Summer Camp!\n\nWe thank you for becoming a part of the Beaj family! 🤩";
+                                        await sendButtonMessage(userMobileNumber, finalKidsMessage, [{ id: 'change_user', title: 'Change User' }]);
+                                        await createActivityLog(userMobileNumber, "template", "outbound", finalKidsMessage, null);
+                                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["change user"]);
                                         return;
                                     }
                                 }

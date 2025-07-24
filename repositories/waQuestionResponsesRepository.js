@@ -39,6 +39,15 @@ const getById = async (id) => {
     return await WA_QuestionResponses.findByPk(id);
 };
 
+const deleteRecord = async (profileId, phoneNumber, lessonId, questionId) => {
+    return await WA_QuestionResponses.update({
+        submittedUserAudio: null,
+        submittedFeedbackAudio: null
+    }, {
+        where: { profile_id: profileId, phoneNumber: phoneNumber, lessonId: lessonId, questionId: questionId }
+    });
+};
+
 const updateReplace = async (
     profileId,
     phoneNumber,
@@ -620,6 +629,7 @@ export default {
     getById,
     update,
     updateReplace,
+    deleteRecord,
     deleteById,
     getTotalScore,
     getTotalQuestions,

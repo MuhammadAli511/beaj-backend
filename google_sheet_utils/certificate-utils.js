@@ -152,7 +152,6 @@ const generateCertificate = async (name) => {
     ctx.fillText(name.toUpperCase(), nameX, nameY);
     const buffer = canvas.toBuffer('image/jpeg');
     const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer, name);
-    console.log(`Certificate generated successfully for ${name}`);
     return imageUrl;
   } catch (error) {
     console.error("Error generating certificate:", error);
