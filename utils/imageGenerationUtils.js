@@ -1350,19 +1350,19 @@ const level4ReportCard = async (details) => {
     ctx.fillText('Activities Completed', rightCardX + 175, lifeSkillsY + 55);
 
     // Topics
-    ctx.font = '14px Mont';
+    ctx.font = '14px Arial';
     ctx.fillStyle = '#000000';
     ctx.textAlign = 'left';
 
     // Green checkmarks
     ctx.fillStyle = '#00d084';
-    ctx.fillText('✓', rightCardX + 15, lifeSkillsY + 85);
-    ctx.fillText('✓', rightCardX + 15, lifeSkillsY + 105);
-    ctx.fillText('✓', rightCardX + 15, lifeSkillsY + 125);
-    ctx.fillText('✓', rightCardX + 15, lifeSkillsY + 145);
-    ctx.fillText('✓', rightCardX + 15, lifeSkillsY + 165);
-    ctx.fillText('✓', rightCardX + 15, lifeSkillsY + 185);
-    ctx.fillText('✓', rightCardX + 15, lifeSkillsY + 205);
+    ctx.fillText('-', rightCardX + 15, lifeSkillsY + 85);
+    ctx.fillText('-', rightCardX + 15, lifeSkillsY + 105);
+    ctx.fillText('-', rightCardX + 15, lifeSkillsY + 125);
+    ctx.fillText('-', rightCardX + 15, lifeSkillsY + 145);
+    ctx.fillText('-', rightCardX + 15, lifeSkillsY + 165);
+    ctx.fillText('-', rightCardX + 15, lifeSkillsY + 185);
+    ctx.fillText('-', rightCardX + 15, lifeSkillsY + 205);
 
     // Topic text
     ctx.fillStyle = '#000000';
@@ -1544,18 +1544,18 @@ const kidsReportCard = async (details) => {
     ctx.fillText('Activities Completed', 225, activitiesY + 55);
 
     // Topics
-    ctx.font = '14px Mont';
+    ctx.font = '14px Arial';
     ctx.fillStyle = '#000000';
     ctx.textAlign = 'left';
 
     // Green checkmarks
     ctx.fillStyle = '#00d084';
-    ctx.fillText('✓', 65, activitiesY + 85);
-    ctx.fillText('✓', 65, activitiesY + 105);
-    ctx.fillText('✓', 65, activitiesY + 125);
-    ctx.fillText('✓', 65, activitiesY + 145);
-    ctx.fillText('✓', 65, activitiesY + 165);
-    ctx.fillText('✓', 65, activitiesY + 185);
+    ctx.fillText('-', 65, activitiesY + 85);
+    ctx.fillText('-', 65, activitiesY + 105);
+    ctx.fillText('-', 65, activitiesY + 125);
+    ctx.fillText('-', 65, activitiesY + 145);
+    ctx.fillText('-', 65, activitiesY + 165);
+    ctx.fillText('-', 65, activitiesY + 185);
 
     // Topic text
     ctx.fillStyle = '#000000';
@@ -1588,19 +1588,19 @@ const kidsReportCard = async (details) => {
     ctx.fillText('Activities Completed', 479, activitiesY + 55);
 
     // Topics
-    ctx.font = '14px Mont';
+    ctx.font = '14px Arial';
     ctx.fillStyle = '#000000';
     ctx.textAlign = 'left';
 
     // Green checkmarks
     ctx.fillStyle = '#00d084';
-    ctx.fillText('✓', 319, activitiesY + 85);
-    ctx.fillText('✓', 319, activitiesY + 105);
-    ctx.fillText('✓', 319, activitiesY + 125);
-    ctx.fillText('✓', 319, activitiesY + 145);
-    ctx.fillText('✓', 319, activitiesY + 165);
-    ctx.fillText('✓', 319, activitiesY + 185);
-    ctx.fillText('✓', 319, activitiesY + 205);
+    ctx.fillText('-', 319, activitiesY + 85);
+    ctx.fillText('-', 319, activitiesY + 105);
+    ctx.fillText('-', 319, activitiesY + 125);
+    ctx.fillText('-', 319, activitiesY + 145);
+    ctx.fillText('-', 319, activitiesY + 165);
+    ctx.fillText('-', 319, activitiesY + 185);
+    ctx.fillText('-', 319, activitiesY + 205);
 
     // Topic text
     ctx.fillStyle = '#000000';
