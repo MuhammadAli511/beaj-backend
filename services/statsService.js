@@ -1546,7 +1546,7 @@ const studentBarAnalyticsService = async (courseIds, grades, cohorts, graphType,
 
         if (graphType === 'graph1') {
 
-            qry1 = `WITH "TargetGroup" AS (
+                            qry1 = `WITH "TargetGroup" AS (
                     SELECT 
                         m."profile_id",
                         m."phoneNumber",
@@ -1563,10 +1563,10 @@ const studentBarAnalyticsService = async (courseIds, grades, cohorts, graphType,
                     INNER JOIN 
                         "wa_profiles" p ON m."profile_id" = p."profile_id"
                     WHERE 
-                        p."profile_type" = 'student' and
-                            m."rollout" = 2 and
-                            m."classLevel" = '${grade}' 
-                            ${cohort}
+                        p."profile_type" = 'student' AND
+                        m."rollout" = 2 AND
+                        m."classLevel" = '${grade}' 
+                        ${cohort}
                 ),
                 "user_progress" AS (
                     SELECT 
@@ -1619,91 +1619,131 @@ const studentBarAnalyticsService = async (courseIds, grades, cohorts, graphType,
                     WHERE 
                         "currentWeek" IS NOT NULL 
                         AND "currentDay" IS NOT NULL
+                ),
+                "activity_status" AS (
+                    SELECT 
+                        profile_id,
+                        MAX(timestamp) AS last_message_timestamp
+                    FROM 
+                        wa_user_activity_logs
+                    GROUP BY profile_id
                 )
                 SELECT 
-                    "profile_id",
-                    "phoneNumber",
-                    "name",
-                    "cohort",
-                    "classLevel",
-                    "city",
-                    "schoolName",
-                    "customerSource",
-                    "customerChannel",
-                    "rollout"
+                    gdc."profile_id",
+                    gdc."phoneNumber",
+                    gdc."name",
+                    gdc."cohort",
+                    gdc."classLevel",
+                    gdc."city",
+                    gdc."schoolName",
+                    gdc."customerSource",
+                    gdc."customerChannel",
+                    gdc."rollout",
+                    -- Use current_date - last activity to calculate diff
+                    CASE 
+                        WHEN a.last_message_timestamp IS NOT NULL 
+                            AND DATE_PART('day', CURRENT_DATE - a.last_message_timestamp) < 3 
+                        THEN 'Active'
+                        ELSE 'Inactive'
+                    END AS "status"
                 FROM 
-                    "get_dayCount"
+                    "get_dayCount" gdc
+                LEFT JOIN 
+                    "activity_status" a ON gdc.profile_id = a.profile_id
                 WHERE 
-                    "day" = ${parameterId};`;
-        }
+                    gdc."day" = ${parameterId};
+                `;
+                        }
 
 
         if (graphType === 'graph2') {
             
-            qry1 = `WITH TargetGroup AS (
-                SELECT 
-                    m."profile_id",
-                    m."phoneNumber",
-                    m."name",
-                    m."cohort",
-                    m."classLevel",
-                    m."city",
-                    m."schoolName",
-                    m."customerSource",
-                    m."customerChannel",
-                    m."rollout"
-                FROM 
-                    "wa_users_metadata" m
-                    INNER JOIN "wa_profiles" p ON m."profile_id" = p."profile_id"
-                WHERE 
-                    p."profile_type" = 'student' AND
-                    m."rollout" = 2 AND
-                   m."classLevel" = '${grade}' 
-                    ${cohort}
-            ),
-            LessonWithMaxTimestamp AS (
+            qry1 = `WITH 
+                TargetGroup AS (
+                    SELECT 
+                        m."profile_id",
+                        m."phoneNumber",
+                        m."name",
+                        m."cohort",
+                        m."classLevel",
+                        m."city",
+                        m."schoolName",
+                        m."customerSource",
+                        m."customerChannel",
+                        m."rollout"
+                    FROM 
+                        "wa_users_metadata" m
+                    INNER JOIN 
+                        "wa_profiles" p ON m."profile_id" = p."profile_id"
+                    WHERE 
+                        p."profile_type" = 'student' AND
+                        m."rollout" = 2 AND
+                        m."classLevel" = '${grade}' 
+                        ${cohort}
+                ),
+                
+                activity_status AS (
+                    SELECT 
+                        profile_id,
+                        MAX(timestamp) AS last_message_timestamp
+                    FROM 
+                        wa_user_activity_logs
+                    GROUP BY profile_id
+                ),
+
+                LessonWithMaxTimestamp AS (
+                    SELECT 
+                        l."profile_id",
+                        tg."phoneNumber",
+                        tg."name",
+                        tg."cohort",
+                        tg."classLevel",
+                        tg."city",
+                        tg."schoolName",
+                        tg."customerSource",
+                        tg."customerChannel",
+                        tg."rollout",
+                        l."lessonId",
+                        l."endTime",
+                        ROW_NUMBER() OVER (
+                            PARTITION BY l."profile_id" 
+                            ORDER BY l."endTime" DESC
+                        ) AS row_num
+                    FROM 
+                        "wa_lessons_completed" l
+                    INNER JOIN 
+                        TargetGroup tg ON l."profile_id" = tg."profile_id"
+                    WHERE 
+                        l."completionStatus" = 'Completed' AND 
+                        l."courseId" = ${courseId}
+                )
+
                 SELECT 
                     l."profile_id",
-                    tg."phoneNumber",
-                    tg."name",
-                    tg."cohort",
-                    tg."classLevel",
-                    tg."city",
-                    tg."schoolName",
-                    tg."customerSource",
-                    tg."customerChannel",
-                    tg."rollout",
+                    l."phoneNumber",
+                    l."name",
+                    l."cohort",
+                    l."classLevel",
+                    l."city",
+                    l."schoolName",
+                    l."customerSource",
+                    l."customerChannel",
+                    l."rollout",
                     l."lessonId",
-                    l."endTime",
-                    ROW_NUMBER() OVER (
-                        PARTITION BY l."profile_id" 
-                        ORDER BY l."endTime" DESC
-                    ) AS row_num
+                    CASE 
+                        WHEN a.last_message_timestamp IS NOT NULL 
+                            AND DATE_PART('day', CURRENT_DATE - a.last_message_timestamp) < 3 
+                        THEN 'Active'
+                        ELSE 'Inactive'
+                    END AS status
                 FROM 
-                    "wa_lessons_completed" l
-                INNER JOIN 
-                    TargetGroup tg ON l."profile_id" = tg."profile_id"
+                    LessonWithMaxTimestamp l
+                LEFT JOIN 
+                    activity_status a ON l."profile_id" = a."profile_id"
                 WHERE 
-                    l."completionStatus" = 'Completed' AND 
-                    l."courseId" = ${courseId}
-            )
-            SELECT 
-                l."profile_id",
-                l."phoneNumber",
-                l."name",
-                l."cohort",
-                l."classLevel",
-                l."city",
-                l."schoolName",
-                l."customerSource",
-                l."customerChannel",
-                l."rollout",
-                l."lessonId"
-            FROM 
-                LessonWithMaxTimestamp l
-            WHERE 
-                l."lessonId" = ${parameterId} AND 
-                l.row_num = 1;`;
+                    l."lessonId" = ${parameterId} AND 
+                    l.row_num = 1;`;
+
         }
 
         // Execute all queries concurrently
