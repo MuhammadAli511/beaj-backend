@@ -1246,7 +1246,7 @@ const level4ReportCard = async (details) => {
     ctx.fillText('Grade', 70, infoStartY + 75);
     ctx.font = 'bold 18px Mont';
     ctx.fillStyle = '#000000';
-    ctx.fillText(`Grade ${grade}`, 70, infoStartY + 93);
+    ctx.fillText("Youth Camp", 70, infoStartY + 93);
 
     drawRoundedRect(304, infoStartY + 55, 240, 45, 12, '#FFFFFF', '#e0e0e0', 2);
     ctx.font = '14px Mont';
