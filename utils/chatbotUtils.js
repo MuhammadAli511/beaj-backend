@@ -427,7 +427,6 @@ const studentReportCardCalculation = async (profileId, phoneNumber) => {
     } else {
         reportCardImage = await kidsReportCard({ name, grade, section, ...reportCard });
     }
-    console.log("Report Card Image:", reportCardImage);
     return reportCardImage;
 };
 
