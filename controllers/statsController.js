@@ -10,16 +10,6 @@ const totalContentStatsController = async (req, res, next) => {
     }
 };
 
-const dashboardCardsFunnelController = async (req, res, next) => {
-    try {
-        const dashboardCardsFunnel = await service.dashboardCardsFunnelService();
-        res.status(200).send(dashboardCardsFunnel);
-    } catch (error) {
-        error.fileName = 'statsController.js';
-        next(error);
-    }
-};
-
 const lastActiveUsersController = async (req, res, next) => {
     try {
         const { days, cohorts } = req.body;
@@ -99,7 +89,6 @@ const clearingCacheController = async (req, res, next) => {
 
 export default {
     totalContentStatsController,
-    dashboardCardsFunnelController,
     lastActiveUsersController,
     studentUserJourneyStatsController,
     studentTrialUserJourneyStatsController,

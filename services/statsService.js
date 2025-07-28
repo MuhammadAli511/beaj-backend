@@ -3,7 +3,6 @@ import courseCategoryRepository from '../repositories/courseCategoryRepository.j
 import lessonRepository from '../repositories/lessonRepository.js';
 import waUsersMetadataRepository from '../repositories/waUsersMetadataRepository.js';
 import waUserActivityLogsRepository from '../repositories/waUserActivityLogsRepository.js';
-import waPurchasedCoursesRepository from '../repositories/waPurchasedCoursesRepository.js';
 import sequelize from '../config/sequelize.js';
 
 const totalContentStatsService = async () => {
@@ -22,62 +21,6 @@ const totalContentStatsService = async () => {
         throw error;
     }
 };
-
-const dashboardCardsFunnelService = async () => {
-    try {
-        const linkClickedCount = await waUsersMetadataRepository.getTotalUsersCount();
-        const freeDemoStartedCount = await waUsersMetadataRepository.getFreeDemoStartedUsersCount();
-        const freeDemoEndedCount = await waUsersMetadataRepository.getFreeDemoEndedUsersCount();
-        const registeredUsersCount = await waUsersMetadataRepository.getRegisteredUsersCount();
-        const selectedUsersCount = await waUsersMetadataRepository.getSelectedUsersCount();
-        const purchasedUsersCount = await waPurchasedCoursesRepository.getPurchasedCount();
-
-        // The above is a 6 step funnel. Calculate +/- % for each step
-        const linkClickedPercentage = 0;
-        const freeDemoStartedPercentage = ((freeDemoStartedCount / linkClickedCount) * 100).toFixed(2);
-        const freeDemoEndedPercentage = ((freeDemoEndedCount / freeDemoStartedCount) * 100).toFixed(2);
-        const registeredUsersPercentage = ((registeredUsersCount / freeDemoEndedCount) * 100).toFixed(2);
-        const selectedUsersPercentage = ((selectedUsersCount / registeredUsersCount) * 100).toFixed(2);
-        const purchasedUsersPercentage = ((purchasedUsersCount / selectedUsersCount) * 100).toFixed(2);
-        const freeDemoStartedDropPercentage = (100 - freeDemoStartedPercentage).toFixed(2);
-        const freeDemoEndedDropPercentage = (100 - freeDemoEndedPercentage).toFixed(2);
-        const registeredUsersDropPercentage = (100 - registeredUsersPercentage).toFixed(2);
-        const selectedUsersDropPercentage = (100 - selectedUsersPercentage).toFixed(2);
-        const purchasedUsersDropPercentage = (100 - purchasedUsersPercentage).toFixed(2);
-
-        return {
-            "linkClicked": {
-                "count": linkClickedCount,
-                "percentage": linkClickedPercentage
-            },
-            "freeDemoStarted": {
-                "count": freeDemoStartedCount,
-                "percentage": freeDemoStartedDropPercentage,
-            },
-            "freeDemoEnded": {
-                "count": freeDemoEndedCount,
-                "percentage": freeDemoEndedDropPercentage
-            },
-            "registeredUsers": {
-                "count": registeredUsersCount,
-                "percentage": registeredUsersDropPercentage
-            },
-            "selectedUsers": {
-                "count": selectedUsersCount,
-                "percentage": selectedUsersDropPercentage
-            },
-            "purchasedUsers": {
-                "count": purchasedUsersCount,
-                "percentage": purchasedUsersDropPercentage
-            }
-        };
-
-    } catch (error) {
-        error.fileName = 'statsService.js';
-        throw error;
-    }
-};
-
 
 const lastActiveUsersService = async (days, cohorts) => {
     try {
@@ -327,329 +270,191 @@ const studentTrialUserJourneyStatsService = async (date) => {
 
 const studentCourseStatsService = async () => {
     try {
-        // Automated Progress Report SQL Script
-        // Generates merged metrics for Main Course, Pre-Assessment, and Post-Assessment
-        // Filters results to show only counts >= 10 users
-        const courseStatsQuery = `
-            WITH
-                -- 0. Define the filtered user group
-                filtered_users AS (
-                    SELECT
-                        u.profile_id
-                    FROM wa_users_metadata u
-                    WHERE u.rollout = 2
-                      AND u."classLevel" IN ('grade 1', 'grade 2', 'grade 3', 'grade 4', 'grade 5', 'grade 6', 'grade 7')
-                      AND u.cohort IS NOT NULL
-                      AND u.cohort NOT IN ('Cohort 0')
-                ),
-
-                -- 1. Define course groupings
-                course_groups AS (
-                SELECT course_id, 'Main Course' AS group_name
-                    FROM (VALUES (119),(120),(121),(122),(123),(124),(143)) AS t(course_id)
-                UNION ALL
-                SELECT course_id, 'Pre-Assessment' AS group_name
-                    FROM (VALUES (139),(140),(141),(142)) AS t(course_id)
-                UNION ALL
-                SELECT course_id, 'Post-Assessment' AS group_name
-                    FROM (VALUES (144),(145),(146),(147)) AS t(course_id)
-                ),
-
-                -- 2. Find the first and last sequence for each course/week/day
-                start_lessons AS (
-                SELECT
-                    l."courseId",
-                    l."weekNumber",
-                    l."dayNumber",
-                    MIN(l."SequenceNumber") AS min_sequence
-                FROM "Lesson" l
-                JOIN course_groups cg ON l."courseId" = cg.course_id
-                WHERE l."weekNumber" IS NOT NULL AND l."dayNumber" IS NOT NULL
-                GROUP BY l."courseId", l."weekNumber", l."dayNumber"
-                ),
-                end_lessons AS (
-                SELECT
-                    l."courseId",
-                    l."weekNumber",
-                    l."dayNumber",
-                    MAX(l."SequenceNumber") AS max_sequence
-                FROM "Lesson" l
-                JOIN course_groups cg ON l."courseId" = cg.course_id
-                WHERE l."weekNumber" IS NOT NULL AND l."dayNumber" IS NOT NULL
-                GROUP BY l."courseId", l."weekNumber", l."dayNumber"
-                ),
-
-                -- 3. Map those sequences back to lesson IDs
-                start_lesson_ids AS (
-                SELECT
-                    sl."courseId",
-                    sl."weekNumber",
-                    sl."dayNumber",
-                    l."LessonId" AS start_lesson_id
-                FROM start_lessons sl
-                JOIN "Lesson" l ON l."courseId" = sl."courseId"
-                                AND l."weekNumber" = sl."weekNumber"
-                                AND l."dayNumber" = sl."dayNumber"
-                                AND l."SequenceNumber" = sl.min_sequence
-                ),
-                end_lesson_ids AS (
-                SELECT
-                    el."courseId",
-                    el."weekNumber",
-                    el."dayNumber",
-                    l."LessonId" AS end_lesson_id
-                FROM end_lessons el
-                JOIN "Lesson" l ON l."courseId" = el."courseId"
-                                AND l."weekNumber" = el."weekNumber"
-                                AND l."dayNumber" = el."dayNumber"
-                                AND l."SequenceNumber" = el.max_sequence
-                ),
-
-                -- 4. Combine into one mapping of start/end per group/week/day
-                lesson_mapping AS (
-                SELECT
-                    cg.group_name,
-                    sl."courseId",
-                    sl."weekNumber",
-                    sl."dayNumber",
-                    sl.start_lesson_id,
-                    el.end_lesson_id
-                FROM start_lesson_ids sl
-                JOIN end_lesson_ids el ON sl."courseId" = el."courseId"
-                                        AND sl."weekNumber" = el."weekNumber"
-                                        AND sl."dayNumber" = el."dayNumber"
-                JOIN course_groups cg ON sl."courseId" = cg.course_id
-                ),
-
-                -- 5. Add Level 4 Day 2 to Day 3 for assessments
-                adjusted_lesson_mapping AS (
-                SELECT * FROM lesson_mapping
-                UNION ALL
-                SELECT
-                    group_name,
-                    "courseId",
-                    "weekNumber",
-                    3 AS dayNumber,
-                    start_lesson_id,
-                    end_lesson_id
-                FROM lesson_mapping
-                WHERE group_name IN ('Pre-Assessment','Post-Assessment')
-                    AND "dayNumber" = 2
-                    AND "courseId" IN (142,147)
-                ),
-
-                -- 6. Collect all lesson IDs for each group/week/day, including adjustments
-                day_lessons AS (
-                -- a) standard lessons
-                SELECT
-                    cg.group_name,
-                    l."weekNumber",
-                    l."dayNumber",
-                    ARRAY_AGG(l."LessonId") AS all_lesson_ids
-                FROM "Lesson" l
-                JOIN course_groups cg ON l."courseId" = cg.course_id
-                WHERE l."weekNumber" IS NOT NULL AND l."dayNumber" IS NOT NULL
-                GROUP BY cg.group_name, l."weekNumber", l."dayNumber"
-
-                UNION ALL
-
-                -- b) Pre-Assessment Level 4 Day 2 treated as Day 3
-                SELECT
-                    cg.group_name,
-                    l."weekNumber",
-                    3 AS dayNumber,
-                    ARRAY_AGG(l."LessonId") AS all_lesson_ids
-                FROM "Lesson" l
-                JOIN course_groups cg ON l."courseId" = cg.course_id
-                WHERE cg.group_name = 'Pre-Assessment' AND l."courseId" = 142 AND l."dayNumber" = 2
-                GROUP BY cg.group_name, l."weekNumber"
-
-                UNION ALL
-
-                -- c) Post-Assessment Level 4 Day 2 treated as Day 3
-                SELECT
-                    cg.group_name,
-                    l."weekNumber",
-                    3 AS dayNumber,
-                    ARRAY_AGG(l."LessonId") AS all_lesson_ids
-                FROM "Lesson" l
-                JOIN course_groups cg ON l."courseId" = cg.course_id
-                WHERE cg.group_name = 'Post-Assessment' AND l."courseId" = 147 AND l."dayNumber" = 2
-                GROUP BY cg.group_name, l."weekNumber"
-                ),
-
-                -- 7. Aggregate all lesson data
-                aggregated_metrics AS (
-                SELECT
-                    alm.group_name,
-                    alm."weekNumber",
-                    alm."dayNumber",
-                    ARRAY_AGG(DISTINCT alm.start_lesson_id) AS start_lesson_ids,
-                    ARRAY_AGG(DISTINCT alm.end_lesson_id) AS end_lesson_ids,
-                    dl.all_lesson_ids
-                FROM adjusted_lesson_mapping alm
-                JOIN day_lessons dl ON dl.group_name = alm.group_name
-                                    AND dl."weekNumber" = alm."weekNumber"
-                                    AND dl."dayNumber" = alm."dayNumber"
-                GROUP BY alm.group_name, alm."weekNumber", alm."dayNumber", dl.all_lesson_ids
-                ),
-
-                -- 8. Get all relevant lesson completions for our filtered users
-                user_completions AS (
-                    SELECT
-                        lc.profile_id,
-                        lc."lessonId",
-                        lc."completionStatus"
-                    FROM wa_lessons_completed lc
-                    JOIN filtered_users fu ON lc.profile_id = fu.profile_id
-                ),
-
-                -- 9. A calendar of all possible days for each group
-                day_calendar AS (
-                    SELECT DISTINCT
-                        group_name,
-                        "weekNumber",
-                        "dayNumber"
-                    FROM aggregated_metrics
-                ),
-
-                -- 10. Cross join users with the calendar to create a full grid
-                user_day_grid AS (
-                    SELECT
-                        fu.profile_id,
-                        dc.group_name,
-                        dc."weekNumber",
-                        dc."dayNumber"
-                    FROM filtered_users fu
-                    CROSS JOIN day_calendar dc
-                ),
-
-                -- 11. Join the grid with actual completions to get raw status
-                user_daily_status AS (
-                    SELECT
-                        udg.profile_id,
-                        udg.group_name,
-                        udg."weekNumber",
-                        udg."dayNumber",
-                        MAX(CASE WHEN uc."lessonId" = ANY(am.start_lesson_ids) THEN 1 ELSE 0 END) AS has_started_day,
-                        MAX(CASE WHEN uc."lessonId" = ANY(am.end_lesson_ids) AND uc."completionStatus" = 'Completed' THEN 1 ELSE 0 END) AS has_completed_day
-                    FROM user_day_grid udg
-                    JOIN aggregated_metrics am
-                        ON udg.group_name = am.group_name
-                        AND udg."weekNumber" = am."weekNumber"
-                        AND udg."dayNumber" = am."dayNumber"
-                    LEFT JOIN user_completions uc
-                        ON udg.profile_id = uc.profile_id
-                        AND uc."lessonId" = ANY(am.all_lesson_ids)
-                    GROUP BY
-                        udg.profile_id,
-                        udg.group_name,
-                        udg."weekNumber",
-                        udg."dayNumber"
-                ),
-
-                -- 12. Apply the funnel logic using LAG to enforce sequential progress
-                sequential_progress AS (
-                    SELECT
-                        profile_id,
-                        group_name,
-                        "weekNumber",
-                        "dayNumber",
-                        has_started_day,
-                        (has_started_day * has_completed_day) as is_truly_completed
-                    FROM user_daily_status
-                ),
-
-                funnel AS (
-                    SELECT
-                        profile_id,
-                        group_name,
-                        "weekNumber",
-                        "dayNumber",
-                        has_started_day,
-                        is_truly_completed,
-                        COALESCE(MIN(is_truly_completed) OVER (
-                            PARTITION BY profile_id, group_name
-                            ORDER BY "weekNumber", "dayNumber"
-                            ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
-                        ), 1) as prerequisite_met
-                    FROM sequential_progress
-                ),
-
-                -- 13. Aggregate the final counts based on valid sequential progress
-                final_counts AS (
-                    SELECT
-                        group_name,
-                        "weekNumber",
-                        "dayNumber",
-                        COUNT(profile_id) FILTER (WHERE has_started_day = 1 AND prerequisite_met = 1) AS started_count,
-                        COUNT(profile_id) FILTER (WHERE is_truly_completed = 1 AND prerequisite_met = 1) AS completed_count
-                    FROM funnel
-                    GROUP BY group_name, "weekNumber", "dayNumber"
-                )
-
-                -- 14. Final report
-                SELECT description, count
-                FROM (
-                -- Total Users
-                SELECT 'Total Users' AS description, COUNT(*) AS count, 1 AS sort_order
-                FROM filtered_users
-
-                UNION ALL
-
-                -- Users with one message
-                SELECT 'Started Users (One Message)' AS description, COUNT(*) AS count, 2 AS sort_order
-                FROM filtered_users fu
-                JOIN wa_user_progress p ON fu.profile_id = p.profile_id
-                WHERE (p."acceptableMessages" IS NULL OR p."acceptableMessages" <> ARRAY['start now!'])
-
-                UNION ALL
-
-                -- Pre-Assessment: Started
-                SELECT
-                    'Pre-Assessment Started Week ' || fc."weekNumber" || ' Day ' || fc."dayNumber" AS description,
-                    fc.started_count AS count,
-                    (3 + (fc."weekNumber" - 1)*10 + (fc."dayNumber" - 1)*2) AS sort_order
-                FROM final_counts fc
-                WHERE fc.group_name = 'Pre-Assessment'
-
-
-                UNION ALL
-
-                -- Pre-Assessment: Completed
-                SELECT
-                    'Pre-Assessment Completed Week ' || fc."weekNumber" || ' Day ' || fc."dayNumber" AS description,
-                    fc.completed_count AS count,
-                    (4 + (fc."weekNumber" - 1)*10 + (fc."dayNumber" - 1)*2) AS sort_order
-                FROM final_counts fc
-                WHERE fc.group_name = 'Pre-Assessment'
-
-                UNION ALL
-
-                -- Main Course: Started
-                SELECT
-                    'Main Course Started Week ' || fc."weekNumber" || ' Day ' || fc."dayNumber" AS description,
-                    fc.started_count AS count,
-                    (100 + (fc."weekNumber" - 1)*10 + (fc."dayNumber" - 1)*2) AS sort_order
-                FROM final_counts fc
-                WHERE fc.group_name = 'Main Course'
-
-                UNION ALL
-
-                -- Main Course: Completed
-                SELECT
-                    'Main Course Completed Week ' || fc."weekNumber" || ' Day ' || fc."dayNumber" AS description,
-                    fc.completed_count AS count,
-                    (101 + (fc."weekNumber" - 1)*10 + (fc."dayNumber" - 1)*2) AS sort_order
-                FROM final_counts fc
-                WHERE fc.group_name = 'Main Course'
-                ) final_results
-                ORDER BY sort_order;
+        // TOTAL USERS query
+        const totalUsersQuery = `
+            SELECT COUNT(*) as total_users
+            FROM wa_users_metadata 
+            WHERE "cohort" NOT IN ('', 'Cohort 0') 
+                AND cohort IS NOT NULL 
+                AND "rollout" = 2 
+                AND "classLevel" IS NOT NULL;
         `;
 
-        const [courseStats] = await sequelize.query(courseStatsQuery);
+        // ONE MESSAGE query
+        const oneMessageQuery = `
+            SELECT COUNT(*) as one_message_count
+            FROM wa_users_metadata wum 
+            JOIN wa_user_progress wup 
+                ON wum."profile_id" = wup."profile_id" 
+            WHERE wum."cohort" NOT IN ('', 'Cohort 0') 
+                AND wum."cohort" IS NOT NULL 
+                AND wum."rollout" = 2 
+                AND wum."classLevel" IS NOT NULL 
+                AND NOT (wup."acceptableMessages" @> ARRAY['start now!']::text[]);
+        `;
 
-        return courseStats;
+        // PRE ASSESSMENT query
+        const preAssessmentQuery = `
+            WITH LessonBoundaries AS ( 
+                SELECT 
+                    "courseId", 
+                    "weekNumber", 
+                    "dayNumber", 
+                    MIN("SequenceNumber") as min_sequence, 
+                    MAX("SequenceNumber") as max_sequence 
+                FROM "Lesson" 
+                WHERE "dayNumber" IS NOT NULL 
+                    AND "weekNumber" IS NOT NULL 
+                    AND "SequenceNumber" IS NOT NULL 
+                    AND "courseId" IN (139, 140, 141, 142) 
+                GROUP BY "courseId", "weekNumber", "dayNumber" 
+            ), 
+            LessonGroups AS ( 
+                SELECT 
+                    CONCAT( 
+                        'Week ', l."weekNumber", 
+                        ' Day ', l."dayNumber", 
+                        CASE 
+                            WHEN l."SequenceNumber" = lb.min_sequence THEN ' Start' 
+                            WHEN l."SequenceNumber" = lb.max_sequence THEN ' Complete' 
+                        END 
+                    ) as heading, 
+                    STRING_AGG(l."LessonId"::text, ', ' ORDER BY l."courseId") as lesson_ids, 
+                    ARRAY_AGG(l."LessonId" ORDER BY l."courseId") as lesson_id_array, 
+                    l."weekNumber", 
+                    l."dayNumber", 
+                    CASE 
+                        WHEN l."SequenceNumber" = lb.min_sequence THEN ' Start' 
+                        WHEN l."SequenceNumber" = lb.max_sequence THEN ' Complete' 
+                    END as lesson_type 
+                FROM "Lesson" l 
+                INNER JOIN LessonBoundaries lb 
+                    ON l."courseId" = lb."courseId" 
+                    AND l."weekNumber" = lb."weekNumber" 
+                    AND l."dayNumber" = lb."dayNumber" 
+                    AND (l."SequenceNumber" = lb.min_sequence OR l."SequenceNumber" = lb.max_sequence) 
+                WHERE l."courseId" IN (139, 140, 141, 142) 
+                GROUP BY 
+                    l."weekNumber", 
+                    l."dayNumber", 
+                    CASE 
+                        WHEN l."SequenceNumber" = lb.min_sequence THEN ' Start' 
+                        WHEN l."SequenceNumber" = lb.max_sequence THEN ' Complete' 
+                    END 
+            ) 
+            SELECT 
+                lg.heading, 
+                COUNT(DISTINCT wlc.id) as completion_count 
+            FROM LessonGroups lg 
+            LEFT JOIN wa_lessons_completed wlc 
+                ON wlc."lessonId" = ANY(lg.lesson_id_array) 
+                AND wlc."completionStatus" = 'Completed' 
+            GROUP BY 
+                lg.heading, 
+                lg.lesson_ids, 
+                lg."weekNumber", 
+                lg."dayNumber", 
+                lg.lesson_type 
+            ORDER BY 
+                MIN(lg."weekNumber"), 
+                MIN(lg."dayNumber"), 
+                CASE 
+                    WHEN lg.lesson_type = ' Start' THEN 1 
+                    ELSE 2 
+                END;
+        `;
+
+        // ACTUAL COURSE query
+        const actualCourseQuery = `
+            WITH LessonBoundaries AS ( 
+                SELECT 
+                    "courseId", 
+                    "weekNumber", 
+                    "dayNumber", 
+                    MIN("SequenceNumber") as min_sequence, 
+                    MAX("SequenceNumber") as max_sequence 
+                FROM "Lesson" 
+                WHERE "dayNumber" IS NOT NULL 
+                    AND "weekNumber" IS NOT NULL 
+                    AND "SequenceNumber" IS NOT NULL 
+                    AND "courseId" IN (119, 120, 121, 122, 123, 124, 143) 
+                GROUP BY "courseId", "weekNumber", "dayNumber" 
+            ), 
+            LessonGroups AS ( 
+                SELECT 
+                    CONCAT( 
+                        'Week ', l."weekNumber", 
+                        ' Day ', l."dayNumber", 
+                        CASE 
+                            WHEN l."SequenceNumber" = lb.min_sequence THEN ' Start' 
+                            WHEN l."SequenceNumber" = lb.max_sequence THEN ' Complete' 
+                        END 
+                    ) as heading, 
+                    STRING_AGG(l."LessonId"::text, ', ' ORDER BY l."courseId") as lesson_ids, 
+                    ARRAY_AGG(l."LessonId" ORDER BY l."courseId") as lesson_id_array, 
+                    l."weekNumber", 
+                    l."dayNumber", 
+                    CASE 
+                        WHEN l."SequenceNumber" = lb.min_sequence THEN ' Start' 
+                        WHEN l."SequenceNumber" = lb.max_sequence THEN ' Complete' 
+                    END as lesson_type 
+                FROM "Lesson" l 
+                INNER JOIN LessonBoundaries lb 
+                    ON l."courseId" = lb."courseId" 
+                    AND l."weekNumber" = lb."weekNumber" 
+                    AND l."dayNumber" = lb."dayNumber" 
+                    AND (l."SequenceNumber" = lb.min_sequence OR l."SequenceNumber" = lb.max_sequence) 
+                WHERE l."courseId" IN (119, 120, 121, 122, 123, 124, 143) 
+                GROUP BY 
+                    l."weekNumber", 
+                    l."dayNumber", 
+                    CASE 
+                        WHEN l."SequenceNumber" = lb.min_sequence THEN ' Start' 
+                        WHEN l."SequenceNumber" = lb.max_sequence THEN ' Complete' 
+                    END 
+            ) 
+            SELECT 
+                lg.heading, 
+                COUNT(DISTINCT wlc.id) as completion_count 
+            FROM LessonGroups lg 
+            LEFT JOIN wa_lessons_completed wlc 
+                ON wlc."lessonId" = ANY(lg.lesson_id_array) 
+                AND wlc."completionStatus" = 'Completed' 
+            GROUP BY 
+                lg.heading, 
+                lg.lesson_ids, 
+                lg."weekNumber", 
+                lg."dayNumber", 
+                lg.lesson_type 
+            ORDER BY 
+                MIN(lg."weekNumber"), 
+                MIN(lg."dayNumber"), 
+                CASE 
+                    WHEN lg.lesson_type = ' Start' THEN 1 
+                    ELSE 2 
+                END;
+        `;
+
+        // Execute all queries concurrently using Promise.all
+        const [totalUsersResult, oneMessageResult, preAssessmentResult, actualCourseResult] = await Promise.all([
+            sequelize.query(totalUsersQuery),
+            sequelize.query(oneMessageQuery),
+            sequelize.query(preAssessmentQuery),
+            sequelize.query(actualCourseQuery)
+        ]);
+
+        // Extract the results from the query responses
+        const totalUsers = totalUsersResult[0];
+        const oneMessage = oneMessageResult[0];
+        const preAssessment = preAssessmentResult[0];
+        const actualCourse = actualCourseResult[0];
+
+        return {
+            totalUsers,
+            oneMessage,
+            preAssessment,
+            actualCourse
+        };
     } catch (error) {
         error.fileName = 'statsService.js';
         throw error;
@@ -1546,7 +1351,7 @@ const studentBarAnalyticsService = async (courseIds, grades, cohorts, graphType,
 
         if (graphType === 'graph1') {
 
-                            qry1 = `WITH "TargetGroup" AS (
+            qry1 = `WITH "TargetGroup" AS (
                     SELECT 
                         m."profile_id",
                         m."phoneNumber",
@@ -1653,11 +1458,11 @@ const studentBarAnalyticsService = async (courseIds, grades, cohorts, graphType,
                 WHERE 
                     gdc."day" = ${parameterId};
                 `;
-                        }
+        }
 
 
         if (graphType === 'graph2') {
-            
+
             qry1 = `WITH 
                 TargetGroup AS (
                     SELECT 
@@ -1763,7 +1568,6 @@ const studentBarAnalyticsService = async (courseIds, grades, cohorts, graphType,
 
 export default {
     totalContentStatsService,
-    dashboardCardsFunnelService,
     lastActiveUsersService,
     studentUserJourneyStatsService,
     studentTrialUserJourneyStatsService,
