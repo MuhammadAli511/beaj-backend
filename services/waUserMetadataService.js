@@ -9,13 +9,18 @@ const getWaUserMetadataByPhoneNumberService = async (phoneNumber) => {
 };
 
 
-const assignTargetGroupService = async (phoneNumber,profile_id, targetGroup) => {
-    return await waUsersMetadataRepository.assignTargetGroup(phoneNumber,profile_id, targetGroup);
-}
+const assignTargetGroupService = async (phoneNumber, profile_id, targetGroup) => {
+    return await waUsersMetadataRepository.assignTargetGroup(phoneNumber, profile_id, targetGroup);
+};
+
+const updateWaUserMetadataService = async (profile_id, phoneNumber, metadata) => {
+    return await waUsersMetadataRepository.update(profile_id, phoneNumber, metadata);
+};
 
 
 export default {
     getAllWaUsersMetadataService,
     getWaUserMetadataByPhoneNumberService,
-    assignTargetGroupService
+    assignTargetGroupService,
+    updateWaUserMetadataService,
 };
