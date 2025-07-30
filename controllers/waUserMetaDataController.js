@@ -35,9 +35,23 @@ const assignTargetGroupController = async (req, res, next) => {
     }
 };
 
+const updateWaUserMetaDataController = async (req, res, next) => {
+    try {
+        const phoneNumber = req.body.phoneNumber;
+        const profile_id = req.body.profile_id;
+        const metadata = req.body.metadata;
+        await service.updateWaUserMetadataService(profile_id, phoneNumber, metadata);
+        res.status(200).send({ message: "User metadata updated successfully" });
+    } catch (error) {
+        error.fileName = 'waUserMetaDataController.js';
+        next(error);
+    }
+};
+
 
 export default {
     getAllWaUserMetaDataController,
     getWaUserMetaDataByPhoneNumberController,
-    assignTargetGroupController
+    assignTargetGroupController,
+    updateWaUserMetaDataController,
 };

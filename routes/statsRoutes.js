@@ -14,9 +14,6 @@ router.get('/status', (req, res) => {
 // GET  api/stats/totalContentStats
 router.get('/totalContentStats', beajFacilitatorsAuth, statsController.totalContentStatsController);
 
-// GET api/stats/dashboardCardsFunnel
-router.get('/dashboardCardsFunnel', beajFacilitatorsAuth, statsController.dashboardCardsFunnelController);
-
 // POST api/stats/lastActiveUsers
 router.post('/lastActiveUsers', beajFacilitatorsAuth, statsController.lastActiveUsersController);
 

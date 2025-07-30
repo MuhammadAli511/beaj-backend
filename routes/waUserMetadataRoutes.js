@@ -19,6 +19,9 @@ router.get('/getByPhoneNumber/:phoneNumber', beajFacilitatorsAuth, waUserMetaDat
 // POST api/waUserMetaData/assignTargetGroup
 router.post('/assignTargetGroup', beajFacilitatorsAuth, waUserMetaDataController.assignTargetGroupController);
 
+// POST api/waUserMetaData/update
+router.post('/update', beajFacilitatorsAuth, waUserMetaDataController.updateWaUserMetaDataController);
+
 // Use error handler middleware
 router.use(errorHandler);
 
