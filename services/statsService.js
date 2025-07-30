@@ -1888,7 +1888,7 @@ const studentBarAnalyticsService = async (courseIds, grades, cohorts, graphType,
             //     WHERE 
             //         l."lessonId" = ${parameterId} AND 
             //         l.row_num = 1;`;
-            console.log(qry1);
+            // console.log(qry1);
         }
 
         // Execute all queries concurrently
