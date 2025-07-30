@@ -637,75 +637,35 @@ const getLessonCompletions = async (botType, rollout, level, cohort, targetGroup
 
         // Optimized query with proper total calculations
         const qry = `
-        WITH lesson_completions AS (
-            SELECT 
-                wlc."profile_id",
-                wlc."phoneNumber",
-                l."courseId",
-                l."weekNumber",
-                COUNT(DISTINCT CASE 
-                    WHEN l."weekNumber" = 1 THEN l."dayNumber" 
-                END) as week1_days,
-                COUNT(DISTINCT CASE 
-                    WHEN l."weekNumber" = 2 THEN l."dayNumber" 
-                END) as week2_days,
-                COUNT(DISTINCT CASE 
-                    WHEN l."weekNumber" = 3 THEN l."dayNumber" 
-                END) as week3_days,
-                COUNT(DISTINCT CASE 
-                    WHEN l."weekNumber" = 4 THEN l."dayNumber" 
-                END) as week4_days
-            FROM "wa_lessons_completed" wlc
-            INNER JOIN "Lesson" l ON l."LessonId" = wlc."lessonId" 
-                AND l."courseId" = wlc."courseId"
-                AND l."status" = 'Active'
-            WHERE wlc."completionStatus" = 'Completed'
-                AND l."courseId" IN (${course_list})
-            GROUP BY wlc."profile_id", wlc."phoneNumber", l."courseId", l."weekNumber"
+        WITH all_lessons_per_day AS (
+            SELECT "courseId", "weekNumber", "dayNumber", COUNT(*) AS total_lessons
+            FROM "Lesson"
+            WHERE "status" = 'Active' AND "courseId" IN (${course_list})
+            GROUP BY "courseId", "weekNumber", "dayNumber"
         ),
-        user_progress AS (
-            SELECT 
-                lc."profile_id",
-                lc."phoneNumber", 
-                lc."courseId",
-                1 as "weekNumber",
-                NULLIF(lc.week1_days, 0) as days_completed
-            FROM lesson_completions lc
-            WHERE lc.week1_days > 0
-            
-            UNION ALL
-            
-            SELECT 
-                lc."profile_id",
-                lc."phoneNumber", 
-                lc."courseId",
-                2 as "weekNumber",
-                NULLIF(lc.week2_days, 0) as days_completed
-            FROM lesson_completions lc
-            WHERE lc.week2_days > 0
-            
-            UNION ALL
-            
-            SELECT 
-                lc."profile_id",
-                lc."phoneNumber", 
-                lc."courseId",
-                3 as "weekNumber",
-                NULLIF(lc.week3_days, 0) as days_completed
-            FROM lesson_completions lc
-            WHERE lc.week3_days > 0
-            
-            UNION ALL
-            
-            SELECT 
-                lc."profile_id",
-                lc."phoneNumber", 
-                lc."courseId",
-                4 as "weekNumber",
-                NULLIF(lc.week4_days, 0) as days_completed
-            FROM lesson_completions lc
-            WHERE lc.week4_days > 0
+        completed_lessons AS (
+            SELECT c."profile_id", c."phoneNumber", l."courseId", l."weekNumber", l."dayNumber", COUNT(*) AS completed
+            FROM "wa_lessons_completed" c
+            JOIN "Lesson" l ON l."LessonId" = c."lessonId"
+            WHERE c."completionStatus" = 'Completed' AND l."status" = 'Active'
+              AND l."courseId" IN (${course_list})
+            GROUP BY c."profile_id", c."phoneNumber", l."courseId", l."weekNumber", l."dayNumber"
+        ),
+        completed_days AS (
+            SELECT cl."profile_id", cl."phoneNumber", cl."courseId", cl."weekNumber", cl."dayNumber"
+            FROM completed_lessons cl
+            JOIN all_lessons_per_day al ON 
+                al."courseId" = cl."courseId" AND 
+                al."weekNumber" = cl."weekNumber" AND 
+                al."dayNumber" = cl."dayNumber"
+            WHERE cl.completed = al.total_lessons
+        ),
+        lesson_day_counts AS (
+            SELECT "profile_id", "phoneNumber", "courseId", "weekNumber", COUNT(DISTINCT "dayNumber") AS days_completed
+            FROM completed_days
+            GROUP BY "profile_id", "phoneNumber", "courseId", "weekNumber"
         )
+
         SELECT 
             ROW_NUMBER() OVER (ORDER BY m."name") AS sr_no,
             m."profile_id",
@@ -713,15 +673,16 @@ const getLessonCompletions = async (botType, rollout, level, cohort, targetGroup
             m."name",
             ${course_array}
         FROM "wa_users_metadata" m
-        INNER JOIN "wa_profiles" p ON m."profile_id" = p."profile_id"
-        LEFT JOIN user_progress lc ON m."profile_id" = lc."profile_id" 
-            AND m."phoneNumber" = lc."phoneNumber"
-        WHERE ${target_grp} m."cohort" = '${cohort}' 
-            AND m."rollout" = ${rollout}
-            AND p."profile_type" = '${botType}' 
-             ${classLevel}
+        JOIN "wa_profiles" p ON m."profile_id" = p."profile_id"
+        LEFT JOIN lesson_day_counts lc ON m."profile_id" = lc."profile_id" AND m."phoneNumber" = lc."phoneNumber"
+        WHERE ${target_grp} m."cohort" = '${cohort}'
+          AND m."rollout" = ${rollout}
+          AND p."profile_type" = '${botType}'
+          ${classLevel}
         GROUP BY m."profile_id", m."phoneNumber", m."name"
-        ORDER BY m."name" ASC;`;
+        ORDER BY m."name";
+        `;
+        console.log(qry);
         const res = await sequelize.query(qry);
         return res[0];
 
@@ -2518,97 +2479,109 @@ const getUserProgressStats = async (botType, grade, cohort, rollout, courseId1, 
     try {
        let level =  ``;
         if (botType === 'teacher'){
-          level =  ` `;
+          level =  ``;
         }
         else{
             level =  ` AND m."classLevel" = '${grade}' `;
         }
-        const qry = `
-                    WITH target_group AS (
-            SELECT m.profile_id
-            FROM wa_users_metadata m
-            INNER JOIN wa_profiles p ON m.profile_id = p.profile_id
-            WHERE p.profile_type = '${botType}'
-            AND m.rollout = ${rollout}
-            ${level}
-            AND m.cohort = '${cohort}'
+        const qry = `WITH target_group AS (
+                SELECT m.profile_id
+                FROM wa_users_metadata m
+                INNER JOIN wa_profiles p ON m.profile_id = p.profile_id
+                WHERE p.profile_type = '${botType}'
+                AND m.rollout = ${rollout}
+                ${level}
+                AND m.cohort = '${cohort}'
             ),
 
-            -- First lesson of actual course (used to detect course start)
+            -- First and Last lessons
             actual_course_start_lesson AS (
-                SELECT "LessonId"
+                SELECT "LessonId","courseId"
                 FROM "Lesson"
-                WHERE "courseId" = ${courseId1} AND "weekNumber" = 1 AND "dayNumber" = 1 AND "SequenceNumber" = 1
+                WHERE "courseId" = ${courseId1} AND "weekNumber" = 1 AND "dayNumber" = 1 AND "SequenceNumber" = 1 and "status" = 'Active'
                 LIMIT 1
             ),
 
-            -- Last lesson of actual course (used to detect course completion)
             actual_course_last_lesson AS (
-                SELECT "LessonId"
+                SELECT "LessonId" ,"courseId"
                 FROM "Lesson"
-                WHERE "courseId" = ${courseId1}
+                WHERE "courseId" = ${courseId1}  and "status" = 'Active'
                 ORDER BY "weekNumber" DESC, "dayNumber" DESC, "SequenceNumber" DESC
                 LIMIT 1
             ),
 
-            -- First lesson of assessment course (used to detect assessment start)
             assessment_course_start_lesson AS (
-                SELECT "LessonId"
+                SELECT "LessonId","courseId"
                 FROM "Lesson"
-                WHERE "courseId" = ${courseId2} AND "weekNumber" = 1 AND "dayNumber" = 1 AND "SequenceNumber" = 1
+                WHERE "courseId" = ${courseId2} AND "weekNumber" = 1 AND "dayNumber" = 1 AND "SequenceNumber" = 1 and "status" = 'Active'
                 LIMIT 1
             ),
 
-            -- Last lesson of assessment course (used to detect assessment completion)
             assessment_course_last_lesson AS (
-                SELECT "LessonId"
+                SELECT "LessonId","courseId"
                 FROM "Lesson"
-                WHERE "courseId" = ${courseId2}
+                WHERE "courseId" = ${courseId2}  and "status" = 'Active'
                 ORDER BY "weekNumber" DESC, "dayNumber" DESC, "SequenceNumber" DESC
                 LIMIT 1
+            ),
+
+            started_main AS (
+                SELECT DISTINCT c.profile_id
+                FROM wa_lessons_completed c
+                JOIN "Lesson" l ON l."LessonId" = c."lessonId" and l."courseId" = c."courseId"
+                JOIN target_group tg ON tg.profile_id = c.profile_id
+                WHERE l."courseId" = ${courseId1}
+            ),
+
+            completed_main AS (
+                SELECT DISTINCT c.profile_id
+                FROM wa_lessons_completed c
+                JOIN actual_course_last_lesson last_lesson ON last_lesson."LessonId" = c."lessonId" and last_lesson."courseId" = c."courseId"
+                JOIN target_group tg ON tg.profile_id = c.profile_id
+                WHERE c."completionStatus" = 'Completed'
+            ),
+
+            started_assessment AS (
+                SELECT DISTINCT c.profile_id
+                FROM wa_lessons_completed c
+                JOIN "Lesson" l ON l."LessonId" = c."lessonId" and l."courseId" = c."courseId"
+                JOIN target_group tg ON tg.profile_id = c.profile_id
+                WHERE l."courseId" = ${courseId2}
+            ),
+
+            completed_assessment AS (
+                SELECT DISTINCT c.profile_id
+                FROM wa_lessons_completed c
+                JOIN assessment_course_last_lesson last_lesson ON last_lesson."LessonId" = c."lessonId" and last_lesson."courseId" = c."courseId"
+                JOIN target_group tg ON tg.profile_id = c.profile_id
+                WHERE c."completionStatus" = 'Completed'
+            ),
+
+            not_started_assessment AS (
+                SELECT tg.profile_id
+                FROM target_group tg
+                LEFT JOIN wa_lessons_completed c
+                    ON tg.profile_id = c.profile_id
+                    AND c."lessonId" = (SELECT "LessonId" FROM assessment_course_start_lesson)
+                WHERE c.profile_id IS NULL
+            ),
+
+            completed_assessment_not_started_main AS (
+                SELECT ca.profile_id
+                FROM completed_assessment ca
+                LEFT JOIN started_main sm ON ca.profile_id = sm.profile_id
+                WHERE sm.profile_id IS NULL
             )
 
             SELECT
-                -- Total users in target group
                 (SELECT COUNT(*) FROM target_group) AS totalUsers,
-
-                -- Started actual course (completed any lesson of course 119)
-                (
-                    SELECT COUNT(DISTINCT c.profile_id)
-                    FROM wa_lessons_completed c
-                    JOIN "Lesson" l ON l."LessonId" = c."lessonId"
-                    JOIN target_group tg ON tg."profile_id" = c."profile_id"
-                    WHERE l."courseId" = ${courseId1}
-                ) AS startedMainCourse,
-
-                -- Completed actual course (completed the last lesson of course 119)
-                (
-                    SELECT COUNT(DISTINCT c.profile_id)
-                    FROM wa_lessons_completed c
-                    JOIN actual_course_last_lesson last_lesson ON last_lesson."LessonId" = c."lessonId"
-                    JOIN target_group tg ON tg."profile_id" = c."profile_id"
-                    WHERE c."completionStatus" = 'Completed'
-                ) AS completedMainCourse,
-
-                -- Started assessment (completed any lesson of course 139)
-                (
-                    SELECT COUNT(DISTINCT c.profile_id)
-                    FROM wa_lessons_completed c
-                    JOIN "Lesson" l ON l."LessonId" = c."lessonId"
-                    JOIN target_group tg ON tg."profile_id" = c."profile_id"
-                    WHERE l."courseId" = ${courseId2}
-                ) AS startedPreAssessment,
-
-                -- Completed assessment (completed the last lesson of course 139)
-                (
-                    SELECT COUNT(DISTINCT c.profile_id)
-                    FROM wa_lessons_completed c
-                    JOIN assessment_course_last_lesson last_lesson ON last_lesson."LessonId" = c."lessonId"
-                    JOIN target_group tg ON tg."profile_id" = c."profile_id"
-                    WHERE c."completionStatus" = 'Completed'
-                ) AS completedPreAssessment;
-        `;
-
+                (SELECT COUNT(*) FROM started_main) AS startedMainCourse,
+                (SELECT COUNT(*) FROM completed_main) AS completedMainCourse,
+                (SELECT COUNT(*) FROM started_assessment) AS startedPreAssessment,
+                (SELECT COUNT(*) FROM completed_assessment) AS completedPreAssessment,
+                (SELECT COUNT(*) FROM completed_assessment_not_started_main) AS completedAssessmentButNotStartedMain,
+                (SELECT COUNT(*) FROM not_started_assessment) AS notStartedPreAssessment;
+            `;
         const res = await sequelize.query(qry);
         return res[0];
     } catch (error) {
@@ -2616,6 +2589,137 @@ const getUserProgressStats = async (botType, grade, cohort, rollout, courseId1, 
         throw error;
     }
 };
+
+
+const getUserProgressBarStats = async (botType, grade, cohort, rollout, courseId1, courseId2, condition_name) => {
+    try {
+        let level = ``;
+        if (botType !== 'teacher') {
+            level = `AND m."classLevel" = '${grade}'`;
+        }
+
+        const query = `
+        WITH target_group AS (
+            SELECT m.profile_id, m."phoneNumber", m."name", m."schoolName", m."city",
+                    m."customerChannel", m."customerSource",
+                   m."amountPaid", m."rollout"
+            FROM wa_users_metadata m
+            INNER JOIN wa_profiles p ON m.profile_id = p.profile_id
+            WHERE p.profile_type = '${botType}'
+              AND m.rollout = ${rollout}
+              ${level}
+              AND m.cohort = '${cohort}'
+        ),
+
+        actual_course_start_lesson AS (
+            SELECT "LessonId", "courseId"
+            FROM "Lesson"
+            WHERE "courseId" = ${courseId1} AND "weekNumber" = 1 AND "dayNumber" = 1 AND "SequenceNumber" = 1 AND "status" = 'Active'
+            LIMIT 1
+        ),
+
+        actual_course_last_lesson AS (
+            SELECT "LessonId", "courseId"
+            FROM "Lesson"
+            WHERE "courseId" = ${courseId1} AND "status" = 'Active'
+            ORDER BY "weekNumber" DESC, "dayNumber" DESC, "SequenceNumber" DESC
+            LIMIT 1
+        ),
+
+        assessment_course_start_lesson AS (
+            SELECT "LessonId", "courseId"
+            FROM "Lesson"
+            WHERE "courseId" = ${courseId2} AND "weekNumber" = 1 AND "dayNumber" = 1 AND "SequenceNumber" = 1 AND "status" = 'Active'
+            LIMIT 1
+        ),
+
+        assessment_course_last_lesson AS (
+            SELECT "LessonId", "courseId"
+            FROM "Lesson"
+            WHERE "courseId" = ${courseId2} AND "status" = 'Active'
+            ORDER BY "weekNumber" DESC, "dayNumber" DESC, "SequenceNumber" DESC
+            LIMIT 1
+        ),
+
+        started_main AS (
+            SELECT DISTINCT c.profile_id
+            FROM wa_lessons_completed c
+            JOIN "Lesson" l ON l."LessonId" = c."lessonId" AND l."courseId" = c."courseId"
+            JOIN target_group tg ON tg.profile_id = c.profile_id
+            WHERE l."courseId" = ${courseId1}
+        ),
+
+        completed_main AS (
+            SELECT DISTINCT c.profile_id
+            FROM wa_lessons_completed c
+            JOIN actual_course_last_lesson l ON l."LessonId" = c."lessonId" AND l."courseId" = c."courseId"
+            JOIN target_group tg ON tg.profile_id = c.profile_id
+            WHERE c."completionStatus" = 'Completed'
+        ),
+
+        started_assessment AS (
+            SELECT DISTINCT c.profile_id
+            FROM wa_lessons_completed c
+            JOIN "Lesson" l ON l."LessonId" = c."lessonId" AND l."courseId" = c."courseId"
+            JOIN target_group tg ON tg.profile_id = c.profile_id
+            WHERE l."courseId" = ${courseId2}
+        ),
+
+        completed_assessment AS (
+            SELECT DISTINCT c.profile_id
+            FROM wa_lessons_completed c
+            JOIN assessment_course_last_lesson l ON l."LessonId" = c."lessonId" AND l."courseId" = c."courseId"
+            JOIN target_group tg ON tg.profile_id = c.profile_id
+            WHERE c."completionStatus" = 'Completed'
+        ),
+
+        not_started_assessment AS (
+            SELECT tg.profile_id
+            FROM target_group tg
+            LEFT JOIN wa_lessons_completed c ON tg.profile_id = c.profile_id
+              AND c."lessonId" = (SELECT "LessonId" FROM assessment_course_start_lesson)
+            WHERE c.profile_id IS NULL
+        ),
+
+        completed_assessment_not_started_main AS (
+            SELECT ca.profile_id
+            FROM completed_assessment ca
+            LEFT JOIN started_main sm ON ca.profile_id = sm.profile_id
+            WHERE sm.profile_id IS NULL
+        )
+
+        SELECT tg.*
+        FROM target_group tg
+        WHERE tg.profile_id IN (
+            ${
+                condition_name === 'total_users'
+                    ? `SELECT profile_id FROM target_group`
+                    : condition_name === 'started_main_course'
+                    ? `SELECT profile_id FROM started_main`
+                    : condition_name === 'completed_main_course'
+                    ? `SELECT profile_id FROM completed_main`
+                    : condition_name === 'started_pre_assessment'
+                    ? `SELECT profile_id FROM started_assessment`
+                    : condition_name === 'completed_pre_assessment'
+                    ? `SELECT profile_id FROM completed_assessment`
+                    : condition_name === 'completed_assessment_but_not_started_main'
+                    ? `SELECT profile_id FROM completed_assessment_not_started_main`
+                    : condition_name === 'not_started_pre_assessment'
+                    ? `SELECT profile_id FROM not_started_assessment`
+                    : `NULL`
+            }
+        )
+        ORDER BY tg."name" ASC
+        `;
+
+        const res = await sequelize.query(query);
+        return res[0];
+    } catch (error) {
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
+};
+
 
 // const getActivityAssessmentScoreDay = async (botType, rollout, level, cohort, targetGroup, courseId) => {
 //   try {
@@ -3095,5 +3199,5 @@ const getActivityAssessmentCumulative = async () => {
 
 export default {
     getcohortList, getDataFromPostgres, getSuccessRate, getActivityTotalCount, getCompletedActivity, getLessonCompletion, getLastActivityCompleted, getWeeklyScore, getPhoneNumber_userNudges, getWeeklyScore_pilot, getCount_NotStartedActivity, getLessonCompletions, getActivity_Completions, getActivityNameCount,
-    getLastActivityCompleted_DropOff, getActivtyAssessmentScore,getCumulativeLessonCompletions,getCumulativeActivityCompletions, getActivityAssessmentScoreDay, getActivityAssessmentCumulative, getUserProgressStats
+    getLastActivityCompleted_DropOff, getActivtyAssessmentScore,getCumulativeLessonCompletions,getCumulativeActivityCompletions, getActivityAssessmentScoreDay, getActivityAssessmentCumulative, getUserProgressStats, getUserProgressBarStats
 };

@@ -18,6 +18,10 @@ router.get('/getUserProgressLeaderboard', beajFacilitatorsAuth, userProgressCont
 
 router.get('/getcohortList', beajFacilitatorsAuth, userProgressController.getcohortListController);
 
+
+
+router.get('/getUserProgressBarStats', beajFacilitatorsAuth, userProgressController.getUserProgressBarStatsController);
+
 // Use error handler middleware
 router.use(errorHandler);
 
