@@ -56,8 +56,8 @@ const studentTrialUserJourneyStatsController = async (req, res, next) => {
 
 const studentAnalyticsController = async (req, res, next) => {
     try {
-        const { courseId, grade, cohort, graphType } = req.body;
-        const userJourneyStats = await service.studentAnalyticsService(courseId, grade, cohort, graphType);
+        const { courseId, grade, cohort, graphType, userType } = req.body;
+        const userJourneyStats = await service.studentAnalyticsService(courseId, grade, cohort, graphType, userType);
         res.status(200).send(userJourneyStats);
     } catch (error) {
         error.fileName = 'statsController.js';
@@ -67,8 +67,8 @@ const studentAnalyticsController = async (req, res, next) => {
 
 const studentBarAnalyticsController = async (req, res, next) => {
     try {
-        const { courseId, grade, cohort, graphType, parameterId } = req.body;
-        const userJourneyStats = await service.studentBarAnalyticsService(courseId, grade, cohort, graphType, parameterId);
+        const { courseId, grade, cohort, graphType, parameterId, userType } = req.body;
+        const userJourneyStats = await service.studentBarAnalyticsService(courseId, grade, cohort, graphType, parameterId, userType);
         res.status(200).send(userJourneyStats);
     } catch (error) {
         error.fileName = 'statsController.js';
@@ -97,6 +97,17 @@ const clearingCacheController = async (req, res, next) => {
     }
 };
 
+const userAnalyticsStatsController = async (req, res, next) => {
+    try {
+        const { botType } = req.body;
+        const userJourneyStats = await service.userAnalyticsStatsService(botType);
+        res.status(200).send(userJourneyStats);
+    } catch (error) {
+        error.fileName = 'statsController.js';
+        next(error);
+    }
+};
+
 export default {
     totalContentStatsController,
     dashboardCardsFunnelController,
@@ -107,4 +118,5 @@ export default {
     clearingCacheController,
     studentAnalyticsController,
     studentBarAnalyticsController,
+    userAnalyticsStatsController,
 };

@@ -570,8 +570,19 @@ const getcohortListService = async (botType,rollout,level,targetGroup) => {
     return cohort_list;
 };
 
+const getUserProgressBarStatsService = async (botType, level, cohort, rollout, courseId1, courseId4, condition) => {
+  console.log(botType, level, cohort, rollout, courseId1, courseId4, condition);
+  let array_list = await etlRepository.getUserProgressBarStats(botType, level, cohort, rollout, courseId1, courseId4, condition);
+  // array_list = array_list.map(obj => Object.values(obj).map(value => value));
+  // console.log(array_list)
+  return {
+    users: array_list
+  };
+};
+
 export default {
   getAllUserProgressService,
   getUserProgressLeaderboardService,
   getcohortListService,
+  getUserProgressBarStatsService,
 };
