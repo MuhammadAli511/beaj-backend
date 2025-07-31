@@ -366,73 +366,102 @@ const studentCourseStatsService = async () => {
 
         // ACTUAL COURSE query
         const actualCourseQuery = `
-            WITH LessonBoundaries AS ( 
-                SELECT 
-                    "courseId", 
-                    "weekNumber", 
-                    "dayNumber", 
-                    MIN("SequenceNumber") as min_sequence, 
-                    MAX("SequenceNumber") as max_sequence 
-                FROM "Lesson" 
-                WHERE "dayNumber" IS NOT NULL 
-                    AND "weekNumber" IS NOT NULL 
-                    AND "SequenceNumber" IS NOT NULL 
-                    AND "courseId" IN (119, 120, 121, 122, 123, 124, 143) 
-                GROUP BY "courseId", "weekNumber", "dayNumber" 
-            ), 
-            LessonGroups AS ( 
-                SELECT 
-                    CONCAT( 
-                        'Week ', l."weekNumber", 
-                        ' Day ', l."dayNumber", 
-                        CASE 
-                            WHEN l."SequenceNumber" = lb.min_sequence THEN ' Start' 
-                            WHEN l."SequenceNumber" = lb.max_sequence THEN ' Complete' 
-                        END 
-                    ) as heading, 
-                    STRING_AGG(l."LessonId"::text, ', ' ORDER BY l."courseId") as lesson_ids, 
-                    ARRAY_AGG(l."LessonId" ORDER BY l."courseId") as lesson_id_array, 
-                    l."weekNumber", 
-                    l."dayNumber", 
-                    CASE 
-                        WHEN l."SequenceNumber" = lb.min_sequence THEN ' Start' 
-                        WHEN l."SequenceNumber" = lb.max_sequence THEN ' Complete' 
-                    END as lesson_type 
-                FROM "Lesson" l 
-                INNER JOIN LessonBoundaries lb 
-                    ON l."courseId" = lb."courseId" 
-                    AND l."weekNumber" = lb."weekNumber" 
-                    AND l."dayNumber" = lb."dayNumber" 
-                    AND (l."SequenceNumber" = lb.min_sequence OR l."SequenceNumber" = lb.max_sequence) 
-                WHERE l."courseId" IN (119, 120, 121, 122, 123, 124, 143) 
-                GROUP BY 
-                    l."weekNumber", 
-                    l."dayNumber", 
-                    CASE 
-                        WHEN l."SequenceNumber" = lb.min_sequence THEN ' Start' 
-                        WHEN l."SequenceNumber" = lb.max_sequence THEN ' Complete' 
-                    END 
-            ) 
-            SELECT 
-                lg.heading, 
-                COUNT(DISTINCT wlc.id) as completion_count 
-            FROM LessonGroups lg 
-            LEFT JOIN wa_lessons_completed wlc 
-                ON wlc."lessonId" = ANY(lg.lesson_id_array) 
-                AND wlc."completionStatus" = 'Completed' 
-            GROUP BY 
-                lg.heading, 
-                lg.lesson_ids, 
-                lg."weekNumber", 
-                lg."dayNumber", 
-                lg.lesson_type 
-            ORDER BY 
-                MIN(lg."weekNumber"), 
-                MIN(lg."dayNumber"), 
-                CASE 
-                    WHEN lg.lesson_type = ' Start' THEN 1 
-                    ELSE 2 
-                END;
+            WITH LessonBoundaries AS (
+                SELECT
+                    "courseId",
+                    "weekNumber",
+                    "dayNumber",
+                    MIN("SequenceNumber")                  AS min_sequence,
+                    MAX("SequenceNumber")                  AS max_sequence,
+                    -- build a descending array of sequence numbers and pull out the 3rd element
+                    (ARRAY_AGG("SequenceNumber" ORDER BY "SequenceNumber" DESC))[3]
+                                                        AS third_sequence
+                FROM "Lesson"
+                WHERE "dayNumber"    IS NOT NULL
+                AND "weekNumber"   IS NOT NULL
+                AND "SequenceNumber" IS NOT NULL
+                AND "courseId"     IN (119,120,121,122,123,124,143)
+                GROUP BY "courseId", "weekNumber", "dayNumber"
+            ),
+            LessonGroups AS (
+                SELECT
+                    CONCAT(
+                        'Week ', l."weekNumber",
+                        ' Day ',  l."dayNumber",
+                        CASE
+                        WHEN l."SequenceNumber" = lb.min_sequence THEN ' Start'
+                        WHEN l."SequenceNumber" =
+                            -- if it's the special group pick the 3rd-highest, else the max
+                            CASE
+                                WHEN l."weekNumber" = 4 AND l."dayNumber" = 5
+                                THEN lb.third_sequence
+                                ELSE lb.max_sequence
+                            END
+                        THEN ' Complete'
+                        END
+                    ) AS heading,
+                    STRING_AGG(l."LessonId"::text, ', ' ORDER BY l."courseId") AS lesson_ids,
+                    ARRAY_AGG  (l."LessonId"       ORDER BY l."courseId") AS lesson_id_array,
+                    l."weekNumber",
+                    l."dayNumber",
+                    CASE
+                    WHEN l."SequenceNumber" = lb.min_sequence THEN ' Start'
+                    WHEN l."SequenceNumber" =
+                        CASE
+                            WHEN l."weekNumber" = 4 AND l."dayNumber" = 5
+                            THEN lb.third_sequence
+                            ELSE lb.max_sequence
+                        END
+                    THEN ' Complete'
+                    END AS lesson_type
+                FROM "Lesson" l
+                JOIN LessonBoundaries lb
+                ON  l."courseId"     = lb."courseId"
+                AND l."weekNumber"   = lb."weekNumber"
+                AND l."dayNumber"    = lb."dayNumber"
+                -- only pull the Start and (modified) Complete rows
+                AND (
+                        l."SequenceNumber" = lb.min_sequence
+                    OR l."SequenceNumber" =
+                        CASE
+                        WHEN l."weekNumber" = 4 AND l."dayNumber" = 5
+                            THEN lb.third_sequence
+                        ELSE lb.max_sequence
+                        END
+                    )
+                WHERE l."courseId" IN (119,120,121,122,123,124,143)
+                GROUP BY
+                l."weekNumber",
+                l."dayNumber",
+                CASE
+                    WHEN l."SequenceNumber" = lb.min_sequence THEN ' Start'
+                    WHEN l."SequenceNumber" =
+                        CASE
+                        WHEN l."weekNumber" = 4 AND l."dayNumber" = 5
+                            THEN lb.third_sequence
+                        ELSE lb.max_sequence
+                        END
+                    THEN ' Complete'
+                END
+            )
+            SELECT
+                lg.heading,
+                COUNT(DISTINCT wlc.id) AS completion_count
+            FROM LessonGroups lg
+            LEFT JOIN wa_lessons_completed wlc
+            ON wlc."lessonId"        = ANY(lg.lesson_id_array)
+            AND wlc."completionStatus" = 'Completed'
+            GROUP BY
+            lg.heading,
+            lg.lesson_ids,
+            lg."weekNumber",
+            lg."dayNumber",
+            lg.lesson_type
+            ORDER BY
+            lg."weekNumber",
+            lg."dayNumber",
+            CASE WHEN lg.lesson_type = ' Start' THEN 1 ELSE 2 END;
+
         `;
 
         // Execute all queries concurrently using Promise.all
@@ -767,12 +796,12 @@ const clearingCacheService = async () => {
 
 const studentAnalyticsService = async (courseIds, grades, cohorts, graphType, userType) => {
     try {
-        let grade = grades, courseId = courseIds, qry1 = ``, qry2 = ``, cohort = ``, cohortCond = ``, courseCond= ``, cohortCond1=``, dayno = 0, maxDay = 0;
-        if(userType === 'teacher'){
+        let grade = grades, courseId = courseIds, qry1 = ``, qry2 = ``, cohort = ``, cohortCond = ``, courseCond = ``, cohortCond1 = ``, dayno = 0, maxDay = 0;
+        if (userType === 'teacher') {
             grade = ` and m."classLevel" is null `;
             maxDay = 6;
         }
-        else{
+        else {
             grade = ` and m."classLevel" = '${grade}' `;
             maxDay = 5;
         }
@@ -782,10 +811,10 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType, us
         else {
             cohort = ` AND m."cohort" IS NOT NULL AND m."cohort" != 'Cohort 0' AND m."cohort" != 'Cohort 35' `;
         }
-        if(graphType === 'graph6'){
+        if (graphType === 'graph6') {
             grade = grades;
         }
-        console.log('courseIds', courseId, 'grades', grade, 'cohorts', cohort, 'graphType', graphType, 'userType' , userType);
+        console.log('courseIds', courseId, 'grades', grade, 'cohorts', cohort, 'graphType', graphType, 'userType', userType);
         if (graphType === 'graph1') {
             qry1 = `WITH "TargetGroup" AS (
                             SELECT m.profile_id
@@ -930,8 +959,8 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType, us
             // on d."day" = v."day" ORDER BY 
             //     d."day";`;
 
-                // console.log(qry1);
-        
+            // console.log(qry1);
+
             qry2 = `WITH TargetGroup AS (
                     SELECT 
                         m."profile_id"
@@ -964,7 +993,7 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType, us
 
         if (graphType === 'graph2') {
 
-            qry1 =  `WITH "TargetGroup" AS (
+            qry1 = `WITH "TargetGroup" AS (
                         SELECT
                             m.profile_id
                         FROM wa_users_metadata m
@@ -1104,7 +1133,7 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType, us
             //     g."LessonId" = lcc."lessonId"
             // ORDER BY 
             //     g."weekNumber",g."dayNumber",g."SequenceNumber";`
-          console.log(qry1);
+            console.log(qry1);
 
             qry2 = `WITH TargetGroup AS (
                     SELECT 
@@ -1137,52 +1166,52 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType, us
         }
 
         if (graphType === 'graph3') {
-                let days = 20;
-                let gradeCond = '';
-                let courseCond = '';
-                let cohortCond = '';
-                let cohortCond1 = '';
+            let days = 20;
+            let gradeCond = '';
+            let courseCond = '';
+            let cohortCond = '';
+            let cohortCond1 = '';
 
-                 if(userType === "student"){
-                    days = 20;
-                    if(!grades && !cohorts && !courseIds){
-                        gradeCond = ` AND m."classLevel" IN ('grade 1', 'grade 2', 'grade 3', 'grade 4', 'grade 5', 'grade 6', 'grade 7') `;
-                        courseCond = ` l."courseId" IN (119, 120, 121, 122, 123, 124, 143) `;
-                        cohortCond1 = ` c."courseId" IN (119, 120, 121, 122, 123, 124, 143) `;
-                    }
-                    if(!cohorts){
-                       cohortCond = ` AND m.cohort IS NOT NULL AND m.cohort != 'Cohort 0' AND m.cohort != 'Cohort 35' `;
-                    }
-                    if(grades){
-                        gradeCond = ` AND m."classLevel" = '${grades}' `;
-                    }
-                    if(courseIds){
-                        gradeCond = ` AND m."classLevel" = '${grades}' `;
-                        courseCond = ` l."courseId" IN (${courseIds}) `;
-                        cohortCond1 = ` c."courseId" IN (${courseIds}) `;
-                    }
-                 }
-                 if(userType === "teacher"){
+            if (userType === "student") {
+                days = 20;
+                if (!grades && !cohorts && !courseIds) {
+                    gradeCond = ` AND m."classLevel" IN ('grade 1', 'grade 2', 'grade 3', 'grade 4', 'grade 5', 'grade 6', 'grade 7') `;
+                    courseCond = ` l."courseId" IN (119, 120, 121, 122, 123, 124, 143) `;
+                    cohortCond1 = ` c."courseId" IN (119, 120, 121, 122, 123, 124, 143) `;
+                }
+                if (!cohorts) {
+                    cohortCond = ` AND m.cohort IS NOT NULL AND m.cohort != 'Cohort 0' AND m.cohort != 'Cohort 35' `;
+                }
+                if (grades) {
+                    gradeCond = ` AND m."classLevel" = '${grades}' `;
+                }
+                if (courseIds) {
+                    gradeCond = ` AND m."classLevel" = '${grades}' `;
+                    courseCond = ` l."courseId" IN (${courseIds}) `;
+                    cohortCond1 = ` c."courseId" IN (${courseIds}) `;
+                }
+            }
+            if (userType === "teacher") {
+                days = 24;
+                if (!grades && !cohorts && !courseIds) {
+                    days = 72;
+                    gradeCond = ` AND m."classLevel" IS NULL `;
+                    courseCond = ` l."courseId" IN (134, 135, 136) `;
+                    cohortCond1 = ` c."courseId" IN (134, 135, 136) `;
+                }
+                if (!cohorts) {
+                    cohortCond = ` AND m.cohort IS NOT NULL AND m.cohort != 'Cohort 0' AND m.cohort != 'Cohort 35' `;
+                }
+                if (courseIds) {
                     days = 24;
-                    if(!grades && !cohorts && !courseIds){
-                        days = 72;
-                        gradeCond = ` AND m."classLevel" IS NULL `;
-                        courseCond = ` l."courseId" IN (134, 135, 136) `;
-                        cohortCond1 = ` c."courseId" IN (134, 135, 136) `;
-                    }
-                    if(!cohorts){
-                       cohortCond = ` AND m.cohort IS NOT NULL AND m.cohort != 'Cohort 0' AND m.cohort != 'Cohort 35' `;
-                    }
-                    if(courseIds){
-                        days = 24;
-                        gradeCond = ` AND m."classLevel" is null `;
-                        courseCond = ` l."courseId" IN (${courseIds}) `;
-                        cohortCond1 = ` c."courseId" IN (${courseIds}) `;
-                    }
-                    
-                 }
+                    gradeCond = ` AND m."classLevel" is null `;
+                    courseCond = ` l."courseId" IN (${courseIds}) `;
+                    cohortCond1 = ` c."courseId" IN (${courseIds}) `;
+                }
 
-                qry1 = `
+            }
+
+            qry1 = `
                     WITH "TargetGroup" AS (
                         SELECT m.profile_id
                         FROM wa_users_metadata m
@@ -1390,18 +1419,18 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType, us
                 ORDER BY "courseId";`;
         }
 
-        if(graphType === 'graph6'){
+        if (graphType === 'graph6') {
             let a = null;
             dayno = grades;
             if (userType === 'student') {
                 grade = ` AND m."classLevel" IN ('grade 1', 'grade 2', 'grade 3', 'grade 4', 'grade 5', 'grade 6', 'grade 7') `;
-                cohortCond =  ` AND m.cohort IS NOT NULL AND m.cohort != 'Cohort 0' AND m.cohort != 'Cohort 35' `;
+                cohortCond = ` AND m.cohort IS NOT NULL AND m.cohort != 'Cohort 0' AND m.cohort != 'Cohort 35' `;
                 courseCond = ` "courseId" IN (119, 120, 121, 122, 123, 124, 143) `;
                 a = '2025-07-01';
             }
-            else{
+            else {
                 grade = ` AND m."classLevel" is null `;
-                cohortCond =  ` AND m.cohort IS NOT NULL AND m.cohort != 'Cohort 0' AND m.cohort != 'Cohort 35' `;
+                cohortCond = ` AND m.cohort IS NOT NULL AND m.cohort != 'Cohort 0' AND m.cohort != 'Cohort 35' `;
                 courseCond = ` "courseId" IN (134,135,136) `;
                 a = '2025-07-14'
             }
@@ -1479,25 +1508,25 @@ const studentBarAnalyticsService = async (courseIds, grades, cohorts, graphType,
         // Set default date if not provided
         let grade = grades, courseId = courseIds, qry1 = ``, qry2 = ``, cohort = ``, cohortCond = ``;
         if (cohorts) {
-                cohort = ` and m.cohort = '${cohorts}' `;
+            cohort = ` and m.cohort = '${cohorts}' `;
         }
-        else{
+        else {
             cohort = ` AND m."cohort" IS NOT NULL AND m."cohort" != 'Cohort 0' AND m."cohort" != 'Cohort 35' `;
         }
         let a = 5;
-            if(userType === 'student'){
-                a = 5;
-                grade = ` and m."classLevel" = '${grades}' `;
-            }
-            else{
-                a = 6;
-                grade = ` and m."classLevel" is null `;
-            }
+        if (userType === 'student') {
+            a = 5;
+            grade = ` and m."classLevel" = '${grades}' `;
+        }
+        else {
+            a = 6;
+            grade = ` and m."classLevel" is null `;
+        }
 
-        console.log('courseIds', courseIds, 'grades', grades, 'cohorts', cohorts, 'graphType', graphType,"parameterId", parameterId, "userType", userType);
+        console.log('courseIds', courseIds, 'grades', grades, 'cohorts', cohorts, 'graphType', graphType, "parameterId", parameterId, "userType", userType);
 
         if (graphType === 'graph1') {
-                                qry1 = `WITH "TargetGroup" AS (
+            qry1 = `WITH "TargetGroup" AS (
                         SELECT m.profile_id
                         FROM wa_users_metadata m
                         JOIN wa_profiles p ON m.profile_id = p.profile_id
@@ -1599,7 +1628,7 @@ const studentBarAnalyticsService = async (courseIds, grades, cohorts, graphType,
                     activity_status b ON a."profile_id" = b."profile_id"
                     WHERE a.adjusted_day = ${parameterId};
                     `;
-                    
+
             // qry1 = `WITH "TargetGroup" AS (
             //         SELECT 
             //             m."profile_id",
@@ -1707,7 +1736,7 @@ const studentBarAnalyticsService = async (courseIds, grades, cohorts, graphType,
             //     WHERE 
             //         gdc."day" = ${parameterId};
             //     `;
-            }
+        }
 
         if (graphType === 'graph2') {
 
@@ -1826,7 +1855,7 @@ const studentBarAnalyticsService = async (courseIds, grades, cohorts, graphType,
             //            ${grade}
             //            ${cohort}
             //     ),
-                
+
             //     activity_status AS (
             //         SELECT 
             //             profile_id,
@@ -1908,7 +1937,7 @@ const studentBarAnalyticsService = async (courseIds, grades, cohorts, graphType,
 
 const userAnalyticsStatsService = async (botType) => {
     try {
-        let qry0 = ``, classLevel = `` , cohort = ``, courseId = ``, qry1 = `` ;
+        let qry0 = ``, classLevel = ``, cohort = ``, courseId = ``, qry1 = ``;
         cohort = ` AND m."cohort" IS NOT NULL AND m.cohort != 'Cohort 0' and  m.cohort != 'Cohort 35' `;
         if (botType === 'teacher') {
             classLevel = ` AND m."classLevel" is null `;
