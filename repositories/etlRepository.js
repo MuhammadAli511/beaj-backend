@@ -3197,7 +3197,360 @@ const getActivityAssessmentCumulative = async () => {
   }
 };
 
+const getTeacherLessonCumulative = async () =>{
+     try {
+    const qry = `WITH LessonAssignments AS (
+    SELECT
+        "courseId",
+        "weekNumber",
+        "dayNumber",
+        COUNT("LessonId") AS "TotalLessons"
+    FROM "Lesson"
+    WHERE "courseId" IN (134, 135, 136)
+      AND "status" = 'Active'
+    GROUP BY "courseId", "weekNumber", "dayNumber"
+                ),
+
+                Students AS (
+                    SELECT DISTINCT
+                        m."phoneNumber",
+                        m."name",
+                        m."cohort",
+                        m."profile_id",
+                        m."rollout",
+                        m."customerChannel",
+                        m."customerSource",
+                        m."amountPaid",
+                        m."city"
+                    FROM "wa_users_metadata" m
+                    INNER JOIN "wa_profiles" p ON m."profile_id" = p."profile_id"
+                    WHERE m."rollout" = 2
+                    AND p."profile_type" = 'teacher'
+                    AND m."classLevel" IS NULL
+                    AND m."cohort" IS NOT NULL
+                    AND m."cohort" NOT IN ('Cohort 0', 'Cohort 35')
+                ),
+
+                AllCombinations AS (
+                    SELECT
+                        s.*,
+                        la."courseId",
+                        la."weekNumber",
+                        la."dayNumber",
+                        la."TotalLessons"
+                    FROM Students s
+                    CROSS JOIN LessonAssignments la
+                ),
+
+                StudentCompletions AS (
+                    SELECT
+                        m."profile_id",
+                        s."courseId",
+                        s."weekNumber",
+                        s."dayNumber",
+                        COUNT(DISTINCT l."lessonId") AS "CompletedLessons"
+                    FROM "wa_users_metadata" m
+                    INNER JOIN "wa_profiles" p ON m."profile_id" = p."profile_id"
+                    INNER JOIN "wa_lessons_completed" l ON m."profile_id" = l."profile_id"
+                        AND l."completionStatus" = 'Completed'
+                    INNER JOIN "Lesson" s ON s."LessonId" = l."lessonId"
+                        AND s."courseId" = l."courseId"
+                        AND s."status" = 'Active'
+                    WHERE m."rollout" = 2
+                    AND p."profile_type" = 'teacher'
+                    AND m."classLevel" IS NULL
+                    AND m."cohort" IS NOT NULL
+                    AND m."cohort" NOT IN ('Cohort 0', 'Cohort 35')
+                    AND s."courseId" IN (134, 135, 136)
+                    GROUP BY m."profile_id", s."courseId", s."weekNumber", s."dayNumber"
+                ),
+
+                DailyProgress AS (
+                    SELECT
+                        ac.*,
+                        COALESCE(sc."CompletedLessons", 0) AS "CompletedLessons",
+                        CASE
+                            WHEN COALESCE(sc."CompletedLessons", 0) = ac."TotalLessons" THEN 1
+                            ELSE 0
+                        END AS "DayCompleted"
+                    FROM AllCombinations ac
+                    LEFT JOIN StudentCompletions sc
+                        ON ac."profile_id" = sc."profile_id"
+                        AND ac."courseId" = sc."courseId"
+                        AND ac."weekNumber" = sc."weekNumber"
+                        AND ac."dayNumber" = sc."dayNumber"
+                ),
+
+                WeeklyProgress AS (
+                    SELECT
+                        dp."phoneNumber",
+                        dp."name",
+                        dp."cohort",
+                        dp."profile_id",
+                        dp."rollout",
+                        dp."customerChannel",
+                        dp."customerSource",
+                        dp."amountPaid",
+                        dp."city",
+                        dp."courseId",
+                        dp."weekNumber",
+                        SUM(dp."DayCompleted") AS "DaysCompletedInWeek"
+                    FROM DailyProgress dp
+                    GROUP BY dp."phoneNumber", dp."name", dp."cohort", dp."profile_id", dp."rollout",
+                            dp."customerChannel", dp."customerSource", dp."amountPaid", dp."city",
+                            dp."courseId", dp."weekNumber"
+                ),
+
+                PivotedProgress AS (
+                    SELECT
+                        wp."phoneNumber",
+                        wp."name",
+                        wp."cohort",
+                        wp."profile_id",
+                        wp."rollout",
+                        wp."customerChannel",
+                        wp."customerSource",
+                        wp."amountPaid",
+                        wp."city",
+                        wp."courseId",
+                        MAX(CASE WHEN wp."weekNumber" = 1 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week1",
+                        MAX(CASE WHEN wp."weekNumber" = 2 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week2",
+                        MAX(CASE WHEN wp."weekNumber" = 3 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week3",
+                        MAX(CASE WHEN wp."weekNumber" = 4 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week4"
+                    FROM WeeklyProgress wp
+                    GROUP BY wp."phoneNumber", wp."name", wp."cohort", wp."profile_id", wp."rollout",
+                            wp."customerChannel", wp."customerSource", wp."amountPaid", wp."city", wp."courseId"
+                ),
+
+                AggregatedProgress AS (
+                    SELECT
+                        COALESCE(ROW_NUMBER() OVER (ORDER BY pp."name"), 0) AS sr_no,
+                        pp."profile_id",
+                        pp."phoneNumber",
+                        pp."name",
+                        -- Course 1 (134)
+                        MAX(CASE WHEN pp."courseId" = 134 THEN pp."week1" END) AS "course1_week1",
+                        MAX(CASE WHEN pp."courseId" = 134 THEN pp."week2" END) AS "course1_week2",
+                        MAX(CASE WHEN pp."courseId" = 134 THEN pp."week3" END) AS "course1_week3",
+                        MAX(CASE WHEN pp."courseId" = 134 THEN pp."week4" END) AS "course1_week4",
+                        MAX(CASE WHEN pp."courseId" = 134 THEN 
+                            NULLIF(COALESCE(pp."week1",0) + COALESCE(pp."week2",0) + COALESCE(pp."week3",0) + COALESCE(pp."week4",0), 0)
+                        END) AS "course1_total",
+
+                        -- Course 2 (135)
+                        MAX(CASE WHEN pp."courseId" = 135 THEN pp."week1" END) AS "course2_week1",
+                        MAX(CASE WHEN pp."courseId" = 135 THEN pp."week2" END) AS "course2_week2",
+                        MAX(CASE WHEN pp."courseId" = 135 THEN pp."week3" END) AS "course2_week3",
+                        MAX(CASE WHEN pp."courseId" = 135 THEN pp."week4" END) AS "course2_week4",
+                        MAX(CASE WHEN pp."courseId" = 135 THEN 
+                            NULLIF(COALESCE(pp."week1",0) + COALESCE(pp."week2",0) + COALESCE(pp."week3",0) + COALESCE(pp."week4",0), 0)
+                        END) AS "course2_total",
+
+                        -- Course 3 (136)
+                        MAX(CASE WHEN pp."courseId" = 136 THEN pp."week1" END) AS "course3_week1",
+                        MAX(CASE WHEN pp."courseId" = 136 THEN pp."week2" END) AS "course3_week2",
+                        MAX(CASE WHEN pp."courseId" = 136 THEN pp."week3" END) AS "course3_week3",
+                        MAX(CASE WHEN pp."courseId" = 136 THEN pp."week4" END) AS "course3_week4",
+                        MAX(CASE WHEN pp."courseId" = 136 THEN 
+                            NULLIF(COALESCE(pp."week1",0) + COALESCE(pp."week2",0) + COALESCE(pp."week3",0) + COALESCE(pp."week4",0), 0)
+                        END) AS "course3_total",
+
+                        -- Grand total
+                        NULLIF(
+                            COALESCE(MAX(CASE WHEN pp."courseId" = 134 THEN 
+                                COALESCE(pp."week1",0) + COALESCE(pp."week2",0) + COALESCE(pp."week3",0) + COALESCE(pp."week4",0)
+                            END), 0) +
+                            COALESCE(MAX(CASE WHEN pp."courseId" = 135 THEN 
+                                COALESCE(pp."week1",0) + COALESCE(pp."week2",0) + COALESCE(pp."week3",0) + COALESCE(pp."week4",0)
+                            END), 0) +
+                            COALESCE(MAX(CASE WHEN pp."courseId" = 136 THEN 
+                                COALESCE(pp."week1",0) + COALESCE(pp."week2",0) + COALESCE(pp."week3",0) + COALESCE(pp."week4",0)
+                            END), 0)
+                        , 0) AS grand_total,
+                        pp."city",
+                        pp."cohort",
+                         pp."amountPaid",
+                        pp."rollout",
+                        pp."customerChannel",
+                        pp."customerSource"
+                    FROM PivotedProgress pp
+                    GROUP BY pp."phoneNumber", pp."name", pp."cohort", pp."profile_id", pp."rollout",
+                            pp."customerChannel", pp."customerSource", pp."amountPaid", pp."city"
+                )
+
+                SELECT *
+                FROM AggregatedProgress
+                ORDER BY "name";`;
+
+                const result = await sequelize.query(qry);
+   
+    return result[0];
+  } catch (error) {
+    console.error("Error in getActivityAssessmentScoreDay:", error);
+    error.fileName = "etlRepository.js";
+    throw error;
+  }
+};
+
+const getTeacherActivityCumulative = async () =>{
+     try {
+    const qry = ` SELECT COALESCE(ROW_NUMBER() OVER (ORDER BY m."name" ASC) , 0) AS sr_no,
+             m."profile_id",
+              m."phoneNumber",
+		        m."name",
+              SUM(CASE WHEN s."weekNumber" = 1 AND s."courseId" = 134 THEN 1 ELSE NULL END) AS "course1_week1_activities",
+              SUM(CASE WHEN s."weekNumber" = 2 AND s."courseId" = 134 THEN 1 ELSE NULL END) AS "course1_week2_activities",
+              SUM(CASE WHEN s."weekNumber" = 3 AND s."courseId" = 134 THEN 1 ELSE NULL END) AS "course1_week3_activities",
+              SUM(CASE WHEN s."weekNumber" = 4 AND s."courseId" = 134 THEN 1 ELSE NULL END) AS "course1_week4_activities",
+              
+              NULLIF(SUM(CASE WHEN s."courseId" = 134 THEN 1 ELSE 0 END), 0) AS course1_total,
+
+              SUM(CASE WHEN s."weekNumber" = 1 AND s."courseId" = 135 THEN 1 ELSE NULL END) AS "course2_week1_activities",
+              SUM(CASE WHEN s."weekNumber" = 2 AND s."courseId" = 135 THEN 1 ELSE NULL END) AS "course2_week2_activities",
+              SUM(CASE WHEN s."weekNumber" = 3 AND s."courseId" = 135 THEN 1 ELSE NULL END) AS "course2_week3_activities",
+              SUM(CASE WHEN s."weekNumber" = 4 AND s."courseId" = 135 THEN 1 ELSE NULL END) AS "course2_week4_activities",
+
+              NULLIF(SUM(CASE WHEN s."courseId" = 135 THEN 1 ELSE 0 END), 0) AS course2_total,
+
+              SUM(CASE WHEN s."weekNumber" = 1 AND s."courseId" = 136 THEN 1 ELSE NULL END) AS "course3_week1_activities",
+              SUM(CASE WHEN s."weekNumber" = 2 AND s."courseId" = 136 THEN 1 ELSE NULL END) AS "course3_week2_activities",
+              SUM(CASE WHEN s."weekNumber" = 3 AND s."courseId" = 136 THEN 1 ELSE NULL END) AS "course3_week3_activities",
+              SUM(CASE WHEN s."weekNumber" = 4 AND s."courseId" = 136 THEN 1 ELSE NULL END) AS "course3_week4_activities",
+
+              NULLIF(SUM(CASE WHEN s."courseId" = 136 THEN 1 ELSE 0 END), 0) AS course3_total,
+              NULLIF(
+                  SUM(CASE WHEN s."courseId" IN (136,135,134) THEN 1 ELSE 0 END)
+              , 0) AS grand_total,
+			  m."city",
+			  m."cohort",
+             m."rollout",
+			 m."amountPaid",
+		        m."customerChannel",
+		        m."customerSource"
+          FROM 
+              "wa_users_metadata" m 
+			  INNER JOIN "wa_profiles" p ON m."profile_id" = p."profile_id"
+          LEFT JOIN 
+              "wa_lessons_completed" l 
+              ON m."profile_id" = l."profile_id" 
+              AND l."completionStatus" = 'Completed' 
+          LEFT JOIN 
+              "Lesson" s 
+              ON s."LessonId" = l."lessonId" 
+              AND s."courseId" = l."courseId" 
+              AND s."courseId" IN (136,135,134) 
+              AND s."weekNumber" IN (1, 2, 3, 4)  
+          WHERE 
+             m."rollout"=2 AND p."profile_type" = 'teacher'
+      AND m."classLevel" IS NULL
+      AND m."cohort" IS NOT NULL
+      AND m."cohort" NOT IN ('Cohort 0', 'Cohort 35')
+          GROUP BY 
+             m."phoneNumber",
+		        m."name",
+		        m."cohort",
+		        m."profile_id",
+		        m."rollout",
+		        m."customerChannel",
+		        m."customerSource",
+		        m."amountPaid",
+		        m."city",
+				 m."cohort"
+          ORDER BY 
+            m."name" ASC;`;
+
+                const result = await sequelize.query(qry);
+   
+    return result[0];
+  } catch (error) {
+    console.error("Error in getActivityAssessmentScoreDay:", error);
+    error.fileName = "etlRepository.js";
+    throw error;
+  }
+};
+
+const getTeacherAssessmentCumulative = async (courseId = 148) =>{
+     try {
+    const qry = ` WITH target_group_users AS (
+            SELECT m."phoneNumber", m."profile_id", m."name"
+            FROM "wa_users_metadata" m
+            INNER JOIN "wa_profiles" p ON m."profile_id" = p."profile_id"
+            WHERE  m."rollout"=2 AND p."profile_type" = 'teacher'
+		      AND m."classLevel" IS NULL
+		      AND m."cohort" IS NOT NULL
+		      AND m."cohort" NOT IN ('Cohort 0', 'Cohort 35')
+            ),
+            course_activities AS (
+            SELECT "LessonId", "activity", "courseId", "weekNumber", "dayNumber"
+            FROM "Lesson"
+            WHERE "courseId" IN (${courseId})
+                AND "weekNumber" = 1
+                AND "status" = 'Active'
+            ),
+            mcqs AS (
+            SELECT q."phoneNumber", q."profile_id",
+                COUNT(CASE WHEN l."dayNumber" = 1 AND element = TRUE THEN 1 END) AS mcqs_week1_correct_count,
+                COUNT(CASE WHEN l."dayNumber" = 1 THEN 1 END) AS mcqs_week1_total
+            FROM "wa_question_responses" q
+            LEFT JOIN course_activities l ON q."lessonId" = l."LessonId",
+            UNNEST(q."correct") AS element
+            WHERE l."activity" = 'assessmentMcqs'
+                AND q."profile_id" IN (SELECT "profile_id" FROM target_group_users)
+            GROUP BY q."phoneNumber", q."profile_id"
+            ),
+            speaking_practice AS (
+            SELECT q."phoneNumber", q."profile_id",
+                COUNT(CASE WHEN l."dayNumber" = 1 THEN 1 END) * 5 AS speaking_practice_week1_total,
+                COALESCE(SUM(
+                CASE WHEN l."dayNumber" = 1 THEN
+                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'accuracyScore')::DECIMAL, 0) +
+                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'fluencyScore')::DECIMAL, 0) +
+                    COALESCE(("submittedFeedbackJson"[1]->'scoreNumber'->>'compScore')::DECIMAL, 0)
+                END
+                ) / 300 * 5, 0) AS speaking_practice_week1_correct_count
+            FROM "wa_question_responses" q
+            LEFT JOIN course_activities l ON l."LessonId" = q."lessonId"
+            WHERE l."activity" = 'speakingPractice'
+                AND q."profile_id" IN (SELECT "profile_id" FROM target_group_users)
+            GROUP BY q."phoneNumber", q."profile_id"
+            )
+            SELECT
+            ROW_NUMBER() OVER (ORDER BY m."name") AS sr_no, m."profile_id",
+            m."phoneNumber", m."name",
+
+            -- MCQs Day-wise
+            CASE WHEN mc.mcqs_week1_correct_count = 0 THEN NULL ELSE ROUND(mc.mcqs_week1_correct_count, 2) END AS day1_mcqs,
+
+            -- Speaking Practice
+            CASE WHEN sp.speaking_practice_week1_correct_count = 0 THEN NULL ELSE ROUND(sp.speaking_practice_week1_correct_count, 2) END AS speaking_practice,
+
+            -- Final Score and Total
+            NULLIF(ROUND(
+                COALESCE(mc.mcqs_week1_correct_count, 0) + COALESCE(sp.speaking_practice_week1_correct_count, 0), 2), 0) AS total_activity_score,
+             m."city",
+             m."cohort",m."amountPaid", m."rollout", m."customerChannel",
+		        m."customerSource"
+            FROM "wa_users_metadata" m
+            INNER JOIN "wa_profiles" p ON m."profile_id" = p."profile_id"
+            LEFT JOIN mcqs mc ON m."profile_id" = mc."profile_id"
+            LEFT JOIN speaking_practice sp ON m."profile_id" = sp."profile_id"
+            WHERE  m."rollout"=2 AND p."profile_type" = 'teacher'
+            AND m."classLevel" IS NULL
+            AND m."cohort" IS NOT NULL
+            AND m."cohort" NOT IN ('Cohort 0', 'Cohort 35')
+            ORDER BY m."name" ASC;`;
+
+    const result = await sequelize.query(qry);
+   
+    return result[0];
+  } catch (error) {
+    console.error("Error in getActivityAssessmentScoreDay:", error);
+    error.fileName = "etlRepository.js";
+    throw error;
+  }
+};
+
 export default {
     getcohortList, getDataFromPostgres, getSuccessRate, getActivityTotalCount, getCompletedActivity, getLessonCompletion, getLastActivityCompleted, getWeeklyScore, getPhoneNumber_userNudges, getWeeklyScore_pilot, getCount_NotStartedActivity, getLessonCompletions, getActivity_Completions, getActivityNameCount,
-    getLastActivityCompleted_DropOff, getActivtyAssessmentScore,getCumulativeLessonCompletions,getCumulativeActivityCompletions, getActivityAssessmentScoreDay, getActivityAssessmentCumulative, getUserProgressStats, getUserProgressBarStats
+    getLastActivityCompleted_DropOff, getActivtyAssessmentScore,getCumulativeLessonCompletions,getCumulativeActivityCompletions, getActivityAssessmentScoreDay, getActivityAssessmentCumulative, getUserProgressStats, getUserProgressBarStats, getTeacherLessonCumulative, getTeacherActivityCumulative, getTeacherAssessmentCumulative,
 };

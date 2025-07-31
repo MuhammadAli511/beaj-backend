@@ -20,10 +20,25 @@ const runCumulativeSheets = async () => {
   cum_activity_student = cum_activity_student.map(obj => Object.values(obj).map(value => value));
   cum_activity_assessment = cum_activity_assessment.map(obj => Object.values(obj).map(value => value));
 
+
+  let cum_activity_teacher = await etlRepository.getTeacherActivityCumulative();
+  let cum_lesson_teacher = await etlRepository.getTeacherLessonCumulative();
+  let cum_pre_assessment_teacher = await etlRepository.getTeacherAssessmentCumulative(148);
+  let cum_post_assessment_teacher = await etlRepository.getTeacherAssessmentCumulative(149);
+
+  cum_activity_teacher = cum_activity_teacher.map(obj => Object.values(obj).map(value => value));
+  cum_lesson_teacher = cum_lesson_teacher.map(obj => Object.values(obj).map(value => value));
+  cum_pre_assessment_teacher = cum_pre_assessment_teacher.map(obj => Object.values(obj).map(value => value));
+  cum_post_assessment_teacher = cum_post_assessment_teacher.map(obj => Object.values(obj).map(value => value));
+
   await CumulativeUtils_load(
     cum_lesson_student,
     cum_activity_student,
     cum_activity_assessment,
+    cum_activity_teacher,
+    cum_lesson_teacher,
+    cum_pre_assessment_teacher,
+    cum_post_assessment_teacher
   );
 
   // let courseId_l1 = 106;

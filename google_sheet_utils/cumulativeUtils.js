@@ -8,9 +8,13 @@ const creds = JSON.parse(
 const sheets = google.sheets("v4");
 
 const CumulativeUtils_load = async (
-  cum_lesson_student,
+    cum_lesson_student,
     cum_activity_student,
-    cum_activity_assessment
+    cum_activity_assessment,
+    cum_activity_teacher,
+    cum_lesson_teacher,
+    cum_pre_assessment_teacher,
+    cum_post_assessment_teacher
 ) => {
   try {
     const auth = new google.auth.GoogleAuth({
@@ -27,12 +31,10 @@ const CumulativeUtils_load = async (
             `Student Lesson!A3:N`, 
             `Student Activity!A3:N`, 
             `Student Assessment!A4:Z`,
-            // Uncomment the following lines if you want to clear these ranges as well
-            // `Rollout Week!A3:T`,
-            // `Rollout-T1 Activity Count!A3:Z`,
-            // `Rollout-T2 Activity Count!A3:Z`,
-            // `Rollout-T1 Activity Score!A4:Z`,
-            // `Rollout-T2 Activity Score!A4:Z`,
+            `Teacher Lesson!A3:Z`, 
+            `Teacher Activity!A3:Z`, 
+            `Teacher Pre-Assessment!A4:M`, 
+             `Teacher Post-Assessment!A4:M`, 
         ],
     };
 
@@ -57,34 +59,22 @@ const CumulativeUtils_load = async (
           range: `Student Assessment!A4:Z`, 
           values: cum_activity_assessment
         },
-        // {
-        //   range: `Rollout Week!A3:T`, 
-        //   values: arrayT1_List2,
-        // },
-        // {
-        //   range: `Rollout-T1 Activity Count!A1`, 
-        //   values: ActivityCompletedCount1,
-        // },
-        // {
-        //   range: `Rollout-T2 Activity Count!A1`, 
-        //   values: ActivityCompletedCount2,
-        // },
-        // {
-        //   range: `Rollout-T1 Activity Score!A4`, 
-        //   values: arrayT1_List01,
-        // },
-        // {
-        //   range: `Rollout-T2 Activity Score!A4`, 
-        //   values: arrayT1_List02,
-        // },
-        // {
-        //   range: `Rollout-T1 Activity Score!D2`, 
-        //   values: individual_weekly_score_l1_list_total,
-        // },
-        // {
-        //   range: `Rollout-T2 Activity Score!D2`, 
-        //   values: individual_weekly_score_l2_list_total,
-        // },
+        {
+          range: `Teacher Lesson!A3:Z`, 
+          values:  cum_lesson_teacher
+        },
+        {
+          range: `Teacher Activity!A3:Z`, 
+          values: cum_activity_teacher
+        },
+       {
+          range: `Teacher Pre-Assessment!A4:M`, 
+          values: cum_pre_assessment_teacher
+        },
+        {
+          range: `Teacher Post-Assessment!A4:M`, 
+          values: cum_post_assessment_teacher
+        },
       ],
     };
     
