@@ -5,6 +5,10 @@ const create = async (data) => {
     return await userProgress.save();
 };
 
+const getAll = async () => {
+    return await WA_UserProgress.findAll();
+};
+
 const getByPhoneNumber = async (phoneNumber) => {
     return await WA_UserProgress.findOne({
         where: {
@@ -152,6 +156,7 @@ const updateDifficultyLevel = async (profileId, phoneNumber, difficultyLevel) =>
 
 export default {
     create,
+    getAll,
     getByPhoneNumber,
     getByProfileId,
     update,
