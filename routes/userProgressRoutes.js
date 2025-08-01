@@ -16,10 +16,13 @@ router.get('/getAllUserProgressData', beajFacilitatorsAuth, userProgressControll
 // GET  api/userProgress/getAll
 router.get('/getUserProgressLeaderboard', beajFacilitatorsAuth, userProgressController.getUserProgressLeaderboardController);
 
+// GET  api/userProgress/getcohortList
 router.get('/getcohortList', beajFacilitatorsAuth, userProgressController.getcohortListController);
 
+// GET  api/userProgress/getMetadataProgress
+router.get('/getMetadataProgress', userProgressController.getMetadataProgressController);
 
-
+// GET  api/userProgress/getUserProgressBarStats
 router.get('/getUserProgressBarStats', beajFacilitatorsAuth, userProgressController.getUserProgressBarStatsController);
 
 // Use error handler middleware

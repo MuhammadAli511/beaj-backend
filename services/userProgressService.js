@@ -1,9 +1,12 @@
 import etlRepository from "../repositories/etlRepository.js";
+import waUsersMetadataRepository from "../repositories/waUsersMetadataRepository.js";
+import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
+import courseRepository from "../repositories/courseRepository.js";
+import sequelize from "../config/sequelize.js";
 import fs from 'fs';
 import path from 'path';
 import { createCanvas, loadImage } from 'canvas';
 import { fileURLToPath } from 'url';
-import { et } from "date-fns/locale";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -74,7 +77,7 @@ const getAllUserProgressService = async (botType, rollout, level, cohort, target
   else if (module === 'assessment') {
     let array_list_Pre = await etlRepository.getActivityAssessmentScoreDay(botType, rollout, level, cohort, targetGroup, courseId4, assessmentView);
     let array_listt_Post = await etlRepository.getActivityAssessmentScoreDay(botType, rollout, level, cohort, targetGroup, courseId5, assessmentView);
-    
+
     let totalRow = [], arrayT1_List01 = [];
 
     let maxL1 = {
@@ -102,195 +105,195 @@ const getAllUserProgressService = async (botType, rollout, level, cohort, target
       maxL2.total_watchandspeak = 0;
     }
 
-    if(assessmentView === 'week') {
-     
-    for (let i = 0; i < array_list_Pre.length; i++) {
-      let l1_entry = array_list_Pre[i];
-      let l2_entry = array_listt_Post[i];
+    if (assessmentView === 'week') {
 
-      // Update max totals for L1
-      maxL1.total_mcqs = Math.max(maxL1.total_mcqs, l1_entry.total_mcqs);
+      for (let i = 0; i < array_list_Pre.length; i++) {
+        let l1_entry = array_list_Pre[i];
+        let l2_entry = array_listt_Post[i];
 
-      // Update max totals for L2
-      maxL2.total_mcqs = Math.max(maxL2.total_mcqs, l2_entry.total_mcqs);
+        // Update max totals for L1
+        maxL1.total_mcqs = Math.max(maxL1.total_mcqs, l1_entry.total_mcqs);
 
+        // Update max totals for L2
+        maxL2.total_mcqs = Math.max(maxL2.total_mcqs, l2_entry.total_mcqs);
+
+        if (level === 'grade 7' || botType === 'teacher') {
+          maxL1.total_speaking_practice = Math.max(maxL1.total_speaking_practice, l1_entry.total_speaking_practice);
+          maxL2.total_speaking_practice = Math.max(maxL2.total_speaking_practice, l2_entry.total_speaking_practice);
+          // Your existing array push
+          arrayT1_List01.push([
+            i + 1,
+            l1_entry.profile_id,
+            l1_entry.phoneNumber,
+            l1_entry.name,
+            l1_entry.total_mcqs_score,
+            l1_entry.day1_sp,
+            l1_entry.total_score,
+            null,
+            l2_entry.total_mcqs_score,
+            l2_entry.day1_sp,
+            l2_entry.total_score,
+          ]);
+        }
+        else {
+          maxL1.total_watchandspeak = Math.max(maxL1.total_watchandspeak, l1_entry.total_watchandspeak);
+          maxL2.total_watchandspeak = Math.max(maxL2.total_watchandspeak, l2_entry.total_watchandspeak);
+          // Your existing array push
+          arrayT1_List01.push([
+            i + 1,
+            l1_entry.profile_id,
+            l1_entry.phoneNumber,
+            l1_entry.name,
+            l1_entry.total_mcqs_score,
+            l1_entry.day1_ws,
+            l1_entry.total_score,
+            null,
+            l2_entry.total_mcqs_score,
+            l2_entry.day1_ws,
+            l2_entry.total_score,
+          ]);
+        }
+      }
       if (level === 'grade 7' || botType === 'teacher') {
-        maxL1.total_speaking_practice = Math.max(maxL1.total_speaking_practice, l1_entry.total_speaking_practice);
-        maxL2.total_speaking_practice = Math.max(maxL2.total_speaking_practice, l2_entry.total_speaking_practice);
-        // Your existing array push
-        arrayT1_List01.push([
-          i + 1,
-          l1_entry.profile_id,
-          l1_entry.phoneNumber,
-          l1_entry.name,
-          l1_entry.total_mcqs_score,
-          l1_entry.day1_sp,
-          l1_entry.total_score,
+        totalRow = [
           null,
-          l2_entry.total_mcqs_score,
-          l2_entry.day1_sp,
-          l2_entry.total_score,
-        ]);
+          null,
+          null,
+          null,
+          maxL1.total_mcqs,
+          maxL1.total_speaking_practice,
+          maxL1.total_mcqs + maxL1.total_speaking_practice,
+          null,
+          maxL2.total_mcqs,
+          maxL2.total_speaking_practice,
+          maxL2.total_mcqs + maxL2.total_speaking_practice,
+        ];
       }
       else {
-        maxL1.total_watchandspeak = Math.max(maxL1.total_watchandspeak, l1_entry.total_watchandspeak);
-        maxL2.total_watchandspeak = Math.max(maxL2.total_watchandspeak, l2_entry.total_watchandspeak);
-        // Your existing array push
-        arrayT1_List01.push([
-          i + 1,
-          l1_entry.profile_id,
-          l1_entry.phoneNumber,
-          l1_entry.name,
-          l1_entry.total_mcqs_score,
-          l1_entry.day1_ws,
-          l1_entry.total_score,
+        totalRow = [
           null,
-          l2_entry.total_mcqs_score,
-          l2_entry.day1_ws,
-          l2_entry.total_score,
-        ]);
+          null,
+          null,
+          null,
+          maxL1.total_mcqs,
+          maxL1.total_watchandspeak,
+          maxL1.total_mcqs + maxL1.total_watchandspeak,
+          null,
+          maxL2.total_mcqs,
+          maxL2.total_watchandspeak,
+          maxL2.total_mcqs + maxL2.total_watchandspeak,
+        ];
       }
     }
-    if (level === 'grade 7' || botType === 'teacher') {
-      totalRow = [
-        null,
-        null,
-        null,
-        null,
-        maxL1.total_mcqs,
-        maxL1.total_speaking_practice,
-        maxL1.total_mcqs + maxL1.total_speaking_practice,
-        null,
-        maxL2.total_mcqs,
-        maxL2.total_speaking_practice,
-        maxL2.total_mcqs + maxL2.total_speaking_practice,
-      ];
-    }
     else {
-      totalRow = [
-        null,
-        null,
-        null,
-        null,
-        maxL1.total_mcqs,
-        maxL1.total_watchandspeak,
-        maxL1.total_mcqs + maxL1.total_watchandspeak,
-        null,
-        maxL2.total_mcqs,
-        maxL2.total_watchandspeak,
-        maxL2.total_mcqs + maxL2.total_watchandspeak,
-      ];
-    }
-    }
-    else{
 
-    for (let i = 0; i < array_list_Pre.length; i++) {
-      let l1_entry = array_list_Pre[i];
-      let l2_entry = array_listt_Post[i];
+      for (let i = 0; i < array_list_Pre.length; i++) {
+        let l1_entry = array_list_Pre[i];
+        let l2_entry = array_listt_Post[i];
 
-      // Update max totals for L1
-      maxL1.day1_mcqs_total = Math.max(maxL1.day1_mcqs_total, l1_entry.day1_mcqs_total);
-      maxL1.day2_mcqs_total = Math.max(maxL1.day2_mcqs_total, l1_entry.day2_mcqs_total);
-      maxL1.day3_mcqs_total = Math.max(maxL1.day3_mcqs_total, l1_entry.day3_mcqs_total);
-      maxL1.total_mcqs = Math.max(maxL1.total_mcqs, l1_entry.total_mcqs);
+        // Update max totals for L1
+        maxL1.day1_mcqs_total = Math.max(maxL1.day1_mcqs_total, l1_entry.day1_mcqs_total);
+        maxL1.day2_mcqs_total = Math.max(maxL1.day2_mcqs_total, l1_entry.day2_mcqs_total);
+        maxL1.day3_mcqs_total = Math.max(maxL1.day3_mcqs_total, l1_entry.day3_mcqs_total);
+        maxL1.total_mcqs = Math.max(maxL1.total_mcqs, l1_entry.total_mcqs);
 
-      // Update max totals for L2
-      maxL2.day1_mcqs_total = Math.max(maxL2.day1_mcqs_total, l2_entry.day1_mcqs_total);
-      maxL2.day2_mcqs_total = Math.max(maxL2.day2_mcqs_total, l2_entry.day2_mcqs_total);
-      maxL2.day3_mcqs_total = Math.max(maxL2.day3_mcqs_total, l2_entry.day3_mcqs_total);
-      maxL2.total_mcqs = Math.max(maxL2.total_mcqs, l2_entry.total_mcqs);
+        // Update max totals for L2
+        maxL2.day1_mcqs_total = Math.max(maxL2.day1_mcqs_total, l2_entry.day1_mcqs_total);
+        maxL2.day2_mcqs_total = Math.max(maxL2.day2_mcqs_total, l2_entry.day2_mcqs_total);
+        maxL2.day3_mcqs_total = Math.max(maxL2.day3_mcqs_total, l2_entry.day3_mcqs_total);
+        maxL2.total_mcqs = Math.max(maxL2.total_mcqs, l2_entry.total_mcqs);
 
+        if (level === 'grade 7' || botType === 'teacher') {
+          maxL1.total_speaking_practice = Math.max(maxL1.total_speaking_practice, l1_entry.total_speaking_practice);
+          maxL2.total_speaking_practice = Math.max(maxL2.total_speaking_practice, l2_entry.total_speaking_practice);
+          // Your existing array push
+          arrayT1_List01.push([
+            i + 1,
+            l1_entry.profile_id,
+            l1_entry.phoneNumber,
+            l1_entry.name,
+            l1_entry.day1_mcqs,
+            l1_entry.day2_mcqs,
+            l1_entry.day3_mcqs,
+            l1_entry.total_mcqs_score,
+            l1_entry.day1_sp,
+            l1_entry.total_score,
+            null,
+            l2_entry.day1_mcqs,
+            l2_entry.day2_mcqs,
+            l2_entry.day3_mcqs,
+            l2_entry.total_mcqs_score,
+            l2_entry.day1_sp,
+            l2_entry.total_score,
+          ]);
+        }
+        else {
+          maxL1.total_watchandspeak = Math.max(maxL1.total_watchandspeak, l1_entry.total_watchandspeak);
+          maxL2.total_watchandspeak = Math.max(maxL2.total_watchandspeak, l2_entry.total_watchandspeak);
+          // Your existing array push
+          arrayT1_List01.push([
+            i + 1,
+            l1_entry.profile_id,
+            l1_entry.phoneNumber,
+            l1_entry.name,
+            l1_entry.day1_mcqs,
+            l1_entry.day2_mcqs,
+            l1_entry.day3_mcqs,
+            l1_entry.total_mcqs_score,
+            l1_entry.day1_ws,
+            l1_entry.total_score,
+            null,
+            l2_entry.day1_mcqs,
+            l2_entry.day2_mcqs,
+            l2_entry.day3_mcqs,
+            l2_entry.total_mcqs_score,
+            l2_entry.day1_ws,
+            l2_entry.total_score,
+          ]);
+        }
+      }
       if (level === 'grade 7' || botType === 'teacher') {
-        maxL1.total_speaking_practice = Math.max(maxL1.total_speaking_practice, l1_entry.total_speaking_practice);
-        maxL2.total_speaking_practice = Math.max(maxL2.total_speaking_practice, l2_entry.total_speaking_practice);
-        // Your existing array push
-        arrayT1_List01.push([
-          i + 1,
-          l1_entry.profile_id,
-          l1_entry.phoneNumber,
-          l1_entry.name,
-          l1_entry.day1_mcqs,
-          l1_entry.day2_mcqs,
-          l1_entry.day3_mcqs,
-          l1_entry.total_mcqs_score,
-          l1_entry.day1_sp,
-          l1_entry.total_score,
+        totalRow = [
           null,
-          l2_entry.day1_mcqs,
-          l2_entry.day2_mcqs,
-          l2_entry.day3_mcqs,
-          l2_entry.total_mcqs_score,
-          l2_entry.day1_sp,
-          l2_entry.total_score,
-        ]);
+          null,
+          null,
+          null,
+          maxL1.day1_mcqs_total,
+          maxL1.day2_mcqs_total,
+          maxL1.day3_mcqs_total,
+          maxL1.total_mcqs,
+          maxL1.total_speaking_practice,
+          maxL1.total_mcqs + maxL1.total_speaking_practice,
+          null,
+          maxL2.day1_mcqs_total,
+          maxL2.day2_mcqs_total,
+          maxL2.day3_mcqs_total,
+          maxL2.total_mcqs,
+          maxL2.total_speaking_practice,
+          maxL2.total_mcqs + maxL2.total_speaking_practice,
+        ];
       }
       else {
-        maxL1.total_watchandspeak = Math.max(maxL1.total_watchandspeak, l1_entry.total_watchandspeak);
-        maxL2.total_watchandspeak = Math.max(maxL2.total_watchandspeak, l2_entry.total_watchandspeak);
-        // Your existing array push
-        arrayT1_List01.push([
-          i + 1,
-          l1_entry.profile_id,
-          l1_entry.phoneNumber,
-          l1_entry.name,
-          l1_entry.day1_mcqs,
-          l1_entry.day2_mcqs,
-          l1_entry.day3_mcqs,
-          l1_entry.total_mcqs_score,
-          l1_entry.day1_ws,
-          l1_entry.total_score,
+        totalRow = [
           null,
-          l2_entry.day1_mcqs,
-          l2_entry.day2_mcqs,
-          l2_entry.day3_mcqs,
-          l2_entry.total_mcqs_score,
-          l2_entry.day1_ws,
-          l2_entry.total_score,
-        ]);
+          null,
+          null,
+          null,
+          maxL1.day1_mcqs_total,
+          maxL1.day2_mcqs_total,
+          maxL1.day3_mcqs_total,
+          maxL1.total_mcqs,
+          maxL1.total_watchandspeak,
+          maxL1.total_mcqs + maxL1.total_watchandspeak,
+          null,
+          maxL2.day1_mcqs_total,
+          maxL2.day2_mcqs_total,
+          maxL2.day3_mcqs_total,
+          maxL2.total_mcqs,
+          maxL2.total_watchandspeak,
+          maxL2.total_mcqs + maxL2.total_watchandspeak,
+        ];
       }
-    }
-    if (level === 'grade 7' || botType === 'teacher') {
-      totalRow = [
-        null,
-        null,
-        null,
-        null,
-        maxL1.day1_mcqs_total,
-        maxL1.day2_mcqs_total,
-        maxL1.day3_mcqs_total,
-        maxL1.total_mcqs,
-        maxL1.total_speaking_practice,
-        maxL1.total_mcqs + maxL1.total_speaking_practice,
-        null,
-        maxL2.day1_mcqs_total,
-        maxL2.day2_mcqs_total,
-        maxL2.day3_mcqs_total,
-        maxL2.total_mcqs,
-        maxL2.total_speaking_practice,
-        maxL2.total_mcqs + maxL2.total_speaking_practice,
-      ];
-    }
-    else {
-      totalRow = [
-        null,
-        null,
-        null,
-        null,
-        maxL1.day1_mcqs_total,
-        maxL1.day2_mcqs_total,
-        maxL1.day3_mcqs_total,
-        maxL1.total_mcqs,
-        maxL1.total_watchandspeak,
-        maxL1.total_mcqs + maxL1.total_watchandspeak,
-        null,
-        maxL2.day1_mcqs_total,
-        maxL2.day2_mcqs_total,
-        maxL2.day3_mcqs_total,
-        maxL2.total_mcqs,
-        maxL2.total_watchandspeak,
-        maxL2.total_mcqs + maxL2.total_watchandspeak,
-      ];
-    }
     }
     array_list = [totalRow, ...arrayT1_List01];
   }
@@ -298,11 +301,10 @@ const getAllUserProgressService = async (botType, rollout, level, cohort, target
   userStats = userStats.map(obj => Object.values(obj).map(value => value));
   array_list = capitalizeNames(array_list);
 
-  
-  // console.log(array_list);
+
   return {
     array_list: array_list,
-    userStats : userStats,
+    userStats: userStats,
   };
 };
 
@@ -562,22 +564,43 @@ const getTopPerformersWithNames = (data, columnIndex) => {
   return sortedScores;
 };
 
-const getcohortListService = async (botType,rollout,level,targetGroup) => {
-
-    let cohort_list = await etlRepository.getcohortList(botType,rollout,level,targetGroup);
-    cohort_list = cohort_list.map(obj => Object.values(obj).map(value => value));
-
-    return cohort_list;
+const getcohortListService = async (botType, rollout, level, targetGroup) => {
+  let cohort_list = await etlRepository.getcohortList(botType, rollout, level, targetGroup);
+  cohort_list = cohort_list.map(obj => Object.values(obj).map(value => value));
+  return cohort_list;
 };
 
 const getUserProgressBarStatsService = async (botType, level, cohort, rollout, courseId1, courseId4, condition) => {
-  console.log(botType, level, cohort, rollout, courseId1, courseId4, condition);
   let array_list = await etlRepository.getUserProgressBarStats(botType, level, cohort, rollout, courseId1, courseId4, condition);
-  // array_list = array_list.map(obj => Object.values(obj).map(value => value));
-  // console.log(array_list)
   return {
     users: array_list
   };
+};
+
+const getMetadataProgressService = async () => {
+  const query = `
+    SELECT 
+      m.*,
+      p.phone_number as profile_phone_number,
+      p.bot_phone_number_id,
+      p.profile_type,
+      p.created_at as profile_created_at,
+      up.persona,
+      up."currentWeek",
+      up."currentDay",
+      up."currentCourseId",
+      c."CourseName" as courseName
+    FROM wa_users_metadata m
+    LEFT JOIN wa_profiles p ON m.profile_id = p.profile_id
+    LEFT JOIN wa_user_progress up ON m.profile_id = up.profile_id
+    LEFT JOIN "Courses" c ON up."currentCourseId" = c."CourseId"
+  `;
+
+  const result = await sequelize.query(query, {
+    type: sequelize.QueryTypes.SELECT
+  });
+
+  return result;
 };
 
 export default {
@@ -585,4 +608,5 @@ export default {
   getUserProgressLeaderboardService,
   getcohortListService,
   getUserProgressBarStatsService,
+  getMetadataProgressService
 };
