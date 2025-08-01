@@ -28,13 +28,13 @@ const CumulativeUtils_load = async (
 
       const resource_clear = {
         ranges: [
-            `Student Lesson!A3:N`, 
-            `Student Activity!A3:N`, 
+            `Student Lesson!A3:AA`, 
+            `Student Activity!A3:AA`, 
             `Student Assessment!A4:Z`,
-            `Teacher Lesson!A3:Z`, 
-            `Teacher Activity!A3:Z`, 
-            `Teacher Pre-Assessment!A4:M`, 
-             `Teacher Post-Assessment!A4:M`, 
+            `Teacher Lesson!A4:AA`, 
+            `Teacher Activity!A4:AA`, 
+            `Teacher Pre-Assessment!A4:N`, 
+             `Teacher Post-Assessment!A4:N`, 
         ],
     };
 
@@ -48,11 +48,11 @@ const CumulativeUtils_load = async (
       valueInputOption: "RAW",
       data: [
         {
-          range: `Student Lesson!A3:N`, 
+          range: `Student Lesson!A3:AA`, 
           values: cum_lesson_student
         },
         {
-          range: `Student Activity!A3:N`, 
+          range: `Student Activity!A3:AA`, 
           values: cum_activity_student
         },
         {
@@ -60,19 +60,19 @@ const CumulativeUtils_load = async (
           values: cum_activity_assessment
         },
         {
-          range: `Teacher Lesson!A3:Z`, 
+          range: `Teacher Lesson!A4:AA`, 
           values:  cum_lesson_teacher
         },
         {
-          range: `Teacher Activity!A3:Z`, 
+          range: `Teacher Activity!A4:AA`, 
           values: cum_activity_teacher
         },
        {
-          range: `Teacher Pre-Assessment!A4:M`, 
+          range: `Teacher Pre-Assessment!A4:N`, 
           values: cum_pre_assessment_teacher
         },
         {
-          range: `Teacher Post-Assessment!A4:M`, 
+          range: `Teacher Post-Assessment!A4:N`, 
           values: cum_post_assessment_teacher
         },
       ],

@@ -2301,6 +2301,10 @@ const getCumulativeLessonCompletions = async () => {
         m."classLevel" AS grade,
         m."cohort",
         m."rollout",
+        m."schoolName", m."customerChannel",
+                        m."customerSource",
+                        m."amountPaid",
+                        m."city",
         -- Map grade to course (adjust these mappings as needed)
         CASE m."classLevel"
             WHEN 'grade 1' THEN 119
@@ -2366,7 +2370,11 @@ SELECT
     sc."courseId",
     sc.grade,
     sc."cohort",
-    sc."rollout"
+    sc."rollout",
+    sc."schoolName", sc."customerChannel",
+                        sc."customerSource",
+                        sc."amountPaid",
+                        sc."city"
 FROM student_courses sc
 LEFT JOIN user_weekly_progress up ON sc."profile_id" = up."profile_id"
     AND sc."phoneNumber" = up."phoneNumber"
@@ -2395,6 +2403,10 @@ const getCumulativeActivityCompletions = async () => {
             m."classLevel" AS grade,
             m."cohort",
             m."rollout",
+            m."schoolName", m."customerChannel",
+                        m."customerSource",
+                        m."amountPaid",
+                        m."city",
             CASE m."classLevel"
                 WHEN 'grade 1' THEN 119
                 WHEN 'grade 2' THEN 120
@@ -2457,7 +2469,11 @@ const getCumulativeActivityCompletions = async () => {
            sc."courseId",
           sc."grade",
           sc."cohort",
-          sc."rollout"
+          sc."rollout",
+          sc."schoolName", sc."customerChannel",
+                        sc."customerSource",
+                        sc."amountPaid",
+                        sc."city"
       FROM student_courses sc
       LEFT JOIN user_weekly_activities uwa 
         ON sc."profile_id" = uwa."profile_id" 
@@ -3174,7 +3190,11 @@ const getActivityAssessmentCumulative = async () => {
           --  NULLIF(ROUND(
             --    COALESCE(mc.mcqs_week1_total, 0) + COALESCE(mc.mcqs_week2_total, 0) + COALESCE(mc.mcqs_week3_total, 0) +
             --    COALESCE(ws.watchAndSpeak_week1_total, 0) + COALESCE(sp.speaking_practice_week1_total, 0), 2), 0) AS total_activity_total,
-            m."classLevel", m."cohort", m."rollout"
+            m."classLevel", m."cohort", m."rollout",
+            m."schoolName", m."customerChannel",
+                        m."customerSource",
+                        m."amountPaid",
+                        m."city"
             FROM "wa_users_metadata" m
             INNER JOIN "wa_profiles" p ON m."profile_id" = p."profile_id"
             LEFT JOIN mcqs mc ON m."profile_id" = mc."profile_id"
@@ -3221,7 +3241,8 @@ const getTeacherLessonCumulative = async () =>{
                         m."customerChannel",
                         m."customerSource",
                         m."amountPaid",
-                        m."city"
+                        m."city",
+                         m."schoolName"
                     FROM "wa_users_metadata" m
                     INNER JOIN "wa_profiles" p ON m."profile_id" = p."profile_id"
                     WHERE m."rollout" = 2
@@ -3294,11 +3315,12 @@ const getTeacherLessonCumulative = async () =>{
                         dp."city",
                         dp."courseId",
                         dp."weekNumber",
+                         dp."schoolName",
                         SUM(dp."DayCompleted") AS "DaysCompletedInWeek"
                     FROM DailyProgress dp
                     GROUP BY dp."phoneNumber", dp."name", dp."cohort", dp."profile_id", dp."rollout",
                             dp."customerChannel", dp."customerSource", dp."amountPaid", dp."city",
-                            dp."courseId", dp."weekNumber"
+                            dp."courseId", dp."weekNumber", dp."schoolName"
                 ),
 
                 PivotedProgress AS (
@@ -3313,13 +3335,14 @@ const getTeacherLessonCumulative = async () =>{
                         wp."amountPaid",
                         wp."city",
                         wp."courseId",
+                        wp."schoolName",
                         MAX(CASE WHEN wp."weekNumber" = 1 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week1",
                         MAX(CASE WHEN wp."weekNumber" = 2 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week2",
                         MAX(CASE WHEN wp."weekNumber" = 3 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week3",
                         MAX(CASE WHEN wp."weekNumber" = 4 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week4"
                     FROM WeeklyProgress wp
                     GROUP BY wp."phoneNumber", wp."name", wp."cohort", wp."profile_id", wp."rollout",
-                            wp."customerChannel", wp."customerSource", wp."amountPaid", wp."city", wp."courseId"
+                            wp."customerChannel", wp."customerSource", wp."amountPaid", wp."city", wp."courseId", wp."schoolName"
                 ),
 
                 AggregatedProgress AS (
@@ -3372,10 +3395,11 @@ const getTeacherLessonCumulative = async () =>{
                          pp."amountPaid",
                         pp."rollout",
                         pp."customerChannel",
-                        pp."customerSource"
+                        pp."customerSource",
+                         pp."schoolName"
                     FROM PivotedProgress pp
                     GROUP BY pp."phoneNumber", pp."name", pp."cohort", pp."profile_id", pp."rollout",
-                            pp."customerChannel", pp."customerSource", pp."amountPaid", pp."city"
+                            pp."customerChannel", pp."customerSource", pp."amountPaid", pp."city", pp."schoolName"
                 )
 
                 SELECT *
@@ -3426,7 +3450,8 @@ const getTeacherActivityCumulative = async () =>{
              m."rollout",
 			 m."amountPaid",
 		        m."customerChannel",
-		        m."customerSource"
+		        m."customerSource",
+                m."schoolName"
           FROM 
               "wa_users_metadata" m 
 			  INNER JOIN "wa_profiles" p ON m."profile_id" = p."profile_id"
@@ -3455,7 +3480,8 @@ const getTeacherActivityCumulative = async () =>{
 		        m."customerSource",
 		        m."amountPaid",
 		        m."city",
-				 m."cohort"
+				 m."cohort",
+                  m."schoolName"
           ORDER BY 
             m."name" ASC;`;
 
@@ -3529,7 +3555,8 @@ const getTeacherAssessmentCumulative = async (courseId = 148) =>{
                 COALESCE(mc.mcqs_week1_correct_count, 0) + COALESCE(sp.speaking_practice_week1_correct_count, 0), 2), 0) AS total_activity_score,
              m."city",
              m."cohort",m."amountPaid", m."rollout", m."customerChannel",
-		        m."customerSource"
+		        m."customerSource",
+                 m."schoolName"
             FROM "wa_users_metadata" m
             INNER JOIN "wa_profiles" p ON m."profile_id" = p."profile_id"
             LEFT JOIN mcqs mc ON m."profile_id" = mc."profile_id"
