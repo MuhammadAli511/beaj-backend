@@ -40,10 +40,7 @@ const getById = async (id) => {
 };
 
 const deleteRecord = async (profileId, phoneNumber, lessonId, questionId) => {
-    return await WA_QuestionResponses.update({
-        submittedUserAudio: null,
-        submittedFeedbackAudio: null
-    }, {
+    return await WA_QuestionResponses.destroy({
         where: { profile_id: profileId, phoneNumber: phoneNumber, lessonId: lessonId, questionId: questionId }
     });
 };
