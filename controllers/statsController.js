@@ -98,6 +98,17 @@ const userAnalyticsStatsController = async (req, res, next) => {
     }
 };
 
+const studentCardAnalyticsStatsController = async (req, res, next) => {
+    try {
+        const { courseId, grade, cohort, graphType, statType, userType } = req.body;
+        const userJourneyStats = await service.studentCardAnalyticsStatsService(courseId, grade, cohort, graphType, statType, userType);
+        res.status(200).send(userJourneyStats);
+    } catch (error) {
+        error.fileName = 'statsController.js';
+        next(error);
+    }
+};
+
 export default {
     totalContentStatsController,
     lastActiveUsersController,
@@ -108,4 +119,5 @@ export default {
     studentAnalyticsController,
     studentBarAnalyticsController,
     userAnalyticsStatsController,
+    studentCardAnalyticsStatsController
 };

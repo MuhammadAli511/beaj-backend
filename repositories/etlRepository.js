@@ -2587,7 +2587,19 @@ const getUserProgressStats = async (botType, grade, cohort, rollout, courseId1, 
                 FROM completed_assessment ca
                 LEFT JOIN started_main sm ON ca.profile_id = sm.profile_id
                 WHERE sm.profile_id IS NULL
-            )
+            ),
+            started_not_completed_assessment AS (
+            SELECT sa.profile_id
+            FROM started_assessment sa
+            LEFT JOIN completed_assessment ca ON sa.profile_id = ca.profile_id
+            WHERE ca.profile_id IS NULL
+        ),
+        started_not_completed_main AS (
+            SELECT sm.profile_id
+            FROM started_main sm
+            LEFT JOIN completed_main cm ON sm.profile_id = cm.profile_id
+            WHERE cm.profile_id IS NULL
+        )
 
             SELECT
                 (SELECT COUNT(*) FROM target_group) AS totalUsers,
@@ -2596,6 +2608,8 @@ const getUserProgressStats = async (botType, grade, cohort, rollout, courseId1, 
                 (SELECT COUNT(*) FROM started_assessment) AS startedPreAssessment,
                 (SELECT COUNT(*) FROM completed_assessment) AS completedPreAssessment,
                 (SELECT COUNT(*) FROM completed_assessment_not_started_main) AS completedAssessmentButNotStartedMain,
+                (SELECT COUNT(*) FROM started_not_completed_assessment) AS startedNotCompletedPreAssessment,
+                (SELECT COUNT(*) FROM started_not_completed_main) AS startedNotCompletedMainCourse,
                 (SELECT COUNT(*) FROM not_started_assessment) AS notStartedPreAssessment;
             `;
         const res = await sequelize.query(qry);
@@ -2702,6 +2716,18 @@ const getUserProgressBarStats = async (botType, grade, cohort, rollout, courseId
             FROM completed_assessment ca
             LEFT JOIN started_main sm ON ca.profile_id = sm.profile_id
             WHERE sm.profile_id IS NULL
+        ),
+        started_not_completed_assessment AS (
+            SELECT sa.profile_id
+            FROM started_assessment sa
+            LEFT JOIN completed_assessment ca ON sa.profile_id = ca.profile_id
+            WHERE ca.profile_id IS NULL
+        ),
+        started_not_completed_main AS (
+            SELECT sm.profile_id
+            FROM started_main sm
+            LEFT JOIN completed_main cm ON sm.profile_id = cm.profile_id
+            WHERE cm.profile_id IS NULL
         )
 
         SELECT tg.*
@@ -2722,6 +2748,10 @@ const getUserProgressBarStats = async (botType, grade, cohort, rollout, courseId
                     ? `SELECT profile_id FROM completed_assessment_not_started_main`
                     : condition_name === 'not_started_pre_assessment'
                     ? `SELECT profile_id FROM not_started_assessment`
+                    : condition_name === 'started_not_completed_assessment'
+                    ? `SELECT profile_id FROM started_not_completed_assessment`
+                    : condition_name === 'started_not_completed_main'
+                    ? `SELECT profile_id FROM started_not_completed_main`
                     : `NULL`
             }
         )
