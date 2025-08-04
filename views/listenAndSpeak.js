@@ -145,7 +145,17 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
 
                 const answersArray = currentListenAndSpeakQuestion.dataValues.answer;
                 let prompt = "Transcribe the audio, if it is empty return nothing";
-                let recognizedText = await AIServices.azureOpenAISpeechToTextWithPrompt(audioBuffer, prompt);
+                let recognizedText = null;
+                try {
+                    recognizedText = await AIServices.azureOpenAISpeechToTextWithPrompt(audioBuffer, prompt);
+                } catch (error) {
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                    await waQuestionResponsesRepository.deleteRecord(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId, currentListenAndSpeakQuestion.dataValues.id);
+                    let errorMessage = "Sorry! We did not understand that.\n\nPlease record a *new* voice message. Do not forward the previously recorded voice message.";
+                    await sendMessage(userMobileNumber, errorMessage);
+                    await createActivityLog(userMobileNumber, "text", "outbound", errorMessage, null);
+                    return;
+                }
                 if (recognizedText) {
                     // Checking if user response is correct or not
 
@@ -289,8 +299,11 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                         await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
                     }
                 } else {
-                    await sendMessage(userMobileNumber, "No speech recognized or an error occurred. Please try again.");
-                    await createActivityLog(userMobileNumber, "text", "outbound", "No speech recognized or an error occurred. Please try again.", null);
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                    await waQuestionResponsesRepository.deleteRecord(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId, currentListenAndSpeakQuestion.dataValues.id);
+                    let errorMessage = "Sorry! We did not understand that.\n\nPlease record a *new* voice message. Do not forward the previously recorded voice message.";
+                    await sendMessage(userMobileNumber, errorMessage);
+                    await createActivityLog(userMobileNumber, "text", "outbound", errorMessage, null);
                 }
                 return;
             }
@@ -449,7 +462,17 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
 
                 const answersArray = currentListenAndSpeakQuestion.dataValues.answer;
                 let prompt = "Transcribe the audio, if it is empty return nothing";
-                let recognizedText = await AIServices.azureOpenAISpeechToTextWithPrompt(audioBuffer, prompt);
+                let recognizedText = null;
+                try {
+                    recognizedText = await AIServices.azureOpenAISpeechToTextWithPrompt(audioBuffer, prompt);
+                } catch (error) {
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                    await waQuestionResponsesRepository.deleteRecord(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId, currentListenAndSpeakQuestion.dataValues.id);
+                    let errorMessage = "Sorry! We did not understand that.\n\nPlease record a *new* voice message. Do not forward the previously recorded voice message.";
+                    await sendMessage(userMobileNumber, errorMessage);
+                    await createActivityLog(userMobileNumber, "text", "outbound", errorMessage, null);
+                    return;
+                }
                 if (recognizedText) {
                     // Checking if user response is correct or not
 
@@ -595,8 +618,11 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                         await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson, message);
                     }
                 } else {
-                    await sendMessage(userMobileNumber, "No speech recognized or an error occurred. Please try again.");
-                    await createActivityLog(userMobileNumber, "text", "outbound", "No speech recognized or an error occurred. Please try again.", null);
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                    await waQuestionResponsesRepository.deleteRecord(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId, currentListenAndSpeakQuestion.dataValues.id);
+                    let errorMessage = "Sorry! We did not understand that.\n\nPlease record a *new* voice message. Do not forward the previously recorded voice message.";
+                    await sendMessage(userMobileNumber, errorMessage);
+                    await createActivityLog(userMobileNumber, "text", "outbound", errorMessage, null);
                 }
                 return;
             }
