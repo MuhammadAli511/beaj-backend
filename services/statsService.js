@@ -295,72 +295,81 @@ const studentCourseStatsService = async () => {
 
         // PRE ASSESSMENT query
         const preAssessmentQuery = `
-            WITH LessonBoundaries AS ( 
-                SELECT 
-                    "courseId", 
-                    "weekNumber", 
-                    "dayNumber", 
-                    MIN("SequenceNumber") as min_sequence, 
-                    MAX("SequenceNumber") as max_sequence 
-                FROM "Lesson" 
-                WHERE "dayNumber" IS NOT NULL 
-                    AND "weekNumber" IS NOT NULL 
-                    AND "SequenceNumber" IS NOT NULL 
-                    AND "courseId" IN (139, 140, 141, 142) 
-                GROUP BY "courseId", "weekNumber", "dayNumber" 
-            ), 
-            LessonGroups AS ( 
-                SELECT 
-                    CONCAT( 
-                        'Week ', l."weekNumber", 
-                        ' Day ', l."dayNumber", 
-                        CASE 
-                            WHEN l."SequenceNumber" = lb.min_sequence THEN ' Start' 
-                            WHEN l."SequenceNumber" = lb.max_sequence THEN ' Complete' 
-                        END 
-                    ) as heading, 
-                    STRING_AGG(l."LessonId"::text, ', ' ORDER BY l."courseId") as lesson_ids, 
-                    ARRAY_AGG(l."LessonId" ORDER BY l."courseId") as lesson_id_array, 
-                    l."weekNumber", 
-                    l."dayNumber", 
-                    CASE 
-                        WHEN l."SequenceNumber" = lb.min_sequence THEN ' Start' 
-                        WHEN l."SequenceNumber" = lb.max_sequence THEN ' Complete' 
-                    END as lesson_type 
-                FROM "Lesson" l 
-                INNER JOIN LessonBoundaries lb 
-                    ON l."courseId" = lb."courseId" 
-                    AND l."weekNumber" = lb."weekNumber" 
-                    AND l."dayNumber" = lb."dayNumber" 
-                    AND (l."SequenceNumber" = lb.min_sequence OR l."SequenceNumber" = lb.max_sequence) 
-                WHERE l."courseId" IN (139, 140, 141, 142) 
-                GROUP BY 
-                    l."weekNumber", 
-                    l."dayNumber", 
-                    CASE 
-                        WHEN l."SequenceNumber" = lb.min_sequence THEN ' Start' 
-                        WHEN l."SequenceNumber" = lb.max_sequence THEN ' Complete' 
-                    END 
-            ) 
-            SELECT 
-                lg.heading, 
-                COUNT(DISTINCT wlc.id) as completion_count 
-            FROM LessonGroups lg 
-            LEFT JOIN wa_lessons_completed wlc 
-                ON wlc."lessonId" = ANY(lg.lesson_id_array) 
-                AND wlc."completionStatus" = 'Completed' 
-            GROUP BY 
-                lg.heading, 
-                lg.lesson_ids, 
-                lg."weekNumber", 
-                lg."dayNumber", 
-                lg.lesson_type 
-            ORDER BY 
-                MIN(lg."weekNumber"), 
-                MIN(lg."dayNumber"), 
-                CASE 
-                    WHEN lg.lesson_type = ' Start' THEN 1 
-                    ELSE 2 
+            WITH LessonBoundaries AS (
+                SELECT
+                    "courseId",
+                    "weekNumber",
+                    "dayNumber",
+                    MIN("SequenceNumber") as min_sequence,
+                    MAX("SequenceNumber") as max_sequence
+                FROM "Lesson"
+                WHERE "dayNumber" IS NOT NULL
+                AND "weekNumber" IS NOT NULL
+                AND "SequenceNumber" IS NOT NULL
+                AND "courseId" IN (139, 140, 141, 142)
+                GROUP BY "courseId", "weekNumber", "dayNumber"
+            ),
+            LessonGroups AS (
+                SELECT
+                    CONCAT(
+                        'Week ', l."weekNumber",
+                        ' Day ', l."dayNumber",
+                        CASE
+                            WHEN l."SequenceNumber" = lb.min_sequence THEN ' Start'
+                            WHEN l."SequenceNumber" = lb.max_sequence THEN ' Complete'
+                        END
+                    ) as heading,
+                    STRING_AGG(l."LessonId"::text, ', ' ORDER BY l."courseId") as lesson_ids,
+                    ARRAY_AGG(l."LessonId" ORDER BY l."courseId") as lesson_id_array,
+                    l."weekNumber",
+                    l."dayNumber",
+                    CASE
+                        WHEN l."SequenceNumber" = lb.min_sequence THEN ' Start'
+                        WHEN l."SequenceNumber" = lb.max_sequence THEN ' Complete'
+                    END as lesson_type
+                FROM "Lesson" l
+                INNER JOIN LessonBoundaries lb
+                    ON l."courseId" = lb."courseId"
+                AND l."weekNumber" = lb."weekNumber"
+                AND l."dayNumber" = lb."dayNumber"
+                AND (l."SequenceNumber" = lb.min_sequence OR l."SequenceNumber" = lb.max_sequence)
+                WHERE l."courseId" IN (139, 140, 141, 142)
+                GROUP BY
+                    l."weekNumber",
+                    l."dayNumber",
+                    CASE
+                        WHEN l."SequenceNumber" = lb.min_sequence THEN ' Start'
+                        WHEN l."SequenceNumber" = lb.max_sequence THEN ' Complete'
+                    END
+            )
+            SELECT
+                lg.heading,
+                COUNT(DISTINCT wlc.id) as completion_count
+            FROM LessonGroups lg
+            LEFT JOIN wa_lessons_completed wlc
+                ON wlc."lessonId" = ANY(lg.lesson_id_array)
+            AND wlc."completionStatus" = 'Completed'
+            AND EXISTS (
+                SELECT 1
+                FROM wa_users_metadata wum
+                WHERE wum."profile_id" = wlc."profile_id"
+                AND wum."rollout" = 2
+                AND wum."cohort" IS NOT NULL
+                AND wum."cohort" NOT IN ('', 'Cohort 0')
+                AND wum."classLevel" IS NOT NULL
+            )
+            GROUP BY
+                lg.heading,
+                lg.lesson_ids,
+                lg."weekNumber",
+                lg."dayNumber",
+                lg.lesson_type
+            ORDER BY
+                MIN(lg."weekNumber"),
+                MIN(lg."dayNumber"),
+                CASE
+                    WHEN lg.lesson_type = ' Start' THEN 1
+                    ELSE 2
                 END;
         `;
 
@@ -451,6 +460,15 @@ const studentCourseStatsService = async () => {
             LEFT JOIN wa_lessons_completed wlc
             ON wlc."lessonId"        = ANY(lg.lesson_id_array)
             AND wlc."completionStatus" = 'Completed'
+            AND EXISTS (
+                SELECT 1
+                FROM wa_users_metadata wum
+                WHERE wum."profile_id" = wlc."profile_id"
+                AND wum."rollout" = 2
+                AND wum."cohort" IS NOT NULL
+                AND wum."cohort" NOT IN ('', 'Cohort 0')
+                AND wum."classLevel" IS NOT NULL
+            )
             GROUP BY
             lg.heading,
             lg.lesson_ids,
@@ -814,7 +832,6 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType, us
         if (graphType === 'graph6') {
             grade = grades;
         }
-        console.log('courseIds', courseId, 'grades', grades, 'cohorts', cohort, 'graphType', graphType, 'userType' , userType);
         if (graphType === 'graph1') {
             qry1 = `WITH "TargetGroup" AS (
                             SELECT m.profile_id
@@ -1475,7 +1492,7 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType, us
             //     WHERE a1.activity_date BETWEEN d.report_date - INTERVAL '${dayno}' AND d.report_date
             // ) AS count
 
-           
+
 
             // FROM date_series d
             // ORDER BY d.report_date;`
@@ -1530,38 +1547,38 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType, us
             `;
         }
 
-        if(graphType === 'graph7'){
+        if (graphType === 'graph7') {
             let second_drop_value = cohorts;
             let first_drop_value = grades;
-           
+
             const classLevel = userType === 'teacher'
-                    ? `AND m."classLevel" IS NULL`
-                    : `AND m."classLevel" IN ('grade 1','grade 2','grade 3','grade 4','grade 5','grade 6','grade 7')`;
+                ? `AND m."classLevel" IS NULL`
+                : `AND m."classLevel" IN ('grade 1','grade 2','grade 3','grade 4','grade 5','grade 6','grade 7')`;
 
-                    const cohortCond = `AND m."cohort" IS NOT NULL AND m.cohort NOT IN ('Cohort 0','Cohort 35')`;
+            const cohortCond = `AND m."cohort" IS NOT NULL AND m.cohort NOT IN ('Cohort 0','Cohort 35')`;
 
-                    const courseList = userType === 'teacher'
-                    ? `(134,135,136)`
-                    : `(119,120,121,122,123,124,143)`;
+            const courseList = userType === 'teacher'
+                ? `(134,135,136)`
+                : `(119,120,121,122,123,124,143)`;
 
-                    // Group by label field based on second dropdown
-                    const groupField = {
-                    'paid_unpaid': `CASE WHEN m."amountPaid" ~ '^[0-9]+(\\.[0-9]+)?$' AND m."amountPaid"::numeric>0 THEN 'Paid' ELSE 'Unpaid' END`,
-                    'b2b_b2c': `m."customerChannel"`,
-                    'district': `m."city"`,
-                    'school_name': `m."schoolName"`,
-                    'source': `m."customerSource"`
-                    }[second_drop_value] || `'total_registered'`;
+            // Group by label field based on second dropdown
+            const groupField = {
+                'paid_unpaid': `CASE WHEN m."amountPaid" ~ '^[0-9]+(\\.[0-9]+)?$' AND m."amountPaid"::numeric>0 THEN 'Paid' ELSE 'Unpaid' END`,
+                'b2b_b2c': `m."customerChannel"`,
+                'district': `m."city"`,
+                'school_name': `m."schoolName"`,
+                'source': `m."customerSource"`
+            }[second_drop_value] || `'total_registered'`;
 
-                    // Additional filter condition based on first dropdown
-                    let firstFilter = '';
-                    if (first_drop_value === 'total_who_sent_atleast_1_msg') {
-                    firstFilter = `AND m.profile_id IN (
+            // Additional filter condition based on first dropdown
+            let firstFilter = '';
+            if (first_drop_value === 'total_who_sent_atleast_1_msg') {
+                firstFilter = `AND m.profile_id IN (
                         SELECT profile_id FROM wa_user_progress
                         WHERE "acceptableMessages" IS NULL OR "acceptableMessages"<>ARRAY['start now!']
                     )`;
-                    } else if (first_drop_value === 'total_who_started') {
-                    firstFilter = `AND m.profile_id IN (
+            } else if (first_drop_value === 'total_who_started') {
+                firstFilter = `AND m.profile_id IN (
                         SELECT DISTINCT lc.profile_id
                         FROM wa_lessons_completed lc
                         JOIN (
@@ -1570,17 +1587,17 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType, us
                         ) fl ON fl."LessonId" = lc."lessonId"
                         WHERE lc."completionStatus" = 'Completed'
                     )`;
-                    } else if (first_drop_value === 'paid') {
-                    firstFilter = `AND m."amountPaid" ~ '^[0-9]+(\\.[0-9]+)?$' AND m."amountPaid"::numeric>0`;
-                    } else if (first_drop_value === 'unpaid') {
-                    firstFilter = `AND (m."amountPaid" IS NULL OR m."amountPaid" = '0')`;
-                    } else if (first_drop_value === 'b2b') {
-                    firstFilter = `AND m."customerChannel" = 'B2B'`;
-                    } else if (first_drop_value === 'b2c') {
-                    firstFilter = `AND m."customerChannel" = 'B2C'`;
-                    }
+            } else if (first_drop_value === 'paid') {
+                firstFilter = `AND m."amountPaid" ~ '^[0-9]+(\\.[0-9]+)?$' AND m."amountPaid"::numeric>0`;
+            } else if (first_drop_value === 'unpaid') {
+                firstFilter = `AND (m."amountPaid" IS NULL OR m."amountPaid" = '0')`;
+            } else if (first_drop_value === 'b2b') {
+                firstFilter = `AND m."customerChannel" = 'B2B'`;
+            } else if (first_drop_value === 'b2c') {
+                firstFilter = `AND m."customerChannel" = 'B2C'`;
+            }
 
-                    qry1 = `
+            qry1 = `
                     WITH base_users AS (
                         SELECT m.profile_id, m."phoneNumber", m.name, m."city", m."schoolName", m."cohort",
                             m."rollout", m."customerChannel", m."customerSource", m."amountPaid"
@@ -1599,23 +1616,23 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType, us
                     GROUP BY label
                     -- ORDER BY count DESC;
                     `;
-                    // console.log(qry1)
+            // console.log(qry1)
         }
 
-        if(graphType === 'graph8'){
-            let drop_down_value =  grades;
+        if (graphType === 'graph8') {
+            let drop_down_value = grades;
             let groupField = '';
-                let classLevel = '';
-                const cohortCondition = `AND m."cohort" IS NOT NULL AND m."cohort" NOT IN ('Cohort 0', 'Cohort 35')`;
+            let classLevel = '';
+            const cohortCondition = `AND m."cohort" IS NOT NULL AND m."cohort" NOT IN ('Cohort 0', 'Cohort 35')`;
 
-                if (userType === 'teacher') {
+            if (userType === 'teacher') {
                 classLevel = `AND m."classLevel" IS NULL`;
-                } else {
+            } else {
                 classLevel = `AND m."classLevel" IN ('grade 1','grade 2','grade 3','grade 4','grade 5','grade 6','grade 7')`;
-                }
+            }
 
-                // Determine the grouping field
-                switch (drop_down_value) {
+            // Determine the grouping field
+            switch (drop_down_value) {
                 case 'b2b_b2c':
                     groupField = `m."customerChannel"`;
                     break;
@@ -1626,12 +1643,12 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType, us
                     groupField = `m."schoolName"`;
                     break;
                 case 'all Users':
-                    groupField =`'All Users'`;
+                    groupField = `'All Users'`;
                 default:
                     groupField = `m."customerChannel"`;
-                }
+            }
 
-                 qry1 = `
+            qry1 = `
                 WITH base_users AS (
                     SELECT 
                     m."amountPaid",
