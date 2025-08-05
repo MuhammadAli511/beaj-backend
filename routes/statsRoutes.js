@@ -35,6 +35,8 @@ router.post('/studentBarAnalyticsStats', beajFacilitatorsAuth, statsController.s
 
 router.post('/userAnalyticsStats', beajFacilitatorsAuth, statsController.userAnalyticsStatsController);
 
+router.post('/studentCardAnalyticsStats', beajFacilitatorsAuth, statsController.studentCardAnalyticsStatsController);
+
 // Use error handler middleware
 router.use(errorHandler);
 
