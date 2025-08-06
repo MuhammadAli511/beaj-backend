@@ -101,7 +101,9 @@ async function elevenLabsTextToSpeechAndUpload(text) {
 
 async function elevenLabsSpeechToText(audioBuffer) {
     try {
-        const client = new ElevenLabsClient();
+        const client = new ElevenLabsClient({
+            apiKey: process.env.ELEVENLABS_API_KEY,
+        });
         const audioBlob = new Blob([audioBuffer], { type: "audio/mp3" });
         const transcription = await client.speechToText.convert({
             file: audioBlob,
@@ -809,6 +811,54 @@ async function geminiFeedback(previousMessages) {
     return result.response.text();
 }
 
+
+async function geminiSpeechToText(audioBuffer, language) {
+    let tempFilePath = null;
+    try {
+        const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({
+            model: "gemini-2.5-pro"
+        });
+
+        // Create temporary file for Gemini API
+        const uniqueFileName = `audio-${uuidv4()}.ogg`;
+        tempFilePath = join(tmpdir(), uniqueFileName);
+
+        await writeFile(tempFilePath, audioBuffer);
+
+        const audioFile = {
+            inlineData: {
+                data: audioBuffer.toString('base64'),
+                mimeType: 'audio/ogg'
+            }
+        };
+
+        let prompt = "Please transcribe the following audio file:";
+        if (language && language !== "none") {
+            prompt = `Please transcribe the following audio file. Transcribe the text in ${language}. If something is spoken in English, then that part should be transcribed in English. (No timestamps or speaker diarization)`;
+        }
+
+        const result = await model.generateContent([
+            prompt,
+            audioFile
+        ]);
+
+        return result.response.text();
+    } catch (error) {
+        console.error('Error in Gemini Speech-to-Text:', error);
+        throw new Error('Gemini Speech-to-Text conversion failed');
+    } finally {
+        // Clean up temporary file
+        if (tempFilePath) {
+            try {
+                await unlink(tempFilePath);
+            } catch (cleanupError) {
+                console.warn('Failed to cleanup temporary file:', cleanupError);
+            }
+        }
+    }
+}
+
 async function geminiCustomFeedback(userTranscript, modelPrompt) {
     const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({
@@ -875,6 +925,7 @@ export default {
     azureSpeechToTextAnyLanguage,
     openaiSpeechToTextWithPrompt,
     elevenLabsSpeechToText,
+    geminiSpeechToText,
     geminiFeedback,
     geminiCustomFeedback,
     openaiTextToSpeechAndUpload,

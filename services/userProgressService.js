@@ -589,6 +589,8 @@ const getMetadataProgressService = async () => {
       up."currentWeek",
       up."currentDay",
       up."currentCourseId",
+      up."lastUpdated",
+      CURRENT_DATE - DATE(up."lastUpdated") as days_since_last_active,
       c."CourseName" as courseName
     FROM wa_users_metadata m
     LEFT JOIN wa_profiles p ON m.profile_id = p.profile_id
