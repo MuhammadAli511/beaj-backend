@@ -12,32 +12,12 @@ import waUserActivityLogsRepository from "../repositories/waUserActivityLogsRepo
 import AIServices from "../utils/AIServices.js";
 import { removeUser, removeUserTillCourse, startCourseForUser, sendCourseLessonToTeacher, sendCourseLessonToKid, resetCourseKid } from "../utils/chatbotUtils.js";
 import {
-    greetingMessage,
-    greetingMessageLoop,
-    kidsChooseClass,
-    kidsChooseClassLoop,
-    demoCourseStart,
-    confirmSchoolName,
-    thankyouMessageSchoolOwner,
-    getUserProfile,
-    getSchoolName,
-    getCityName,
-    thankyouMessageParent,
-    talkToBeajRep,
-    parentOrStudentSelection,
-    studentGenericClassInput,
-    studentSpecificClassInput,
-    paymentDetails,
-    paymentComplete,
-    singleStudentRegistationComplate,
-    studentNameInput,
-    studentNameConfirmation,
-    studentGenericClassConfirmation,
-    studentSpecificClassConfirmation,
-    schoolAdminConfirmation,
-    startOfFlow,
-    cancelRegistration,
-    confirmCancelRegistration
+    greetingMessage, greetingMessageLoop, kidsChooseClass, kidsChooseClassLoop, demoCourseStart,
+    confirmSchoolName, thankyouMessageSchoolOwner, getUserProfile, getSchoolName, getCityName,
+    thankyouMessageParent, talkToBeajRep, parentOrStudentSelection, studentGenericClassInput,
+    studentSpecificClassInput, paymentDetails, paymentComplete, singleStudentRegistationComplate,
+    studentNameInput, studentNameConfirmation, studentGenericClassConfirmation, studentSpecificClassConfirmation,
+    schoolAdminConfirmation, startOfFlow, cancelRegistration, confirmCancelRegistration
 } from "../utils/trialflowUtils.js";
 import { sendMessage, sendButtonMessage, retrieveMediaURL, sendMediaMessage, sendContactCardMessage } from "../utils/whatsappUtils.js";
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
@@ -46,34 +26,13 @@ import { endingMessage } from "../utils/endingMessageUtils.js";
 import { checkUserMessageAndAcceptableMessages, getAcceptableMessagesList, sleep, getDaysPerWeek, getTotalLessonsForCourse, getLevelFromCourseName } from "../utils/utils.js";
 import { runWithContext } from "../utils/requestContext.js";
 import { studentBotContactData, teacherBotContactData } from "../constants/contacts.js";
+import { activity_types_to_repeat, text_message_types, beaj_team_numbers, feedback_acceptable_messages, next_activity_acceptable_messages } from "../constants/constants.js";
 dotenv.config();
 const whatsappVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN;
 const studentBotPhoneNumberId = process.env.STUDENT_BOT_PHONE_NUMBER_ID;
 const teacherBotPhoneNumberId = process.env.TEACHER_BOT_PHONE_NUMBER_ID;
 const marketingBotPhoneNumberId = process.env.MARKETING_BOT_PHONE_NUMBER_ID;
 
-let activity_types_to_repeat = [
-    "mcqs",
-    "watchAndSpeak",
-    "listenAndSpeak",
-    "read",
-    "conversationalQuestionsBot",
-    "conversationalMonologueBot",
-    "speakingPractice",
-    "conversationalAgencyBot",
-    "watchAndAudio",
-    "watchAndImage",
-    "feedbackAudio",
-    "feedbackMcqs",
-    "assessmentMcqs",
-    "assessmentWatchAndSpeak",
-];
-
-let text_message_types = [
-    "text",
-    "interactive",
-    "button"
-];
 
 const verifyWebhookService = async (req, res) => {
     try {
@@ -996,34 +955,7 @@ const webhookService = async (body, res) => {
 
 
 
-                let numbers_to_ignore = [
-                    "+923008400080",
-                    "+923303418882",
-                    "+923345520552",
-                    "+923225036358",
-                    "+923365560202",
-                    "+923170729640",
-                    "+923328251950",
-                    "+923225812411",
-                    "+923232658153",
-                    "+923390001510",
-                    "+923288954660",
-                    "+923704558660",
-                    "+923012232148",
-                    "+923331432681",
-                    "+923196609478",
-                    "+923151076203",
-                    "+923222731870",
-                    "+923475363220",
-                    "+923009546982",
-                    "+923349279631",
-                    "+923352373288",
-                    "+923231911848",
-                    "+923325551465",
-                    "+261320220186",
-                    "+12028123335",
-                    "+923232658153"
-                ];
+
 
                 // User switching a profile
                 if (currentUserState.dataValues.engagement_type == "Choose User") {
@@ -1039,7 +971,7 @@ const webhookService = async (body, res) => {
                     const selectedUserState = await waUserProgressRepository.getByProfileId(profileId);
 
                     if (!selectedUserState.dataValues.currentCourseId) {
-                        const courseStarted = await startCourseForUser(profileId, userMobileNumber, numbers_to_ignore);
+                        const courseStarted = await startCourseForUser(profileId, userMobileNumber, beaj_team_numbers);
                         if (!courseStarted) {
                             return;
                         }
@@ -1083,7 +1015,7 @@ const webhookService = async (body, res) => {
                         messageContent.toLowerCase().includes("start now!")
                     )
                 ) {
-                    await startCourseForUser(profileId, userMobileNumber, numbers_to_ignore);
+                    await startCourseForUser(profileId, userMobileNumber, beaj_team_numbers);
                     return;
                 }
 
@@ -1179,26 +1111,10 @@ const webhookService = async (body, res) => {
 
                 if (text_message_types.includes(message.type)) {
                     if (
-                        messageContent.toLowerCase().includes("start next activity") ||
-                        messageContent.toLowerCase().includes("start part 2") ||
-                        messageContent.toLowerCase().includes("start next game") ||
-                        messageContent.toLowerCase().includes("start next lesson") ||
-                        messageContent.toLowerCase().includes("let's start") ||
-                        messageContent.toLowerCase().includes("it was great") ||
-                        messageContent.toLowerCase().includes("it was great 😁") ||
-                        messageContent.toLowerCase().includes("it can be improved") ||
-                        messageContent.toLowerCase().includes("it can be improved 🤔") ||
-                        messageContent.toLowerCase().includes("start questions") ||
-                        messageContent.toLowerCase().includes("start part b") ||
-                        messageContent.toLowerCase().includes("next") ||
-                        messageContent.toLowerCase().includes("start practice") ||
-                        messageContent.toLowerCase().includes("next activity")
+                        next_activity_acceptable_messages.includes(messageContent.toLowerCase())
                     ) {
                         if (
-                            messageContent.toLowerCase().includes("it was great") ||
-                            messageContent.toLowerCase().includes("it was great 😁") ||
-                            messageContent.toLowerCase().includes("it can be improved") ||
-                            messageContent.toLowerCase().includes("it can be improved 🤔")
+                            feedback_acceptable_messages.includes(messageContent.toLowerCase())
                         ) {
                             await createFeedback(userMobileNumber, profileId, messageContent);
                             return;
@@ -1281,7 +1197,7 @@ const webhookService = async (body, res) => {
                         // Daily blocking
                         const daysPerWeek = await getDaysPerWeek(profileId);
                         if (daysPerWeek == 5 && currentUserState.dataValues.persona == "kid") {
-                            if (!numbers_to_ignore.includes(userMobileNumber)) {
+                            if (!beaj_team_numbers.includes(userMobileNumber)) {
                                 const course = await courseRepository.getById(
                                     currentUserState.dataValues.currentCourseId
                                 );
