@@ -261,6 +261,24 @@ const getCombinedUserData = async () => {
     return results;
 };
 
+const getUserNamesByProfileIds = async (profileIds) => {
+    if (!profileIds || profileIds.length === 0) {
+        return [];
+    }
+
+    const query = `
+        SELECT profile_id, name 
+        FROM wa_users_metadata 
+        WHERE profile_id IN (${profileIds.map(() => '?').join(',')})
+    `;
+
+    const [results] = await sequelize.query(query, {
+        replacements: profileIds
+    });
+
+    return results;
+};
+
 export default {
     create,
     getAll,
@@ -285,5 +303,6 @@ export default {
     updateName,
     getProfileIds,
     deleteByProfileId,
-    getCombinedUserData
+    getCombinedUserData,
+    getUserNamesByProfileIds
 };

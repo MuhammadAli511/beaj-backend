@@ -3,6 +3,7 @@ import lessonRepository from "../repositories/lessonRepository.js";
 import courseRepository from "../repositories/courseRepository.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import multipleChoiceQuestionRepository from "../repositories/multipleChoiceQuestionRepository.js";
+import waUsersMetadataRepository from "../repositories/waUsersMetadataRepository.js";
 import multipleChoiceQuestionAnswerRepository from "../repositories/multipleChoiceQuestionAnswerRepository.js";
 
 const getAllWaQuestionResponsesService = async () => {
@@ -11,42 +12,89 @@ const getAllWaQuestionResponsesService = async () => {
 
 const getWaQuestionResponsesByActivityTypeService = async (activityType, courseId = null) => {
     const waQuestionResponses = await waQuestionResponsesRepository.getByActivityType(activityType, courseId);
-    // Lesson Details
+
+    // Extract all IDs upfront
     const lessonIds = waQuestionResponses.map(response => response.lessonId);
-    const lessons = await lessonRepository.getByLessonIds(lessonIds);
-    // Course Details
+    const profileIds = [...new Set(waQuestionResponses.map(response => response.profile_id))];
+
+    const [lessons, userNamesResults] = await Promise.all([
+        lessonRepository.getByLessonIds(lessonIds),
+        profileIds.length > 0 ? waUsersMetadataRepository.getUserNamesByProfileIds(profileIds) : Promise.resolve([])
+    ]);
+
     const courseIds = lessons.map(lesson => lesson.courseId);
-    const courses = await courseRepository.getByCourseIds(courseIds);
-    // Multiple Choice Question Details
+    const lessonIdsForQuestions = lessons.map(lesson => lesson.LessonId);
+
+    let coursesPromise = courseRepository.getByCourseIds(courseIds);
+    let questionsPromise;
+
+    if (activityType == 'mcqs' || activityType == 'feedbackMcqs' || activityType == 'assessmentMcqs') {
+        questionsPromise = multipleChoiceQuestionRepository.getByLessonIds(lessonIdsForQuestions);
+    } else {
+        questionsPromise = speakActivityQuestionRepository.getByLessonIds(lessonIdsForQuestions);
+    }
+
+    const [courses, questions] = await Promise.all([coursesPromise, questionsPromise]);
+
     let multipleChoiceQuestions = null;
     let speakActivityQuestions = null;
     let mcqAnswers = {};
 
     if (activityType == 'mcqs' || activityType == 'feedbackMcqs' || activityType == 'assessmentMcqs') {
-        const multipleChoiceLessonIds = lessons.map(lesson => lesson.LessonId);
-        multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonIds(multipleChoiceLessonIds);
+        multipleChoiceQuestions = questions;
 
-        // Get all answer options for each question
-        for (const question of multipleChoiceQuestions) {
-            const answers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(question.Id);
-            mcqAnswers[question.Id] = answers;
+        if (multipleChoiceQuestions.length > 0) {
+            const questionIds = multipleChoiceQuestions.map(q => q.Id);
+            const allAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionIds(questionIds);
+
+            // Group answers by question ID
+            mcqAnswers = allAnswers.reduce((acc, answer) => {
+                const questionId = answer.MultipleChoiceQuestionId;
+                if (!acc[questionId]) acc[questionId] = [];
+                acc[questionId].push(answer);
+                return acc;
+            }, {});
         }
     } else {
-        // Speak Activity Question Details
-        const speakActivityLessonIds = lessons.map(lesson => lesson.LessonId);
-        speakActivityQuestions = await speakActivityQuestionRepository.getByLessonIds(speakActivityLessonIds);
+        speakActivityQuestions = questions;
     }
+
+    const lessonMap = lessons.reduce((acc, lesson) => {
+        acc[lesson.LessonId] = lesson;
+        return acc;
+    }, {});
+
+    const courseMap = courses.reduce((acc, course) => {
+        acc[course.CourseId] = course;
+        return acc;
+    }, {});
+
+    const userNamesMap = userNamesResults.reduce((acc, user) => {
+        acc[user.profile_id] = user.name;
+        return acc;
+    }, {});
+
+    const mcqQuestionsMap = multipleChoiceQuestions ? multipleChoiceQuestions.reduce((acc, question) => {
+        acc[question.Id] = question;
+        return acc;
+    }, {}) : {};
+
+    const speakQuestionsMap = speakActivityQuestions ? speakActivityQuestions.reduce((acc, question) => {
+        acc[question.id] = question;
+        return acc;
+    }, {}) : {};
+
     // User Details
     const result = waQuestionResponses.map(response => {
-        const lesson = lessons.find(lesson => lesson.LessonId == response.lessonId);
-        const course = courses.find(course => course.CourseId == lesson?.courseId);
+        const lesson = lessonMap[response.lessonId];
+        const course = lesson ? courseMap[lesson.courseId] : null;
         const responseData = response.dataValues || response;
         let multipleChoiceQuestion = null;
         let speakActivityQuestion = null;
         let userSelectedAnswerText = null;
 
         if (multipleChoiceQuestions) {
-            multipleChoiceQuestion = multipleChoiceQuestions.find(multipleChoiceQuestion => multipleChoiceQuestion.Id == responseData.questionId);
+            multipleChoiceQuestion = mcqQuestionsMap[responseData.questionId];
 
             // Map the user's selected option to the actual answer text
             if (multipleChoiceQuestion && mcqAnswers[multipleChoiceQuestion.Id] && responseData.submittedAnswerText && responseData.submittedAnswerText.length > 0) {
@@ -69,12 +117,13 @@ const getWaQuestionResponsesByActivityTypeService = async (activityType, courseI
                 }
             }
         } else {
-            speakActivityQuestion = speakActivityQuestions.find(speakActivityQuestion => speakActivityQuestion.id == responseData.questionId);
+            speakActivityQuestion = speakQuestionsMap[responseData.questionId];
         }
         return {
             id: responseData.id,
             profileId: responseData.profile_id,
             phoneNumber: responseData.phoneNumber,
+            name: userNamesMap[responseData.profile_id] || null,
             lessonId: responseData.lessonId,
             questionId: responseData.questionId,
             activityType: responseData.activityType,
