@@ -585,6 +585,8 @@ const getMetadataProgressService = async () => {
       p.bot_phone_number_id,
       p.profile_type,
       p.created_at as profile_created_at,
+      up."acceptableMessages",
+      up."activityType",
       up.persona,
       up."currentWeek",
       up."currentDay",
