@@ -581,13 +581,9 @@ const getMetadataProgressService = async () => {
   const query = `
     SELECT 
       m.*,
-      p.phone_number as profile_phone_number,
-      p.bot_phone_number_id,
-      p.profile_type,
-      p.created_at as profile_created_at,
       up."acceptableMessages",
       up."activityType",
-      up.persona,
+      up.persona as "profile_type",
       up."currentWeek",
       up."currentDay",
       up."currentCourseId",
@@ -595,7 +591,6 @@ const getMetadataProgressService = async () => {
       CURRENT_DATE - DATE(up."lastUpdated") as days_since_last_active,
       c."CourseName" as courseName
     FROM wa_users_metadata m
-    LEFT JOIN wa_profiles p ON m.profile_id = p.profile_id
     LEFT JOIN wa_user_progress up ON m.profile_id = up.profile_id
     LEFT JOIN "Courses" c ON up."currentCourseId" = c."CourseId"
   `;
