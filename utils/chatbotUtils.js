@@ -8,7 +8,7 @@ import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRe
 import waPurchasedCoursesRepository from '../repositories/waPurchasedCoursesRepository.js';
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import lessonRepository from "../repositories/lessonRepository.js";
-import { sendMessage, sendMediaMessage, sendButtonMessage } from "./whatsappUtils.js";
+import { sendMessage, sendMediaMessage, sendButtonMessage, sendContactCardMessage } from "./whatsappUtils.js";
 import { createActivityLog } from "./createActivityLogUtils.js";
 import { watchAndImageView } from "../views/watchAndImage.js";
 import { speakingPracticeView } from "../views/speakingPractice.js";
@@ -29,6 +29,7 @@ import { feedbackAudioView } from "../views/feedbackAudio.js";
 import { assessmentMcqsView } from "../views/assessmentMcqs.js";
 import { assessmentWatchAndSpeakView } from "../views/assessmentWatchAndSpeak.js";
 import { level4ReportCard, kidsReportCard } from "./imageGenerationUtils.js";
+import { najiaContactData, amnaContactData } from "../constants/contacts.js";
 
 dotenv.config();
 
@@ -61,7 +62,7 @@ const weekEndScoreCalculation = async (profileId, phoneNumber, weekNumber, cours
 
     // Get all scores and totals in parallel
     const [
-        correctMcqs, totalMcqs, correctListenAndSpeak, totalListenAndSpeak, correctWatchAndSpeak, correctRead, correctMonologue, correctSpeakingPractice
+        correctMcqs = 0, totalMcqs = 0, correctListenAndSpeak = 0, totalListenAndSpeak = 0, correctWatchAndSpeak = { score: 0, total: 0 }, correctRead = { score: 0, total: 0 }, correctMonologue = { score: 0, total: 0 }, correctSpeakingPractice = { score: 0, total: 0 }
     ] = await Promise.all([
         waQuestionResponsesRepository.getTotalScoreForList(profileId, phoneNumber, mcqLessonIds),
         waQuestionResponsesRepository.getTotalQuestionsForList(profileId, phoneNumber, mcqLessonIds),

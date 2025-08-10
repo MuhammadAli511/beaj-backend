@@ -120,7 +120,7 @@ const resetCourseKid = async (phoneNumber) => {
 
 
 
-const specialCommandFlow = async (messageContent, userMobileNumber) => {
+const specialCommandFlow = async (profileId, userMobileNumber, messageContent) => {
     if (!beaj_team_numbers.includes(userMobileNumber)) {
         await sendMessage(userMobileNumber, "Sorry, you are not authorized to use this command.");
         return;

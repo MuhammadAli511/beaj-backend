@@ -8,16 +8,8 @@ import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRe
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import waActiveSessionRepository from "../repositories/waActiveSessionRepository.js";
 import waProfileRepository from "../repositories/waProfileRepository.js";
-import waUserActivityLogsRepository from "../repositories/waUserActivityLogsRepository.js";
 import { startCourseForUser, sendCourseLessonToTeacher, sendCourseLessonToKid, talkToBeajRep } from "../utils/chatbotUtils.js";
-import {
-    greetingMessage, greetingMessageLoop, kidsChooseClass, kidsChooseClassLoop, demoCourseStart,
-    confirmSchoolName, thankyouMessageSchoolOwner, getUserProfile, getSchoolName, getCityName,
-    thankyouMessageParent, parentOrStudentSelection, studentGenericClassInput,
-    studentSpecificClassInput, paymentDetails, paymentComplete, singleStudentRegistationComplate,
-    studentNameInput, studentNameConfirmation, studentGenericClassConfirmation, studentSpecificClassConfirmation,
-    schoolAdminConfirmation, startOfFlow, cancelRegistration, confirmCancelRegistration
-} from "../utils/trialflowUtils.js";
+import { demoCourseStart } from "../utils/trialflowUtils.js";
 import { sendMessage, sendButtonMessage, retrieveMediaURL, sendMediaMessage } from "../utils/whatsappUtils.js";
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
 import { createFeedback } from "../utils/createFeedbackUtils.js";
@@ -25,12 +17,13 @@ import { endingMessage } from "../utils/endingMessageUtils.js";
 import { checkUserMessageAndAcceptableMessages, getAcceptableMessagesList, sleep, getDaysPerWeek, getTotalLessonsForCourse, getLevelFromCourseName } from "../utils/utils.js";
 import { runWithContext } from "../utils/requestContext.js";
 import {
-    activity_types_to_repeat, text_message_types, beaj_team_numbers, feedback_acceptable_messages,
-    next_activity_acceptable_messages, special_commands, talk_to_beaj_rep_messages, grades_and_class_names,
-    youth_camp_grades
+    activity_types_to_repeat, text_message_types, beaj_team_numbers, feedback_acceptable_messages, youth_camp_grades,
+    next_activity_acceptable_messages, special_commands, talk_to_beaj_rep_messages, grades_and_class_names
 } from "../constants/constants.js";
 import { specialCommandFlow } from "../flows/specialCommandFlows.js";
 import { marketingBotFlow } from "../flows/marketingBotFlows.js";
+import { teachersTrialFlowDriver } from "../flows/teacherTrialFlow.js";
+import { kidsTrialFlowDriver } from "../flows/kidsTrialFlow.js";
 dotenv.config();
 const whatsappVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN;
 const studentBotPhoneNumberId = process.env.STUDENT_BOT_PHONE_NUMBER_ID;
@@ -120,7 +113,6 @@ const webhookService = async (body, res) => {
 
             // Wrap the webhook handling logic with the context containing the bot phone number ID
             await runWithContext({ botPhoneNumberId, profileId, userMobileNumber }, async () => {
-                const marketingPreviousMessages = await waUserActivityLogsRepository.getLastMarketingBotMessage(userMobileNumber);
                 let inboundUploadedImage = null;
                 if (message.type === "image") {
                     inboundUploadedImage = await createActivityLog(userMobileNumber, "image", "inbound", message, null);
@@ -153,7 +145,7 @@ const webhookService = async (body, res) => {
                 }
 
                 if (special_commands.includes(messageContent.toLowerCase()) && message.type == "text") {
-                    await specialCommandFlow(messageContent, userMobileNumber);
+                    await specialCommandFlow(profileId, userMobileNumber, messageContent);
                     return;
                 };
 
@@ -200,7 +192,7 @@ const webhookService = async (body, res) => {
 
 
                 if (botPhoneNumberId == marketingBotPhoneNumberId) {
-                    await marketingBotFlow(messageContent, messageType, userMobileNumber);
+                    await marketingBotFlow(profileId, messageContent, messageType, userMobileNumber);
                     return;
                 }
 
@@ -212,19 +204,34 @@ const webhookService = async (body, res) => {
                     return;
                 }
 
-                // DEMO COURSE
-                // Step 1: If user does not exist
+
+                let currentUserState = null;
+
+                // TRIAL FLOW ROUTING
                 if (!userExists) {
                     if (botPhoneNumberId == studentBotPhoneNumberId) {
-                        await greetingMessage(profileId, userMobileNumber, "kids");
+                        await kidsTrialFlowDriver(profileId, userMobileNumber, "New User");
                     } else {
-                        await greetingMessage(profileId, userMobileNumber, "teachers");
+                        await teachersTrialFlowDriver(profileId, userMobileNumber, "New User");
+                    }
+                    return;
+                } else if (currentUserState.dataValues.engagement_type != "Course Start") {
+                    currentUserState = await waUserProgressRepository.getByProfileId(profileId);
+                    const messageAuth = await checkUserMessageAndAcceptableMessages(profileId, userMobileNumber, currentUserState, messageType, messageContent);
+                    if (messageAuth === false) {
+                        return;
+                    }
+                    if (botPhoneNumberId == studentBotPhoneNumberId) {
+                        await kidsTrialFlowDriver(profileId, userMobileNumber, currentUserState.dataValues.engagement_type, messageContent, messageType);
+                    } else {
+                        await teachersTrialFlowDriver(profileId, userMobileNumber, currentUserState.dataValues.engagement_type, messageContent, messageType);
                     }
                     return;
                 }
 
-                let currentUserState = await waUserProgressRepository.getByProfileId(profileId);
-                let currentUserMetadata = await waUsersMetadataRepository.getByProfileId(profileId);
+
+                // ACTUAL COURSE FLOW ROUTING
+                currentUserState = await waUserProgressRepository.getByProfileId(profileId);
 
                 if (currentUserState) {
                     const messageAuth = await checkUserMessageAndAcceptableMessages(profileId, userMobileNumber, currentUserState, messageType, messageContent);
@@ -233,406 +240,6 @@ const webhookService = async (body, res) => {
                     }
                 }
 
-                if (
-                    text_message_types.includes(message.type) &&
-                    (messageContent.toLowerCase() == "start again" || messageContent.toLowerCase() == "go to start") &&
-                    (
-                        currentUserState.dataValues.engagement_type == "School Admin Confirmation" ||
-                        currentUserState.dataValues.engagement_type == "Parent or Student" ||
-                        currentUserState.dataValues.engagement_type == "Thankyou Message - School Owner" ||
-                        currentUserState.dataValues.engagement_type == "Payment Complete"
-                    )
-                ) {
-                    await startOfFlow(profileId, userMobileNumber);
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    messageContent.toLowerCase() == "start again" &&
-                    (
-                        currentUserState.dataValues.engagement_type == "Single Student Registration Complete" ||
-                        currentUserState.dataValues.engagement_type == "Payment Details"
-                    )
-                ) {
-                    await confirmCancelRegistration(profileId, userMobileNumber, currentUserState.dataValues.engagement_type);
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    messageContent.toLowerCase() == "yes" &&
-                    currentUserState.dataValues.engagement_type == "Cancel Registration Confirmation - Single Student Registration Complete"
-                ) {
-                    await cancelRegistration(profileId, userMobileNumber);
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    messageContent.toLowerCase() == "no" &&
-                    currentUserState.dataValues.engagement_type == "Cancel Registration Confirmation - Single Student Registration Complete"
-                ) {
-                    await singleStudentRegistationComplate(profileId, userMobileNumber);
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    messageContent.toLowerCase() == "yes" &&
-                    currentUserState.dataValues.engagement_type == "Cancel Registration Confirmation - Payment Details"
-                ) {
-                    await cancelRegistration(profileId, userMobileNumber);
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    messageContent.toLowerCase() == "no" &&
-                    currentUserState.dataValues.engagement_type == "Cancel Registration Confirmation - Payment Details"
-                ) {
-                    await paymentDetails(profileId, userMobileNumber);
-                    return;
-                }
-
-
-                // DEMO COURSE
-                // Kids Summer Camp Trial
-                if (
-                    text_message_types.includes(message.type) &&
-                    (messageContent.toLowerCase() == "start" || messageContent.toLowerCase() == "start free trial") &&
-                    botPhoneNumberId == studentBotPhoneNumberId &&
-                    (currentUserState.dataValues.engagement_type == "Greeting Message" || currentUserState.dataValues.engagement_type == "Greeting Message - Kids")
-                ) {
-                    await kidsChooseClass(profileId, userMobileNumber);
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    (messageContent.toLowerCase() == "no, choose again") &&
-                    (currentUserState.dataValues.engagement_type == "Confirm Class - Level 1" || currentUserState.dataValues.engagement_type == "Confirm Class - Level 3")
-                ) {
-                    await kidsChooseClassLoop(profileId, userMobileNumber);
-                    return;
-                }
-
-                // if (
-                //     text_message_types.includes(message.type) &&
-                //     (
-                //         // messageContent.toLowerCase() == "end now"
-                //         // messageContent.toLowerCase() == "go to registration" ||
-                //         // messageContent.toLowerCase() == "register now" ||
-                //         // messageContent.toLowerCase() == "skip trial"
-                //     ) &&
-                //     (
-                //         currentUserState.dataValues.engagement_type == "Free Trial - Teachers" ||
-                //         currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" ||
-                //         currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3" ||
-                //         currentUserState.dataValues.engagement_type == "Greeting Message - Kids" ||
-                //         currentUserState.dataValues.engagement_type == "Choose Class"
-                //     )
-                // ) {
-                //     if (botPhoneNumberId == studentBotPhoneNumberId) {
-                //         await getUserProfile(profileId, userMobileNumber);
-                //     } else {
-                //         await endTrialTeachers(profileId, userMobileNumber);
-                //     }
-                //     return;
-                // }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    (messageContent.toLowerCase() == "get another trial") &&
-                    (currentUserState.dataValues.engagement_type == "End Now" || currentUserState.dataValues.engagement_type == "Free Trial - Teachers" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")
-                ) {
-                    if (botPhoneNumberId == studentBotPhoneNumberId) {
-                        await kidsChooseClassLoop(profileId, userMobileNumber);
-                    } else {
-                        await greetingMessageLoop(profileId, userMobileNumber);
-                    }
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    (
-                        messageContent.toLowerCase() == "register" ||
-                        messageContent.toLowerCase() == "camp registration"
-                        // messageContent.toLowerCase() == "go to registration" ||
-                        // messageContent.toLowerCase() == "register now"
-                    ) &&
-                    (
-                        currentUserState.dataValues.engagement_type == "End Now" ||
-                        currentUserState.dataValues.engagement_type == "Free Trial - Teachers" ||
-                        currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" ||
-                        currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3" ||
-                        currentUserState.dataValues.engagement_type == "Greeting Message - Kids"
-                    )
-                ) {
-                    if (botPhoneNumberId == studentBotPhoneNumberId) {
-                        // Kids Product: Parent + School
-                        await getUserProfile(profileId, userMobileNumber);
-                    } else {
-                        // Teachers Product
-                        await getSchoolName(profileId, userMobileNumber);
-                    }
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    (currentUserState.dataValues.engagement_type == "User Profile")
-                ) {
-                    if (messageContent.toLowerCase() == "school admin") {
-                        await schoolAdminConfirmation(profileId, userMobileNumber);
-                    } else if (messageContent.toLowerCase() == "parent or student") {
-                        await parentOrStudentSelection(profileId, userMobileNumber);
-                    } else {
-                        return;
-                    }
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    (currentUserState.dataValues.engagement_type == "School Admin Confirmation")
-                ) {
-                    if (messageContent.toLowerCase() == "school admin") {
-                        let prospectusPdf = await waConstantsRepository.getByKey("SUMMER_CAMP_PROSPECTUS_PDF");
-                        if (prospectusPdf) {
-                            await sendMediaMessage(userMobileNumber, prospectusPdf.dataValues.constantValue, "pdf", "Summer Camp Prospectus for Schools", 0, "WA_Constants", prospectusPdf.dataValues.id, prospectusPdf.dataValues.constantMediaId, "constantMediaId");
-                            await sleep(5000);
-                        }
-                        await waUserProgressRepository.updatePersona(profileId, userMobileNumber, "school admin");
-                        await getSchoolName(profileId, userMobileNumber);
-                        return;
-                    } else if (messageContent.toLowerCase() == "parent or student") {
-                        await parentOrStudentSelection(profileId, userMobileNumber);
-                    } else {
-                        return;
-                    }
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    (currentUserState.dataValues.engagement_type == "School Name")
-                ) {
-                    await confirmSchoolName(profileId, userMobileNumber, messageContent);
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    (messageContent.toLowerCase() == "yes") &&
-                    (currentUserState.dataValues.engagement_type == "Confirm School Name")
-                ) {
-                    await getCityName(profileId, userMobileNumber);
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    (messageContent.toLowerCase() == "no") &&
-                    (currentUserState.dataValues.engagement_type == "Confirm School Name")
-                ) {
-                    await getSchoolName(profileId, userMobileNumber);
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    (currentUserState.dataValues.engagement_type == "City Name" || currentUserState.dataValues.engagement_type == "Confirm City Name")
-                ) {
-                    await thankyouMessageSchoolOwner(profileId, userMobileNumber, messageContent);
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    (messageContent.toLowerCase() == "no") &&
-                    (currentUserState.dataValues.engagement_type == "Confirm City Name")
-                ) {
-                    await getCityName(profileId, userMobileNumber);
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    (
-                        // messageContent.toLowerCase() == "ready to register" ||
-                        messageContent.toLowerCase() == "ready for payment"
-                    ) &&
-                    (currentUserState.dataValues.engagement_type == "Ready to Pay")
-                ) {
-                    await thankyouMessageParent(profileId, userMobileNumber);
-                    return;
-                }
-
-                if (currentUserState.dataValues.engagement_type == "Thankyou Message - Parent" ||
-                    currentUserState.dataValues.engagement_type == "Thankyou Message - School Owner" ||
-                    currentUserState.dataValues.engagement_type == "Thankyou Message"
-                ) {
-                    if (messageContent.toLowerCase() == "get another trial") {
-                        if (botPhoneNumberId == studentBotPhoneNumberId) {
-                            await kidsChooseClassLoop(profileId, userMobileNumber);
-                        } else {
-                            await greetingMessageLoop(profileId, userMobileNumber);
-                        }
-                        return;
-                    } else {
-                        await sendMessage(userMobileNumber, "Your free trial is complete. We will get back to you soon.");
-                        return;
-                    }
-                }
-
-                // Multi User Registration
-                // if (
-                //     text_message_types.includes(message.type) &&
-                //     (currentUserState.dataValues.engagement_type == "Parent or Student") &&
-                //     (messageContent.toLowerCase() == "register on whatsapp")
-                // ) {
-                //     await studentNameInput(profileId, userMobileNumber);
-                //     return;
-                // }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    (currentUserState.dataValues.engagement_type == "Student Name Input")
-                ) {
-                    await studentNameConfirmation(profileId, userMobileNumber, messageContent);
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    (currentUserState.dataValues.engagement_type == "Student Name Confirmation") &&
-                    (messageContent.toLowerCase() == "no" || messageContent.toLowerCase() == "no, type again")
-                ) {
-                    await studentNameInput(profileId, userMobileNumber);
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    (currentUserState.dataValues.engagement_type == "Student Name Confirmation") &&
-                    (messageContent.toLowerCase() == "yes")
-                ) {
-                    await studentGenericClassInput(profileId, userMobileNumber);
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    (currentUserState.dataValues.engagement_type == "Student Generic Class Input") &&
-                    (
-                        messageContent.toLowerCase() == "class 1, 2 or 3" ||
-                        messageContent.toLowerCase() == "class 4, 5 or 6" ||
-                        messageContent.toLowerCase() == "class 7 and above"
-                    )
-                ) {
-                    if (messageContent.toLowerCase() == "class 7 and above") {
-                        await studentSpecificClassConfirmation(profileId, userMobileNumber, messageContent);
-                    } else {
-                        await studentGenericClassConfirmation(profileId, userMobileNumber, messageContent);
-                    }
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    (currentUserState.dataValues.engagement_type == "Student Generic Class Confirmation") &&
-                    (messageContent.toLowerCase() == "no" || messageContent.toLowerCase() == "no, choose again")
-                ) {
-                    await studentGenericClassInput(profileId, userMobileNumber);
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    (currentUserState.dataValues.engagement_type == "Student Generic Class Confirmation") &&
-                    (messageContent.toLowerCase() == "yes")
-                ) {
-                    await studentSpecificClassInput(profileId, userMobileNumber, currentUserMetadata.dataValues.classLevel);
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    (currentUserState.dataValues.engagement_type == "Student Specific Class Input") &&
-                    (
-                        messageContent.toLowerCase() == "class 1" ||
-                        messageContent.toLowerCase() == "class 2" ||
-                        messageContent.toLowerCase() == "class 3" ||
-                        messageContent.toLowerCase() == "class 4" ||
-                        messageContent.toLowerCase() == "class 5" ||
-                        messageContent.toLowerCase() == "class 6" ||
-                        messageContent.toLowerCase() == "class 7 and above"
-                    )
-                ) {
-                    await studentSpecificClassConfirmation(profileId, userMobileNumber, messageContent);
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    (currentUserState.dataValues.engagement_type == "Student Specific Class Confirmation") &&
-                    (messageContent.toLowerCase() == "no")
-                ) {
-                    await studentSpecificClassInput(profileId, userMobileNumber, currentUserMetadata.dataValues.classLevel);
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    (currentUserState.dataValues.engagement_type == "Student Specific Class Confirmation") &&
-                    (messageContent.toLowerCase() == "yes")
-                ) {
-                    await singleStudentRegistationComplate(profileId, userMobileNumber);
-                    return;
-                }
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    (currentUserState.dataValues.engagement_type == "Single Student Registration Complete") &&
-                    messageContent.toLowerCase() == "go to payment"
-                ) {
-                    await paymentDetails(profileId, userMobileNumber);
-                    return;
-                }
-
-
-                if (
-                    text_message_types.includes(message.type) &&
-                    (currentUserState.dataValues.engagement_type == "Single Student Registration Complete") &&
-                    (messageContent.toLowerCase() == "register new student")
-                ) {
-                    const profile_type = "student";
-                    let profile = await waProfileRepository.create({ phone_number: userMobileNumber, bot_phone_number_id: botPhoneNumberId, profile_type: profile_type });
-                    profileId = profile.dataValues.profile_id;
-                    await waUsersMetadataRepository.create({ profile_id: profileId, phoneNumber: userMobileNumber, userClickedLink: new Date() });
-                    await waActiveSessionRepository.updateCurrentProfileIdOnPhoneNumber(userMobileNumber, profileId, botPhoneNumberId);
-                    await waUserProgressRepository.create({ profile_id: profileId, phoneNumber: userMobileNumber, engagement_type: "Greeting Message", lastUpdated: new Date(), persona: "parent or student" });
-                    await studentNameInput(profileId, userMobileNumber);
-                    return;
-                }
-
-                if (
-                    (message.type == "image") &&
-                    (currentUserState.dataValues.engagement_type == "Payment Details")
-                ) {
-                    await paymentComplete(profileId, userMobileNumber, inboundUploadedImage);
-                    return;
-                } else if (
-                    (message.type != "image") &&
-                    (currentUserState.dataValues.engagement_type == "Payment Details")
-                ) {
-                    await sendButtonMessage(userMobileNumber, "Please send us a screenshot of your payment or click on Chat with Beaj Rep to talk to us.", [{ id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }]);
-                    return;
-                }
-
-                // Teacher Training Trial
                 if (
                     text_message_types.includes(message.type) &&
                     (
@@ -887,9 +494,6 @@ const webhookService = async (body, res) => {
                     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Choose User");
                     return;
                 }
-
-
-
 
 
                 // User switching a profile
