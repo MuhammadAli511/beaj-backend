@@ -9,24 +9,28 @@ import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import waActiveSessionRepository from "../repositories/waActiveSessionRepository.js";
 import waProfileRepository from "../repositories/waProfileRepository.js";
 import waUserActivityLogsRepository from "../repositories/waUserActivityLogsRepository.js";
-import AIServices from "../utils/AIServices.js";
-import { removeUser, removeUserTillCourse, startCourseForUser, sendCourseLessonToTeacher, sendCourseLessonToKid, resetCourseKid } from "../utils/chatbotUtils.js";
+import { startCourseForUser, sendCourseLessonToTeacher, sendCourseLessonToKid, talkToBeajRep } from "../utils/chatbotUtils.js";
 import {
     greetingMessage, greetingMessageLoop, kidsChooseClass, kidsChooseClassLoop, demoCourseStart,
     confirmSchoolName, thankyouMessageSchoolOwner, getUserProfile, getSchoolName, getCityName,
-    thankyouMessageParent, talkToBeajRep, parentOrStudentSelection, studentGenericClassInput,
+    thankyouMessageParent, parentOrStudentSelection, studentGenericClassInput,
     studentSpecificClassInput, paymentDetails, paymentComplete, singleStudentRegistationComplate,
     studentNameInput, studentNameConfirmation, studentGenericClassConfirmation, studentSpecificClassConfirmation,
     schoolAdminConfirmation, startOfFlow, cancelRegistration, confirmCancelRegistration
 } from "../utils/trialflowUtils.js";
-import { sendMessage, sendButtonMessage, retrieveMediaURL, sendMediaMessage, sendContactCardMessage } from "../utils/whatsappUtils.js";
+import { sendMessage, sendButtonMessage, retrieveMediaURL, sendMediaMessage } from "../utils/whatsappUtils.js";
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
 import { createFeedback } from "../utils/createFeedbackUtils.js";
 import { endingMessage } from "../utils/endingMessageUtils.js";
 import { checkUserMessageAndAcceptableMessages, getAcceptableMessagesList, sleep, getDaysPerWeek, getTotalLessonsForCourse, getLevelFromCourseName } from "../utils/utils.js";
 import { runWithContext } from "../utils/requestContext.js";
-import { studentBotContactData, teacherBotContactData } from "../constants/contacts.js";
-import { activity_types_to_repeat, text_message_types, beaj_team_numbers, feedback_acceptable_messages, next_activity_acceptable_messages } from "../constants/constants.js";
+import {
+    activity_types_to_repeat, text_message_types, beaj_team_numbers, feedback_acceptable_messages,
+    next_activity_acceptable_messages, special_commands, talk_to_beaj_rep_messages, grades_and_class_names,
+    youth_camp_grades
+} from "../constants/constants.js";
+import { specialCommandFlow } from "../flows/specialCommandFlows.js";
+import { marketingBotFlow } from "../flows/marketingBotFlows.js";
 dotenv.config();
 const whatsappVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN;
 const studentBotPhoneNumberId = process.env.STUDENT_BOT_PHONE_NUMBER_ID;
@@ -51,10 +55,6 @@ const verifyWebhookService = async (req, res) => {
         error.fileName = "chatBotService.js";
         throw error;
     }
-};
-
-const uploadUserDataService = async (users) => {
-    return;
 };
 
 const getCombinedUserDataService = async () => {
@@ -152,23 +152,10 @@ const webhookService = async (body, res) => {
                     return;
                 }
 
-                // If message is reset, delete user from database
-                if (text_message_types.includes(message.type) && messageContent.toLowerCase() == "reset all") {
-                    await removeUser(userMobileNumber);
+                if (special_commands.includes(messageContent.toLowerCase()) && message.type == "text") {
+                    await specialCommandFlow(messageContent, userMobileNumber);
                     return;
-                }
-
-                // If message is reset till course, delete user from database
-                if (text_message_types.includes(message.type) && messageContent.toLowerCase() == "reset course") {
-                    await removeUserTillCourse(profileId, userMobileNumber);
-                    return;
-                }
-
-                // If message is reset course kid, delete user from database and create test data
-                if (text_message_types.includes(message.type) && messageContent.toLowerCase() == "reset course kid") {
-                    await resetCourseKid(userMobileNumber, botPhoneNumberId);
-                    return;
-                }
+                };
 
 
                 if (chooseProfile) {
@@ -183,16 +170,9 @@ const webhookService = async (body, res) => {
                             const globalIndex = i + chunkIndex;
                             const matchingUser = userMetadata.find(user => user.dataValues.profile_id === profile.dataValues.profile_id);
                             let classLevel = matchingUser.dataValues.classLevel.toLowerCase();
-                            if (classLevel == "grade 7" || classLevel == "class 7") {
+                            if (youth_camp_grades.includes(classLevel)) {
                                 classLevel = "Youth Camp";
-                            } else if (
-                                classLevel == "grade 1" || classLevel == "class 1" ||
-                                classLevel == "grade 2" || classLevel == "class 2" ||
-                                classLevel == "grade 3" || classLevel == "class 3" ||
-                                classLevel == "grade 4" || classLevel == "class 4" ||
-                                classLevel == "grade 5" || classLevel == "class 5" ||
-                                classLevel == "grade 6" || classLevel == "class 6"
-                            ) {
+                            } else if (grades_and_class_names.includes(classLevel)) {
                                 classLevel = classLevel.charAt(0).toUpperCase() + classLevel.slice(1);
                             } else {
                                 classLevel = "Youth Camp";
@@ -220,58 +200,13 @@ const webhookService = async (body, res) => {
 
 
                 if (botPhoneNumberId == marketingBotPhoneNumberId) {
-                    if (messageContent.toLowerCase() == "yes" || messageContent.toLowerCase() == "no") {
-                        const lastMessage = marketingPreviousMessages.dataValues.messageContent;
-                        if (lastMessage == "type1_consent" || lastMessage == "type2_consent" || lastMessage == "type3_consent") {
-                            await sendMessage(userMobileNumber, "Response recorded");
-                            await createActivityLog(userMobileNumber, "text", "outbound", "Response recorded", null);
-                            return;
-                        }
-                    }
-
-                    if (!["text", "button", "interactive"].includes(message.type)) {
-                        await sendMessage(userMobileNumber, "Sorry, I am not able to respond to your question. I only accept text messages.");
-                        await createActivityLog(userMobileNumber, "text", "outbound", "Sorry, I am not able to respond to your question. I only accept text messages.", null);
-                        return;
-                    }
-                    const previousMessages = await waUserActivityLogsRepository.getMarketingBotChatHistory(userMobileNumber);
-                    if (previousMessages == null) {
-                        await sendMessage(userMobileNumber, "Sorry, I have received too many messages from you in the past hour. Please try again later.");
-                        await createActivityLog(userMobileNumber, "text", "outbound", "Sorry, I have received too many messages from you in the past hour. Please try again later.", null);
-                        return;
-                    }
-                    let response = await AIServices.marketingBotResponse(previousMessages);
-                    const imageResponse = response.match(/<IMAGE>(.*?)<\/IMAGE>/)?.[1];
-                    const contactResponse = response.match(/<CONTACT>(.*?)<\/CONTACT>/)?.[1];
-                    response = response.replace(/<IMAGE>(.*?)<\/IMAGE>/g, "").replace(/<CONTACT>(.*?)<\/CONTACT>/g, "");
-                    await sendMessage(userMobileNumber, response);
-                    if (imageResponse) {
-                        if (imageResponse.toLowerCase() == "flyer image") {
-                            const flyer = await waConstantsRepository.getByKey("COMBINED_FLYER");
-                            await sendMediaMessage(userMobileNumber, flyer.dataValues.constantValue, "image", null, 0, "WA_Constants", flyer.dataValues.id, flyer.dataValues.constantMediaId, "constantMediaId");
-                            await sleep(2000);
-                        }
-                    }
-                    if (contactResponse) {
-                        if (contactResponse.toLowerCase() == "student trial bot") {
-                            await sendContactCardMessage(userMobileNumber, studentBotContactData);
-                            let contactCardMessage = `👆Click on the Message button to get your student trial started.`;
-                            await sendMessage(userMobileNumber, contactCardMessage);
-                        } else if (contactResponse.toLowerCase() == "teacher trial bot") {
-                            await sendContactCardMessage(userMobileNumber, teacherBotContactData);
-                            let contactCardMessage = `👆Click on the Message button to get your teacher trial started.`;
-                            await sendMessage(userMobileNumber, contactCardMessage);
-                        } else if (contactResponse.toLowerCase() == "team member") {
-                            await talkToBeajRep(profileId, userMobileNumber);
-                        }
-                    }
-                    await createActivityLog(userMobileNumber, "text", "outbound", response, null);
+                    await marketingBotFlow(messageContent, messageType, userMobileNumber);
                     return;
                 }
 
                 if (
                     text_message_types.includes(message.type) &&
-                    (messageContent.toLowerCase() == "talk to beaj rep" || messageContent.toLowerCase() == "chat with beaj rep" || messageContent.toLowerCase() == "get help")
+                    talk_to_beaj_rep_messages.includes(messageContent.toLowerCase())
                 ) {
                     await talkToBeajRep(profileId, userMobileNumber);
                     return;
@@ -1365,4 +1300,4 @@ const webhookService = async (body, res) => {
     }
 };
 
-export default { webhookService, verifyWebhookService, uploadUserDataService, getCombinedUserDataService };
+export default { webhookService, verifyWebhookService, getCombinedUserDataService };

@@ -336,19 +336,6 @@ const thankyouMessageParent = async (profileId, userMobileNumber) => {
     await waUsersMetadataRepository.update(profileId, userMobileNumber, { userRegistrationComplete: new Date() });
 };
 
-const talkToBeajRep = async (profileId, userMobileNumber) => {
-    const user = await waUserProgressRepository.getByProfileId(profileId);
-    if (user && user.dataValues.persona == "school admin") {
-        await sendContactCardMessage(userMobileNumber, najiaContactData);
-    } else {
-        await sendContactCardMessage(userMobileNumber, amnaContactData);
-    }
-    await sleep(2000);
-    let contactCardMessage = `👆Click on the Message button to chat with a Beaj Representative.\nبیج کے نمائندے سے بات کرنے کے لیئے "Message" بٹن پر کلک کریں۔`;
-    await sendMessage(userMobileNumber, contactCardMessage);
-    await createActivityLog(userMobileNumber, "text", "outbound", contactCardMessage, null);
-};
-
 // Multi user registration
 const studentNameInput = async (profileId, userMobileNumber) => {
     const typeNameAudio = await waConstantsRepository.getByKey("TYPE_NAME_AUDIO");
@@ -616,7 +603,6 @@ export {
     confirmCityName,
     readyToPay,
     thankyouMessageParent,
-    talkToBeajRep,
     parentOrStudentSelection,
     studentGenericClassInput,
     studentSpecificClassInput,

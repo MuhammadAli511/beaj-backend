@@ -16,9 +16,7 @@ router.post('/webhook', chatBotController.webhookController);
 // GET /chatbot/webhook
 router.get('/webhook', chatBotController.verifyWebhookController);
 
-// POST /chatbot/upload-user-data
-router.post('/upload-user-data', chatBotController.uploadUserDataController);
-
+// TODO: Move this to metadata
 // GET /chatbot/combined-user-data
 router.get('/combined-user-data', beajFacilitatorsAuth, chatBotController.getCombinedUserDataController);
 
