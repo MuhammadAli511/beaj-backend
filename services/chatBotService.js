@@ -1280,7 +1280,10 @@ const webhookService = async (body, res) => {
 
                         // Daily blocking
                         const daysPerWeek = await getDaysPerWeek(profileId);
-                        if (daysPerWeek == 5 && currentUserState.dataValues.persona == "kid") {
+                        if (
+                            (daysPerWeek == 5 && currentUserState.dataValues.persona == "kid") ||
+                            (currentUserMetadata.dataValues.cohort == "Cohort 20" && currentUserState.dataValues.persona == "teacher")
+                        ) {
                             if (!numbers_to_ignore.includes(userMobileNumber)) {
                                 const course = await courseRepository.getById(
                                     currentUserState.dataValues.currentCourseId
@@ -1298,9 +1301,16 @@ const webhookService = async (body, res) => {
 
                                 while (daysAdded < daysRequiredForCurrentLesson) {
                                     dayUnlockDate.setDate(dayUnlockDate.getDate() + 1);
-                                    // Skip weekends: Saturday (6) and Sunday (0)
-                                    if (dayUnlockDate.getDay() !== 0 && dayUnlockDate.getDay() !== 6) {
-                                        daysAdded++;
+                                    if (currentUserMetadata.dataValues.cohort == "Cohort 20") {
+                                        // Skip weekends: Saturday (6) and Sunday (0)
+                                        if (dayUnlockDate.getDay() !== 0) {
+                                            daysAdded++;
+                                        }
+                                    } else {
+                                        // Skip weekends: Saturday (6) and Sunday (0)
+                                        if (dayUnlockDate.getDay() !== 0 && dayUnlockDate.getDay() !== 6) {
+                                            daysAdded++;
+                                        }
                                     }
                                 }
 
