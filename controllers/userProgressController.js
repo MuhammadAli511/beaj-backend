@@ -35,8 +35,8 @@ const getcohortListController = async (req, res, next) => {
 
 const getUserProgressBarStatsController = async (req, res, next) => {
   try {
-    const { botType, level, cohort, rollout, courseId1, courseId4, condition } = req.query;
-    const result = await service.getUserProgressBarStatsService(botType, level, cohort, rollout, courseId1, courseId4, condition);
+    const { botType, level, cohort, rollout, courseId1, courseId4,courseId5, condition } = req.query;
+    const result = await service.getUserProgressBarStatsService(botType, level, cohort, rollout, courseId1, courseId4,courseId5, condition);
     console.log(result);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
