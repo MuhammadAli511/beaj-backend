@@ -1,6 +1,4 @@
 import service from '../services/chatBotService.js';
-import dotenv from 'dotenv';
-dotenv.config();
 import https from 'https';
 import axios from 'axios';
 import { salman_number, ali_number, salman_endpoint, ali_endpoint } from '../constants/constants.js';

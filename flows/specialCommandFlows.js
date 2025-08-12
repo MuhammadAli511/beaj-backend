@@ -8,9 +8,6 @@ import waProfileRepository from "../repositories/waProfileRepository.js";
 import waPurchasedCoursesRepository from "../repositories/waPurchasedCoursesRepository.js";
 import { beaj_team_numbers } from "../constants/constants.js";
 import { sendMessage } from "../utils/whatsappUtils.js";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 const removeUser = async (phoneNumber) => {
     await waUsersMetadataRepository.deleteByPhoneNumber(phoneNumber);

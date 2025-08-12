@@ -1,4 +1,3 @@
-import dotenv from "dotenv";
 import sdk from "microsoft-cognitiveservices-speech-sdk";
 import { v4 as uuidv4 } from "uuid";
 import { BlobServiceClient } from "@azure/storage-blob";
@@ -18,7 +17,6 @@ import { ElevenLabsClient } from "elevenlabs";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { marketing_bot_prompt } from "./prompts.js";
 
-dotenv.config();
 ffmpeg.setFfmpegPath(ffmpegPath);
 
 const writeFile = promisify(fs.writeFile);

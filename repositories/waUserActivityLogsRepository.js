@@ -1,8 +1,6 @@
 import WA_UserActivityLogs from '../models/WA_UserActivityLogs.js';
 import { Sequelize } from 'sequelize';
-import dotenv from 'dotenv';
 
-dotenv.config();
 
 const create = async (data) => {
     const activityLog = new WA_UserActivityLogs(data);
@@ -18,7 +16,7 @@ const getByPhoneNumber = async (phoneNumber, botPhoneNumberId, limit = 15, offse
         where: {
             phoneNumber: phoneNumber,
             bot_phone_number_id: botPhoneNumberId,
-            profile_id : profile_id,
+            profile_id: profile_id,
         },
         order: [
             ['timestamp', 'DESC']

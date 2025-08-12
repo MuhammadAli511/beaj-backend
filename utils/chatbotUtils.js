@@ -1,4 +1,3 @@
-import dotenv from "dotenv";
 import { format } from 'date-fns';
 import waUsersMetadataRepository from "../repositories/waUsersMetadataRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
@@ -31,7 +30,6 @@ import { assessmentWatchAndSpeakView } from "../views/assessmentWatchAndSpeak.js
 import { level4ReportCard, kidsReportCard } from "./imageGenerationUtils.js";
 import { najiaContactData, amnaContactData } from "../constants/contacts.js";
 
-dotenv.config();
 
 
 const talkToBeajRep = async (profileId, userMobileNumber) => {
@@ -394,19 +392,7 @@ const startCourseForUser = async (profileId, userMobileNumber, numbers_to_ignore
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Course Start");
 
     // Update user progress
-    await waUserProgressRepository.update(
-        profileId,
-        userMobileNumber,
-        nextCourse.dataValues.courseId,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null
-    );
+    await waUserProgressRepository.update(profileId, userMobileNumber, nextCourse.dataValues.courseId, null, null, null, null, null, null, null, null);
 
     // Extract Level from courseName
     // if teacher
@@ -458,114 +444,56 @@ const startCourseForUser = async (profileId, userMobileNumber, numbers_to_ignore
     return true;
 };
 
-const sendCourseLessonToTeacher = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, buttonId = null) => {
+const sendCourseLesson = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona, buttonId = null) => {
     try {
         const activity = startingLesson.dataValues.activity;
         if (activity == 'video') {
-            await videoView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await videoView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'videoEnd') {
-            await videoEndView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await videoEndView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'mcqs') {
-            await mcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher', buttonId);
+            await mcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona, buttonId);
         }
         else if (activity == 'watchAndSpeak') {
-            await watchAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await watchAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'watchAndAudio') {
-            await watchAndAudioView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await watchAndAudioView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'watchAndImage') {
-            await watchAndImageView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await watchAndImageView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'listenAndSpeak') {
-            await listenAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await listenAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'read') {
-            await readView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await readView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'conversationalQuestionsBot') {
-            await conversationalQuestionsBotView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await conversationalQuestionsBotView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'conversationalMonologueBot') {
-            await conversationalMonologueBotView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await conversationalMonologueBotView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'conversationalAgencyBot') {
-            await conversationalAgencyBotView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await conversationalAgencyBotView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'speakingPractice') {
-            await speakingPracticeView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await speakingPracticeView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'feedbackAudio') {
-            await feedbackAudioView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await feedbackAudioView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'feedbackMcqs') {
-            await feedbackMcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await feedbackMcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'assessmentMcqs') {
-            await assessmentMcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher', buttonId);
+            await assessmentMcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona, buttonId);
         }
         else if (activity == 'assessmentWatchAndSpeak') {
-            await assessmentWatchAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
-        }
-    } catch (error) {
-        console.log('Error sending lesson to user:', error);
-        error.fileName = 'chatBotService.js';
-        throw error;
-    }
-};
-
-const sendCourseLessonToKid = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, buttonId = null) => {
-    try {
-        const activity = startingLesson.dataValues.activity;
-        if (activity == 'video') {
-            await videoView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'videoEnd') {
-            await videoEndView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'mcqs') {
-            await mcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid', buttonId);
-        }
-        else if (activity == 'watchAndSpeak') {
-            await watchAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'listenAndSpeak') {
-            await listenAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'read') {
-            await readView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'speakingPractice') {
-            await speakingPracticeView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'assessmentMcqs') {
-            await assessmentMcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid', buttonId);
-        }
-        else if (activity == 'assessmentWatchAndSpeak') {
-            await assessmentWatchAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'watchAndAudio') {
-            await watchAndAudioView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'watchAndImage') {
-            await watchAndImageView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'conversationalQuestionsBot') {
-            await conversationalQuestionsBotView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'conversationalMonologueBot') {
-            await conversationalMonologueBotView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'conversationalAgencyBot') {
-            await conversationalAgencyBotView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'feedbackAudio') {
-            await feedbackAudioView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'feedbackMcqs') {
-            await feedbackMcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
+            await assessmentWatchAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
     } catch (error) {
         console.log('Error sending lesson to user:', error);
@@ -577,8 +505,7 @@ const sendCourseLessonToKid = async (profileId, userMobileNumber, currentUserSta
 export {
     getNextCourse,
     startCourseForUser,
-    sendCourseLessonToTeacher,
-    sendCourseLessonToKid,
+    sendCourseLesson,
     weekEndScoreCalculation,
     studentReportCardCalculation,
     talkToBeajRep

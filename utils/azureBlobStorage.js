@@ -1,9 +1,7 @@
 import { BlobServiceClient } from "@azure/storage-blob";
-import dotenv from 'dotenv';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 
-dotenv.config();
 
 async function uploadImageToBlobStorage(imageBuffer, imageName = 'output-score.jpg') {
     try {
