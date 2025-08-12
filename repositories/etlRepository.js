@@ -2491,14 +2491,19 @@ const getCumulativeActivityCompletions = async () => {
 };
 
 
-const getUserProgressStats = async (botType, grade, cohort, rollout, courseId1, courseId2) => {
+const getUserProgressStats = async (botType, grade, cohort, rollout, courseId1s, courseId2s, courseId3s, courseId4s, courseId5s) => {
     try {
-       let level =  ``;
+       let level =  ``, courseId1, courseId2, courseId3, courseId4, courseId5;
         if (botType === 'teacher'){
           level =  ``;
+          courseId1 = courseId1s;
+          courseId2 = courseId4s;
+          courseId3 = courseId5s;
         }
         else{
             level =  ` AND m."classLevel" = '${grade}' `;
+            courseId1 = courseId1s;
+            courseId2 = courseId4s;
         }
         const qry = `WITH target_group AS (
                 SELECT m.profile_id
@@ -2521,7 +2526,7 @@ const getUserProgressStats = async (botType, grade, cohort, rollout, courseId1, 
             actual_course_last_lesson AS (
                 SELECT "LessonId" ,"courseId"
                 FROM "Lesson"
-                WHERE "courseId" = ${courseId1}  and "status" = 'Active'
+                WHERE ${botType === 'teacher' ? `"courseId" = ${courseId3}` : `"courseId" = ${courseId1}`}  and "status" = 'Active'
                 ORDER BY "weekNumber" DESC, "dayNumber" DESC, "SequenceNumber" DESC
                 LIMIT 1
             ),
@@ -2599,6 +2604,19 @@ const getUserProgressStats = async (botType, grade, cohort, rollout, courseId1, 
             FROM started_main sm
             LEFT JOIN completed_main cm ON sm.profile_id = cm.profile_id
             WHERE cm.profile_id IS NULL
+        ),
+        activity_status AS (
+                    SELECT 
+                        profile_id,
+                        MAX(timestamp) AS last_message_timestamp
+                    FROM 
+                        wa_user_activity_logs WHERE "courseId" = ${courseId2}
+                    GROUP BY profile_id
+                ),
+        get_active_users as (
+        select a.profile_id from "target_group" a inner join "activity_status" b on a.profile_id = b.profile_id
+        where b.last_message_timestamp IS NOT NULL 
+                            AND DATE_PART('day', CURRENT_DATE - b.last_message_timestamp) <= 4
         )
 
             SELECT
@@ -2610,7 +2628,8 @@ const getUserProgressStats = async (botType, grade, cohort, rollout, courseId1, 
                 (SELECT COUNT(*) FROM completed_assessment_not_started_main) AS completedAssessmentButNotStartedMain,
                 (SELECT COUNT(*) FROM started_not_completed_assessment) AS startedNotCompletedPreAssessment,
                 (SELECT COUNT(*) FROM started_not_completed_main) AS startedNotCompletedMainCourse,
-                (SELECT COUNT(*) FROM not_started_assessment) AS notStartedPreAssessment;
+                (SELECT COUNT(*) FROM not_started_assessment) AS notStartedPreAssessment,
+                (SELECT COUNT(*) FROM get_active_users) AS getActiveUsers;
             `;
         const res = await sequelize.query(qry);
         return res[0];
@@ -2621,11 +2640,19 @@ const getUserProgressStats = async (botType, grade, cohort, rollout, courseId1, 
 };
 
 
-const getUserProgressBarStats = async (botType, grade, cohort, rollout, courseId1, courseId2, condition_name) => {
+const getUserProgressBarStats = async (botType, grade, cohort, rollout, courseId1s, courseId4s, courseId5s, condition_name) => {
     try {
-        let level = ``;
-        if (botType !== 'teacher') {
-            level = `AND m."classLevel" = '${grade}'`;
+        let level =  ``, courseId1, courseId2, courseId3;
+        if (botType === 'teacher'){
+          level =  ``;
+          courseId1 = courseId1s;
+          courseId2 = courseId4s;
+          courseId3 = courseId5s;
+        }
+        else{
+            level =  ` AND m."classLevel" = '${grade}' `;
+            courseId1 = courseId1s;
+            courseId2 = courseId4s;
         }
 
         const query = `
@@ -2651,7 +2678,7 @@ const getUserProgressBarStats = async (botType, grade, cohort, rollout, courseId
         actual_course_last_lesson AS (
             SELECT "LessonId", "courseId"
             FROM "Lesson"
-            WHERE "courseId" = ${courseId1} AND "status" = 'Active'
+            WHERE ${botType === 'teacher' ? `"courseId" = ${courseId3}` : `"courseId" = ${courseId1}`}  and "status" = 'Active'
             ORDER BY "weekNumber" DESC, "dayNumber" DESC, "SequenceNumber" DESC
             LIMIT 1
         ),
@@ -2728,8 +2755,20 @@ const getUserProgressBarStats = async (botType, grade, cohort, rollout, courseId
             FROM started_main sm
             LEFT JOIN completed_main cm ON sm.profile_id = cm.profile_id
             WHERE cm.profile_id IS NULL
+        ),
+        activity_status AS (
+            SELECT 
+                profile_id,
+                MAX(timestamp) AS last_message_timestamp
+            FROM 
+                wa_user_activity_logs WHERE "courseId" = ${courseId2}
+                    GROUP BY profile_id
+                ),
+        get_active_users as (
+            select a.profile_id from "target_group" a inner join "activity_status" b on a.profile_id = b.profile_id
+            where b.last_message_timestamp IS NOT NULL 
+                                AND DATE_PART('day', CURRENT_DATE - b.last_message_timestamp) <= 4
         )
-
         SELECT tg.*
         FROM target_group tg
         WHERE tg.profile_id IN (
@@ -2750,6 +2789,8 @@ const getUserProgressBarStats = async (botType, grade, cohort, rollout, courseId
                     ? `SELECT profile_id FROM not_started_assessment`
                     : condition_name === 'started_not_completed_assessment'
                     ? `SELECT profile_id FROM started_not_completed_assessment`
+                    : condition_name === 'get_active_users'
+                    ? `SELECT profile_id FROM get_active_users`
                     : condition_name === 'started_not_completed_main'
                     ? `SELECT profile_id FROM started_not_completed_main`
                     : `NULL`

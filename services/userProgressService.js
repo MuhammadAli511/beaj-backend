@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 const getAllUserProgressService = async (botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3, courseId4, courseId5, module, assessmentView) => {
   let array_list = [], userStats = [];
 
-  userStats = await etlRepository.getUserProgressStats(botType, level, cohort, rollout, courseId1, courseId4);
+  userStats = await etlRepository.getUserProgressStats(botType, level, cohort, rollout, courseId1, courseId2, courseId3, courseId4, courseId5);
 
   if (module === 'lesson') {
     array_list = await etlRepository.getLessonCompletions(botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3);
@@ -570,8 +570,8 @@ const getcohortListService = async (botType, rollout, level, targetGroup) => {
   return cohort_list;
 };
 
-const getUserProgressBarStatsService = async (botType, level, cohort, rollout, courseId1, courseId4, condition) => {
-  let array_list = await etlRepository.getUserProgressBarStats(botType, level, cohort, rollout, courseId1, courseId4, condition);
+const getUserProgressBarStatsService = async (botType, level, cohort, rollout, courseId1, courseId4, courseId5, condition) => {
+  let array_list = await etlRepository.getUserProgressBarStats(botType, level, cohort, rollout, courseId1, courseId4, courseId5, condition);
   return {
     users: array_list
   };
