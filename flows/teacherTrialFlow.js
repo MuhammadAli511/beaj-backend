@@ -1,15 +1,7 @@
 import waUsersMetadataRepository from "../repositories/waUsersMetadataRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
-import waPurchasedCoursesRepository from "../repositories/waPurchasedCoursesRepository.js";
-import waProfileRepository from "../repositories/waProfileRepository.js";
-import waActiveSessionRepository from "../repositories/waActiveSessionRepository.js";
-import courseRepository from "../repositories/courseRepository.js";
-import { sendButtonMessage, sendMessage, sendMediaMessage } from "./whatsappUtils.js";
+import { sendButtonMessage, sendMessage } from "../utils/whatsappUtils.js";
 import { createActivityLog } from "./createActivityLogUtils.js";
-import courses from "../constants/courses.js";
-import { sleep } from "./utils.js";
-import waUserActivityLogsRepository from "../repositories/waUserActivityLogsRepository.js";
-import * as imageGenerationUtils from "./imageGenerationUtils.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 
 
@@ -22,12 +14,6 @@ const greetingMessageTeachers = async (profileId, userMobileNumber) => {
     });
     let greetingMessageText = "";
     greetingMessageText = `Welcome to Beaj Education! 👋\n\nI'm Ms. Beaj - here to guide you!\n\n👇Click on the “Start button”`;
-
-    let userRegistrationComplete = false;
-    const user = await waUsersMetadataRepository.getByProfileId(profileId);
-    if (user.dataValues.userRegistrationComplete) {
-        userRegistrationComplete = true;
-    }
 
     const greetingImage = await waConstantsRepository.getByKey("TEACHER_GREETING");
     if (greetingImage) {

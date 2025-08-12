@@ -17,7 +17,7 @@ const activity_types_to_repeat = [
 
 const text_message_types = ["text", "interactive", "button"];
 
-const special_commands = ["reset all", "reset course", "reset course kid"];
+const special_commands = ["reset all", "reset course"];
 
 const talk_to_beaj_rep_messages = [
     "talk to beaj rep",

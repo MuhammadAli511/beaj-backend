@@ -342,6 +342,7 @@ const thankyouMessageParent = async (profileId, userMobileNumber) => {
 
 const registerNewStudent = async (profileId, userMobileNumber) => {
     const profile_type = "student";
+    let botPhoneNumberId = process.env.STUDENT_BOT_PHONE_NUMBER_ID;
     let profile = await waProfileRepository.create({ phone_number: userMobileNumber, bot_phone_number_id: botPhoneNumberId, profile_type: profile_type });
     profileId = profile.dataValues.profile_id;
     await waUsersMetadataRepository.create({ profile_id: profileId, phoneNumber: userMobileNumber, userClickedLink: new Date() });
@@ -395,7 +396,8 @@ const studentGenericClassConfirmation = async (profileId, userMobileNumber, mess
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no"]);
 };
 
-const studentSpecificClassInput = async (profileId, userMobileNumber, genericClass) => {
+const studentSpecificClassInput = async (profileId, userMobileNumber) => {
+    const genericClass = await waUsersMetadataRepository.getClassLevel(profileId, userMobileNumber);
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Student Specific Class Input");
     const studentClassInputMessage = "Please select student's *class*:\n\nسٹوڈنٹ کی *کلاس* منتخب کریں۔";
     if (genericClass.toLowerCase() == "class 1, 2 or 3") {
@@ -553,7 +555,7 @@ const kidsTrialFlowDriver = async (profileId, userMobileNumber, engagementType, 
         {
             engagementTypes: ["Student Name Input"],
             messages: ["*"],
-            handler: () => studentNameConfirmation(profileId, userMobileNumber)
+            handler: () => studentNameConfirmation(profileId, userMobileNumber, messageContent)
         },
         {
             engagementTypes: ["Student Name Confirmation"],
@@ -583,7 +585,7 @@ const kidsTrialFlowDriver = async (profileId, userMobileNumber, engagementType, 
         {
             engagementTypes: ["Student Generic Class Confirmation"],
             messages: ["yes"],
-            handler: () => studentSpecificClassInput(profileId, userMobileNumber, messageContent)
+            handler: () => studentSpecificClassInput(profileId, userMobileNumber)
         },
         {
             engagementTypes: ["Student Specific Class Input"],
@@ -593,7 +595,7 @@ const kidsTrialFlowDriver = async (profileId, userMobileNumber, engagementType, 
         {
             engagementTypes: ["Student Specific Class Confirmation"],
             messages: ["no", "no, choose again"],
-            handler: () => studentSpecificClassInput(profileId, userMobileNumber, messageContent)
+            handler: () => studentSpecificClassInput(profileId, userMobileNumber)
         },
         {
             engagementTypes: ["Student Specific Class Confirmation"],

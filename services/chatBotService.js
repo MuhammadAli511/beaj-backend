@@ -203,7 +203,7 @@ const webhookService = async (body, res) => {
                 }
 
 
-                const currentUserState = await waUserProgressRepository.getByProfileId(profileId);
+                let currentUserState = await waUserProgressRepository.getByProfileId(profileId);
 
                 // TRIAL FLOW ROUTING
                 if (!userExists) {
