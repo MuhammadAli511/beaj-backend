@@ -4,13 +4,15 @@ import waPurchasedCoursesRepository from "../repositories/waPurchasedCoursesRepo
 import waProfileRepository from "../repositories/waProfileRepository.js";
 import waActiveSessionRepository from "../repositories/waActiveSessionRepository.js";
 import courseRepository from "../repositories/courseRepository.js";
-import { sendButtonMessage, sendMessage, sendMediaMessage } from "./whatsappUtils.js";
-import { createActivityLog } from "./createActivityLogUtils.js";
+import { sendButtonMessage, sendMessage, sendMediaMessage } from "../utils/whatsappUtils.js";
+import { createActivityLog } from "../utils/createActivityLogUtils.js";
 import courses from "../constants/courses.js";
-import { sleep } from "./utils.js";
+import { sleep } from "../utils/utils.js";
 import waUserActivityLogsRepository from "../repositories/waUserActivityLogsRepository.js";
-import * as imageGenerationUtils from "./imageGenerationUtils.js";
+import * as imageGenerationUtils from "../utils/imageGenerationUtils.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
+import dotenv from 'dotenv';
+dotenv.config();
 
 const greetingMessageKids = async (profileId, userMobileNumber) => {
     await waUserProgressRepository.create({

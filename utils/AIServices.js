@@ -16,6 +16,8 @@ import { join } from "path";
 import { ElevenLabsClient } from "elevenlabs";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { marketing_bot_prompt } from "./prompts.js";
+import dotenv from 'dotenv';
+dotenv.config();
 
 ffmpeg.setFfmpegPath(ffmpegPath);
 

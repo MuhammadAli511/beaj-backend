@@ -1,7 +1,7 @@
 import waUsersMetadataRepository from "../repositories/waUsersMetadataRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
 import { sendButtonMessage, sendMessage } from "../utils/whatsappUtils.js";
-import { createActivityLog } from "./createActivityLogUtils.js";
+import { createActivityLog } from "../utils/createActivityLogUtils.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 
 

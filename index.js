@@ -1,10 +1,10 @@
 import "./instrument.js";
+import dotenv from 'dotenv';
+dotenv.config();
 import * as Sentry from "@sentry/node"
 import express from 'express';
 import bodyParser from 'body-parser';
 import path from 'path';
-import dotenv from 'dotenv';
-dotenv.config();
 import sequelize from './config/sequelize.js';
 import cors from 'cors';
 import cron from 'node-cron';
@@ -63,6 +63,6 @@ async function startETLProcess() {
 app.listen(port, async () => {
   console.log(`Server running on port ${port}`);
   if (process.env.ENVIRONMENT != 'DEV') {
-    startETLProcess();
+    // startETLProcess();
   }
 });

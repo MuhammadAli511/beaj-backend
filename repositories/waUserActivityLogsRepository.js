@@ -1,5 +1,7 @@
 import WA_UserActivityLogs from '../models/WA_UserActivityLogs.js';
 import { Sequelize } from 'sequelize';
+import dotenv from 'dotenv';
+dotenv.config();
 
 
 const create = async (data) => {

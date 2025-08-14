@@ -4,8 +4,8 @@ import { createActivityLog } from "../utils/createActivityLogUtils.js";
 import { sleep } from "../utils/utils.js";
 import { studentBotContactData, teacherBotContactData } from "../constants/contacts.js";
 import { talkToBeajRep } from "../utils/chatbotUtils.js";
-import AIServices from "../services/AIServices.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
+import AIServices from '../utils/AIServices.js';
 
 const marketingBotFlow = async (profileId, messageContent, messageType, userMobileNumber) => {
     if (messageContent.toLowerCase() == "yes" || messageContent.toLowerCase() == "no") {

@@ -21,8 +21,10 @@ import {
 } from "../constants/constants.js";
 import { specialCommandFlow } from "../flows/specialCommandFlows.js";
 import { marketingBotFlow } from "../flows/marketingBotFlows.js";
-import { teachersTrialFlowDriver } from "../flows/teacherTrialFlow.js";
-import { kidsTrialFlowDriver } from "../flows/kidsTrialFlow.js";
+import teachersTrialFlowDriver from "../flows/teacherTrialFlow.js";
+import kidsTrialFlowDriver from "../flows/kidsTrialFlow.js";
+import dotenv from 'dotenv';
+dotenv.config();
 const whatsappVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN;
 const studentBotPhoneNumberId = process.env.STUDENT_BOT_PHONE_NUMBER_ID;
 const teacherBotPhoneNumberId = process.env.TEACHER_BOT_PHONE_NUMBER_ID;
