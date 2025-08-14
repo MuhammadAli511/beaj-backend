@@ -61,7 +61,7 @@ const getSchoolName = async (profileId, userMobileNumber) => {
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["text"]);
 };
 
-const teachersTrialFlowDriver = async (profileId, userMobileNumber, engagementType, messageContent, messageType) => {
+const teachersTrialFlowDriver = async (profileId, userMobileNumber, engagementType, messageContent, messageType, inboundUploadedImage) => {
     const endpointHandlers = [
         {
             engagementTypes: ["New User"],

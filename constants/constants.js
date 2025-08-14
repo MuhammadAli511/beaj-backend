@@ -77,6 +77,14 @@ const next_activity_acceptable_messages = [
     "next activity",
 ];
 
+const start_course_acceptable_messages = [
+    "start my course",
+    "start next level",
+    "complete final task",
+    "start level 1",
+    "start now!",
+];
+
 const grades_and_class_names = [
     "grade 1",
     "grade 2",
@@ -113,4 +121,5 @@ export {
     ali_number,
     salman_endpoint,
     ali_endpoint,
+    start_course_acceptable_messages,
 };
