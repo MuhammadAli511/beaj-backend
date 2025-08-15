@@ -77,7 +77,23 @@ const next_activity_acceptable_messages = [
     "next activity",
 ];
 
-const start_course_acceptable_messages = [
+const course_start_acceptable_messages = [
+    "start",
+    "start!",
+    "start free trial",
+    "class 1 or 2",
+    "class 3 to 6",
+];
+
+const course_start_states = [
+    "Greeting Message",
+    "Confirm Class - Level 1",
+    "Confirm Class - Level 3",
+    "Choose Class",
+    "Course Start",
+];
+
+const trigger_course_acceptable_messages = [
     "start my course",
     "start next level",
     "complete final task",
@@ -121,5 +137,7 @@ export {
     ali_number,
     salman_endpoint,
     ali_endpoint,
-    start_course_acceptable_messages,
+    trigger_course_acceptable_messages,
+    course_start_acceptable_messages,
+    course_start_states
 };

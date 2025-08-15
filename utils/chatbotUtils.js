@@ -502,11 +502,4 @@ const sendCourseLesson = async (profileId, userMobileNumber, currentUserState, s
     }
 };
 
-export {
-    getNextCourse,
-    startCourseForUser,
-    sendCourseLesson,
-    weekEndScoreCalculation,
-    studentReportCardCalculation,
-    talkToBeajRep
-};
+export { getNextCourse, startCourseForUser, sendCourseLesson, weekEndScoreCalculation, studentReportCardCalculation, talkToBeajRep };
