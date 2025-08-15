@@ -1280,12 +1280,26 @@ const webhookService = async (body, res) => {
 
                         // Daily blocking
                         const daysPerWeek = await getDaysPerWeek(profileId);
-                        if (daysPerWeek == 5 && currentUserState.dataValues.persona == "kid") {
+                        if (
+                            (daysPerWeek == 5 && currentUserState.dataValues.persona == "kid") ||
+                            (currentUserMetadata.dataValues.cohort == "Cohort 20" && currentUserState.dataValues.persona == "teacher")
+                        ) {
                             if (!numbers_to_ignore.includes(userMobileNumber)) {
                                 const course = await courseRepository.getById(
                                     currentUserState.dataValues.currentCourseId
                                 );
-                                const courseStartDate = new Date(course.dataValues.courseStartDate);
+                                let courseStartDate = new Date(course.dataValues.courseStartDate);
+                                if (currentUserMetadata.dataValues.cohort == "Cohort 20" && currentUserState.dataValues.persona == "teacher") {
+                                    // check course name
+                                    const courseName = await courseRepository.getCourseNameById(currentUserState.dataValues.currentCourseId);
+                                    if (courseName.toLowerCase().includes("level 0") || courseName.toLowerCase().includes("level 1")) {
+                                        courseStartDate = new Date("August 11, 2025");
+                                    } else if (courseName.toLowerCase().includes("level 2")) {
+                                        courseStartDate = new Date("September 8, 2025");
+                                    } else if (courseName.toLowerCase().includes("level 3") || courseName.toLowerCase().includes("level 4")) {
+                                        courseStartDate = new Date("October 6, 2025");
+                                    }
+                                }
                                 const today = new Date();
 
                                 // Calculate the number of days from the start date needed for the current day's content
@@ -1298,9 +1312,16 @@ const webhookService = async (body, res) => {
 
                                 while (daysAdded < daysRequiredForCurrentLesson) {
                                     dayUnlockDate.setDate(dayUnlockDate.getDate() + 1);
-                                    // Skip weekends: Saturday (6) and Sunday (0)
-                                    if (dayUnlockDate.getDay() !== 0 && dayUnlockDate.getDay() !== 6) {
-                                        daysAdded++;
+                                    if (currentUserMetadata.dataValues.cohort == "Cohort 20") {
+                                        // Skip weekends: Saturday (6) and Sunday (0)
+                                        if (dayUnlockDate.getDay() !== 0) {
+                                            daysAdded++;
+                                        }
+                                    } else {
+                                        // Skip weekends: Saturday (6) and Sunday (0)
+                                        if (dayUnlockDate.getDay() !== 0 && dayUnlockDate.getDay() !== 6) {
+                                            daysAdded++;
+                                        }
                                     }
                                 }
 
@@ -1323,9 +1344,15 @@ const webhookService = async (body, res) => {
                                         todayDate < dayUnlockDateDate)
                                 ) {
                                     if (messageContent.toLowerCase().includes("start next lesson")) {
-                                        const message = "Please come back tomorrow to unlock the next lesson.";
-                                        await sendButtonMessage(userMobileNumber, message, [{ id: 'start_next_lesson', title: 'Start Next Lesson' }, { id: 'change_user', title: 'Change User' }]);
-                                        await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Lesson", null);
+                                        if (currentUserMetadata.dataValues.cohort == "Cohort 20" && currentUserState.dataValues.persona == "teacher") {
+                                            const message = "Please come back tomorrow to unlock the next lesson.";
+                                            await sendButtonMessage(userMobileNumber, message, [{ id: 'start_next_lesson', title: 'Start Next Lesson' }]);
+                                            await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Lesson", null);
+                                        } else {
+                                            const message = "Please come back tomorrow to unlock the next lesson.";
+                                            await sendButtonMessage(userMobileNumber, message, [{ id: 'start_next_lesson', title: 'Start Next Lesson' }, { id: 'change_user', title: 'Change User' }]);
+                                            await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Lesson", null);
+                                        }
                                     } else if (messageContent.toLowerCase().includes("start next game")) {
                                         const message = "Please come back tomorrow to unlock the next game.";
                                         await sendButtonMessage(userMobileNumber, message, [{ id: 'start_next_game', title: 'Start Next Game' }, { id: 'change_user', title: 'Change User' }]);
