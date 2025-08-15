@@ -129,30 +129,40 @@ const generateCertificate = async (name) => {
     if (!fs.existsSync(CERTIFICATE_TEMPLATE_PATH)) {
       throw new Error(`Certificate template not found at: ${CERTIFICATE_TEMPLATE_PATH}`);
     }
-
-    // Load the certificate template
     const image = await loadImage(CERTIFICATE_TEMPLATE_PATH);
-    const canvas = createCanvas(image.width, image.height);
-    const ctx = canvas.getContext('2d');
 
-    // Draw template on canvas
-    ctx.drawImage(image, 0, 0, image.width, image.height);
+    // Helper function to draw certificate content
+    const drawCertificate = async (ctx) => {
+          // Draw template on canvas
+          ctx.drawImage(image, 0, 0, image.width, image.height);
+          // Configure text style for the name
+          ctx.fillStyle = 'black';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.font = 'Bold 20.1px Arial, Sans-serif';
 
-    // Configure text style for the name
-    ctx.fillStyle = 'black';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.font = 'Bold 20.1px Arial, Sans-serif';
+          // Position for the name (centered)
+          const nameX = image.width / 2;
+          const nameY = image.height / 2 - 30;
 
-    // Position for the name (centered)
-    const nameX = image.width / 2;
-    const nameY = image.height / 2 - 30;
+          // Draw the name
+          ctx.fillText(name.toUpperCase(), nameX, nameY);
+    };
 
-    // Draw the name
-    ctx.fillText(name.toUpperCase(), nameX, nameY);
-    const buffer = canvas.toBuffer('image/jpeg');
-    const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer, name);
-    return imageUrl;
+      const canvas = createCanvas(image.width, image.height);
+      const ctx = canvas.getContext('2d');
+      await drawCertificate(ctx);
+      const buffer = canvas.toBuffer('image/png');
+      const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer, name);
+
+       const pdfCanvas = createCanvas(image.width, image.height, 'pdf');
+       const pdfCtx = pdfCanvas.getContext('2d');
+       await drawCertificate(pdfCtx);
+       const pdfBuffer = pdfCanvas.toBuffer('application/pdf');
+       const pdfUrl = await azureBlobStorage.uploadPdfToBlobStorage(pdfBuffer);
+
+       return { imageUrl, pdfUrl };
+       
   } catch (error) {
     console.error("Error generating certificate:", error);
     throw error;
