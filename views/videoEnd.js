@@ -89,7 +89,7 @@ const videoEndView = async (profileId, userMobileNumber, currentUserState, start
         }
         return;
     } catch (error) {
-        console.log('Error sending lesson to user:', error);
+        console.error('Error sending lesson to user:', error);
         error.fileName = 'videoEndView.js';
         throw error;
     }

@@ -437,7 +437,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
         }
         return;
     } catch (error) {
-        console.log('Error sending lesson to user:', error);
+        console.error('Error sending lesson to user:', error);
         error.fileName = 'watchAndSpeakView.js';
         throw error;
     }

@@ -357,7 +357,7 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
         }
         return;
     } catch (error) {
-        console.log('Error sending lesson to user:', error);
+        console.error('Error sending lesson to user:', error);
         error.fileName = 'readView.js';
         throw error;
     }

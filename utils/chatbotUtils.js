@@ -99,7 +99,6 @@ const studentReportCardCalculation = async (profileId, phoneNumber) => {
     const gradeCourse = purchasedCoursesWithNames.filter(course => course.courseName && course.courseName.toLowerCase().includes("grade"));
 
     if (gradeCourse.length === 0) {
-        console.log("No grade course found for this profile");
         return;
     }
 
@@ -496,7 +495,7 @@ const sendCourseLesson = async (profileId, userMobileNumber, currentUserState, s
             await assessmentWatchAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
     } catch (error) {
-        console.log('Error sending lesson to user:', error);
+        console.error('Error sending lesson to user:', error);
         error.fileName = 'chatBotService.js';
         throw error;
     }

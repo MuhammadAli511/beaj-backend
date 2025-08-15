@@ -50,9 +50,6 @@ const amnaContactData = {
     }]
 };
 
-// Student Bot: +1 (703) 596-5920
-// Teacher Bot: +1 (703) 829-5046
-
 const studentBotContactData = {
     name: {
         formatted_name: "Beaj Education - Students",

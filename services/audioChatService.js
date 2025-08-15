@@ -39,7 +39,6 @@ const createAudioChatService = async (prompt, userAudioFile) => {
             return "Failed to submit feedback";
         }
     } catch (error) {
-        console.log('Error in audioChatService', error);
         throw error;
     }
 };

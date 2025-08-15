@@ -302,7 +302,7 @@ const conversationalAgencyBotView = async (profileId, userMobileNumber, currentU
         }
         return;
     } catch (error) {
-        console.log('Error sending lesson to user:', error);
+        console.error('Error sending lesson to user:', error);
         error.fileName = 'conversationalAgencyBotView.js';
         throw error;
     }

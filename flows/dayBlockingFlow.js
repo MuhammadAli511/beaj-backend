@@ -16,7 +16,6 @@ const dayBlockingFlow = async (profileId, userMobileNumber, daysPerWeek, current
             );
             let courseStartDate = new Date(course.dataValues.courseStartDate);
             if (currentUserMetadata.dataValues.cohort == "Cohort 20" && currentUserState.dataValues.persona == "teacher") {
-                // check course name
                 const courseName = await courseRepository.getCourseNameById(currentUserState.dataValues.currentCourseId);
                 if (courseName.toLowerCase().includes("level 0") || courseName.toLowerCase().includes("level 1")) {
                     courseStartDate = new Date("August 11, 2025");

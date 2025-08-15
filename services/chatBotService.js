@@ -12,7 +12,7 @@ import { sendMessage, sendMediaMessage } from "../utils/whatsappUtils.js";
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
 import { createFeedback } from "../utils/createFeedbackUtils.js";
 import { endingMessage } from "../utils/endingMessageUtils.js";
-import { 
+import {
     checkUserMessageAndAcceptableMessages, getAcceptableMessagesList, sleep, getDaysPerWeek, getLevelFromCourseName,
     extractMessageContent, getProfileTypeFromBotId
 } from "../utils/utils.js";
@@ -42,7 +42,6 @@ const verifyWebhookService = async (req, res) => {
         const challenge = req.query["hub.challenge"];
 
         if (mode && token === whatsappVerifyToken) {
-            console.log("Webhook verified");
             res.status(200).send(challenge);
         } else {
             res.sendStatus(403);
@@ -67,7 +66,6 @@ const webhookService = async (body, res) => {
         ) {
             const botPhoneNumberId = body.entry[0].changes[0].value.metadata.phone_number_id;
             if (botPhoneNumberId == null || botPhoneNumberId == undefined || botPhoneNumberId == "") {
-                console.log("Bot phone number id is null");
                 return;
             }
 

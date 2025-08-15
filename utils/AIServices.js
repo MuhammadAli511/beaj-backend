@@ -300,18 +300,11 @@ async function azureSpeechToText(audioBuffer) {
                         resolve(result.text);
                         break;
                     case sdk.ResultReason.NoMatch:
-                        console.log("NOMATCH: Speech could not be recognized.");
                         resolve(null);
                         break;
                     case sdk.ResultReason.Canceled:
                         const cancellation = sdk.CancellationDetails.fromResult(result);
-                        console.log(`CANCELED: Reason=${cancellation.reason}`);
 
-                        if (cancellation.reason == sdk.CancellationReason.Error) {
-                            console.log(`CANCELED: ErrorCode=${cancellation.ErrorCode}`);
-                            console.log(`CANCELED: ErrorDetails=${cancellation.errorDetails}`);
-                            console.log("CANCELED: Did you set the speech resource key and region values?");
-                        }
                         reject(
                             new Error(`Speech recognition canceled: ${cancellation.reason}`)
                         );
@@ -360,8 +353,6 @@ async function azureSpeechToTextAnyLanguage(audioBuffer) {
         recognizer.recognized = (s, e) => {
             if (e.result.reason === sdk.ResultReason.RecognizedSpeech) {
                 finalTranscription += e.result.text;
-            } else if (e.result.reason === sdk.ResultReason.NoMatch) {
-                console.log("NOMATCH: Speech could not be recognized.");
             }
         };
 

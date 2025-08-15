@@ -37,7 +37,6 @@ const courseEndingFlow = async (profileId, userMobileNumber, currentUserState) =
             await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start now!", "change user"]);
             return;
         } else {
-            // if teacher
             if (currentUserState.dataValues.persona == "teacher") {
                 if (courseName.toLowerCase().includes("level 3")) {
                     const audioUrl = "https://beajbloblive.blob.core.windows.net/beajdocuments/complete_final_task.mp3";
