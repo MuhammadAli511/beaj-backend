@@ -291,9 +291,11 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
             await createActivityLog(userMobileNumber, "image", "outbound", endingImageLevel3, null, endingMessageLevel3);
             const username = await waUsersMetadataRepository.getByProfileId(profileId);
             if (username.name) {
-                const cert_url = await generateCertificate(username.name);
-                await sendMediaMessage(userMobileNumber, cert_url, 'image', "Course Completion Certificate");
-                await createActivityLog(userMobileNumber, "image", "outbound", cert_url, "Course Completion Certificate");
+                const { imageUrl, pdfUrl } = await generateCertificate(username.name);
+                await sendMediaMessage(userMobileNumber, imageUrl, 'image');
+                await createActivityLog(userMobileNumber, "image", "outbound", imageUrl);
+                await sendMediaMessage(userMobileNumber, pdfUrl, 'pdf', "Course Completion Certificate");
+                await createActivityLog(userMobileNumber, "pdf", "outbound", pdfUrl);
             }
         }
 

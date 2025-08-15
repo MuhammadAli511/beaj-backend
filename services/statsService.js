@@ -818,6 +818,7 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType, us
         if (userType === 'teacher') {
             grade = ` and m."classLevel" is null `;
             maxDay = 6;
+            console.log("cohort", cohorts);
         }
         else {
             grade = ` and m."classLevel" = '${grade}' `;
@@ -1019,14 +1020,14 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType, us
 
                 "StartedUsers" AS (
                 SELECT DISTINCT wlc."profile_id"
-                FROM "wa_lessons_completed" wlc
+                FROM "TargetGroup" tg INNER JOIN "wa_lessons_completed" wlc ON tg."profile_id" = wlc."profile_id"
                 INNER JOIN "StartLesson" l ON l."LessonId" = wlc."lessonId" 
                 WHERE wlc."courseId" IN (${courseId})
                 ),
 
                 "CompletedUsers" AS (
                 SELECT DISTINCT wlc."profile_id"
-                FROM "wa_lessons_completed" wlc
+                FROM "TargetGroup" tg INNER JOIN "wa_lessons_completed" wlc ON tg."profile_id" = wlc."profile_id"
                 WHERE wlc."lessonId" IN (${lessonList})
                 AND wlc."completionStatus" = 'Completed' and wlc."courseId" IN (${courseId})
                 ),
@@ -1047,7 +1048,7 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType, us
                 "ActivityStatus" AS (
                 SELECT "profile_id", MAX("timestamp") AS last_activity
                 FROM "wa_user_activity_logs"
-                WHERE "courseId" IN (${courseId})
+                WHERE "messageDirection" = 'inbound'
                 GROUP BY "profile_id"
                 ),
                 "UserStats" AS (
@@ -1175,19 +1176,19 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType, us
                     AND "weekNumber" = 1 
                     AND "dayNumber" = 1 
                     AND "SequenceNumber" = 1 
-                    AND "status" = 'Active'
+                    AND "status" = 'Active' limit 1
                 ),
 
                 "StartedUsers" AS (
                 SELECT DISTINCT wlc."profile_id"
-                FROM "wa_lessons_completed" wlc
-                INNER JOIN "StartLesson" l ON l."LessonId" = wlc."lessonId"
+                FROM "TargetGroup" tg INNER JOIN "wa_lessons_completed" wlc ON tg."profile_id" = wlc."profile_id"
+                INNER JOIN "StartLesson" l ON l."LessonId" = wlc."lessonId" 
                 WHERE wlc."courseId" IN (${courseId})
                 ),
 
                 "CompletedUsers" AS (
                 SELECT DISTINCT wlc."profile_id"
-                FROM "wa_lessons_completed" wlc
+                FROM "TargetGroup" tg INNER JOIN "wa_lessons_completed" wlc ON tg."profile_id" = wlc."profile_id"
                 WHERE wlc."lessonId" IN (${lessonList})
                 AND wlc."completionStatus" = 'Completed' and wlc."courseId" IN (${courseId})
                 ),
@@ -1208,7 +1209,7 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType, us
                 "ActivityStatus" AS (
                 SELECT "profile_id", MAX("timestamp") AS last_activity
                 FROM "wa_user_activity_logs"
-                WHERE "courseId" IN (${courseId})
+                WHERE "messageDirection" = 'inbound'
                 GROUP BY "profile_id"
                 ),
                 "UserStats" AS (
@@ -1219,7 +1220,6 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType, us
                     (SELECT COUNT(*) FROM "CompletedUsers") AS completed_users
         )
                 SELECT * FROM "UserStats";`
-            // qry1 = `WITH TargetGroup AS (
             //     SELECT 
             //         m."profile_id"
             //     FROM 
@@ -1480,6 +1480,269 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType, us
         }
 
         if (graphType === 'graph5') {
+            qry1 = `WITH "TargetGroup" AS (
+                        SELECT m.profile_id
+                        FROM wa_users_metadata m
+                        JOIN wa_profiles p ON m.profile_id = p.profile_id
+                        WHERE p."profile_type" = '${userType}'
+                        AND m."rollout" = 2 
+                        ${grade}
+                        ${cohort}
+                    ),
+                    "ActivityStatus" AS (
+                        SELECT 
+                            "profile_id", 
+                            MAX("timestamp"::date) AS last_activity
+                        FROM "wa_user_activity_logs"
+                        WHERE "messageDirection" = 'inbound'
+                        GROUP BY "profile_id"
+                    ),
+                    "user_get" AS (
+                        SELECT 
+                            tg."profile_id",
+                            CASE 
+                                WHEN a.last_activity IS NOT NULL 
+                                AND (CURRENT_DATE - a.last_activity) < 3 
+                                THEN 'Active'
+                                ELSE 'Inactive'
+                            END AS status
+                        FROM "TargetGroup" tg
+                        LEFT JOIN "ActivityStatus" a 
+                            ON a."profile_id" = tg."profile_id"
+                    )
+                    SELECT 
+                        COUNT(CASE WHEN status = 'Active' THEN 1 END) AS active,
+                        COUNT(CASE WHEN status = 'Inactive' THEN 1 END) AS inactive
+                    FROM "user_get";
+                    `;
+        }
+
+       // Updated JavaScript code for your graph6 case
+        if (graphType === 'graph6') {
+            let startDate = null;
+            let grade = '';
+            let cohortCond = '';
+            let courseCond = '';
+            
+            if (userType === 'student') {
+                grade = ` AND m."classLevel" IN ('grade 1', 'grade 2', 'grade 3', 'grade 4', 'grade 5', 'grade 6', 'grade 7') `;
+                cohortCond = ` AND m.cohort IS NOT NULL AND m.cohort != 'Cohort 0' AND m.cohort != 'Cohort 35' `;
+                courseCond = ` "courseId" IN (119, 120, 121, 122, 123, 124, 143) `;
+                startDate = '2025-07-01';
+            } else {
+                grade = ` AND m."classLevel" is null `;
+                cohortCond = ` AND m.cohort IS NOT NULL AND m.cohort != 'Cohort 0' AND m.cohort != 'Cohort 35' `;
+                courseCond = ` "courseId" IN (134,135,136) `;
+                startDate = '2025-07-01';
+            }
+
+            // Convert grades (dayno) to proper day counts
+            let dayCount = 0;
+            let intervalDays = 0;
+            
+            switch(grades) {
+                case '0 days':
+                    dayCount = 0;
+                    intervalDays = 0;
+                    break;
+                case '2 days':
+                    dayCount = 3;
+                    intervalDays = 2;
+                    break;
+                case '6 days':
+                    dayCount = 7;
+                    intervalDays = 6;
+                    break;
+                case '14 days':
+                    dayCount = 15;
+                    intervalDays = 14;
+                    break;
+                case '29 days':
+                    dayCount = 30;
+                    intervalDays = 29;
+                    break;
+                default:
+                    dayCount = 1;
+                    intervalDays = 0;
+            }
+
+            qry1 = `
+                WITH base_users AS (
+                    SELECT DISTINCT m.profile_id
+                    FROM wa_users_metadata m
+                    INNER JOIN wa_profiles p ON m.profile_id = p.profile_id
+                    WHERE 
+                        p.profile_type = '${userType}'
+                        AND m.rollout = 2
+                        ${grade}
+                        ${cohortCond}
+                ),
+                
+                daily_activity AS (
+                    SELECT 
+                        a.profile_id,
+                        DATE(a.timestamp) AS activity_date
+                    FROM wa_user_activity_logs a
+                    INNER JOIN base_users bu ON a.profile_id = bu.profile_id
+                    WHERE 
+                        a."messageDirection" = 'inbound'
+                        AND DATE(a.timestamp) >= '${startDate}'
+                    GROUP BY a.profile_id, DATE(a.timestamp)
+                ),
+                
+                date_series AS (
+                    SELECT generate_series(
+                        DATE '${startDate}',
+                        CURRENT_DATE,
+                        '1 day'
+                    ) AS report_date
+                )
+                
+                SELECT
+                    ds.report_date::date as date,
+                    ${dayCount === 0 ? 
+                        `COUNT(DISTINCT CASE WHEN da.activity_date = ds.report_date THEN da.profile_id END)` :
+                        `COUNT(DISTINCT CASE WHEN da.activity_date BETWEEN ds.report_date - INTERVAL '${intervalDays} days' AND ds.report_date THEN da.profile_id END)`
+                    } AS count
+                FROM date_series ds
+                LEFT JOIN daily_activity da 
+                    ON da.activity_date BETWEEN ds.report_date - INTERVAL '${Math.max(intervalDays, 0)} days' AND ds.report_date
+                WHERE ds.report_date >= '2025-07-20'
+                GROUP BY ds.report_date
+                ORDER BY ds.report_date;
+            `;
+        }
+
+        if (graphType === 'graph7') {
+            let second_drop_value = cohorts;
+            let first_drop_value = grades;
+
+            const classLevel = userType === 'teacher'
+                ? `AND m."classLevel" IS NULL`
+                : `AND m."classLevel" IN ('grade 1','grade 2','grade 3','grade 4','grade 5','grade 6','grade 7')`;
+
+            const cohortCond = `AND m."cohort" IS NOT NULL AND m.cohort NOT IN ('Cohort 0','Cohort 35')`;
+
+            const courseList = userType === 'teacher'
+                ? `(134,135,136)`
+                : `(119,120,121,122,123,124,143)`;
+
+            // Group by label field based on second dropdown
+            const groupField = {
+                'paid_unpaid': `CASE WHEN m."amountPaid" ~ '^[0-9]+(\\.[0-9]+)?$' AND m."amountPaid"::numeric>0 THEN 'Paid' ELSE 'Unpaid' END`,
+                'b2b_b2c': `m."customerChannel"`,
+                'district': `m."city"`,
+                'school_name': `m."schoolName"`,
+                'source': `m."customerSource"`
+            }[second_drop_value] || `'total_registered'`;
+
+            // Additional filter condition based on first dropdown
+            let firstFilter = '';
+            if (first_drop_value === 'total_who_sent_atleast_1_msg') {
+                firstFilter = `AND m.profile_id IN (
+                        SELECT profile_id FROM wa_user_progress
+                        WHERE "acceptableMessages" IS NULL OR "acceptableMessages"<>ARRAY['start now!']
+                    )`;
+            } else if (first_drop_value === 'total_who_started') {
+                firstFilter = `AND m.profile_id IN (
+                        SELECT DISTINCT lc.profile_id
+                        FROM wa_lessons_completed lc
+                        JOIN (
+                        SELECT "LessonId" FROM "Lesson"
+                        WHERE "courseId" in ${courseList} AND "weekNumber"=1 AND "dayNumber"=1 AND "SequenceNumber"=1 AND status='Active'
+                        ) fl ON fl."LessonId" = lc."lessonId"
+                        WHERE lc."completionStatus" = 'Completed'
+                    )`;
+            } else if (first_drop_value === 'paid') {
+                firstFilter = `AND m."amountPaid" ~ '^[0-9]+(\\.[0-9]+)?$' AND m."amountPaid"::numeric>0`;
+            } else if (first_drop_value === 'unpaid') {
+                firstFilter = `AND (m."amountPaid" IS NULL OR m."amountPaid" = '0')`;
+            } else if (first_drop_value === 'b2b') {
+                firstFilter = `AND m."customerChannel" = 'B2B'`;
+            } else if (first_drop_value === 'b2c') {
+                firstFilter = `AND m."customerChannel" = 'B2C'`;
+            }
+
+            qry1 = `
+                    WITH base_users AS (
+                        SELECT m.profile_id, m."phoneNumber", m.name, m."city", m."schoolName", m."cohort",
+                            m."rollout", m."customerChannel", m."customerSource", m."amountPaid"
+                        FROM wa_users_metadata m
+                        JOIN wa_profiles p ON p.profile_id = m.profile_id
+                        WHERE p.profile_type = '${userType}'
+                        AND m.rollout = 2
+                        ${classLevel}
+                        ${cohortCond}
+                        ${firstFilter}
+                    )
+                    SELECT
+                        ${groupField} AS label,
+                        COUNT(*) AS count
+                    FROM base_users m
+                    GROUP BY label
+                    ORDER BY count DESC;
+                    `;
+            // console.log(qry1)
+        }
+
+        if (graphType === 'graph8') {
+            let drop_down_value = grades;
+            let groupField = '';
+            let classLevel = '';
+            const cohortCondition = `AND m."cohort" IS NOT NULL AND m."cohort" NOT IN ('Cohort 0', 'Cohort 35')`;
+
+            if (userType === 'teacher') {
+                classLevel = `AND m."classLevel" IS NULL`;
+            } else {
+                classLevel = `AND m."classLevel" IN ('grade 1','grade 2','grade 3','grade 4','grade 5','grade 6','grade 7')`;
+            }
+
+            // Determine the grouping field
+            switch (drop_down_value) {
+                case 'b2b_b2c':
+                    groupField = `m."customerChannel"`;
+                    break;
+                case 'district':
+                    groupField = `m."city"`;
+                    break;
+                case 'school':
+                    groupField = `m."schoolName"`;
+                    break;
+                case 'all Users':
+                    groupField = `'All Users'`;
+                default:
+                    groupField = `m."customerChannel"`;
+            }
+
+            qry1 = `
+                WITH base_users AS (
+                    SELECT 
+                    m."amountPaid",
+                    m."customerChannel",
+                    m."city",
+                    m."schoolName"
+                    FROM "wa_users_metadata" m
+                    JOIN "wa_profiles" p ON m."profile_id" = p."profile_id"
+                    WHERE p."profile_type" = '${userType}'
+                    AND m."rollout" = 2
+                    ${classLevel}
+                    ${cohortCondition}
+                )
+                SELECT
+                    ${groupField} AS label,
+                    ROUND(SUM(CASE 
+                        WHEN "amountPaid" ~ '^[0-9]+(\\.[0-9]+)?$' 
+                        THEN "amountPaid"::numeric 
+                        ELSE 0 
+                    END), 2) AS total_revenue
+                FROM base_users m
+                GROUP BY label
+               ORDER BY total_revenue DESC;
+                `;
+        }
+
+
+        if (graphType === 'graph9') {
             qry1 = `WITH CourseInfo AS (
                     SELECT 
                         "CourseId",
@@ -1585,246 +1848,7 @@ const studentAnalyticsService = async (courseIds, grades, cohorts, graphType, us
                 FROM FinalResults
                 GROUP BY "courseId"
                 ORDER BY "courseId";`;
-        }
-
-        if (graphType === 'graph6') {
-            let a = null;
-            dayno = grades;
-            if (userType === 'student') {
-                grade = ` AND m."classLevel" IN ('grade 1', 'grade 2', 'grade 3', 'grade 4', 'grade 5', 'grade 6', 'grade 7') `;
-                cohortCond = ` AND m.cohort IS NOT NULL AND m.cohort != 'Cohort 0' AND m.cohort != 'Cohort 35' `;
-                courseCond = ` "courseId" IN (119, 120, 121, 122, 123, 124, 143) `;
-                a = '2025-07-20';
-            }
-            else {
-                grade = ` AND m."classLevel" is null `;
-                cohortCond = ` AND m.cohort IS NOT NULL AND m.cohort != 'Cohort 0' AND m.cohort != 'Cohort 35' `;
-                courseCond = ` "courseId" IN (134,135,136) `;
-                a = '2025-07-20'
-            }
-            // qry1 = `WITH base_users AS (
-            // SELECT 
-            //     m.profile_id,
-            //     m."classLevel",
-            //     m.rollout
-            // FROM wa_users_metadata m
-            // INNER JOIN wa_profiles p ON m.profile_id = p.profile_id
-            // WHERE 
-            //     p.profile_type = '${userType}'
-            //     AND m.rollout = 2
-            //     ${grade}
-            //     ${cohortCond}
-            // ),
-
-            // activity_log AS (
-            // SELECT 
-            //     profile_id,
-            //     "courseId",
-            //     timestamp::date AS activity_date
-            // FROM wa_user_activity_logs
-            // WHERE ${courseCond}
-            // ),
-
-            // -- Generate date series from 2025-07-01 to today
-            // date_series AS (
-            // SELECT generate_series(
-            //     DATE '${a}',
-            //     CURRENT_DATE,
-            //     '1 day'
-            // ) AS report_date
-            // )
-
-            // SELECT 
-            // date(d.report_date) as date,
-            // (
-            //     SELECT COUNT(DISTINCT a1.profile_id)
-            //     FROM activity_log a1
-            //     INNER JOIN base_users u1 ON a1.profile_id = u1.profile_id
-            //     WHERE a1.activity_date BETWEEN d.report_date - INTERVAL '${dayno}' AND d.report_date
-            // ) AS count
-
-
-
-            // FROM date_series d
-            // ORDER BY d.report_date;`
-
-            qry1 = `WITH base_users AS (
-            SELECT m.profile_id
-            FROM wa_users_metadata m
-            INNER JOIN wa_profiles p ON m.profile_id = p.profile_id
-            WHERE 
-                p.profile_type = '${userType}'
-                AND m.rollout = 2
-                ${grade}
-                ${cohortCond}
-            ),
-
-            filtered_activity AS (
-            SELECT 
-                a.profile_id,
-                a."courseId",
-                a.timestamp::date AS activity_date
-            FROM wa_user_activity_logs a
-            INNER JOIN base_users bu ON a.profile_id = bu.profile_id
-            WHERE 
-                ${courseCond}
-                AND a.timestamp::date >= DATE '${a}'
-            ),
-
-            date_series AS (
-            SELECT generate_series(
-                DATE '${a}',
-                CURRENT_DATE,
-                '1 day'
-            ) AS report_date
-            ),
-
-            profile_day_activity AS (
-            SELECT
-                d.report_date,
-                fa.profile_id
-            FROM date_series d
-            JOIN filtered_activity fa 
-                ON fa.activity_date BETWEEN d.report_date - INTERVAL '${dayno} days' AND d.report_date
-            GROUP BY d.report_date, fa.profile_id
-            )
-
-            SELECT 
-            report_date::date AS date,
-            COUNT(DISTINCT profile_id) AS count
-            FROM profile_day_activity
-            GROUP BY report_date
-            ORDER BY report_date;
-            `;
-        }
-
-        if (graphType === 'graph7') {
-            let second_drop_value = cohorts;
-            let first_drop_value = grades;
-
-            const classLevel = userType === 'teacher'
-                ? `AND m."classLevel" IS NULL`
-                : `AND m."classLevel" IN ('grade 1','grade 2','grade 3','grade 4','grade 5','grade 6','grade 7')`;
-
-            const cohortCond = `AND m."cohort" IS NOT NULL AND m.cohort NOT IN ('Cohort 0','Cohort 35')`;
-
-            const courseList = userType === 'teacher'
-                ? `(134,135,136)`
-                : `(119,120,121,122,123,124,143)`;
-
-            // Group by label field based on second dropdown
-            const groupField = {
-                'paid_unpaid': `CASE WHEN m."amountPaid" ~ '^[0-9]+(\\.[0-9]+)?$' AND m."amountPaid"::numeric>0 THEN 'Paid' ELSE 'Unpaid' END`,
-                'b2b_b2c': `m."customerChannel"`,
-                'district': `m."city"`,
-                'school_name': `m."schoolName"`,
-                'source': `m."customerSource"`
-            }[second_drop_value] || `'total_registered'`;
-
-            // Additional filter condition based on first dropdown
-            let firstFilter = '';
-            if (first_drop_value === 'total_who_sent_atleast_1_msg') {
-                firstFilter = `AND m.profile_id IN (
-                        SELECT profile_id FROM wa_user_progress
-                        WHERE "acceptableMessages" IS NULL OR "acceptableMessages"<>ARRAY['start now!']
-                    )`;
-            } else if (first_drop_value === 'total_who_started') {
-                firstFilter = `AND m.profile_id IN (
-                        SELECT DISTINCT lc.profile_id
-                        FROM wa_lessons_completed lc
-                        JOIN (
-                        SELECT "LessonId" FROM "Lesson"
-                        WHERE "courseId" in ${courseList} AND "weekNumber"=1 AND "dayNumber"=1 AND "SequenceNumber"=1 AND status='Active'
-                        ) fl ON fl."LessonId" = lc."lessonId"
-                        WHERE lc."completionStatus" = 'Completed'
-                    )`;
-            } else if (first_drop_value === 'paid') {
-                firstFilter = `AND m."amountPaid" ~ '^[0-9]+(\\.[0-9]+)?$' AND m."amountPaid"::numeric>0`;
-            } else if (first_drop_value === 'unpaid') {
-                firstFilter = `AND (m."amountPaid" IS NULL OR m."amountPaid" = '0')`;
-            } else if (first_drop_value === 'b2b') {
-                firstFilter = `AND m."customerChannel" = 'B2B'`;
-            } else if (first_drop_value === 'b2c') {
-                firstFilter = `AND m."customerChannel" = 'B2C'`;
-            }
-
-            qry1 = `
-                    WITH base_users AS (
-                        SELECT m.profile_id, m."phoneNumber", m.name, m."city", m."schoolName", m."cohort",
-                            m."rollout", m."customerChannel", m."customerSource", m."amountPaid"
-                        FROM wa_users_metadata m
-                        JOIN wa_profiles p ON p.profile_id = m.profile_id
-                        WHERE p.profile_type = '${userType}'
-                        AND m.rollout = 2
-                        ${classLevel}
-                        ${cohortCond}
-                        ${firstFilter}
-                    )
-                    SELECT
-                        ${groupField} AS label,
-                        COUNT(*) AS count
-                    FROM base_users m
-                    GROUP BY label
-                    -- ORDER BY count DESC;
-                    `;
-            // console.log(qry1)
-        }
-
-        if (graphType === 'graph8') {
-            let drop_down_value = grades;
-            let groupField = '';
-            let classLevel = '';
-            const cohortCondition = `AND m."cohort" IS NOT NULL AND m."cohort" NOT IN ('Cohort 0', 'Cohort 35')`;
-
-            if (userType === 'teacher') {
-                classLevel = `AND m."classLevel" IS NULL`;
-            } else {
-                classLevel = `AND m."classLevel" IN ('grade 1','grade 2','grade 3','grade 4','grade 5','grade 6','grade 7')`;
-            }
-
-            // Determine the grouping field
-            switch (drop_down_value) {
-                case 'b2b_b2c':
-                    groupField = `m."customerChannel"`;
-                    break;
-                case 'district':
-                    groupField = `m."city"`;
-                    break;
-                case 'school':
-                    groupField = `m."schoolName"`;
-                    break;
-                case 'all Users':
-                    groupField = `'All Users'`;
-                default:
-                    groupField = `m."customerChannel"`;
-            }
-
-            qry1 = `
-                WITH base_users AS (
-                    SELECT 
-                    m."amountPaid",
-                    m."customerChannel",
-                    m."city",
-                    m."schoolName"
-                    FROM "wa_users_metadata" m
-                    JOIN "wa_profiles" p ON m."profile_id" = p."profile_id"
-                    WHERE p."profile_type" = '${userType}'
-                    AND m."rollout" = 2
-                    ${classLevel}
-                    ${cohortCondition}
-                )
-                SELECT
-                    ${groupField} AS label,
-                    ROUND(SUM(CASE 
-                        WHEN "amountPaid" ~ '^[0-9]+(\\.[0-9]+)?$' 
-                        THEN "amountPaid"::numeric 
-                        ELSE 0 
-                    END), 2) AS total_revenue
-                FROM base_users m
-                GROUP BY label
-              --  ORDER BY total_revenue DESC;
-                `;
-        }
+        }  
 
         let [lastLesson1, lastLesson2] = await Promise.all([
             sequelize.query(qry1),
@@ -1921,7 +1945,7 @@ const studentBarAnalyticsService = async (courseIds, grades, cohorts, graphType,
                         profile_id,
                         MAX(timestamp) AS last_message_timestamp
                     FROM 
-                        wa_user_activity_logs where "courseId" = ${courseId}
+                        wa_user_activity_logs where "messageDirection" = 'inbound'
                     GROUP BY profile_id
                     ),
                     "LastUserLesson" AS (
@@ -2136,7 +2160,7 @@ const studentBarAnalyticsService = async (courseIds, grades, cohorts, graphType,
                         profile_id,
                         MAX(timestamp) AS last_message_timestamp
                     FROM 
-                        wa_user_activity_logs WHERE "courseId" = ${courseId}
+                        wa_user_activity_logs WHERE "messageDirection" = 'inbound'
                     GROUP BY profile_id
                 ),
                 "AdjustedLesson" AS (
@@ -2163,9 +2187,9 @@ const studentBarAnalyticsService = async (courseIds, grades, cohorts, graphType,
                     m."rollout",
                      CASE 
                         WHEN b.last_message_timestamp IS NOT NULL 
-                            AND DATE_PART('day', CURRENT_DATE - b.last_message_timestamp) >= 3 
-                        THEN 'Inactive'
-                        ELSE 'Active'
+                            AND DATE_PART('day', CURRENT_DATE - b.last_message_timestamp) <= 3 
+                        THEN 'Active'
+                        ELSE 'Inactive'
                     END AS status
                 FROM "AdjustedLesson" al
                 JOIN "LessonList" ll ON al.assigned_order = ll.order_num
@@ -2261,6 +2285,103 @@ const studentBarAnalyticsService = async (courseIds, grades, cohorts, graphType,
             //         l."lessonId" = ${parameterId} AND 
             //         l.row_num = 1;`;
             // console.log(qry1);
+        }
+        if (graphType === 'graph5') {
+            // qry1 = `WITH "TargetGroup" AS (
+            //             SELECT m.profile_id
+            //             FROM wa_users_metadata m
+            //             JOIN wa_profiles p ON m.profile_id = p.profile_id
+            //             WHERE p."profile_type" = '${userType}'
+            //             AND m."rollout" = 2 
+            //             ${grade}
+            //             ${cohort}
+            //         ),
+            //         "ActivityStatus" AS (
+            //             SELECT 
+            //                 "profile_id", 
+            //                 MAX("timestamp"::date) AS last_activity
+            //             FROM "wa_user_activity_logs"
+            //             WHERE "messageDirection" = 'inbound'
+            //             GROUP BY "profile_id"
+            //         ),
+            //         "user_get" AS (
+            //             SELECT 
+            //                 tg."profile_id",
+            //                 CASE 
+            //                     WHEN a.last_activity IS NOT NULL 
+            //                     AND (CURRENT_DATE - a.last_activity) < 3 
+            //                     THEN 'Active'
+            //                     ELSE 'Inactive'
+            //                 END AS status
+            //             FROM "TargetGroup" tg
+            //             LEFT JOIN "ActivityStatus" a 
+            //                 ON a."profile_id" = tg."profile_id"
+            //         )
+            //         SELECT 
+            //             m."profile_id",
+            //             m."phoneNumber",
+            //             m."name",
+            //             m."cohort",
+            //             m."classLevel",
+            //             m."city",
+            //             m."amountPaid",
+            //             m."schoolName",
+            //             m."customerSource",
+            //             m."customerChannel",
+            //             m."rollout",
+            //             u.status
+            //         FROM "user_get" u inner join "wa_users_metadata" m on u.profile_id = m.profile_id where u.status = '${parameterId}';
+            //         `;
+        
+            qry1 = `WITH "TargetGroup" AS (
+            SELECT m.profile_id
+            FROM wa_users_metadata m
+            JOIN wa_profiles p 
+                ON m.profile_id = p.profile_id
+            WHERE p."profile_type" = '${userType}'
+              AND m."rollout" = 2 
+              ${grade}
+              ${cohort}
+        ),
+        "ActivityStatus" AS (
+            SELECT 
+                "profile_id", 
+                MAX("timestamp") AS last_message_timestamp
+            FROM "wa_user_activity_logs"
+            WHERE "messageDirection" = 'inbound'
+            GROUP BY "profile_id"
+        ),
+        "user_get" AS (
+            SELECT 
+                tg."profile_id",
+                CASE 
+                    WHEN a.last_message_timestamp IS NOT NULL
+                         AND DATE_PART('day', NOW() - a.last_message_timestamp) < 3
+                    THEN 'Active'
+                    ELSE 'Inactive'
+                END AS status
+            FROM "TargetGroup" tg
+            LEFT JOIN "ActivityStatus" a 
+                ON a."profile_id" = tg."profile_id"
+        )
+        SELECT 
+            m."profile_id",
+            m."phoneNumber",
+            m."name",
+            m."cohort",
+            m."classLevel",
+            m."city",
+            m."amountPaid",
+            m."schoolName",
+            m."customerSource",
+            m."customerChannel",
+            m."rollout",
+            u.status
+        FROM "user_get" u
+        INNER JOIN "wa_users_metadata" m 
+            ON u.profile_id = m.profile_id
+        WHERE u.status = '${parameterId}';
+`
         }
 
         // Execute all queries concurrently
@@ -2374,20 +2495,24 @@ const userAnalyticsStatsService = async (botType) => {
             WHERE "customerChannel" = 'B2C'
             ),
 
-            activity AS (
-            SELECT 
-                a."profile_id", 
-                MAX(a."timestamp") AS last_activity
-            FROM "wa_user_activity_logs" a
-            GROUP BY a."profile_id"
-            ),
-            active_users AS (
-            SELECT COUNT(*) AS active_user_count
-            FROM base_users m
-            INNER JOIN activity a ON m."profile_id" = a."profile_id"
-            WHERE DATE_PART('day', NOW() - a."last_activity") < 3
-            )
-
+           activity AS (
+                            SELECT 
+                                a."profile_id", 
+                                MAX(a."timestamp"::date) AS last_activity_date
+                            FROM "wa_user_activity_logs" a
+                            WHERE a."messageDirection" = 'inbound'
+                            GROUP BY a."profile_id"
+                        ),
+                        active_users AS (
+                            SELECT COUNT(*) AS active_user_count
+                            FROM base_users m
+                            INNER JOIN activity a 
+                                ON m."profile_id" = a."profile_id"
+                            WHERE a.last_activity_date IS NOT NULL 
+                            AND (CURRENT_DATE - a.last_activity_date) < 3
+                            -- AND a.last_activity_date >= CURRENT_DATE - INTERVAL '2 day'
+                            -- AND CURRENT_DATE - a.last_activity_date < 3
+                        )
             SELECT 
             t.total AS total_registrations,
             o.one_message_users AS one_msg_users,
@@ -2503,7 +2628,7 @@ const studentCardAnalyticsStatsService = async (courseIds, grades, cohorts, grap
 
       "ActivityStatus" AS (
         SELECT "profile_id", MAX("timestamp") AS last_activity
-        FROM "wa_user_activity_logs" where "courseId" IN (${courseId})
+        FROM "wa_user_activity_logs" where "messageDirection" = 'inbound'
         GROUP BY "profile_id"
       ),
        "NotStartedUsersWithActivity" AS (
@@ -2525,7 +2650,7 @@ const studentCardAnalyticsStatsService = async (courseIds, grades, cohorts, grap
         tg."rollout",
         tg."amountPaid",
         CASE 
-          WHEN a."last_activity" >= NOW() - INTERVAL '3 days' THEN 'Active'
+          WHEN  a.last_activity IS NOT NULL and DATE_PART('day', CURRENT_DATE - a.last_activity) < 3 THEN 'Active'
           ELSE 'Inactive'
         END AS status
       FROM "TargetGroup" tg
