@@ -1,7 +1,6 @@
 import waUsersMetadataRepository from "../repositories/waUsersMetadataRepository.js";
 import courseRepository from "../repositories/courseRepository.js";
 import lessonRepository from "../repositories/lessonRepository.js";
-import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
 import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRepository.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
@@ -9,15 +8,19 @@ import waActiveSessionRepository from "../repositories/waActiveSessionRepository
 import waProfileRepository from "../repositories/waProfileRepository.js";
 import { startCourseForUser, sendCourseLesson, talkToBeajRep } from "../utils/chatbotUtils.js";
 import { demoCourseStart } from "../utils/trialflowUtils.js";
-import { sendMessage, retrieveMediaURL, sendMediaMessage } from "../utils/whatsappUtils.js";
+import { sendMessage, sendMediaMessage } from "../utils/whatsappUtils.js";
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
 import { createFeedback } from "../utils/createFeedbackUtils.js";
 import { endingMessage } from "../utils/endingMessageUtils.js";
-import { checkUserMessageAndAcceptableMessages, getAcceptableMessagesList, sleep, getDaysPerWeek, getLevelFromCourseName } from "../utils/utils.js";
+import { 
+    checkUserMessageAndAcceptableMessages, getAcceptableMessagesList, sleep, getDaysPerWeek, getLevelFromCourseName,
+    extractMessageContent, getProfileTypeFromBotId
+} from "../utils/utils.js";
 import { runWithContext } from "../utils/requestContext.js";
 import {
     activity_types_to_repeat, text_message_types, beaj_team_numbers, feedback_acceptable_messages, course_start_states,
     next_activity_acceptable_messages, special_commands, talk_to_beaj_rep_messages, course_start_acceptable_messages,
+    trigger_course_acceptable_messages,
 } from "../constants/constants.js";
 import { specialCommandFlow } from "../flows/specialCommandFlows.js";
 import { marketingBotFlow } from "../flows/marketingBotFlows.js";
@@ -26,16 +29,14 @@ import kidsTrialFlowDriver from "../flows/kidsTrialFlow.js";
 import { chooseProfileFlow, userSwitchingFlow } from "../flows/profileFlows.js";
 import { dayBlockingFlow } from "../flows/dayBlockingFlow.js";
 import { courseEndingFlow } from "../flows/courseEndingFlow.js";
+import { handleVideoFlow } from "../flows/handleVideoFlow.js";
 import dotenv from 'dotenv';
 dotenv.config();
-const whatsappVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN;
-const studentBotPhoneNumberId = process.env.STUDENT_BOT_PHONE_NUMBER_ID;
-const teacherBotPhoneNumberId = process.env.TEACHER_BOT_PHONE_NUMBER_ID;
-const marketingBotPhoneNumberId = process.env.MARKETING_BOT_PHONE_NUMBER_ID;
 
 
 const verifyWebhookService = async (req, res) => {
     try {
+        const whatsappVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN;
         const mode = req.query["hub.mode"];
         const token = req.query["hub.verify_token"];
         const challenge = req.query["hub.challenge"];
@@ -77,21 +78,12 @@ const webhookService = async (body, res) => {
             let profileId = null;
             let userExists = false;
             let chooseProfile = false;
+            let profile_type = getProfileTypeFromBotId(botPhoneNumberId);
             if (activeSession) {
                 profileId = activeSession.dataValues.profile_id;
                 userExists = true;
             }
             else if (!activeSession && !userProfileExists) {
-                let profile_type = "";
-                if (botPhoneNumberId == teacherBotPhoneNumberId) {
-                    profile_type = "teacher";
-                } else if (botPhoneNumberId == studentBotPhoneNumberId) {
-                    profile_type = "student";
-                } else if (botPhoneNumberId == marketingBotPhoneNumberId) {
-                    profile_type = "marketing";
-                } else {
-                    throw new Error(`Unhandled botPhoneNumberId ${botPhoneNumberId}`);
-                }
                 let profile = await waProfileRepository.create({
                     phone_number: userMobileNumber,
                     bot_phone_number_id: botPhoneNumberId,
@@ -107,8 +99,6 @@ const webhookService = async (body, res) => {
                 chooseProfile = true;
             }
 
-            let messageContent;
-            let buttonId = null;
             let messageType = message.type;
             let logger = `Inbound Message: User: ${userMobileNumber}, Bot ID: ${botPhoneNumberId}, Message Type: ${message.type}, Message Content: ${message.text?.body ||
                 message.image?.id || message.audio?.id || message.video?.id || message.interactive?.button_reply?.title || message.button?.text}`;
@@ -117,29 +107,7 @@ const webhookService = async (body, res) => {
             // Wrap the webhook handling logic with the context containing the bot phone number ID
             await runWithContext({ botPhoneNumberId, profileId, userMobileNumber }, async () => {
                 // INBOUND MESSAGES LOGGING
-                let inboundUploadedImage = null;
-                if (message.type === "image") {
-                    inboundUploadedImage = await createActivityLog(userMobileNumber, "image", "inbound", message, null);
-                    messageContent = await retrieveMediaURL(message.image.id);
-                } else if (message.type === "audio") {
-                    await createActivityLog(userMobileNumber, "audio", "inbound", message, null);
-                    messageContent = await retrieveMediaURL(message.audio.id);
-                } else if (message.type === "video") {
-                    await createActivityLog(userMobileNumber, "video", "inbound", message, null);
-                    messageContent = await retrieveMediaURL(message.video.id);
-                } else if (message.type === "text") {
-                    messageContent = message.text?.body.toLowerCase().trim() || "";
-                    createActivityLog(userMobileNumber, "text", "inbound", message.text?.body, null);
-                } else if (message.type === "interactive") {
-                    messageContent = message.interactive.button_reply.title.toLowerCase().trim();
-                    buttonId = message.interactive.button_reply.id;
-                    createActivityLog(userMobileNumber, "template", "inbound", messageContent, null);
-                } else if (message.type == "button") {
-                    messageContent = message.button.text.toLowerCase().trim();
-                    createActivityLog(userMobileNumber, "template", "inbound", messageContent, null);
-                } else {
-                    return;
-                }
+                const { messageContent, inboundUploadedImage, buttonId } = await extractMessageContent(message, userMobileNumber);
 
                 // CHECKING IF BOT IS ACTIVE
                 const botStatus = await waConstantsRepository.getByKey("BOT_STATUS");
@@ -149,6 +117,12 @@ const webhookService = async (body, res) => {
                     return;
                 }
 
+                // GETTING CURRENT USER STATE
+                let currentUserState = await waUserProgressRepository.getByProfileId(profileId);
+                let currentUserMetadata = await waUsersMetadataRepository.getByProfileId(profileId);
+                let persona = currentUserState.dataValues.persona == "kid" || currentUserState.dataValues.persona == "parent or student" || currentUserState.dataValues.persona == "school admin" ? "kid" : "teacher";
+                let daysPerWeek = await getDaysPerWeek(profileId);
+
                 // SPECIAL COMMANDS
                 if (special_commands.includes(messageContent.toLowerCase()) && message.type == "text") {
                     await specialCommandFlow(profileId, userMobileNumber, messageContent);
@@ -156,7 +130,7 @@ const webhookService = async (body, res) => {
                 };
 
                 // MARKETING BOT
-                if (botPhoneNumberId == marketingBotPhoneNumberId) {
+                if (profile_type == "marketing") {
                     await marketingBotFlow(profileId, messageContent, messageType, userMobileNumber);
                     return;
                 }
@@ -187,15 +161,9 @@ const webhookService = async (body, res) => {
                     return;
                 }
 
-                // GETTING CURRENT USER STATE
-                let currentUserState = await waUserProgressRepository.getByProfileId(profileId);
-                let currentUserMetadata = await waUsersMetadataRepository.getByProfileId(profileId);
-                let persona = currentUserState.dataValues.persona == "kid" || currentUserState.dataValues.persona == "parent or student" || currentUserState.dataValues.persona == "school admin" ? "kid" : "teacher";
-                let daysPerWeek = await getDaysPerWeek(profileId);
-
                 // TRIAL FLOW ROUTING
                 if (!userExists) {
-                    if (botPhoneNumberId == studentBotPhoneNumberId) {
+                    if (profile_type == "student") {
                         await kidsTrialFlowDriver(profileId, userMobileNumber, "New User", messageContent, messageType, inboundUploadedImage);
                     } else {
                         await teachersTrialFlowDriver(profileId, userMobileNumber, "New User", messageContent, messageType, inboundUploadedImage);
@@ -206,7 +174,7 @@ const webhookService = async (body, res) => {
                     if (messageAuth === false) {
                         return;
                     }
-                    if (botPhoneNumberId == studentBotPhoneNumberId) {
+                    if (profile_type == "student") {
                         await kidsTrialFlowDriver(profileId, userMobileNumber, currentUserState.dataValues.engagement_type, messageContent, messageType, inboundUploadedImage);
                     } else {
                         await teachersTrialFlowDriver(profileId, userMobileNumber, currentUserState.dataValues.engagement_type, messageContent, messageType, inboundUploadedImage);
@@ -267,38 +235,7 @@ const webhookService = async (body, res) => {
                         currentUserState = await waUserProgressRepository.getByProfileId(profileId);
                         await sendCourseLesson(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona, buttonId);
                         if (startingLesson.dataValues.activity == "video") {
-                            const nextLesson = await lessonRepository.getNextLesson(
-                                currentUserState.dataValues.currentCourseId,
-                                currentUserState.dataValues.currentWeek,
-                                currentUserState.dataValues.currentDay,
-                                currentUserState.dataValues.currentLesson_sequence
-                            );
-
-                            // Mark previous lesson as completed
-                            const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
-                            await waLessonsCompletedRepository.endLessonByPhoneNumberLessonIdAndProfileId(userMobileNumber, currentLesson.dataValues.LessonId, profileId);
-
-                            // Get acceptable messages for the next question/lesson
-                            const acceptableMessagesList = await getAcceptableMessagesList(nextLesson.dataValues.activity);
-
-                            // Update user progress to next lesson
-                            await waUserProgressRepository.update(
-                                profileId,
-                                userMobileNumber,
-                                nextLesson.dataValues.courseId,
-                                nextLesson.dataValues.weekNumber,
-                                nextLesson.dataValues.dayNumber,
-                                nextLesson.dataValues.LessonId,
-                                nextLesson.dataValues.SequenceNumber,
-                                nextLesson.dataValues.activity,
-                                null,
-                                0,
-                                acceptableMessagesList
-                            );
-                            const latestUserState = await waUserProgressRepository.getByProfileId(profileId);
-
-                            // Send next lesson to user
-                            await sendCourseLesson(profileId, userMobileNumber, latestUserState, nextLesson, messageType, messageContent, persona, buttonId);
+                            await handleVideoFlow(profileId, userMobileNumber, currentUserState, messageType, messageContent, persona, buttonId);
                         }
                         return;
                     }
@@ -378,28 +315,7 @@ const webhookService = async (body, res) => {
 
                     // VIDEO ACTIVITY FLOW
                     if (nextLesson.dataValues.activity == "video") {
-                        const nextLesson = await lessonRepository.getNextLesson(
-                            latestUserState.dataValues.currentCourseId,
-                            latestUserState.dataValues.currentWeek,
-                            latestUserState.dataValues.currentDay,
-                            latestUserState.dataValues.currentLesson_sequence
-                        );
-
-                        // Mark previous lesson as completed
-                        const currentLesson = await lessonRepository.getCurrentLesson(latestUserState.dataValues.currentLessonId);
-                        await waLessonsCompletedRepository.endLessonByPhoneNumberLessonIdAndProfileId(userMobileNumber, currentLesson.dataValues.LessonId, profileId);
-
-                        // Get acceptable messages for the next question/lesson
-                        const acceptableMessagesList = await getAcceptableMessagesList(nextLesson.dataValues.activity);
-
-                        // Update user progress to next lesson
-                        await waUserProgressRepository.update(profileId, userMobileNumber, nextLesson.dataValues.courseId,
-                            nextLesson.dataValues.weekNumber, nextLesson.dataValues.dayNumber, nextLesson.dataValues.LessonId,
-                            nextLesson.dataValues.SequenceNumber, nextLesson.dataValues.activity, null, 0, acceptableMessagesList);
-                        latestUserState = await waUserProgressRepository.getByProfileId(profileId);
-
-                        // Send next lesson to user
-                        await sendCourseLesson(profileId, userMobileNumber, latestUserState, nextLesson, messageType, messageContent, persona, buttonId);
+                        await handleVideoFlow(profileId, userMobileNumber, latestUserState, messageType, messageContent, persona, buttonId);
                     }
                     return;
                 }

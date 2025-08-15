@@ -4,7 +4,12 @@ import waProfileRepository from "../repositories/waProfileRepository.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
 import waUsersMetadataRepository from "../repositories/waUsersMetadataRepository.js";
+import dotenv from 'dotenv';
+dotenv.config();
 
+const studentBotPhoneNumberId = process.env.STUDENT_BOT_PHONE_NUMBER_ID;
+const teacherBotPhoneNumberId = process.env.TEACHER_BOT_PHONE_NUMBER_ID;
+const marketingBotPhoneNumberId = process.env.MARKETING_BOT_PHONE_NUMBER_ID;
 
 const sleep = (ms) => {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -27,6 +32,59 @@ const extractTranscript = (results) => {
 
     return transcript;
 };
+
+
+const extractMessageContent = async (message, userMobileNumber) => {
+    let messageContent = null;
+    let inboundUploadedImage = null;
+    let buttonId = null;
+    
+    switch (message.type) {
+        case "image":
+            inboundUploadedImage = await createActivityLog(userMobileNumber, "image", "inbound", message, null);
+            messageContent = await retrieveMediaURL(message.image.id);
+            break;
+        case "audio":
+            await createActivityLog(userMobileNumber, "audio", "inbound", message, null);
+            messageContent = await retrieveMediaURL(message.audio.id);
+            break;
+        case "video":
+            await createActivityLog(userMobileNumber, "video", "inbound", message, null);
+            messageContent = await retrieveMediaURL(message.video.id);
+            break;
+        case "text":
+            messageContent = message.text?.body.toLowerCase().trim() || "";
+            createActivityLog(userMobileNumber, "text", "inbound", message.text?.body, null);
+            break;
+        case "interactive":
+            messageContent = message.interactive.button_reply.title.toLowerCase().trim();
+            createActivityLog(userMobileNumber, "template", "inbound", messageContent, null);
+            buttonId = message.interactive.button_reply.id;
+            break;
+        case "button":
+            messageContent = message.button.text.toLowerCase().trim();
+            createActivityLog(userMobileNumber, "template", "inbound", messageContent, null);
+            break;
+        default:
+            return null;
+    }
+    
+    return { messageContent, inboundUploadedImage, buttonId };
+};
+
+
+const getProfileTypeFromBotId = (botPhoneNumberId) => {
+    if (botPhoneNumberId === teacherBotPhoneNumberId) {
+        return "teacher";
+    } else if (botPhoneNumberId === studentBotPhoneNumberId) {
+        return "student";
+    } else if (botPhoneNumberId === marketingBotPhoneNumberId) {
+        return "marketing";
+    } else {
+        throw new Error(`Unhandled botPhoneNumberId ${botPhoneNumberId}`);
+    }
+};
+
 
 const getLevelFromCourseName = (courseName) => {
     if (courseName == "Free Trial - Kids - Level 1") {
@@ -305,5 +363,7 @@ export {
     getDaysPerWeek,
     getTotalLessonsForCourse,
     difficultyLevelCalculation,
-    getLevelFromCourseName
+    getLevelFromCourseName,
+    extractMessageContent,
+    getProfileTypeFromBotId
 };
