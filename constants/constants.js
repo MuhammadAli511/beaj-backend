@@ -123,6 +123,51 @@ const ali_number = "+923225036358";
 const salman_endpoint = "http://smiling-pro-sheep.ngrok-free.app/api/chatbot/webhook";
 const ali_endpoint = "http://sensibly-solid-aardvark.ngrok-free.app/api/chatbot/webhook";
 
+const teacher_trial_flow_engagement_types = [
+    "New User",
+    "Free Trial - Teachers",
+    "End Now",
+    "Thankyou Message",
+    "School Name",
+];
+
+const kids_trial_flow_engagement_types = [
+    "New User",
+    "School Admin Confirmation",
+    "Parent or Student",
+    "Thankyou Message - School Owner",
+    "Payment Complete",
+    "Single Student Registration Complete",
+    "Payment Details",
+    "Cancel Registration Confirmation - Single Student Registration Complete",
+    "Cancel Registration Confirmation - Payment Details",
+    "User Profile",
+    "School Admin Confirmation",
+    "School Name",
+    "Confirm School Name",
+    "City Name",
+    "Confirm City Name",
+    "Ready to Pay",
+    "Student Name Input",
+    "Student Name Confirmation",
+    "Student Generic Class Input",
+    "Student Generic Class Confirmation",
+    "Student Specific Class Input",
+    "Student Specific Class Confirmation",
+    "Single Student Registration Complete",
+    "Greeting Message",
+    "Greeting Message - Kids",
+    "Confirm Class - Level 1",
+    "Confirm Class - Level 3",
+    "Choose Class",
+    "Free Trial - Kids - Level 1",
+    "Free Trial - Kids - Level 3",
+    "End Now",
+    "Thankyou Message",
+    "Thankyou Message - Parent",
+    "Thankyou Message - School Owner"
+];
+
 export {
     activity_types_to_repeat,
     text_message_types,
@@ -139,5 +184,7 @@ export {
     ali_endpoint,
     trigger_course_acceptable_messages,
     course_start_acceptable_messages,
-    course_start_states
+    course_start_states,
+    teacher_trial_flow_engagement_types,
+    kids_trial_flow_engagement_types
 };

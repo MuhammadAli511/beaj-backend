@@ -102,15 +102,6 @@ const teachersTrialFlowDriver = async (profileId, userMobileNumber, engagementTy
                 break;
             }
         }
-
-        if (!matchedHandler) {
-            for (const config of endpointHandlers) {
-                if (config.engagementTypes.includes(engagementType)) {
-                    matchedHandler = config.handler;
-                    break;
-                }
-            }
-        }
     } else {
         for (const config of endpointHandlers) {
             if (config.engagementTypes.includes(engagementType)) {
@@ -125,9 +116,7 @@ const teachersTrialFlowDriver = async (profileId, userMobileNumber, engagementTy
         return true;
     }
 
-    await sendMessage(userMobileNumber, "Sorry, I didn't understand that. Please try again.");
-    await createActivityLog(userMobileNumber, "text", "outbound", "Sorry, I didn't understand that. Please try again.", null);
-    return false;
+    return true;
 };
 
 
