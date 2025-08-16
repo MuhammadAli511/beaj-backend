@@ -7,7 +7,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { ElevenLabsClient } from "elevenlabs";
-import AIServices from '../utils/AIServices.js';
+import speechToText from '../utils/speechToText.js';
 
 const writeFile = promisify(fs.writeFile);
 const unlink = promisify(fs.unlink);
@@ -46,7 +46,7 @@ const speechToTextService = async (audioFile, language, provider) => {
             return result;
         } else if (provider === 'azure') {
             // Use Azure Speech-to-Text with auto language detection
-            const transcription = await AIServices.azureSpeechToTextAnyLanguage(audioFile.buffer);
+            const transcription = await speechToText.azureSpeechToTextAnyLanguage(audioFile.buffer);
 
             const result = {
                 success: true,
@@ -57,7 +57,7 @@ const speechToTextService = async (audioFile, language, provider) => {
             return result;
         } else if (provider === 'gemini') {
             // Use Gemini Speech-to-Text
-            const transcription = await AIServices.geminiSpeechToText(audioFile.buffer, language);
+            const transcription = await speechToText.geminiSpeechToText(audioFile.buffer, language);
 
             const result = {
                 success: true,

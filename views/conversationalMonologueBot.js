@@ -8,7 +8,8 @@ import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
 import { sleep, extractMispronouncedWords, getAudioBufferFromAudioFileUrl } from "../utils/utils.js";
-import AIServices from "../utils/AIServices.js";
+import speechToText from "../utils/speechToText.js";
+import textToSpeech from "../utils/textToSpeech.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import { createAndUploadMonologueScoreImage } from "../utils/imageGenerationUtils.js";
 
@@ -128,7 +129,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
 
                 // Extract user transcription
-                const userTranscription = await AIServices.azureOpenAISpeechToText(audioBuffer);
+                const userTranscription = await speechToText.azureOpenAISpeechToText(audioBuffer);
 
                 let disclaimerAndUserTranscriptionMessage = "This chatbot's speech-to-text may not recognize proper nouns accurately or may skip some words—please bear with us while we improve it.";
 
@@ -138,7 +139,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 await createActivityLog(userMobileNumber, "text", "outbound", disclaimerAndUserTranscriptionMessage, null);
 
                 // Azure Pronunciation Assessment
-                const pronunciationAssessment = await AIServices.azurePronunciationAssessment(audioBuffer, userTranscription);
+                const pronunciationAssessment = await speechToText.azurePronunciationAssessment(audioBuffer, userTranscription);
 
                 // Extract mispronounced words
                 const mispronouncedWords = extractMispronouncedWords(pronunciationAssessment);
@@ -159,7 +160,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                     for (const word of mispronouncedWords) {
                         modelResponse += word.Word + (word === mispronouncedWords[mispronouncedWords.length - 1] ? "" : "...");
                     }
-                    correctedAudio = await AIServices.openaiTextToSpeechAndUpload(modelResponse);
+                    correctedAudio = await textToSpeech.azureOpenAITextToSpeech(modelResponse);
                     await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
                     await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
                     await sleep(5000);
@@ -327,7 +328,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
 
                 // Extract user transcription
-                const userTranscription = await AIServices.azureOpenAISpeechToText(audioBuffer);
+                const userTranscription = await speechToText.azureOpenAISpeechToText(audioBuffer);
 
                 let disclaimerAndUserTranscriptionMessage = "This chatbot's speech-to-text may not recognize proper nouns accurately or may skip some words—please bear with us while we improve it.";
 
@@ -337,7 +338,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 await createActivityLog(userMobileNumber, "text", "outbound", disclaimerAndUserTranscriptionMessage, null);
 
                 // Azure Pronunciation Assessment
-                const pronunciationAssessment = await AIServices.azurePronunciationAssessment(audioBuffer, userTranscription);
+                const pronunciationAssessment = await speechToText.azurePronunciationAssessment(audioBuffer, userTranscription);
 
                 // Extract mispronounced words
                 const mispronouncedWords = extractMispronouncedWords(pronunciationAssessment);
@@ -358,7 +359,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                     for (const word of mispronouncedWords) {
                         modelResponse += word.Word + (word === mispronouncedWords[mispronouncedWords.length - 1] ? "" : "...");
                     }
-                    correctedAudio = await AIServices.openaiTextToSpeechAndUpload(modelResponse);
+                    correctedAudio = await textToSpeech.azureOpenAITextToSpeech(modelResponse);
                     await sendMediaMessage(userMobileNumber, correctedAudio, 'audio');
                     await createActivityLog(userMobileNumber, "audio", "outbound", correctedAudio, null);
                     await sleep(5000);

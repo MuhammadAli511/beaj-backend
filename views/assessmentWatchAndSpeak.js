@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
 import { sleep, extractTranscript, convertNumberToEmoji, getAudioBufferFromAudioFileUrl } from "../utils/utils.js";
-import AIServices from "../utils/AIServices.js";
+import speechToText from "../utils/speechToText.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import { createAndUploadScoreImage, createAndUploadScoreImageNoAnswer } from "../utils/imageGenerationUtils.js";
 
@@ -137,10 +137,10 @@ const assessmentWatchAndSpeakView = async (profileId, userMobileNumber, currentU
                 // Azure Pronunciation Assessment
                 let pronunciationAssessment = null;
                 if (!currentWatchAndSpeakQuestion?.dataValues?.answer?.[0]) {
-                    const userTranscription = await AIServices.azureOpenAISpeechToText(audioBuffer);
-                    pronunciationAssessment = await AIServices.azurePronunciationAssessment(audioBuffer, userTranscription);
+                    const userTranscription = await speechToText.azureOpenAISpeechToText(audioBuffer);
+                    pronunciationAssessment = await speechToText.azurePronunciationAssessment(audioBuffer, userTranscription);
                 } else {
-                    pronunciationAssessment = await AIServices.azurePronunciationAssessment(audioBuffer, currentWatchAndSpeakQuestion.dataValues.answer[0]);
+                    pronunciationAssessment = await speechToText.azurePronunciationAssessment(audioBuffer, currentWatchAndSpeakQuestion.dataValues.answer[0]);
                 }
 
                 // Extract user transcription from words
@@ -341,10 +341,10 @@ const assessmentWatchAndSpeakView = async (profileId, userMobileNumber, currentU
                 // Azure Pronunciation Assessment
                 let pronunciationAssessment = null;
                 if (!currentWatchAndSpeakQuestion?.dataValues?.answer?.[0]) {
-                    const userTranscription = await AIServices.azureOpenAISpeechToText(audioBuffer);
-                    pronunciationAssessment = await AIServices.azurePronunciationAssessment(audioBuffer, userTranscription);
+                    const userTranscription = await speechToText.azureOpenAISpeechToText(audioBuffer);
+                    pronunciationAssessment = await speechToText.azurePronunciationAssessment(audioBuffer, userTranscription);
                 } else {
-                    pronunciationAssessment = await AIServices.azurePronunciationAssessment(audioBuffer, currentWatchAndSpeakQuestion.dataValues.answer[0]);
+                    pronunciationAssessment = await speechToText.azurePronunciationAssessment(audioBuffer, currentWatchAndSpeakQuestion.dataValues.answer[0]);
                 }
 
                 // Extract user transcription from words

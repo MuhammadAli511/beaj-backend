@@ -5,7 +5,7 @@ import { sleep } from "../utils/utils.js";
 import { studentBotContactData, teacherBotContactData } from "../constants/contacts.js";
 import { talkToBeajRep } from "../utils/chatbotUtils.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
-import AIServices from '../utils/AIServices.js';
+import llmFeedback from '../utils/llmFeedback.js';
 
 const marketingBotFlow = async (profileId, messageContent, messageType, userMobileNumber) => {
     if (messageContent.toLowerCase() == "yes" || messageContent.toLowerCase() == "no") {
@@ -29,7 +29,7 @@ const marketingBotFlow = async (profileId, messageContent, messageType, userMobi
         await createActivityLog(userMobileNumber, "text", "outbound", "Sorry, I have received too many messages from you in the past hour. Please try again later.", null);
         return;
     }
-    let response = await AIServices.marketingBotResponse(previousMessages);
+    let response = await llmFeedback.marketingBotResponse(previousMessages);
     const imageResponse = response.match(/<IMAGE>(.*?)<\/IMAGE>/)?.[1];
     const contactResponse = response.match(/<CONTACT>(.*?)<\/CONTACT>/)?.[1];
     response = response.replace(/<IMAGE>(.*?)<\/IMAGE>/g, "").replace(/<CONTACT>(.*?)<\/CONTACT>/g, "");

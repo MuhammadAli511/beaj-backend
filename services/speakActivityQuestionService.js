@@ -1,5 +1,5 @@
 import azure_blob from '../utils/azureBlobStorage.js';
-import AIServices from '../utils/AIServices.js';
+import textToSpeech from '../utils/textToSpeech.js';
 import parseAnswers from '../utils/parseAnswers.js';
 import speakActivityQuestionRepository from '../repositories/speakActivityQuestionRepository.js';
 
@@ -16,11 +16,11 @@ const createSpeakActivityQuestionService = async (question, mediaFile, mediaFile
                 if (question.includes("<question>")) {
                     const questionText = question.match(/<question>(.*?)<\/question>/s)[1].trim();
                     if (questionText != "") {
-                        mediaUrl = await AIServices.openaiTextToSpeechAndUpload(questionText);
+                        mediaUrl = await textToSpeech.azureOpenAITextToSpeech(questionText);
                     }
                 }
             } else {
-                mediaUrl = await AIServices.openaiTextToSpeechAndUpload(question);
+                mediaUrl = await textToSpeech.azureOpenAITextToSpeech(question);
             }
         }
 
@@ -72,12 +72,12 @@ const updateSpeakActivityQuestionService = async (id, question, mediaFile, media
             mediaUrl = mediaFile;
         } else {
             if (activityType != 'conversationalAgencyBot') {
-                mediaUrl = await AIServices.openaiTextToSpeechAndUpload(question);
+                mediaUrl = await textToSpeech.azureOpenAITextToSpeech(question);
             } else {
                 if (question.includes("<question>")) {
                     const questionText = question.match(/<question>(.*?)<\/question>/s)[1].trim();
                     if (questionText != "") {
-                        mediaUrl = await AIServices.openaiTextToSpeechAndUpload(questionText);
+                        mediaUrl = await textToSpeech.azureOpenAITextToSpeech(questionText);
                     }
                 }
             }

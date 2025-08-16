@@ -1,8 +1,5 @@
 import sdk from "microsoft-cognitiveservices-speech-sdk";
 import { v4 as uuidv4 } from "uuid";
-import { BlobServiceClient } from "@azure/storage-blob";
-import { format } from "date-fns";
-import { Readable, PassThrough } from "stream";
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegPath from "ffmpeg-static";
 import _ from "lodash";
@@ -15,7 +12,6 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { ElevenLabsClient } from "elevenlabs";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { marketing_bot_prompt } from "./prompts.js";
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -24,82 +20,8 @@ ffmpeg.setFfmpegPath(ffmpegPath);
 const writeFile = promisify(fs.writeFile);
 const unlink = promisify(fs.unlink);
 
-async function uploadAudioToAzure(audioData) {
-    // Generate a unique file name with timestamp and UUID
-    const timestamp = format(new Date(), "yyyyMMddHHmmssSSS");
-    const uniqueID = uuidv4();
-    const baseFileName = `tts_audio_${uniqueID}.mp3`;
-    const filename = `${timestamp}-${uniqueID}-${baseFileName}`;
 
-    const containerName = "beajdocuments";
-    const azureBlobConnectionString =
-        process.env.AZURE_BLOB_CONNECTION_STRING;
-
-    if (!azureBlobConnectionString) {
-        throw new Error(
-            "Azure Blob Storage connection string is not defined in environment variables."
-        );
-    }
-
-    const blobServiceClient = BlobServiceClient.fromConnectionString(
-        azureBlobConnectionString
-    );
-
-    const containerClient =
-        blobServiceClient.getContainerClient(containerName);
-
-    await containerClient.createIfNotExists({
-        access: "container",
-    });
-
-    const blobClient = containerClient.getBlockBlobClient(filename);
-    const blockBlobClient = blobClient.getBlockBlobClient();
-
-    await blockBlobClient.uploadData(audioData, {
-        blobHTTPHeaders: { blobContentType: "audio/mpeg" },
-    });
-
-    const blobUrl = blockBlobClient.url;
-    return blobUrl;
-};
-
-async function elevenLabsTextToSpeechAndUpload(text) {
-    try {
-        const client = new ElevenLabsClient({
-            apiKey: process.env.ELEVENLABS_API_KEY,
-        });
-        const audio = await client.generate({
-            voice: "NH0AbpVpD8W8R6jnEwVU",
-            model_id: "eleven_flash_v2_5",
-            text,
-        });
-
-        // Save to temporary file and then read it as a buffer
-        const tempFileName = `temp-${uuidv4()}.mp3`;
-        const tempFilePath = join(tmpdir(), tempFileName);
-        const tempFileStream = fs.createWriteStream(tempFilePath);
-        audio.pipe(tempFileStream);
-
-        return new Promise((resolve, reject) => {
-            tempFileStream.on("finish", async () => {
-                try {
-                    const audioBuffer = fs.readFileSync(tempFilePath);
-                    const audioUrl = await uploadAudioToAzure(audioBuffer);
-                    resolve(audioUrl);
-                } catch (err) {
-                    reject(err);
-                } finally {
-                    fs.unlinkSync(tempFilePath);
-                }
-            });
-        });
-    } catch (error) {
-        console.error("Error during text-to-speech generation:", error);
-        throw error;
-    }
-}
-
-async function elevenLabsSpeechToText(audioBuffer) {
+const elevenLabsSpeechToText = async (audioBuffer) => {
     try {
         const client = new ElevenLabsClient({
             apiKey: process.env.ELEVENLABS_API_KEY,
@@ -116,71 +38,34 @@ async function elevenLabsSpeechToText(audioBuffer) {
         console.error("Error in ElevenLabs Speech-to-Text:", error);
         throw new Error("Speech-to-Text conversion failed");
     }
-}
+};
 
-async function convertOggToWav(oggBuffer) {
-    return new Promise((resolve, reject) => {
-        const oggStream = new PassThrough();
-        oggStream.end(oggBuffer);
-
-        const wavData = [];
-        const wavStream = new PassThrough();
-        wavStream.on("data", (chunk) => wavData.push(chunk));
-        wavStream.on("end", () => resolve(Buffer.concat(wavData)));
-        wavStream.on("error", (err) => reject(err));
-
-        ffmpeg(oggStream)
-            .format("wav")
-            .audioCodec("pcm_s16le")
-            .audioChannels(1)
-            .audioFrequency(16000)
-            .on("error", (err) => reject(err))
-            .pipe(wavStream);
-    });
-}
-
-async function azureOpenAISpeechToText(audioBuffer) {
+const azureOpenAISpeechToText = async (audioBuffer, prompt = null) => {
     try {
         const endpoint = process.env.AZURE_OPENAI_ENDPOINT_2;
         const apiKey = process.env.AZURE_OPENAI_API_KEY_2;
         const apiVersion = "2025-03-01-preview";
         const deployment = "gpt-4o-transcribe";
 
-        const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
-        const result = await client.audio.transcriptions.create({
+        const postObject = {
             file: fs.createReadStream(tempFilePath),
             model: deployment,
             language: 'en',
-        });
-
-        return result.text;
-    } catch {
-        return await openaiSpeechToText(audioBuffer);
-    }
-};
-
-async function azureOpenAISpeechToTextWithPrompt(audioBuffer, prompt) {
-    try {
-        const endpoint = process.env.AZURE_OPENAI_ENDPOINT_2;
-        const apiKey = process.env.AZURE_OPENAI_API_KEY_2;
-        const apiVersion = "2025-03-01-preview";
-        const deployment = "gpt-4o-transcribe";
+        };
+        if (prompt) {
+            postObject.prompt = prompt;
+        }
 
         const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
-        const result = await client.audio.transcriptions.create({
-            file: fs.createReadStream(tempFilePath),
-            model: deployment,
-            language: 'en',
-            prompt: prompt
-        });
+        const result = await client.audio.transcriptions.create(postObject);
 
         return result.text;
     } catch {
-        return await openaiSpeechToTextWithPrompt(audioBuffer, prompt);
+        return await openaiSpeechToText(audioBuffer, prompt);
     }
 };
 
-async function openaiSpeechToText(audioBuffer) {
+const openaiSpeechToText = async (audioBuffer, prompt = null) => {
     const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
     const uniqueFileName = `audio-${uuidv4()}.ogg`;
@@ -189,88 +74,23 @@ async function openaiSpeechToText(audioBuffer) {
     try {
         await writeFile(tempFilePath, audioBuffer);
 
-        const transcription = await openai.audio.transcriptions.create({
-            file: fs.createReadStream(tempFilePath),
-            model: "gpt-4o-transcribe",
-            language: 'en'
-        });
-        return transcription.text;
-    } finally {
-        await unlink(tempFilePath);
-    }
-};
-
-async function openaiSpeechToTextWithPrompt(audioBuffer, prompt) {
-    const openai = new OpenAI(process.env.OPENAI_API_KEY);
-
-    const uniqueFileName = `audio-${uuidv4()}.ogg`;
-    const tempFilePath = join(tmpdir(), uniqueFileName);
-
-    try {
-        await writeFile(tempFilePath, audioBuffer);
-
-        const transcription = await openai.audio.transcriptions.create({
+        const postObject = {
             file: fs.createReadStream(tempFilePath),
             model: "gpt-4o-transcribe",
             language: 'en',
-            prompt: prompt
-        });
+        };
+        if (prompt) {
+            postObject.prompt = prompt;
+        }
+
+        const transcription = await openai.audio.transcriptions.create(postObject);
         return transcription.text;
     } finally {
         await unlink(tempFilePath);
     }
 };
 
-async function azureOpenAITextToSpeechAndUpload(text) {
-    try {
-        const endpoint = process.env.AZURE_OPENAI_ENDPOINT_2;
-        const apiKey = process.env.AZURE_OPENAI_API_KEY_2;
-        const apiVersion = "2025-03-01-preview";
-        const deployment = "gpt-4o-mini-tts";
-
-        const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
-
-        const mp3 = await client.audio.speech.create({
-            model: deployment,
-            voice: "nova",
-            input: text,
-            instructions: "Use British pronunciation for English and speak in a slow speed, not too fast"
-        });
-
-        const buffer = Buffer.from(await mp3.arrayBuffer());
-        const tempFileName = `temp-${uuidv4()}.mp3`;
-        const tempFilePath = join(tmpdir(), tempFileName);
-        await writeFile(tempFilePath, buffer);
-        const audioUrl = await uploadAudioToAzure(buffer);
-        return audioUrl;
-    } catch (error) {
-        return await openaiTextToSpeechAndUpload(text);
-    }
-};
-
-async function openaiTextToSpeechAndUpload(text) {
-    try {
-        const openai = new OpenAI(process.env.OPENAI_API_KEY);
-
-        const mp3 = await openai.audio.speech.create({
-            model: "gpt-4o-mini-tts",
-            voice: "nova",
-            input: text,
-            instructions: "Use British pronunciation for English and speak in a slow speed, not too fast"
-        });
-
-        const buffer = Buffer.from(await mp3.arrayBuffer());
-        const tempFileName = `temp-${uuidv4()}.mp3`;
-        const tempFilePath = join(tmpdir(), tempFileName);
-        await writeFile(tempFilePath, buffer);
-        const audioUrl = await uploadAudioToAzure(buffer);
-        return audioUrl;
-    } catch (error) {
-        return await elevenLabsTextToSpeechAndUpload(text);
-    }
-};
-
-async function azureSpeechToText(audioBuffer) {
+const azureSpeechToText = async (audioBuffer) => {
     return new Promise(async (resolve, reject) => {
         try {
             const wavBuffer = await convertOggToWav(audioBuffer);
@@ -317,9 +137,9 @@ async function azureSpeechToText(audioBuffer) {
             reject(err);
         }
     });
-}
+};
 
-async function azureSpeechToTextAnyLanguage(audioBuffer) {
+const azureSpeechToTextAnyLanguage = async (audioBuffer) => {
     return new Promise(async (resolve, reject) => {
         const region = process.env.AZURE_CUSTOM_VOICE_REGION;
         const subscriptionKey = process.env.AZURE_CUSTOM_VOICE_KEY;
@@ -365,9 +185,9 @@ async function azureSpeechToTextAnyLanguage(audioBuffer) {
         // Start continuous recognition
         recognizer.startContinuousRecognitionAsync();
     });
-}
+};
 
-async function azurePronunciationAssessment(audioBuffer, referenceText) {
+const azurePronunciationAssessment = async (audioBuffer, referenceText) => {
     return new Promise(async (resolve, reject) => {
         try {
             const wavBuffer = await convertOggToWav(audioBuffer);
@@ -609,9 +429,9 @@ async function azurePronunciationAssessment(audioBuffer, referenceText) {
             reject(err);
         }
     });
-}
+};
 
-async function azureSpeakingAssessment(audioBuffer, topic) {
+const azureSpeakingAssessment = async (audioBuffer, topic) => {
     return new Promise(async (resolve, reject) => {
         try {
             const wavBuffer = await convertOggToWav(audioBuffer);
@@ -749,61 +569,9 @@ async function azureSpeakingAssessment(audioBuffer, topic) {
             reject(err);
         }
     });
-}
+};
 
-async function openaiFeedback(previousMessages) {
-    try {
-        const endpoint = process.env.AZURE_OPENAI_ENDPOINT_2;
-        const apiKey = process.env.AZURE_OPENAI_API_KEY_2;
-        const apiVersion = "2025-01-01-preview";
-        const deployment = "gpt-4.1-nano";
-
-        const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
-        const result = await client.chat.completions.create({
-            messages: previousMessages,
-            model: "",
-        });
-
-        return result.choices[0].message.content;
-    } catch {
-        return await geminiFeedback(previousMessages);
-    }
-}
-
-async function geminiFeedback(previousMessages) {
-    let userTranscript = previousMessages[previousMessages.length - 1].content;
-    previousMessages.pop();
-
-    let messagesArray = [];
-    previousMessages.forEach(message => {
-        messagesArray.push({
-            role: message.role == 'assistant' ? 'model' : message.role,
-            parts: [{ text: message.content }]
-        });
-    });
-
-    let systemInstruction = "";
-
-    if (messagesArray[0].role === 'system') {
-        systemInstruction = messagesArray[0].content;
-        messagesArray.shift();
-    }
-
-    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash",
-        systemInstruction: systemInstruction
-    });
-    const chat = model.startChat({
-        history: messagesArray
-    });
-
-    let result = await chat.sendMessage(userTranscript);
-    return result.response.text();
-}
-
-
-async function geminiSpeechToText(audioBuffer, language) {
+const geminiSpeechToText = async (audioBuffer, language) => {
     let tempFilePath = null;
     try {
         const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY);
@@ -848,81 +616,16 @@ async function geminiSpeechToText(audioBuffer, language) {
             }
         }
     }
-}
-
-async function geminiCustomFeedback(userTranscript, modelPrompt) {
-    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash",
-        systemInstruction: modelPrompt
-    });
-    const result = await model.generateContent(userTranscript);
-    return result.response.text();
-}
-
-async function openaiCustomFeedback(userTranscript, modelPrompt) {
-    try {
-        const endpoint = process.env.AZURE_OPENAI_ENDPOINT_2;
-        const apiKey = process.env.AZURE_OPENAI_API_KEY_2;
-        const apiVersion = "2025-01-01-preview";
-        const deployment = "gpt-4.1-nano";
-
-        const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
-        const result = await client.chat.completions.create({
-            messages: [
-                { role: "system", content: modelPrompt },
-                { role: "user", content: userTranscript },
-            ],
-            model: "",
-        });
-
-        return result.choices[0].message.content;
-    } catch {
-        return await geminiCustomFeedback(userTranscript, modelPrompt);
-    }
-}
-
-async function marketingBotResponse(previousMessages) {
-    const marketingBotPrompt = await marketing_bot_prompt();
-    previousMessages.unshift({
-        role: "system",
-        content: marketingBotPrompt
-    });
-    try {
-        const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
-        const apiKey = process.env.AZURE_OPENAI_API_KEY;
-        const apiVersion = "2025-01-01-preview";
-        const deployment = "gpt-4.1-mini";
-
-        const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
-        const result = await client.chat.completions.create({
-            messages: previousMessages,
-            model: "",
-        });
-
-        return result.choices[0].message.content;
-    } catch {
-        return "Sorry, I am not able to respond to your question.";
-    }
-}
-
-export default {
-    azureSpeechToText,
-    azurePronunciationAssessment,
-    openaiFeedback,
-    openaiSpeechToText,
-    openaiCustomFeedback,
-    azureSpeakingAssessment,
-    azureSpeechToTextAnyLanguage,
-    openaiSpeechToTextWithPrompt,
-    elevenLabsSpeechToText,
-    geminiSpeechToText,
-    geminiFeedback,
-    geminiCustomFeedback,
-    openaiTextToSpeechAndUpload,
-    marketingBotResponse,
-    azureOpenAISpeechToText,
-    azureOpenAISpeechToTextWithPrompt,
-    azureOpenAITextToSpeechAndUpload
 };
 
+
+export default {
+    elevenLabsSpeechToText,
+    azureOpenAISpeechToText,
+    openaiSpeechToText,
+    azureSpeechToText,
+    azureSpeechToTextAnyLanguage,
+    azurePronunciationAssessment,
+    azureSpeakingAssessment,
+    geminiSpeechToText
+};

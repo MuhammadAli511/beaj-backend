@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
 import { sleep, convertNumberToEmoji, difficultyLevelCalculation, getAudioBufferFromAudioFileUrl } from "../utils/utils.js";
-import AIServices from "../utils/AIServices.js";
+import speechToText from "../utils/speechToText.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 
 const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
@@ -147,7 +147,7 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 let prompt = "Transcribe the audio, if it is empty return nothing";
                 let recognizedText = null;
                 try {
-                    recognizedText = await AIServices.azureOpenAISpeechToTextWithPrompt(audioBuffer, prompt);
+                    recognizedText = await speechToText.azureOpenAISpeechToText(audioBuffer, prompt);
                 } catch (error) {
                     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
                     await waQuestionResponsesRepository.deleteRecord(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId, currentListenAndSpeakQuestion.dataValues.id);
@@ -464,7 +464,7 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 let prompt = "Transcribe the audio, if it is empty return nothing";
                 let recognizedText = null;
                 try {
-                    recognizedText = await AIServices.azureOpenAISpeechToTextWithPrompt(audioBuffer, prompt);
+                    recognizedText = await speechToText.azureOpenAISpeechToText(audioBuffer, prompt);
                 } catch (error) {
                     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
                     await waQuestionResponsesRepository.deleteRecord(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId, currentListenAndSpeakQuestion.dataValues.id);

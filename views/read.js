@@ -9,7 +9,7 @@ import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
 import { sleep, extractTranscript, getAudioBufferFromAudioFileUrl, getLevelFromCourseName } from "../utils/utils.js";
-import AIServices from "../utils/AIServices.js";
+import speechToText from "../utils/speechToText.js";
 import { createAndUploadScoreImage, createAndUploadKidsScoreImage } from "../utils/imageGenerationUtils.js";
 import courseRepository from "../repositories/courseRepository.js";
 
@@ -133,7 +133,7 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
                 const textWithoutPunctuationAndHtmlTags = lessonText.replace(/[^a-z0-9 ]/gi, "").toLowerCase().trim();
 
                 // Azure Pronunciation Assessment
-                const pronunciationAssessment = await AIServices.azurePronunciationAssessment(audioBuffer, textWithoutPunctuationAndHtmlTags);
+                const pronunciationAssessment = await speechToText.azurePronunciationAssessment(audioBuffer, textWithoutPunctuationAndHtmlTags);
 
                 // Extract user transcription from words
                 const userTranscription = extractTranscript(pronunciationAssessment);
@@ -300,7 +300,7 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
                 const textWithoutPunctuationAndHtmlTags = lessonText.replace(/[^a-z0-9 ]/gi, "").toLowerCase().trim();
 
                 // Azure Pronunciation Assessment
-                const pronunciationAssessment = await AIServices.azurePronunciationAssessment(audioBuffer, textWithoutPunctuationAndHtmlTags);
+                const pronunciationAssessment = await speechToText.azurePronunciationAssessment(audioBuffer, textWithoutPunctuationAndHtmlTags);
 
                 // Extract user transcription from words
                 const userTranscription = extractTranscript(pronunciationAssessment);
