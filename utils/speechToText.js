@@ -12,6 +12,7 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { ElevenLabsClient } from "elevenlabs";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { convertOggToWav } from "./utils.js";
 import dotenv from 'dotenv';
 dotenv.config();
 

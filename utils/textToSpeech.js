@@ -8,6 +8,7 @@ import { promisify } from "util";
 import { tmpdir } from "os";
 import { join } from "path";
 import { ElevenLabsClient } from "elevenlabs";
+import { uploadAudioToAzure } from "./utils.js";
 import dotenv from 'dotenv';
 dotenv.config();
 

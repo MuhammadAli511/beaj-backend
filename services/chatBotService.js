@@ -119,6 +119,7 @@ const webhookService = async (body, res) => {
                 let currentUserState = await waUserProgressRepository.getByProfileId(profileId);
                 let currentUserMetadata = await waUsersMetadataRepository.getByProfileId(profileId);
                 let persona;
+                let trialFlowHit = false;
                 if (!currentUserState) {
                     persona = null;
                 } else if (
@@ -134,7 +135,7 @@ const webhookService = async (body, res) => {
 
                 // SPECIAL COMMANDS
                 console.log("SPECIAL COMMANDS START");
-                if (special_commands.includes(messageContent.toLowerCase()) && message.type == "text") {
+                if (message.type == "text" && special_commands.includes(messageContent.toLowerCase())) {
                     await specialCommandFlow(profileId, userMobileNumber, messageContent);
                     return;
                 };
@@ -191,9 +192,12 @@ const webhookService = async (body, res) => {
                         return;
                     }
                     if (profile_type == "student" && kids_trial_flow_engagement_types.includes(currentUserState.dataValues.engagement_type)) {
-                        await kidsTrialFlow.kidsTrialFlowDriver(profileId, userMobileNumber, currentUserState.dataValues.engagement_type, messageContent, messageType, inboundUploadedImage);
+                        trialFlowHit = await kidsTrialFlow.kidsTrialFlowDriver(profileId, userMobileNumber, currentUserState.dataValues.engagement_type, messageContent, messageType, inboundUploadedImage);
                     } else if (profile_type == "teacher" && teacher_trial_flow_engagement_types.includes(currentUserState.dataValues.engagement_type)) {
-                        await teachersTrialFlow.teachersTrialFlowDriver(profileId, userMobileNumber, currentUserState.dataValues.engagement_type, messageContent, messageType, inboundUploadedImage);
+                        trialFlowHit = await teachersTrialFlow.teachersTrialFlowDriver(profileId, userMobileNumber, currentUserState.dataValues.engagement_type, messageContent, messageType, inboundUploadedImage);
+                    }
+                    if (trialFlowHit === true) {
+                        return;
                     }
                 }
                 console.log("TRIAL FLOW ROUTING END");
@@ -263,8 +267,8 @@ const webhookService = async (body, res) => {
                     }
                 }
                 console.log("MID ACTIVITY FLOWS - TRIGGERING ON \"YES\" OR \"NO\" OR \"EASY\" OR \"HARD\" END");
-                // MOVING NEXT ACTIVITY MAIN COURSE
-                console.log("MOVING NEXT ACTIVITY MAIN COURSE START");
+                // MOVING NEXT ACTIVITY
+                console.log("MOVING NEXT ACTIVITY");
                 if (text_message_types.includes(message.type) && next_activity_acceptable_messages.includes(messageContent.toLowerCase())) {
                     // FEEDBACK FLOW
                     if (feedback_acceptable_messages.includes(messageContent.toLowerCase())) {
@@ -330,7 +334,7 @@ const webhookService = async (body, res) => {
                     }
                     return;
                 }
-                console.log("MOVING NEXT ACTIVITY MAIN COURSE END");
+                console.log("MOVING NEXT ACTIVITY");
                 // MOVING TO NEXT QUESTION
                 console.log("MOVING TO NEXT QUESTION START");
                 if (currentUserState.dataValues.activityType && activity_types_to_repeat.includes(currentUserState.dataValues.activityType)) {

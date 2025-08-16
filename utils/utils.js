@@ -7,6 +7,7 @@ import waUsersMetadataRepository from "../repositories/waUsersMetadataRepository
 import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import { BlobServiceClient } from "@azure/storage-blob";
+import { retrieveMediaURL } from "./whatsappUtils.js";
 import { PassThrough } from "stream";
 import ffmpeg from "fluent-ffmpeg";
 import dotenv from 'dotenv';
@@ -431,5 +432,7 @@ export {
     difficultyLevelCalculation,
     getLevelFromCourseName,
     extractMessageContent,
-    getProfileTypeFromBotId
+    getProfileTypeFromBotId,
+    uploadAudioToAzure,
+    convertOggToWav
 };

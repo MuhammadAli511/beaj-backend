@@ -129,6 +129,8 @@ const teacher_trial_flow_engagement_types = [
     "End Now",
     "Thankyou Message",
     "School Name",
+    "Confirm School Name",
+    "City Name"
 ];
 
 const kids_trial_flow_engagement_types = [

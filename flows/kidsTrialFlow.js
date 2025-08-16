@@ -11,6 +11,7 @@ import { sleep } from "../utils/utils.js";
 import waUserActivityLogsRepository from "../repositories/waUserActivityLogsRepository.js";
 import * as imageGenerationUtils from "../utils/imageGenerationUtils.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
+import { text_message_types } from "../constants/constants.js";
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -658,7 +659,7 @@ const kidsTrialFlowDriver = async (profileId, userMobileNumber, engagementType, 
         for (const config of endpointHandlers) {
             if (!config.engagementTypes.includes(engagementType)) continue;
 
-            if (config.messages.includes(messageContent.toLowerCase()) || config.messages.includes('*')) {
+            if (text_message_types.includes(messageType) && (config.messages.includes(messageContent.toLowerCase()) || config.messages.includes('*'))) {
                 matchedHandler = config.handler;
                 break;
             }
@@ -677,7 +678,7 @@ const kidsTrialFlowDriver = async (profileId, userMobileNumber, engagementType, 
         return true;
     }
 
-    return true;
+    return false;
 };
 
 
