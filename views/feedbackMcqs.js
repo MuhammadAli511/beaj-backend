@@ -226,7 +226,7 @@ const feedbackMcqsView = async (profileId, userMobileNumber, currentUserState, s
         }
         return;
     } catch (error) {
-        console.log('Error sending lesson to user:', error);
+        console.error('Error sending lesson to user:', error);
         error.fileName = 'mcqsView.js';
         throw error;
     }

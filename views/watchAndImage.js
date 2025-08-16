@@ -181,7 +181,7 @@ const watchAndImageView = async (profileId, userMobileNumber, currentUserState, 
         }
         return;
     } catch (error) {
-        console.log('Error sending lesson to user:', error);
+        console.error('Error sending lesson to user:', error);
         error.fileName = 'watchAndImageView.js';
         throw error;
     }

@@ -279,6 +279,13 @@ const getUserNamesByProfileIds = async (profileIds) => {
     return results;
 };
 
+const getClassLevel = async (profileId, phoneNumber) => {
+    const user = await WA_UsersMetadata.findOne({
+        where: { profile_id: profileId, phoneNumber: phoneNumber }
+    });
+    return user.dataValues.classLevel;
+};
+
 export default {
     create,
     getAll,
@@ -304,5 +311,6 @@ export default {
     getProfileIds,
     deleteByProfileId,
     getCombinedUserData,
-    getUserNamesByProfileIds
+    getUserNamesByProfileIds,
+    getClassLevel
 };

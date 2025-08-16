@@ -1,8 +1,7 @@
 import service from '../services/chatBotService.js';
-import dotenv from 'dotenv';
-dotenv.config();
 import https from 'https';
 import axios from 'axios';
+import { salman_number, ali_number, salman_endpoint, ali_endpoint } from '../constants/constants.js';
 
 const webhookController = async (req, res, next) => {
     try {
@@ -22,11 +21,9 @@ const webhookController = async (req, res, next) => {
             }
 
             // Define the ngrok endpoints for forwarding
-            const salmanEndpoint = "http://smiling-pro-sheep.ngrok-free.app/api/chatbot/webhook";
-            const aliEndpoint = "http://sensibly-solid-aardvark.ngrok-free.app/api/chatbot/webhook";
-            if (phone_number == "+923012232148") {
+            if (phone_number == salman_number) {
                 try {
-                    const response = await axios.post(salmanEndpoint, req.body, {
+                    const response = await axios.post(salman_endpoint, req.body, {
                         headers: {
                             'Content-Type': 'application/json',
                             'Accept': 'application/json'
@@ -43,9 +40,9 @@ const webhookController = async (req, res, next) => {
                     return;
                 }
             }
-            else if (phone_number == "+923225036358") {
+            else if (phone_number == ali_number) {
                 try {
-                    const response = await axios.post(aliEndpoint, req.body, {
+                    const response = await axios.post(ali_endpoint, req.body, {
                         headers: {
                             'Content-Type': 'application/json',
                             'Accept': 'application/json'
@@ -84,17 +81,6 @@ const verifyWebhookController = async (req, res, next) => {
     }
 };
 
-const uploadUserDataController = async (req, res, next) => {
-    try {
-        const { users } = req.body;
-        const count = await service.uploadUserDataService(users);
-        res.status(200).send({ message: `Successfully uploaded ${count} users.` });
-    } catch (error) {
-        error.fileName = 'chatBotController.js';
-        next(error);
-    }
-};
-
 const getCombinedUserDataController = async (req, res, next) => {
     try {
         const result = await service.getCombinedUserDataService();
@@ -108,6 +94,5 @@ const getCombinedUserDataController = async (req, res, next) => {
 export default {
     webhookController,
     verifyWebhookController,
-    uploadUserDataController,
     getCombinedUserDataController
 };

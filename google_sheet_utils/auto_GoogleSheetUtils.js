@@ -23,8 +23,6 @@ const retryOperation = async (operation, maxRetries = 5, initialDelay = 1000) =>
       return await operation();
     } catch (error) {
       const delay = initialDelay * Math.pow(2, retries);
-      console.log(`API error. Retrying in ${delay}ms...`);
-      console.log(`Error details: ${error.message}`);
       await new Promise(resolve => setTimeout(resolve, delay));
       retries++;
 
@@ -57,7 +55,6 @@ const new_loadDataToGoogleSheets = async (
     arrayLevels_List = capitalizeNames(arrayLevels_List);
 
     if (edit_flag == 1) {
-      console.log("Clearing existing data...");
       await retryOperation(() =>
         sheets.spreadsheets.values.update({
           auth: authClient,
@@ -144,7 +141,6 @@ const new_loadDataToGoogleSheets = async (
     }
 
     if (edit_flag == 2) {
-      console.log("Writing data to sheets...");
 
       // First, write the array levels data
       await retryOperation(() =>
@@ -221,10 +217,9 @@ const new_loadDataToGoogleSheets = async (
       }
 
       if (module_week == "Week") {
-        console.log("Formatting top three values...");
         await formatTopThreeInColumns(arrayLevels_List, facilitator);
 
-        let columnIndex = await getColumnIndexWithPercentageValues(arrayLevels_List, 1, facilitator);
+        let columnIndex = getColumnIndexWithPercentageValues(arrayLevels_List, 1, facilitator);
         await generateStarTeachersImage(arrayLevels_List, columnIndex, './', facilitator);
 
       }
@@ -236,7 +231,6 @@ const new_loadDataToGoogleSheets = async (
         })
       );
 
-      console.log("Data upload complete.");
     }
 
   } catch (error) {
@@ -371,7 +365,6 @@ const formatTopThreeInColumns = async (arrayLevels_List, facilitator) => {
       }
     }
 
-    console.log("Formatting complete");
   } catch (error) {
     console.error("Error in formatTopThreeInColumns:", error);
     throw error;
@@ -493,12 +486,10 @@ const getColumnIndexWithPercentageValues = (arrayLevels_List, minValues, facilit
     }
   }
 
-  console.log("No column found with sufficient percentage values");
   throw new Error(`No column found with at least ${minValues} percentage values`);
 };
 const deleteImagesFromSheet = async (facilitator) => {
   try {
-    console.log(`Deleting images from sheet for facilitator ${facilitator}...`);
 
     // Import fetch if not already available
     const fetch = (await import('node-fetch')).default;
@@ -509,7 +500,6 @@ const deleteImagesFromSheet = async (facilitator) => {
     // Build the request URL with proper encoding of the sheet name
     const deleteImagesUrl = `${appsScriptUrl}?action=deleteImages&sheetName=${encodeURIComponent('Facilitator ' + facilitator)}`;
 
-    console.log(`Calling Apps Script: ${deleteImagesUrl}`);
 
     // Make the request
     const response = await fetch(deleteImagesUrl, {
@@ -528,7 +518,6 @@ const deleteImagesFromSheet = async (facilitator) => {
       throw new Error(`Apps Script error: ${result.message || 'Unknown error'}`);
     }
 
-    console.log(`Images deleted successfully: ${result.message}`);
     return true;
 
   } catch (error) {
@@ -542,11 +531,9 @@ const uploadImageToCell = async (imageBuffer, facilitator, cellReference) => {
   const tempFilePath = path.join(process.cwd(), `temp_${facilitator}_${Date.now()}.png`);
 
   try {
-    console.log(`Starting image upload for facilitator ${facilitator} to cell ${cellReference}...`);
 
     // Save buffer to temp file
     fs.writeFileSync(tempFilePath, imageBuffer);
-    console.log(`Temporary file saved: ${tempFilePath}`);
 
     // Initialize Google Auth
     const auth = new google.auth.GoogleAuth({
@@ -561,7 +548,6 @@ const uploadImageToCell = async (imageBuffer, facilitator, cellReference) => {
     const drive = google.drive({ version: 'v3', auth: authClient });
 
     // Upload to Google Drive
-    console.log("Uploading image to Google Drive...");
     const fileMetadata = {
       name: `StarTeachers_${facilitator}_${Date.now()}.png`,
       mimeType: 'image/png'
@@ -597,7 +583,6 @@ const uploadImageToCell = async (imageBuffer, facilitator, cellReference) => {
     }
 
     const fileId = driveResponse.data.id;
-    console.log(`Image uploaded to Drive with ID: ${fileId}`);
 
     // Make the file public
     await drive.permissions.create({
@@ -613,7 +598,6 @@ const uploadImageToCell = async (imageBuffer, facilitator, cellReference) => {
     const appsScriptUrl = 'https://script.google.com/macros/s/AKfycby2Ob7DGUVF4qSVXv7rXreGweikZVI4UfqbaGr4jV1YOnA27AeeYYLR9y7wxV9D9w/exec';
 
     const fetch = (await import('node-fetch')).default;
-    console.log(`Calling Apps Script to insert image at cell ${cellReference}...`);
 
     // Use POST with URL encoded form data
     const formData = new URLSearchParams();
@@ -630,23 +614,18 @@ const uploadImageToCell = async (imageBuffer, facilitator, cellReference) => {
     });
 
     const responseText = await scriptResponse.text();
-    console.log(`Apps Script response: ${responseText}`);
 
     // Wait a bit to ensure the image is inserted
-    console.log("Waiting for image to be processed...");
     await new Promise(resolve => setTimeout(resolve, 5000));
 
     // Delete the Drive file
-    console.log("Deleting file from Drive...");
     await drive.files.delete({
       fileId: fileId
     });
 
-    console.log("File deleted from Drive");
 
     // Clean up temp file
     fs.unlinkSync(tempFilePath);
-    console.log("Temporary file deleted");
 
     return true;
 
@@ -657,7 +636,6 @@ const uploadImageToCell = async (imageBuffer, facilitator, cellReference) => {
     if (fs.existsSync(tempFilePath)) {
       try {
         fs.unlinkSync(tempFilePath);
-        console.log("Temporary file cleaned up after error");
       } catch (unlinkError) {
         console.error("Error cleaning up temporary file:", unlinkError);
       }
@@ -674,12 +652,10 @@ const uploadImageToCell = async (imageBuffer, facilitator, cellReference) => {
 
 const generateStarTeachersImage = async (arrayLevels_List, columnIndex, imagePath, facilitator) => {
   try {
-    console.log("Generating star teachers image...");
     const templatePath = path.join(__dirname, 'leaderboard.png');
 
     const outputPath = `/output.png`;
 
-    console.log(`Looking for template at: ${templatePath}`);
 
     // Check if input image exists
     if (!fs.existsSync(templatePath)) {
@@ -691,12 +667,10 @@ const generateStarTeachersImage = async (arrayLevels_List, columnIndex, imagePat
     const topPerformers = getTopPerformersWithNames(arrayLevels_List, columnIndex);
 
     if (topPerformers.length === 0) {
-      console.log("No performers found for this column");
       return null;
     }
 
     // Load template image
-    console.log("Loading template image...");
     const image = await loadImage(templatePath);
 
     // Create canvas with same dimensions as template

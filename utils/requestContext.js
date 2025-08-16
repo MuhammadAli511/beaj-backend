@@ -24,7 +24,6 @@ export const runWithContext = (context, fn) => {
         return requestStorage.run(context, fn);
     } catch (error) {
         console.error('Error in runWithContext:', error);
-        console.log('Falling back to running function without context');
         return fn();
     }
 };

@@ -8,7 +8,9 @@ import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
 import { sleep, getAudioBufferFromAudioFileUrl } from "../utils/utils.js";
-import AIServices from "../utils/AIServices.js";
+import textToSpeech from "../utils/textToSpeech.js";
+import speechToText from "../utils/speechToText.js";
+import llmFeedback from "../utils/llmFeedback.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import { question_bot_prompt, wrapup_prompt } from "../utils/prompts.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
@@ -135,7 +137,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                 const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
 
                 // OpenAI Speech to Text
-                const recognizedText = await AIServices.elevenLabsSpeechToText(audioBuffer);
+                const recognizedText = await speechToText.elevenLabsSpeechToText(audioBuffer);
                 if (recognizedText) {
                     const recordExists = await waQuestionResponsesRepository.checkRecordExistsForProfileIdAndLessonId(profileId, currentUserState.dataValues.currentLessonId);
                     let openaiFeedbackTranscript = null;
@@ -155,7 +157,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         previousMessages.push(currentMessage);
 
                         // OpenAI Feedback
-                        openaiFeedbackTranscript = await AIServices.openaiFeedback(previousMessages);
+                        openaiFeedbackTranscript = await llmFeedback.azureOpenaiFeedback(previousMessages);
                         initialFeedbackResponse = openaiFeedbackTranscript;
 
                         // Extract corrected version of the answer
@@ -165,7 +167,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         }
 
                         // ElevenLabs Text to Speech
-                        openaiFeedbackAudio = await AIServices.openaiTextToSpeechAndUpload(openaiFeedbackTranscript);
+                        openaiFeedbackAudio = await textToSpeech.azureOpenAITextToSpeech(openaiFeedbackTranscript);
 
                         // Media message
                         await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
@@ -184,7 +186,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         let userResponse = "<USER_RESPONSE>" + recognizedText + "<\/USER_RESPONSE>\n\n\n" + improvedVersion + "<\/IMPROVED>";
 
                         // OpenAI Feedback
-                        openaiFeedbackTranscript = await AIServices.openaiCustomFeedback(await wrapup_prompt(), userResponse);
+                        openaiFeedbackTranscript = await llmFeedback.azureOpenaiCustomFeedback(await wrapup_prompt(), userResponse);
                         initialFeedbackResponse = openaiFeedbackTranscript;
 
                         if (openaiFeedbackTranscript.toLowerCase().includes("can be improved")) {
@@ -365,7 +367,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                 const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
 
                 // OpenAI Speech to Text
-                const recognizedText = await AIServices.elevenLabsSpeechToText(audioBuffer);
+                const recognizedText = await speechToText.elevenLabsSpeechToText(audioBuffer);
                 if (recognizedText) {
                     const recordExists = await waQuestionResponsesRepository.checkRecordExistsForProfileIdAndLessonId(profileId, currentUserState.dataValues.currentLessonId);
                     let openaiFeedbackTranscript = null;
@@ -385,7 +387,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         previousMessages.push(currentMessage);
 
                         // OpenAI Feedback
-                        openaiFeedbackTranscript = await AIServices.openaiFeedback(previousMessages);
+                        openaiFeedbackTranscript = await llmFeedback.azureOpenaiFeedback(previousMessages);
                         initialFeedbackResponse = openaiFeedbackTranscript;
 
                         // Extract corrected version of the answer
@@ -395,7 +397,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         }
 
                         // ElevenLabs Text to Speech
-                        openaiFeedbackAudio = await AIServices.openaiTextToSpeechAndUpload(openaiFeedbackTranscript);
+                        openaiFeedbackAudio = await textToSpeech.azureOpenAITextToSpeech(openaiFeedbackTranscript);
 
                         // Media message
                         await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
@@ -414,7 +416,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         let userResponse = "<USER_RESPONSE>" + recognizedText + "<\/USER_RESPONSE>\n\n\n" + improvedVersion + "<\/IMPROVED>";
 
                         // OpenAI Feedback
-                        openaiFeedbackTranscript = await AIServices.openaiCustomFeedback(await wrapup_prompt(), userResponse);
+                        openaiFeedbackTranscript = await llmFeedback.azureOpenaiCustomFeedback(await wrapup_prompt(), userResponse);
                         initialFeedbackResponse = openaiFeedbackTranscript;
 
                         if (openaiFeedbackTranscript.toLowerCase().includes("can be improved")) {
@@ -478,7 +480,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
         }
         return;
     } catch (error) {
-        console.log('Error sending lesson to user:', error);
+        console.error('Error sending lesson to user:', error);
         error.fileName = 'conversationalQuestionsBotView.js';
         throw error;
     }

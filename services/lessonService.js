@@ -9,7 +9,6 @@ import waUserMetaRepository from "../repositories/waUsersMetadataRepository.js";
 import prodSequelize from "../config/prodDB.js";
 import courseRepository from "../repositories/courseRepository.js";
 import azure_blob from "../utils/azureBlobStorage.js";
-import { removeUserTillCourse } from "../utils/chatbotUtils.js";
 import waUserActivityLogsRepository from "../repositories/waUserActivityLogsRepository.js";
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRepository.js";

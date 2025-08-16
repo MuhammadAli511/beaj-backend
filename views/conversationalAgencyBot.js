@@ -8,8 +8,10 @@ import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
 import { sleep, getAudioBufferFromAudioFileUrl } from "../utils/utils.js";
-import AIServices from "../utils/AIServices.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
+import textToSpeech from "../utils/textToSpeech.js";
+import speechToText from "../utils/speechToText.js";
+import llmFeedback from "../utils/llmFeedback.js";
 
 const conversationalAgencyBotView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
@@ -52,7 +54,7 @@ const conversationalAgencyBotView = async (profileId, userMobileNumber, currentU
                 if (firstConversationalAgencyBotQuestion?.dataValues?.mediaFile?.includes("http")) {
                     questionAudio = firstConversationalAgencyBotQuestion.dataValues.mediaFile;
                 } else {
-                    questionAudio = await AIServices.openaiTextToSpeechAndUpload(questionText);
+                    questionAudio = await textToSpeech.azureOpenAITextToSpeech(questionText);
                 }
 
                 // Update question number
@@ -145,12 +147,12 @@ const conversationalAgencyBotView = async (profileId, userMobileNumber, currentU
                 await sendMessage(userMobileNumber, waitingMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", waitingMessage, null);
 
-                const recognizedText = await AIServices.azureSpeechToTextAnyLanguage(audioBuffer);
+                const recognizedText = await speechToText.azureSpeechToTextAnyLanguage(audioBuffer);
                 if (recognizedText != null && recognizedText != "") {
                     if (currentUserState.dataValues.questionNumber == 1) {
                         // Language Detection
                         let modelLanguagePrompt = "Detect the majority of the language used in the provided text. Respond in one word only. The two options are: English or Urdu. You must respond with only one word."
-                        const languageDetectionFeedback = await AIServices.openaiCustomFeedback(recognizedText, modelLanguagePrompt);
+                        const languageDetectionFeedback = await llmFeedback.azureOpenaiCustomFeedback(recognizedText, modelLanguagePrompt);
                         if (languageDetectionFeedback.toLowerCase().includes("english")) {
                             modelLanguagePrompt = "Respond in simple and easy-to-understand English within 100 words."
                         } else {
@@ -170,10 +172,10 @@ const conversationalAgencyBotView = async (profileId, userMobileNumber, currentU
                             }
                         ]
 
-                        let openaiFeedbackTranscript = await AIServices.openaiFeedback(messagesArray);
+                        let openaiFeedbackTranscript = await llmFeedback.azureOpenaiFeedback(messagesArray);
                         let initialFeedbackResponse = openaiFeedbackTranscript;
 
-                        let openaiFeedbackAudio = await AIServices.openaiTextToSpeechAndUpload(initialFeedbackResponse);
+                        let openaiFeedbackAudio = await textToSpeech.azureOpenAITextToSpeech(initialFeedbackResponse);
                         await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
                         await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
 
@@ -217,7 +219,7 @@ const conversationalAgencyBotView = async (profileId, userMobileNumber, currentU
                         const previousConversationalAgencyBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber - 1);
                         // Language Detection
                         let modelLanguagePrompt = "Detect the majority of the language used in the provided text. Respond in one word only. The two options are: English or Urdu. You must respond with only one word."
-                        const languageDetectionFeedback = await AIServices.openaiCustomFeedback(recognizedText, modelLanguagePrompt);
+                        const languageDetectionFeedback = await llmFeedback.azureOpenaiCustomFeedback(recognizedText, modelLanguagePrompt);
                         if (languageDetectionFeedback.toLowerCase().includes("english")) {
                             modelLanguagePrompt = "Respond in simple and easy-to-understand English."
                         } else {
@@ -243,10 +245,10 @@ const conversationalAgencyBotView = async (profileId, userMobileNumber, currentU
                             messagesArray.push(message);
                         });
 
-                        let openaiFeedbackTranscript = await AIServices.openaiFeedback(messagesArray);
+                        let openaiFeedbackTranscript = await llmFeedback.azureOpenaiFeedback(messagesArray);
                         let initialFeedbackResponse = openaiFeedbackTranscript;
 
-                        let openaiFeedbackAudio = await AIServices.openaiTextToSpeechAndUpload(initialFeedbackResponse);
+                        let openaiFeedbackAudio = await textToSpeech.azureOpenAITextToSpeech(initialFeedbackResponse);
                         await sendMediaMessage(userMobileNumber, openaiFeedbackAudio, 'audio');
                         await createActivityLog(userMobileNumber, "audio", "outbound", openaiFeedbackAudio, null);
 
@@ -302,7 +304,7 @@ const conversationalAgencyBotView = async (profileId, userMobileNumber, currentU
         }
         return;
     } catch (error) {
-        console.log('Error sending lesson to user:', error);
+        console.error('Error sending lesson to user:', error);
         error.fileName = 'conversationalAgencyBotView.js';
         throw error;
     }

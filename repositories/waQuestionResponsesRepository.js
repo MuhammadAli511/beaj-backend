@@ -24,7 +24,6 @@ const create = async (profileId, phoneNumber, lessonId, questionId, activityType
         return await response.save();
     } catch (error) {
         if (error.name == 'SequelizeUniqueConstraintError') {
-            console.log(`Duplicate question response for profileId: ${profileId}, questionId: ${questionId} - ignoring`);
             return null;
         }
         throw error;

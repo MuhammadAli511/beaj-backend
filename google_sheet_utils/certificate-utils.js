@@ -69,14 +69,12 @@ async function checkFolderStructure() {
           },
           fields: 'id'
         });
-        console.log(`Created folder: ${folderName}`);
         return folder.data.id;
       } catch (error) {
         if (error.errors?.some(e => e.reason === 'duplicate')) {
           // If creation failed due to duplicate, try finding again
           const foundId = await findExactFolder(folderName, parentId);
           if (foundId) {
-            console.log(`Folder already exists (race condition handled): ${folderName}`);
             return foundId;
           }
         }
@@ -84,7 +82,6 @@ async function checkFolderStructure() {
       }
     };
 
-    console.log('Verifying folder structure...');
 
     // 1. Main folder
     const mainFolderId = await ensureFolderExists('Teacher Self Development - Certificates');
@@ -109,7 +106,6 @@ async function checkFolderStructure() {
       createCohorts('Cohort', 25, 44, t2Id)
     ]);
 
-    console.log('Folder structure verified successfully');
     return true;
 
   } catch (error) {
@@ -123,7 +119,6 @@ export { checkFolderStructure };
 
 const generateCertificate = async (name) => {
   try {
-    console.log(`Generating certificate for ${name}...`);
 
     // Check if template exists
     if (!fs.existsSync(CERTIFICATE_TEMPLATE_PATH)) {
@@ -133,36 +128,36 @@ const generateCertificate = async (name) => {
 
     // Helper function to draw certificate content
     const drawCertificate = async (ctx) => {
-          // Draw template on canvas
-          ctx.drawImage(image, 0, 0, image.width, image.height);
-          // Configure text style for the name
-          ctx.fillStyle = 'black';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.font = 'Bold 20.1px Arial, Sans-serif';
+      // Draw template on canvas
+      ctx.drawImage(image, 0, 0, image.width, image.height);
+      // Configure text style for the name
+      ctx.fillStyle = 'black';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = 'Bold 20.1px Arial, Sans-serif';
 
-          // Position for the name (centered)
-          const nameX = image.width / 2;
-          const nameY = image.height / 2 - 30;
+      // Position for the name (centered)
+      const nameX = image.width / 2;
+      const nameY = image.height / 2 - 30;
 
-          // Draw the name
-          ctx.fillText(name.toUpperCase(), nameX, nameY);
+      // Draw the name
+      ctx.fillText(name.toUpperCase(), nameX, nameY);
     };
 
-      const canvas = createCanvas(image.width, image.height);
-      const ctx = canvas.getContext('2d');
-      await drawCertificate(ctx);
-      const buffer = canvas.toBuffer('image/png');
-      const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer, name);
+    const canvas = createCanvas(image.width, image.height);
+    const ctx = canvas.getContext('2d');
+    await drawCertificate(ctx);
+    const buffer = canvas.toBuffer('image/png');
+    const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer, name);
 
-       const pdfCanvas = createCanvas(image.width, image.height, 'pdf');
-       const pdfCtx = pdfCanvas.getContext('2d');
-       await drawCertificate(pdfCtx);
-       const pdfBuffer = pdfCanvas.toBuffer('application/pdf');
-       const pdfUrl = await azureBlobStorage.uploadPdfToBlobStorage(pdfBuffer);
+    const pdfCanvas = createCanvas(image.width, image.height, 'pdf');
+    const pdfCtx = pdfCanvas.getContext('2d');
+    await drawCertificate(pdfCtx);
+    const pdfBuffer = pdfCanvas.toBuffer('application/pdf');
+    const pdfUrl = await azureBlobStorage.uploadPdfToBlobStorage(pdfBuffer);
 
-       return { imageUrl, pdfUrl };
-       
+    return { imageUrl, pdfUrl };
+
   } catch (error) {
     console.error("Error generating certificate:", error);
     throw error;
@@ -192,8 +187,6 @@ const findFolder = async (drive, folderName, parentFolderId = null) => {
 
 const uploadCertificateToDrive = async (buffer, name, cohort, targetGrp) => {
   try {
-    console.log(`Uploading certificate for ${name} to Drive (${targetGrp}/${cohort})...`);
-
     // Load credentials
     const creds = JSON.parse(
       await readFile(new URL('../cert_cred.json', import.meta.url), 'utf-8')
@@ -261,7 +254,6 @@ const uploadCertificateToDrive = async (buffer, name, cohort, targetGrp) => {
       }
     });
 
-    console.log(`Certificate uploaded successfully. File ID: ${fileId}`);
     return { fileId, viewLink };
 
   } catch (error) {
@@ -314,7 +306,6 @@ const loadTrackingSheet = async (spreadsheetId, sheetName) => {
       }
     }
 
-    console.log(`Loaded ${trackedStudents.size} students from tracking sheet`);
     return trackedStudents;
   } catch (error) {
     console.error(`Error loading tracking sheet: ${error.message}`);
@@ -335,7 +326,6 @@ const updateTrackingSheet = async (spreadsheetId, sheetName, newStudents) => {
       resource: { values: rowsToAppend },
     });
 
-    console.log(`Added ${newStudents.length} new entries to tracking sheet`);
   } catch (error) {
     console.error(`Error updating tracking sheet: ${error.message}`);
     throw error;
@@ -371,7 +361,6 @@ const updateCohortInTrackingSheet = async (spreadsheetId, sheetName, phoneNumber
     },
   });
 
-  console.log(`Updated cohort '${cohort}' for ${phoneNumber} at row ${rowNumber}`);
 };
 
 
@@ -383,7 +372,6 @@ const generateCertificatesForEligibleStudents = async (
 ) => {
   try {
     await checkFolderStructure();
-    console.log('Starting certificate generation process...');
 
     // Load existing phone numbers from tracking sheet
     const trackedStudents = await loadTrackingSheet(SPREADSHEET_ID, SHEET_NAME);
@@ -410,7 +398,6 @@ const generateCertificatesForEligibleStudents = async (
         const studentTargetGroup = callType === "cumulative" ? student[19] : targetGroup;
 
         if (!week4Score || week4Score === 'null') {
-          console.log(`Skipping ${name} - L3 Week 4 not completed`);
           stats.skipped++;
           continue;
         }
@@ -419,14 +406,12 @@ const generateCertificatesForEligibleStudents = async (
 
         if (trackedStudents.has(phoneNumber)) {
           await updateCohortInTrackingSheet(SPREADSHEET_ID, SHEET_NAME, phoneNumber, studentCohort);
-          console.log(`Skipping ${name} - certificate already generated`);
           stats.alreadyGenerated++;
 
           continue;
         }
 
         // Generate and upload certificate
-        console.log(`Processing certificate for ${name} (${phoneNumber})`);
         await processCertificate(name, studentCohort, studentTargetGroup);
 
         newlyGeneratedStudents.push({ phoneNumber, name, cohort: studentCohort });
@@ -441,14 +426,6 @@ const generateCertificatesForEligibleStudents = async (
     if (newlyGeneratedStudents.length > 0) {
       await updateTrackingSheet(SPREADSHEET_ID, SHEET_NAME, newlyGeneratedStudents);
     }
-
-    console.log('Certificate generation complete:');
-    console.log(`- Total students: ${stats.total}`);
-    console.log(`- Eligible students: ${stats.eligible}`);
-    console.log(`- Already had certificates: ${stats.alreadyGenerated}`);
-    console.log(`- New certificates generated: ${stats.newlyGenerated}`);
-    console.log(`- Failed to generate: ${stats.failed}`);
-    console.log(`- Skipped (not eligible): ${stats.skipped}`);
 
     return stats;
   } catch (error) {

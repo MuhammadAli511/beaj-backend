@@ -14,14 +14,14 @@ const getDataFromPostgres = async () => {
     }
 };
 
-const getcohortList = async (botType,rollout,level,targetGroup) => {
+const getcohortList = async (botType, rollout, level, targetGroup) => {
     try {
-        let grp =``, grade = ``;
-        if(targetGroup != ''){
+        let grp = ``, grade = ``;
+        if (targetGroup != '') {
             grp = ` and m."targetGroup" = '${targetGroup}'`;
         }
-        if(level != ''){
-             grade = ` and m."classLevel" = '${level}'`;
+        if (level != '') {
+            grade = ` and m."classLevel" = '${level}'`;
         }
         const qry = `SELECT m."cohort"
             FROM "wa_users_metadata" m
@@ -31,7 +31,6 @@ const getcohortList = async (botType,rollout,level,targetGroup) => {
             ORDER BY 
             CAST(regexp_replace(m."cohort", '[^0-9]', '', 'g') AS INTEGER);`;
 
-            // console.log(qry)
         const res = await sequelize.query(qry);
 
         return res[0];
@@ -186,380 +185,6 @@ const getCompletedActivity = async (course_id1, course_id2, grp, activity_name_l
     }
 };
 
-// const getLessonCompletions = async (botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3) => {
-//     try {
-
-//         let classLevel = '', course_list = '', course_array = '', target_grp = '';
-//         if(botType === 'teacher'){
-//             if(rollout == 1 || rollout == 0){
-//                 target_grp = ` m."targetGroup" = '${targetGroup}' AND `;
-//             }
-//             classLevel = `m."classLevel" is null`;
-//             course_list = `${courseId1}, ${courseId2}, ${courseId3}`;   
-//             course_array = `MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week1" END) AS "course1_week1",
-//                 MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week2" END) AS "course1_week2",
-//                 MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week3" END) AS "course1_week3",
-//                 MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week4" END) AS "course1_week4",
-//                 MAX(CASE WHEN pp."courseId" = ${courseId1} THEN NULLIF(
-//             COALESCE(pp."week1", 0) +
-//             COALESCE(pp."week2", 0) +
-//             COALESCE(pp."week3", 0) +
-//             COALESCE(pp."week4", 0), 0
-//             ) END) AS "course1_total",
-//                     MAX(CASE WHEN pp."courseId" = ${courseId2} THEN pp."week1" END) AS "course2_week1",
-//                     MAX(CASE WHEN pp."courseId" = ${courseId2} THEN pp."week2" END) AS "course2_week2",
-//                     MAX(CASE WHEN pp."courseId" = ${courseId2} THEN pp."week3" END) AS "course2_week3",
-//                     MAX(CASE WHEN pp."courseId" = ${courseId2} THEN pp."week4" END) AS "course2_week4",
-//                     MAX(CASE WHEN pp."courseId" = ${courseId2} THEN NULLIF(
-//                 COALESCE(pp."week1", 0) +
-//                 COALESCE(pp."week2", 0) +
-//                 COALESCE(pp."week3", 0) +
-//                 COALESCE(pp."week4", 0), 0
-//             ) END) AS "course2_total",
-//                 MAX(CASE WHEN pp."courseId" = ${courseId3} THEN pp."week1" END) AS "course3_week1",
-//             MAX(CASE WHEN pp."courseId" = ${courseId3} THEN pp."week2" END) AS "course3_week2",
-//             MAX(CASE WHEN pp."courseId" = ${courseId3} THEN pp."week3" END) AS "course3_week3",
-//             MAX(CASE WHEN pp."courseId" = ${courseId3} THEN pp."week4" END) AS "course3_week4",
-//                 MAX(CASE WHEN pp."courseId" = ${courseId3} THEN NULLIF(
-//                 COALESCE(pp."week1", 0) +
-//                 COALESCE(pp."week2", 0) +
-//                 COALESCE(pp."week3", 0) +
-//                 COALESCE(pp."week4", 0), 0
-//             ) END) AS "course3_total",
-//         NULLIF(COALESCE(
-//                     MAX(CASE WHEN pp."courseId" = ${courseId1} THEN 
-//                         COALESCE(pp."week1", 0) + COALESCE(pp."week2", 0) + COALESCE(pp."week3", 0) + COALESCE(pp."week4", 0)
-//                     END), 0
-//                 ) +
-//                 COALESCE(
-//                     MAX(CASE WHEN pp."courseId" = ${courseId2} THEN 
-//                         COALESCE(pp."week1", 0) + COALESCE(pp."week2", 0) + COALESCE(pp."week3", 0) + COALESCE(pp."week4", 0)
-//                     END), 0
-//                 ) +
-//                 COALESCE(
-//                     MAX(CASE WHEN pp."courseId" = ${courseId3} THEN 
-//                         COALESCE(pp."week1", 0) + COALESCE(pp."week2", 0) + COALESCE(pp."week3", 0) + COALESCE(pp."week4", 0)
-//                     END), 0
-//             ),0) AS grand_total`;
-//         }
-//         else{
-//             classLevel = `m."classLevel" = '${level}'`;
-//             course_list = `${courseId1}`;
-//             course_array = `MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week1" END) AS "course1_week1",
-//                 MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week2" END) AS "course1_week2",
-//                 MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week3" END) AS "course1_week3",
-//                 MAX(CASE WHEN pp."courseId" = ${courseId1} THEN pp."week4" END) AS "course1_week4",
-//                 MAX(CASE WHEN pp."courseId" = ${courseId1} THEN NULLIF(
-//             COALESCE(pp."week1", 0) +
-//             COALESCE(pp."week2", 0) +
-//             COALESCE(pp."week3", 0) +
-//             COALESCE(pp."week4", 0), 0
-//             ) END) AS "course1_total"`;
-//         }
-
-//          const qry = `WITH LessonAssignments AS (
-//     SELECT
-//         "courseId",
-//         "weekNumber",
-//         "dayNumber",
-//         COUNT("LessonId") AS "TotalLessons"
-//     FROM
-//         "Lesson"
-//     WHERE
-//         "courseId" IN (${course_list})  and "status" = 'Active'
-//     GROUP BY
-//         "courseId", "weekNumber", "dayNumber"
-// ),
-// Students AS (
-//     SELECT DISTINCT
-//         m."phoneNumber",
-//         m."profile_id",
-// 		m."name"
-//     FROM
-//         "wa_users_metadata" m inner join "wa_profiles" p on
-// 		m."profile_id" = p."profile_id"
-//     WHERE
-//         ${target_grp} m."cohort" = '${cohort}' and m."rollout" = ${rollout}
-// 		and p."profile_type" = '${botType}' and ${classLevel}
-// ),
-// AllCombinations AS (
-//     SELECT
-//         s."phoneNumber",
-//         s."profile_id",
-// 		s."name",
-//         la."courseId",
-//         la."weekNumber",
-//         la."dayNumber"
-//     FROM
-//         Students s
-//     CROSS JOIN
-//         LessonAssignments la
-// ),
-// StudentCompletions AS (
-//     SELECT
-//         m."phoneNumber",
-//         m."profile_id",
-// 		    m."name",
-//         s."courseId",
-//         s."weekNumber",
-//         s."dayNumber",
-//         COUNT(l."lessonId") AS "CompletedLessons"
-//     FROM
-//         "wa_users_metadata" m inner join "wa_profiles" p on m."profile_id" = p."profile_id"
-//     LEFT JOIN
-//         "wa_lessons_completed" l 
-//         ON m."profile_id" = l."profile_id" and m."phoneNumber" = l."phoneNumber" AND l."completionStatus" = 'Completed'
-//     LEFT JOIN
-//         "Lesson" s 
-//         ON s."LessonId" = l."lessonId" AND s."courseId" = l."courseId"
-//     WHERE
-//         ${target_grp} m."cohort" = '${cohort}' and m."rollout" = ${rollout}
-// 		and p."profile_type" = '${botType}' and ${classLevel}
-//         AND s."courseId" IN (${course_list}) 
-//     GROUP BY
-//         m."phoneNumber", m."profile_id", m."name", s."courseId", s."weekNumber", s."dayNumber"
-// ),
-// FinalProgress AS (
-//     SELECT
-//         ac."phoneNumber",
-//         ac."profile_id",
-//         ac."name",
-//         ac."courseId",
-//         ac."weekNumber",
-//         ac."dayNumber",
-//         COALESCE(sc."CompletedLessons", 0) AS "CompletedLessons"
-//     FROM
-//         AllCombinations ac
-//     LEFT JOIN
-//         StudentCompletions sc 
-//         ON ac."profile_id" = sc."profile_id"
-//         AND ac."courseId" = sc."courseId"
-//         AND ac."weekNumber" = sc."weekNumber"
-//         AND ac."dayNumber" = sc."dayNumber"
-// ),
-// DailyProgress AS (
-//     SELECT
-//         fp."phoneNumber",
-//         fp."profile_id",
-// 		    fp."name",
-//         fp."courseId",
-//         fp."weekNumber",
-//         fp."dayNumber",
-//         CASE
-//             WHEN fp."CompletedLessons" = la."TotalLessons" THEN 1
-//             ELSE 0
-//         END AS "DayCompleted"
-//     FROM
-//         FinalProgress fp
-//     JOIN
-//         LessonAssignments la 
-//         ON fp."courseId" = la."courseId"
-//         AND fp."weekNumber" = la."weekNumber"
-//         AND fp."dayNumber" = la."dayNumber"
-// ),
-// WeeklyProgress AS (
-//     SELECT
-//         dp."phoneNumber",
-//         dp."profile_id",
-// 		    dp."name",
-//         dp."courseId",
-//         dp."weekNumber",
-//         SUM(dp."DayCompleted") AS "DaysCompletedInWeek"
-//     FROM
-//         DailyProgress dp
-//     GROUP BY
-//         dp."phoneNumber",dp."profile_id",dp."name", dp."courseId", dp."weekNumber"
-// ),
-// PivotedProgress AS (
-//     SELECT
-//         wp."phoneNumber",
-//         wp."profile_id",
-// 		    wp."name",
-//         wp."courseId",
-//         MAX(CASE WHEN wp."weekNumber" = 1 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week1",
-//         MAX(CASE WHEN wp."weekNumber" = 2 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week2",
-//         MAX(CASE WHEN wp."weekNumber" = 3 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week3",
-//         MAX(CASE WHEN wp."weekNumber" = 4 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week4"
-//     FROM
-//         WeeklyProgress wp
-//     GROUP BY
-//         wp."phoneNumber", wp."profile_id", wp."name", wp."courseId"
-// ),
-// AggregatedProgress AS (
-//     SELECT
-//          ROW_NUMBER() OVER (ORDER BY pp."name") AS sr_no,
-//         pp."phoneNumber",
-//         pp."profile_id",
-//         pp."name",
-//         ${course_array}
-//     FROM
-//         PivotedProgress pp
-//     GROUP BY
-//         pp."phoneNumber", pp."profile_id", pp."name"
-// )
-// SELECT
-//     *
-// FROM
-//     AggregatedProgress
-// ORDER BY "name" asc;`;
-
-// //         const qry = `WITH LessonAssignments AS (
-// //     SELECT
-// //         "courseId",
-// //         "weekNumber",
-// //         "dayNumber",
-// //         COUNT("LessonId") AS "TotalLessons"
-// //     FROM
-// //         "Lesson"
-// //     WHERE
-// //         "courseId" IN (${course_list}) and "status" = 'Active'
-// //     GROUP BY
-// //         "courseId", "weekNumber", "dayNumber"
-// // ),
-// // Students AS (
-// //     SELECT DISTINCT
-// //         m."phoneNumber",
-// // 		m."profile_id",
-// // 		m."name"
-// //     FROM
-// //         "wa_users_metadata" m inner join "wa_profiles" p on
-// // 		m."profile_id" = p."profile_id"
-// //     WHERE
-// //         ${target_grp} m."cohort" = '${cohort}' and m."rollout" = ${rollout}
-// // 		and p."profile_type" = '${botType}' and ${classLevel}
-// // ),
-// // AllCombinations AS (
-// //     SELECT
-// //         s."phoneNumber",
-// // 		s."profile_id",
-// // 		s."name",
-// //         la."courseId",
-// //         la."weekNumber",
-// //         la."dayNumber"
-// //     FROM
-// //         Students s
-// //     CROSS JOIN
-// //         LessonAssignments la
-// // ),
-// // StudentCompletions AS (
-// //     SELECT
-// //         m."phoneNumber",
-// // 		m."profile_id",
-// // 		m."name",
-// //         s."courseId",
-// //         s."weekNumber",
-// //         s."dayNumber",
-// //         COUNT(l."lessonId") AS "CompletedLessons"
-// //     FROM
-// //         "wa_users_metadata" m inner join "wa_profiles" p on m."profile_id" = p."profile_id"
-// //     LEFT JOIN
-// //         "wa_lessons_completed" l 
-// //         ON m."phoneNumber" = l."phoneNumber" and m."profile_id" = l."profile_id" AND l."completionStatus" = 'Completed'
-// //     LEFT JOIN
-// //         "Lesson" s 
-// //         ON s."LessonId" = l."lessonId" AND s."courseId" = l."courseId"
-// //     WHERE
-// //         ${target_grp} m."cohort" = '${cohort}' and m."rollout" = ${rollout}
-// // 		and p."profile_type" = '${botType}' and ${classLevel}
-// //         AND s."courseId" IN (${course_list}) 
-// //     GROUP BY
-// //         m."phoneNumber", m."profile_id", m."name", s."courseId", s."weekNumber", s."dayNumber"
-// // ),
-// // FinalProgress AS (
-// //     SELECT
-// //         ac."phoneNumber",
-// // 		ac."profile_id",
-// // 		ac."name",
-// //         ac."courseId",
-// //         ac."weekNumber",
-// //         ac."dayNumber",
-// //         COALESCE(sc."CompletedLessons", 0) AS "CompletedLessons"
-// //     FROM
-// //         AllCombinations ac
-// //     LEFT JOIN
-// //         StudentCompletions sc 
-// //         ON ac."phoneNumber" = sc."phoneNumber"
-// // 		and ac."profile_id" = sc."profile_id"
-// //         AND ac."courseId" = sc."courseId"
-// //         AND ac."weekNumber" = sc."weekNumber"
-// //         AND ac."dayNumber" = sc."dayNumber"
-// // ),
-// // DailyProgress AS (
-// //     SELECT
-// //         fp."phoneNumber",
-// // 		fp."profile_id",
-// // 		fp."name",
-// //         fp."courseId",
-// //         fp."weekNumber",
-// //         fp."dayNumber",
-// //         CASE
-// //             WHEN fp."CompletedLessons" = la."TotalLessons" THEN 1
-// //             ELSE 0
-// //         END AS "DayCompleted"
-// //     FROM
-// //         FinalProgress fp
-// //     JOIN
-// //         LessonAssignments la 
-// //         ON fp."courseId" = la."courseId"
-// //         AND fp."weekNumber" = la."weekNumber"
-// //         AND fp."dayNumber" = la."dayNumber"
-// // ),
-// // WeeklyProgress AS (
-// //     SELECT
-// //         dp."phoneNumber",
-// // 		dp."profile_id",
-// // 		dp."name",
-// //         dp."courseId",
-// //         dp."weekNumber",
-// //         SUM(dp."DayCompleted") AS "DaysCompletedInWeek"
-// //     FROM
-// //         DailyProgress dp
-// //     GROUP BY
-// //         dp."phoneNumber",dp."profile_id", dp."name", dp."courseId", dp."weekNumber"
-// // ),
-// // PivotedProgress AS (
-// //     SELECT
-// //         wp."phoneNumber",
-// // 		wp."profile_id",
-// // 		wp."name",
-// //         wp."courseId",
-// //         MAX(CASE WHEN wp."weekNumber" = 1 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week1",
-// //         MAX(CASE WHEN wp."weekNumber" = 2 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week2",
-// //         MAX(CASE WHEN wp."weekNumber" = 3 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week3",
-// //         MAX(CASE WHEN wp."weekNumber" = 4 THEN NULLIF(wp."DaysCompletedInWeek", 0) END) AS "week4"
-// //     FROM
-// //         WeeklyProgress wp
-// //     GROUP BY
-// //         wp."phoneNumber", wp."profile_id",wp."name", wp."courseId"
-// // ),
-// // AggregatedProgress AS (
-// //     SELECT
-// // 	    ROW_NUMBER() OVER (ORDER BY pp."name") AS sr_no,
-// //         pp."profile_id",
-// //         pp."phoneNumber",
-// // 		pp."name",
-// //         ${course_array}
-// //     FROM
-// //         PivotedProgress pp
-// //     GROUP BY
-// //         pp."phoneNumber",pp."profile_id",pp."name"
-// // )
-// // SELECT
-// //     *
-// // FROM
-// //     AggregatedProgress
-// // ORDER BY
-// //         "name";`;
-
-
-//         const res = await sequelize.query(qry);
-
-//         return res[0];
-//     } catch (error) {
-//         error.fileName = "etlRepository.js";
-//         throw error;
-//     }
-// };
 const getLessonCompletions = async (botType, rollout, level, cohort, targetGroup, courseId1, courseId2, courseId3) => {
     try {
         let classLevel = '', course_list = '', course_array = '', target_grp = '';
@@ -682,7 +307,6 @@ const getLessonCompletions = async (botType, rollout, level, cohort, targetGroup
         GROUP BY m."profile_id", m."phoneNumber", m."name"
         ORDER BY m."name";
         `;
-        console.log(qry);
         const res = await sequelize.query(qry);
         return res[0];
 
@@ -2070,34 +1694,29 @@ speaking_practice AS (
 
         // Build the final query
         const query = `
-${commonCTEs}
-${speakingPracticeCTE}
-SELECT 
-    ROW_NUMBER() OVER (ORDER BY m."name") AS sr_no,
-    m."phoneNumber", 
-    m."profile_id",
-    m."name",
-    ${endColumns}
-FROM 
-    "wa_users_metadata" m 
-INNER JOIN 
-    "wa_profiles" p ON m."profile_id" = p."profile_id"
-LEFT JOIN 
-    mcqs mc ON m."profile_id" = mc."profile_id"
-${joinString}
-WHERE 
-    ${targetGrpCondition} 
-    m."rollout" = ${rollout}
-    AND p."profile_type" = '${botType}' 
-    ${classLevel}
-ORDER BY 
-    m."name" ASC;
-`;
-if(courseId == 139) {
-            console.log("Executing query for courseId 139:", query);
-        }
-
-
+            ${commonCTEs}
+            ${speakingPracticeCTE}
+            SELECT 
+                ROW_NUMBER() OVER (ORDER BY m."name") AS sr_no,
+                m."phoneNumber", 
+                m."profile_id",
+                m."name",
+                ${endColumns}
+            FROM 
+                "wa_users_metadata" m 
+            INNER JOIN 
+                "wa_profiles" p ON m."profile_id" = p."profile_id"
+            LEFT JOIN 
+                mcqs mc ON m."profile_id" = mc."profile_id"
+            ${joinString}
+            WHERE 
+                ${targetGrpCondition} 
+                m."rollout" = ${rollout}
+                AND p."profile_type" = '${botType}' 
+                ${classLevel}
+            ORDER BY 
+                m."name" ASC;
+        `;
         // Execute the query
         const result = await sequelize.query(query);
         return result[0];
@@ -2382,7 +2001,6 @@ LEFT JOIN user_weekly_progress up ON sc."profile_id" = up."profile_id"
 ORDER BY sc.grade, sc."cohort", sc."name";
         `;
 
-        // console.log("Cumulative Weekly Completion Query (All Users):", qry);
         const res = await sequelize.query(qry);
         return res[0];
     } catch (error) {
@@ -2393,8 +2011,8 @@ ORDER BY sc.grade, sc."cohort", sc."name";
 
 
 const getCumulativeActivityCompletions = async () => {
-  try {
-    const qry = `
+    try {
+        const qry = `
       WITH student_courses AS (
         SELECT DISTINCT
             m."profile_id",
@@ -2482,26 +2100,26 @@ const getCumulativeActivityCompletions = async () => {
       ORDER BY sc.grade, sc."cohort", sc."name";
     `;
 
-    const res = await sequelize.query(qry);
-    return res[0];
-  } catch (error) {
-    error.fileName = "etlRepository.js";
-    throw error;
-  }
+        const res = await sequelize.query(qry);
+        return res[0];
+    } catch (error) {
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
 };
 
 
 const getUserProgressStats = async (botType, grade, cohort, rollout, courseId1s, courseId2s, courseId3s, courseId4s, courseId5s) => {
     try {
-       let level =  ``, courseId1, courseId2, courseId3, courseId4, courseId5;
-        if (botType === 'teacher'){
-          level =  ``;
-          courseId1 = courseId1s;
-          courseId2 = courseId4s;
-          courseId3 = courseId5s;
+        let level = ``, courseId1, courseId2, courseId3, courseId4, courseId5;
+        if (botType === 'teacher') {
+            level = ``;
+            courseId1 = courseId1s;
+            courseId2 = courseId4s;
+            courseId3 = courseId5s;
         }
-        else{
-            level =  ` AND m."classLevel" = '${grade}' `;
+        else {
+            level = ` AND m."classLevel" = '${grade}' `;
             courseId1 = courseId1s;
             courseId2 = courseId4s;
         }
@@ -2643,15 +2261,15 @@ const getUserProgressStats = async (botType, grade, cohort, rollout, courseId1s,
 
 const getUserProgressBarStats = async (botType, grade, cohort, rollout, courseId1s, courseId4s, courseId5s, condition_name) => {
     try {
-        let level =  ``, courseId1, courseId2, courseId3;
-        if (botType === 'teacher'){
-          level =  ``;
-          courseId1 = courseId1s;
-          courseId2 = courseId4s;
-          courseId3 = courseId5s;
+        let level = ``, courseId1, courseId2, courseId3;
+        if (botType === 'teacher') {
+            level = ``;
+            courseId1 = courseId1s;
+            courseId2 = courseId4s;
+            courseId3 = courseId5s;
         }
-        else{
-            level =  ` AND m."classLevel" = '${grade}' `;
+        else {
+            level = ` AND m."classLevel" = '${grade}' `;
             courseId1 = courseId1s;
             courseId2 = courseId4s;
         }
@@ -2774,28 +2392,27 @@ const getUserProgressBarStats = async (botType, grade, cohort, rollout, courseId
         SELECT tg.*
         FROM target_group tg
         WHERE tg.profile_id IN (
-            ${
-                condition_name === 'total_users'
-                    ? `SELECT profile_id FROM target_group`
-                    : condition_name === 'started_main_course'
+            ${condition_name === 'total_users'
+                ? `SELECT profile_id FROM target_group`
+                : condition_name === 'started_main_course'
                     ? `SELECT profile_id FROM started_main`
                     : condition_name === 'completed_main_course'
-                    ? `SELECT profile_id FROM completed_main`
-                    : condition_name === 'started_pre_assessment'
-                    ? `SELECT profile_id FROM started_assessment`
-                    : condition_name === 'completed_pre_assessment'
-                    ? `SELECT profile_id FROM completed_assessment`
-                    : condition_name === 'completed_assessment_but_not_started_main'
-                    ? `SELECT profile_id FROM completed_assessment_not_started_main`
-                    : condition_name === 'not_started_pre_assessment'
-                    ? `SELECT profile_id FROM not_started_assessment`
-                    : condition_name === 'started_not_completed_assessment'
-                    ? `SELECT profile_id FROM started_not_completed_assessment`
-                    : condition_name === 'get_active_users'
-                    ? `SELECT profile_id FROM get_active_users`
-                    : condition_name === 'started_not_completed_main'
-                    ? `SELECT profile_id FROM started_not_completed_main`
-                    : `NULL`
+                        ? `SELECT profile_id FROM completed_main`
+                        : condition_name === 'started_pre_assessment'
+                            ? `SELECT profile_id FROM started_assessment`
+                            : condition_name === 'completed_pre_assessment'
+                                ? `SELECT profile_id FROM completed_assessment`
+                                : condition_name === 'completed_assessment_but_not_started_main'
+                                    ? `SELECT profile_id FROM completed_assessment_not_started_main`
+                                    : condition_name === 'not_started_pre_assessment'
+                                        ? `SELECT profile_id FROM not_started_assessment`
+                                        : condition_name === 'started_not_completed_assessment'
+                                            ? `SELECT profile_id FROM started_not_completed_assessment`
+                                            : condition_name === 'get_active_users'
+                                                ? `SELECT profile_id FROM get_active_users`
+                                                : condition_name === 'started_not_completed_main'
+                                                    ? `SELECT profile_id FROM started_not_completed_main`
+                                                    : `NULL`
             }
         )
         ORDER BY tg."name" ASC
@@ -2810,21 +2427,21 @@ const getUserProgressBarStats = async (botType, grade, cohort, rollout, courseId
 };
 
 const getActivityAssessmentScoreDay = async (botType, rollout, level, cohort, targetGroup, courseId, module) => {
-  try {
-    let classLevel = '', targetGrpCondition = '', joinString = '';
-    let speakingPracticeCTE = '', endColumns = '';
+    try {
+        let classLevel = '', targetGrpCondition = '', joinString = '';
+        let speakingPracticeCTE = '', endColumns = '';
 
-    if (botType === 'teacher' && (rollout == 1 || rollout == 0)) {
-      targetGrpCondition = `m."targetGroup" = '${targetGroup}' AND`;
-    }
+        if (botType === 'teacher' && (rollout == 1 || rollout == 0)) {
+            targetGrpCondition = `m."targetGroup" = '${targetGroup}' AND`;
+        }
 
-    if (botType === 'teacher') {
-      classLevel = `AND m."classLevel" IS NULL AND m."cohort" = '${cohort}'`;
-    } else if (botType === 'student') {
-      classLevel = `AND m."classLevel" = '${level}' AND m."cohort" = '${cohort}'`;
-    }
+        if (botType === 'teacher') {
+            classLevel = `AND m."classLevel" IS NULL AND m."cohort" = '${cohort}'`;
+        } else if (botType === 'student') {
+            classLevel = `AND m."classLevel" = '${level}' AND m."cohort" = '${cohort}'`;
+        }
 
-    const commonCTEs = `
+        const commonCTEs = `
         WITH target_group_users AS (
         SELECT m."phoneNumber", m."profile_id", m."name"
         FROM "wa_users_metadata" m
@@ -2873,7 +2490,7 @@ const getActivityAssessmentScoreDay = async (botType, rollout, level, cohort, ta
         GROUP BY q."phoneNumber", q."profile_id"
         )`;
 
-            if (botType === 'student' && level === 'grade 7' || botType === 'teacher') {
+        if (botType === 'student' && level === 'grade 7' || botType === 'teacher') {
             speakingPracticeCTE = `,
         speaking_practice AS (
         SELECT q."phoneNumber", q."profile_id",
@@ -2927,7 +2544,7 @@ const getActivityAssessmentScoreDay = async (botType, rollout, level, cohort, ta
             + COALESCE(sp.speaking_practice_week1_total, 0), 2), 0) AS total_total
                 `;
             }
-            } else {
+        } else {
             joinString = `LEFT JOIN watch_and_speak ws ON m."profile_id" = ws."profile_id"`;
 
             if (module === 'day') {
@@ -2962,10 +2579,10 @@ const getActivityAssessmentScoreDay = async (botType, rollout, level, cohort, ta
             COALESCE(mc.mcqs_week1_total + mc.mcqs_week2_total + mc.mcqs_week3_total, 0)
             + COALESCE(ws.watchAndSpeak_week1_total, 0), 2), 0) AS total_total
         `;
-      }
-    }
+            }
+        }
 
-    const query = `
+        const query = `
         ${commonCTEs}
         ${speakingPracticeCTE}
         SELECT 
@@ -2989,21 +2606,21 @@ const getActivityAssessmentScoreDay = async (botType, rollout, level, cohort, ta
         ORDER BY m."name" ASC;
         `;
 
-    const result = await sequelize.query(query);
-   
-    return result[0];
-  } catch (error) {
-    console.error("Error in getActivityAssessmentScoreDay:", error);
-    error.fileName = "etlRepository.js";
-    throw error;
-  }
+        const result = await sequelize.query(query);
+
+        return result[0];
+    } catch (error) {
+        console.error("Error in getActivityAssessmentScoreDay:", error);
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
 };
 
 
 const getActivityAssessmentCumulative = async () => {
-  try {
+    try {
 
-    const query = `
+        const query = `
             WITH target_group_users AS (
             SELECT m."phoneNumber", m."profile_id", m."name"
             FROM "wa_users_metadata" m
@@ -3118,19 +2735,19 @@ const getActivityAssessmentCumulative = async () => {
             ORDER BY m."classLevel", m."cohort" ASC;
             `;
 
-    const result = await sequelize.query(query);
+        const result = await sequelize.query(query);
 
-    return result[0];
-  } catch (error) {
-    console.error("Error in getActivityAssessmentCumulative:", error);
-    error.fileName = "etlRepository.js";
-    throw error;
-  }
+        return result[0];
+    } catch (error) {
+        console.error("Error in getActivityAssessmentCumulative:", error);
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
 };
 
-const getTeacherLessonCumulative = async () =>{
-     try {
-    const qry = `WITH LessonAssignments AS (
+const getTeacherLessonCumulative = async () => {
+    try {
+        const qry = `WITH LessonAssignments AS (
     SELECT
         "courseId",
         "weekNumber",
@@ -3317,19 +2934,19 @@ const getTeacherLessonCumulative = async () =>{
                 FROM AggregatedProgress
                 ORDER BY "name";`;
 
-                const result = await sequelize.query(qry);
-   
-    return result[0];
-  } catch (error) {
-    console.error("Error in getActivityAssessmentScoreDay:", error);
-    error.fileName = "etlRepository.js";
-    throw error;
-  }
+        const result = await sequelize.query(qry);
+
+        return result[0];
+    } catch (error) {
+        console.error("Error in getActivityAssessmentScoreDay:", error);
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
 };
 
-const getTeacherActivityCumulative = async () =>{
-     try {
-    const qry = ` SELECT COALESCE(ROW_NUMBER() OVER (ORDER BY m."name" ASC) , 0) AS sr_no,
+const getTeacherActivityCumulative = async () => {
+    try {
+        const qry = ` SELECT COALESCE(ROW_NUMBER() OVER (ORDER BY m."name" ASC) , 0) AS sr_no,
              m."profile_id",
               m."phoneNumber",
 		        m."name",
@@ -3396,19 +3013,19 @@ const getTeacherActivityCumulative = async () =>{
           ORDER BY 
             m."name" ASC;`;
 
-                const result = await sequelize.query(qry);
-   
-    return result[0];
-  } catch (error) {
-    console.error("Error in getActivityAssessmentScoreDay:", error);
-    error.fileName = "etlRepository.js";
-    throw error;
-  }
+        const result = await sequelize.query(qry);
+
+        return result[0];
+    } catch (error) {
+        console.error("Error in getActivityAssessmentScoreDay:", error);
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
 };
 
-const getTeacherAssessmentCumulative = async (courseId = 148) =>{
-     try {
-    const qry = ` WITH target_group_users AS (
+const getTeacherAssessmentCumulative = async (courseId = 148) => {
+    try {
+        const qry = ` WITH target_group_users AS (
             SELECT m."phoneNumber", m."profile_id", m."name"
             FROM "wa_users_metadata" m
             INNER JOIN "wa_profiles" p ON m."profile_id" = p."profile_id"
@@ -3478,17 +3095,17 @@ const getTeacherAssessmentCumulative = async (courseId = 148) =>{
             AND m."cohort" NOT IN ('Cohort 0', 'Cohort 35')
             ORDER BY m."name" ASC;`;
 
-    const result = await sequelize.query(qry);
-   
-    return result[0];
-  } catch (error) {
-    console.error("Error in getActivityAssessmentScoreDay:", error);
-    error.fileName = "etlRepository.js";
-    throw error;
-  }
+        const result = await sequelize.query(qry);
+
+        return result[0];
+    } catch (error) {
+        console.error("Error in getActivityAssessmentScoreDay:", error);
+        error.fileName = "etlRepository.js";
+        throw error;
+    }
 };
 
 export default {
     getcohortList, getDataFromPostgres, getSuccessRate, getActivityTotalCount, getCompletedActivity, getLessonCompletion, getLastActivityCompleted, getWeeklyScore, getPhoneNumber_userNudges, getWeeklyScore_pilot, getCount_NotStartedActivity, getLessonCompletions, getActivity_Completions, getActivityNameCount,
-    getLastActivityCompleted_DropOff, getActivtyAssessmentScore,getCumulativeLessonCompletions,getCumulativeActivityCompletions, getActivityAssessmentScoreDay, getActivityAssessmentCumulative, getUserProgressStats, getUserProgressBarStats, getTeacherLessonCumulative, getTeacherActivityCumulative, getTeacherAssessmentCumulative,
+    getLastActivityCompleted_DropOff, getActivtyAssessmentScore, getCumulativeLessonCompletions, getCumulativeActivityCompletions, getActivityAssessmentScoreDay, getActivityAssessmentCumulative, getUserProgressStats, getUserProgressBarStats, getTeacherLessonCumulative, getTeacherActivityCumulative, getTeacherAssessmentCumulative,
 };
