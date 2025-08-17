@@ -242,9 +242,9 @@ const webhookService = async (body, res) => {
                                 await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null, captionText);
                                 await sleep(2000);
                             }
-                            startingLesson = await lessonRepository.getNextLesson(currentUserState.dataValues.currentCourseId, 1, null, null);
                         }
-                        // Send first lesson to user
+                        startingLesson = await lessonRepository.getNextLesson(currentUserState.dataValues.currentCourseId, 1, null, null);
+                        await waUserProgressRepository.update(profileId, userMobileNumber, currentUserState.dataValues.currentCourseId, startingLesson.dataValues.weekNumber, startingLesson.dataValues.dayNumber, startingLesson.dataValues.LessonId, startingLesson.dataValues.SequenceNumber, startingLesson.dataValues.activity, null, null, null);
                         currentUserState = await waUserProgressRepository.getByProfileId(profileId);
                         await sendCourseLesson(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona, buttonId);
                         if (startingLesson.dataValues.activity == "video") {
