@@ -10,7 +10,7 @@ import { weekEndImage, generateKidsCertificate } from "./imageGenerationUtils.js
 import { sleep, getDaysPerWeek, getTotalLessonsForCourse, getLevelFromCourseName } from "./utils.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import stickerMapping from "../constants/stickerMapping.js";
-import { generateCertificate } from '../google_sheet_utils/certificate-utils.js';
+import { generateCertificate } from '../google_sheet_utils/certificateUtils.js';
 
 
 

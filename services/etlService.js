@@ -1,14 +1,7 @@
 import etlRepository from "../repositories/etlRepository.js";
-import loadDataToGoogleSheets from "../google_sheet_utils/googleSheetUtil.js";
-import new_loadDataToGoogleSheets from "../google_sheet_utils/LevelGoogleSheet.js";
-import lesson_loadDataToGoogleSheets from "../google_sheet_utils/LessonGoogleSheet.js";
-import getPhoneNumberColumn from "../google_sheet_utils/getPhoneNumberColumn.js";
-import googleSheetStats from "../google_sheet_utils/googleSheetStats.js";
 import T1Repository from "../repositories/etl_T1Repository.js";
 import getWeeklyActivityCompleted1 from "../repositories/etl_weeklyScoreRepository.js";
-import DashboardUtils_load from "../google_sheet_utils/DashboardUtils.js";
 import CumulativeUtils_load from "../google_sheet_utils/cumulativeUtils.js";
-import { generateCertificatesForEligibleStudents } from '../google_sheet_utils/certificate-utils.js';
 
 const runCumulativeSheets = async () => {
 
@@ -48,11 +41,6 @@ const runETL = async () => {
     const t2_l1_courseId = 99;
     const t1_l2_courseId = 104;
     const t2_l2_courseId = 103;
-
-    const data = await etlRepository.getDataFromPostgres();
-    const new_data_list = await getPhoneNumberColumn(data);
-    const funnel_count = await T1Repository.getDashboardStats();
-    const funnel = await googleSheetStats(funnel_count);
 
     let activityCnt1 = [], total_actvity1 = [];
     let activityCnt2 = [], total_actvity2 = [];
@@ -253,52 +241,6 @@ const runETL = async () => {
       entry.final_percentage_week4,
     ]);
 
-    const new_weeklyCntT1 = [];
-    const new_weeklyCntT2 = [];
-
-    const weeklyCntT1 = [];
-    const weeklyCntT2 = [];
-
-    await lesson_loadDataToGoogleSheets(
-      arrayOfT1Lesson_Pilot,
-      pilot_t1_w1_weekly_Score,
-      pilot_t2_w1_weekly_Score,
-      pilot_t1_w1_weekly_Score1,
-      pilot_t2_w1_weekly_Score1,
-    );
-
-    await new_loadDataToGoogleSheets(
-      arrayOfT1Activity_Pilot,
-      activityMap2,
-      total_actvity1,
-      total_actvity2,
-      activityCompletedMap1,
-      activityCompletedMap2,
-      pilot_lastActivityCompleted_t1_l1_Map,
-      pilot_lastActivityCompleted_t2_l1_Map,
-      pilot_lastActivityCompleted_t1_l2_Map,
-      pilot_lastActivityCompleted_t2_l2_Map
-    );
-
-
-    await loadDataToGoogleSheets(
-      new_data_list,
-      funnel,
-      activityCnt1,
-      activityCnt2,
-      weeklyCntT1,
-      weeklyCntT2,
-      activityMap1,
-      activityMap2,
-      new_weeklyCntT1,
-      new_weeklyCntT2,
-      success_list1,
-      success_list2,
-      success_list3,
-      success_list4,
-
-    );
-
   } catch (error) {
     error.fileName = "etlService.js";
     throw error;
@@ -312,8 +254,6 @@ const runETL_Dashboard = async () => {
     let userMetadata_Rollout = await getWeeklyActivityCompleted1.getUserMetadataAll('Rollout');
     let userMetadata_overTime = await getWeeklyActivityCompleted1.getUserMetadataTime();
 
-    const funnel_count = await T1Repository.getDashboardStats();
-    const funnel = await googleSheetStats(funnel_count);
 
     userMetadata_Pilot = userMetadata_Pilot.map(obj => Object.values(obj).map(value => value));
     userMetadata_Control = userMetadata_Control.map(obj => Object.values(obj).map(value => value));
@@ -428,46 +368,6 @@ const runETL_Dashboard = async () => {
 
     let CohortWiseUpdateLag_T2_l2 = await getWeeklyActivityCompleted1.getCount_UpdateLagCohortWise(110, 'T2');
     CohortWiseUpdateLag_T2_l2 = CohortWiseUpdateLag_T2_l2.map(obj => Object.values(obj).map(value => value));
-
-    await DashboardUtils_load(
-      userMetadata_Pilot,
-      userMetadata_Control,
-      userMetadata_Rollout,
-      userMetadata_overTime,
-      successRate1,
-      successRate2,
-      successRate3,
-      successRate4,
-      successRate5,
-      successRate6,
-      successRate01,
-      successRate02,
-      successRate03,
-      successRate04,
-      last_activity_t1_l1,
-      last_activity_t2_l1,
-      cumulativeAvgAct_t1,
-      cumulativeAvgAct_t2,
-      last_activity_t1_l2,
-      last_activity_t2_l2,
-      cumulativeAvgAct_t1_l2,
-      cumulativeAvgAct_t2_l2,
-      dailyAvgAct_t1,
-      dailyAvgAct_t2,
-      funnel,
-      NotStartedCohort_T1,
-      NotStartedCohort_T2,
-      LastLessonCompleted_T1,
-      LastLessonCompleted_T2,
-      CohortWiseUpdateLag_T1,
-      CohortWiseUpdateLag_T2,
-      NotStartedCohort_T1_l2,
-      NotStartedCohort_T2_l2,
-      LastLessonCompleted_T1_l2,
-      LastLessonCompleted_T2_l2,
-      CohortWiseUpdateLag_T1_l2,
-      CohortWiseUpdateLag_T2_l2
-    );
 
     await runCumulativeSheets();
 

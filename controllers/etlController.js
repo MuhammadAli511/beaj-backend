@@ -1,4 +1,3 @@
-import etlService_auto from "../services/etlService_Auto.js";
 import etlService from "../services/etlService.js";
 
 const runETL = async () => {
@@ -31,7 +30,7 @@ const runETL1 = async (req, res) => {
         }
 
         if (tgrp && module && facilitator && cohort && co_no !== undefined) {
-            await etlService_auto.runETL(tgrp, module, cohort, co_no, facilitator);
+            // await etlService_auto.runETL(tgrp, module, cohort, co_no, facilitator);
         }
         res.status(200).send("Beaj Employees Route Status : Working");
     } catch (error) {
