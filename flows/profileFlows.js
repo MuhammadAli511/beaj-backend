@@ -41,8 +41,6 @@ const chooseProfileFlow = async (profileId, userMobileNumber, botPhoneNumberId, 
         await createActivityLog(userMobileNumber, "template", "outbound", profileMessage.trim(), null);
         await sleep(1000);
     }
-    const acceptableMessagesList = Array.from({ length: profiles.length }, (_, i) => String.fromCharCode(65 + i));
-    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Choose User");
     if (chooseProfile) {
         await waActiveSessionRepository.create({ phone_number: userMobileNumber, bot_phone_number_id: botPhoneNumberId, profile_id: profileId });
