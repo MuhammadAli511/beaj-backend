@@ -1,15 +1,13 @@
-import dotenv from "dotenv";
 import { format } from 'date-fns';
 import waUsersMetadataRepository from "../repositories/waUsersMetadataRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
-import waUserActivityLogsRepository from "../repositories/waUserActivityLogsRepository.js";
 import courseRepository from "../repositories/courseRepository.js";
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRepository.js";
 import waPurchasedCoursesRepository from '../repositories/waPurchasedCoursesRepository.js';
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import lessonRepository from "../repositories/lessonRepository.js";
-import { sendMessage, sendMediaMessage, sendButtonMessage } from "./whatsappUtils.js";
+import { sendMessage, sendMediaMessage, sendButtonMessage, sendContactCardMessage } from "./whatsappUtils.js";
 import { createActivityLog } from "./createActivityLogUtils.js";
 import { watchAndImageView } from "../views/watchAndImage.js";
 import { speakingPracticeView } from "../views/speakingPractice.js";
@@ -24,148 +22,55 @@ import { watchAndSpeakView } from "../views/watchAndSpeak.js";
 import { mcqsView } from "../views/mcqs.js";
 import { listenAndSpeakView } from "../views/listenAndSpeak.js";
 import { conversationalAgencyBotView } from "../views/conversationalAgencyBot.js";
-import waActiveSessionRepository from "../repositories/waActiveSessionRepository.js";
 import waProfileRepository from "../repositories/waProfileRepository.js";
 import { feedbackMcqsView } from "../views/feedbackMcqs.js";
 import { feedbackAudioView } from "../views/feedbackAudio.js";
 import { assessmentMcqsView } from "../views/assessmentMcqs.js";
 import { assessmentWatchAndSpeakView } from "../views/assessmentWatchAndSpeak.js";
 import { level4ReportCard, kidsReportCard } from "./imageGenerationUtils.js";
+import { najiaContactData, amnaContactData } from "../constants/contacts.js";
 
-dotenv.config();
 
 
-const removeUser = async (phoneNumber) => {
-    await waUsersMetadataRepository.deleteByPhoneNumber(phoneNumber);
-    await waUserProgressRepository.deleteByPhoneNumber(phoneNumber);
-    await waUserActivityLogsRepository.deleteByPhoneNumber(phoneNumber);
-    await waLessonsCompletedRepository.deleteByPhoneNumber(phoneNumber);
-    await waQuestionResponsesRepository.deleteByPhoneNumber(phoneNumber);
-    await waActiveSessionRepository.deleteByPhoneNumber(phoneNumber);
-    await waProfileRepository.deleteByPhoneNumber(phoneNumber);
-    await waPurchasedCoursesRepository.deleteByPhoneNumber(phoneNumber);
-
-    await sendMessage(phoneNumber, "Your data has been removed. Please start again using the link provided.");
-};
-
-const removeUserTillCourse = async (profileId, phoneNumber) => {
-    const profile = await waProfileRepository.getByProfileId(profileId);
-    const profileType = profile.dataValues.profile_type;
-    if (profileType == "teacher") {
-        await waUserProgressRepository.update(profileId, phoneNumber, null, null, null, null, null, null, null, null, ["start my course"]);
+const talkToBeajRep = async (profileId, userMobileNumber) => {
+    const user = await waUserProgressRepository.getByProfileId(profileId);
+    if (user && user.dataValues.persona == "school admin") {
+        await sendContactCardMessage(userMobileNumber, najiaContactData);
     } else {
-        await waUserProgressRepository.update(profileId, phoneNumber, null, null, null, null, null, null, null, null, ["start now!"]);
+        await sendContactCardMessage(userMobileNumber, amnaContactData);
     }
-    await waUserProgressRepository.updateEngagementType(profileId, phoneNumber, "Course Start");
-    await waUserActivityLogsRepository.deleteByPhoneNumber(phoneNumber);
-    await waLessonsCompletedRepository.deleteByPhoneNumber(phoneNumber);
-    await waQuestionResponsesRepository.deleteByPhoneNumber(phoneNumber);
-    await sendMessage(phoneNumber, "Your data has been removed. Please start again using the link provided.");
-};
-
-const resetCourseKid = async (phoneNumber, botPhoneNumberId) => {
-    // First, delete all existing data like "reset all"
-    await waUsersMetadataRepository.deleteByPhoneNumber(phoneNumber);
-    await waUserProgressRepository.deleteByPhoneNumber(phoneNumber);
-    await waUserActivityLogsRepository.deleteByPhoneNumber(phoneNumber);
-    await waLessonsCompletedRepository.deleteByPhoneNumber(phoneNumber);
-    await waQuestionResponsesRepository.deleteByPhoneNumber(phoneNumber);
-    await waActiveSessionRepository.deleteByPhoneNumber(phoneNumber);
-    await waProfileRepository.deleteByPhoneNumber(phoneNumber);
-    await waPurchasedCoursesRepository.deleteByPhoneNumber(phoneNumber);
-
-    // Create test profiles
-    const profiles = [
-        { phone_number: phoneNumber, bot_phone_number_id: botPhoneNumberId, profile_type: 'student' },
-        { phone_number: phoneNumber, bot_phone_number_id: botPhoneNumberId, profile_type: 'student' },
-        { phone_number: phoneNumber, bot_phone_number_id: botPhoneNumberId, profile_type: 'student' },
-        { phone_number: phoneNumber, bot_phone_number_id: botPhoneNumberId, profile_type: 'student' },
-        { phone_number: phoneNumber, bot_phone_number_id: botPhoneNumberId, profile_type: 'student' },
-        { phone_number: phoneNumber, bot_phone_number_id: botPhoneNumberId, profile_type: 'student' },
-        { phone_number: phoneNumber, bot_phone_number_id: botPhoneNumberId, profile_type: 'student' }
-    ];
-
-    const createdProfiles = [];
-    for (const profileData of profiles) {
-        const profile = await waProfileRepository.create(profileData);
-        createdProfiles.push(profile);
-    }
-
-    // Create user metadata for each profile
-    const userMetadata = [
-        { phoneNumber: phoneNumber, name: 'user 1', userClickedLink: new Date(), userRegistrationComplete: new Date(), profile_id: createdProfiles[0].dataValues.profile_id, classLevel: 'grade 1' },
-        { phoneNumber: phoneNumber, name: 'user 2', userClickedLink: new Date(), userRegistrationComplete: new Date(), profile_id: createdProfiles[1].dataValues.profile_id, classLevel: 'grade 2' },
-        { phoneNumber: phoneNumber, name: 'user 3', userClickedLink: new Date(), userRegistrationComplete: new Date(), profile_id: createdProfiles[2].dataValues.profile_id, classLevel: 'grade 3' },
-        { phoneNumber: phoneNumber, name: 'user 4', userClickedLink: new Date(), userRegistrationComplete: new Date(), profile_id: createdProfiles[3].dataValues.profile_id, classLevel: 'grade 4' },
-        { phoneNumber: phoneNumber, name: 'user 5', userClickedLink: new Date(), userRegistrationComplete: new Date(), profile_id: createdProfiles[4].dataValues.profile_id, classLevel: 'grade 5' },
-        { phoneNumber: phoneNumber, name: 'user 6', userClickedLink: new Date(), userRegistrationComplete: new Date(), profile_id: createdProfiles[5].dataValues.profile_id, classLevel: 'grade 6' },
-        { phoneNumber: phoneNumber, name: 'user 7', userClickedLink: new Date(), userRegistrationComplete: new Date(), profile_id: createdProfiles[6].dataValues.profile_id, classLevel: 'grade 7' }
-    ];
-
-    for (const metadata of userMetadata) {
-        await waUsersMetadataRepository.create(metadata);
-    }
-
-    // Create user progress for each profile
-    const userProgress = [
-        { profile_id: createdProfiles[0].dataValues.profile_id, phoneNumber: phoneNumber, persona: 'kid', engagement_type: 'Course Start', acceptableMessages: ['Start Now!'], lastUpdated: new Date() },
-        { profile_id: createdProfiles[1].dataValues.profile_id, phoneNumber: phoneNumber, persona: 'kid', engagement_type: 'Course Start', acceptableMessages: ['Start Now!'], lastUpdated: new Date() },
-        { profile_id: createdProfiles[2].dataValues.profile_id, phoneNumber: phoneNumber, persona: 'kid', engagement_type: 'Course Start', acceptableMessages: ['Start Now!'], lastUpdated: new Date() },
-        { profile_id: createdProfiles[3].dataValues.profile_id, phoneNumber: phoneNumber, persona: 'kid', engagement_type: 'Course Start', acceptableMessages: ['Start Now!'], lastUpdated: new Date() },
-        { profile_id: createdProfiles[4].dataValues.profile_id, phoneNumber: phoneNumber, persona: 'kid', engagement_type: 'Course Start', acceptableMessages: ['Start Now!'], lastUpdated: new Date() },
-        { profile_id: createdProfiles[5].dataValues.profile_id, phoneNumber: phoneNumber, persona: 'kid', engagement_type: 'Course Start', acceptableMessages: ['Start Now!'], lastUpdated: new Date() },
-        { profile_id: createdProfiles[6].dataValues.profile_id, phoneNumber: phoneNumber, persona: 'kid', engagement_type: 'Course Start', acceptableMessages: ['Start Now!'], lastUpdated: new Date() }
-    ];
-
-    for (const progress of userProgress) {
-        await waUserProgressRepository.create(progress);
-    }
-
-    // Create purchased courses
-    const paymentProof = "https://beajbloblive.blob.core.windows.net/beajdocuments/20250618163609353-d5f65630-4f1e-4b87-974d-44034f71c1d5-1664985517525471";
-    const purchasedCourses = [
-        { phoneNumber: phoneNumber, courseCategoryId: 71, courseId: 119, courseStartDate: new Date(), purchaseDate: new Date(), profile_id: createdProfiles[0].dataValues.profile_id, paymentProof: paymentProof, paymentStatus: 'Approved' },
-        { phoneNumber: phoneNumber, courseCategoryId: 71, courseId: 120, courseStartDate: new Date(), purchaseDate: new Date(), profile_id: createdProfiles[1].dataValues.profile_id, paymentProof: paymentProof, paymentStatus: 'Approved' },
-        { phoneNumber: phoneNumber, courseCategoryId: 71, courseId: 121, courseStartDate: new Date(), purchaseDate: new Date(), profile_id: createdProfiles[2].dataValues.profile_id, paymentProof: paymentProof, paymentStatus: 'Approved' },
-        { phoneNumber: phoneNumber, courseCategoryId: 71, courseId: 122, courseStartDate: new Date(), purchaseDate: new Date(), profile_id: createdProfiles[3].dataValues.profile_id, paymentProof: paymentProof, paymentStatus: 'Approved' },
-        { phoneNumber: phoneNumber, courseCategoryId: 71, courseId: 123, courseStartDate: new Date(), purchaseDate: new Date(), profile_id: createdProfiles[4].dataValues.profile_id, paymentProof: paymentProof, paymentStatus: 'Approved' },
-        { phoneNumber: phoneNumber, courseCategoryId: 71, courseId: 124, courseStartDate: new Date(), purchaseDate: new Date(), profile_id: createdProfiles[5].dataValues.profile_id, paymentProof: paymentProof, paymentStatus: 'Approved' },
-        { phoneNumber: phoneNumber, courseCategoryId: 71, courseId: 143, courseStartDate: new Date(), purchaseDate: new Date(), profile_id: createdProfiles[6].dataValues.profile_id, paymentProof: paymentProof, paymentStatus: 'Approved' },
-    ];
-
-    for (const purchase of purchasedCourses) {
-        await waPurchasedCoursesRepository.create(purchase);
-    }
-
-    await sendMessage(phoneNumber, "Test data has been created for kid profiles. You now have 7 student profiles with purchased courses.");
+    await sleep(2000);
+    let contactCardMessage = `👆Click on the Message button to chat with a Beaj Representative.\nبیج کے نمائندے سے بات کرنے کے لیئے "Message" بٹن پر کلک کریں۔`;
+    await sendMessage(userMobileNumber, contactCardMessage);
+    await createActivityLog(userMobileNumber, "text", "outbound", contactCardMessage, null);
 };
 
 const weekEndScoreCalculation = async (profileId, phoneNumber, weekNumber, courseId) => {
-    // Get lessonIds for mcqs of that week
-    const mcqLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'mcqs');
-    const correctMcqs = await waQuestionResponsesRepository.getTotalScoreForList(profileId, phoneNumber, mcqLessonIds);
-    const totalMcqs = await waQuestionResponsesRepository.getTotalQuestionsForList(profileId, phoneNumber, mcqLessonIds);
+    // Get all lesson IDs in parallel
+    const [
+        mcqLessonIds, listenAndSpeakLessonIds, watchAndSpeakLessonIds, readLessonIds, monologueLessonIds, speakingPracticeLessonIds
+    ] = await Promise.all([
+        lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'mcqs'),
+        lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'listenAndSpeak'),
+        lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'watchAndSpeak'),
+        lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'read'),
+        lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'conversationalMonologueBot'),
+        lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'speakingPractice')
+    ]);
 
-    // Get lessonIds for listenAndSpeak of that week
-    const listenAndSpeakLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'listenAndSpeak');
-    const correctListenAndSpeak = await waQuestionResponsesRepository.getTotalScoreForList(profileId, phoneNumber, listenAndSpeakLessonIds);
-    const totalListenAndSpeak = await waQuestionResponsesRepository.getTotalQuestionsForList(profileId, phoneNumber, listenAndSpeakLessonIds);
-
-    // Get lessonIds for watchAndSpeak of that week
-    const watchAndSpeakLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'watchAndSpeak');
-    const correctWatchAndSpeak = await waQuestionResponsesRepository.watchAndSpeakScoreForList(profileId, phoneNumber, watchAndSpeakLessonIds);
-
-    // Get lessonIds for read of that week
-    const readLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'read');
-    const correctRead = await waQuestionResponsesRepository.readScoreForList(profileId, phoneNumber, readLessonIds);
-
-    // Get lessonIds for conversationalMonologueBot of that week
-    const monologueLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'conversationalMonologueBot');
-    const correctMonologue = await waQuestionResponsesRepository.monologueScoreForList(profileId, phoneNumber, monologueLessonIds);
-
-    // Get lessonIds for speakingPractice of that week
-    const speakingPracticeLessonIds = await lessonRepository.getLessonIdsByCourseAndWeekAndActivityType(courseId, weekNumber, 'speakingPractice');
-    const correctSpeakingPractice = await waQuestionResponsesRepository.monologueScoreForList(profileId, phoneNumber, speakingPracticeLessonIds);
+    // Get all scores and totals in parallel
+    const [
+        correctMcqs = 0, totalMcqs = 0, correctListenAndSpeak = 0, totalListenAndSpeak = 0, correctWatchAndSpeak = { score: 0, total: 0 }, correctRead = { score: 0, total: 0 }, correctMonologue = { score: 0, total: 0 }, correctSpeakingPractice = { score: 0, total: 0 }
+    ] = await Promise.all([
+        waQuestionResponsesRepository.getTotalScoreForList(profileId, phoneNumber, mcqLessonIds),
+        waQuestionResponsesRepository.getTotalQuestionsForList(profileId, phoneNumber, mcqLessonIds),
+        waQuestionResponsesRepository.getTotalScoreForList(profileId, phoneNumber, listenAndSpeakLessonIds),
+        waQuestionResponsesRepository.getTotalQuestionsForList(profileId, phoneNumber, listenAndSpeakLessonIds),
+        waQuestionResponsesRepository.watchAndSpeakScoreForList(profileId, phoneNumber, watchAndSpeakLessonIds),
+        waQuestionResponsesRepository.readScoreForList(profileId, phoneNumber, readLessonIds),
+        waQuestionResponsesRepository.monologueScoreForList(profileId, phoneNumber, monologueLessonIds),
+        waQuestionResponsesRepository.monologueScoreForList(profileId, phoneNumber, speakingPracticeLessonIds)
+    ]);
 
     // Calculate sum of scores and sum of total scores and give percentage out of 100
     const totalScore = correctMcqs + correctListenAndSpeak + correctWatchAndSpeak.score + correctRead.score + correctMonologue.score + correctSpeakingPractice.score;
@@ -194,7 +99,6 @@ const studentReportCardCalculation = async (profileId, phoneNumber) => {
     const gradeCourse = purchasedCoursesWithNames.filter(course => course.courseName && course.courseName.toLowerCase().includes("grade"));
 
     if (gradeCourse.length === 0) {
-        console.log("No grade course found for this profile");
         return;
     }
 
@@ -487,19 +391,7 @@ const startCourseForUser = async (profileId, userMobileNumber, numbers_to_ignore
     await waUserProgressRepository.updateEngagementType(profileId, userMobileNumber, "Course Start");
 
     // Update user progress
-    await waUserProgressRepository.update(
-        profileId,
-        userMobileNumber,
-        nextCourse.dataValues.courseId,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null
-    );
+    await waUserProgressRepository.update(profileId, userMobileNumber, nextCourse.dataValues.courseId, null, null, null, null, null, null, null, null);
 
     // Extract Level from courseName
     // if teacher
@@ -551,130 +443,62 @@ const startCourseForUser = async (profileId, userMobileNumber, numbers_to_ignore
     return true;
 };
 
-const sendCourseLessonToTeacher = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, buttonId = null) => {
+const sendCourseLesson = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona, buttonId = null) => {
     try {
         const activity = startingLesson.dataValues.activity;
         if (activity == 'video') {
-            await videoView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await videoView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'videoEnd') {
-            await videoEndView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await videoEndView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'mcqs') {
-            await mcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher', buttonId);
+            await mcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona, buttonId);
         }
         else if (activity == 'watchAndSpeak') {
-            await watchAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await watchAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'watchAndAudio') {
-            await watchAndAudioView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await watchAndAudioView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'watchAndImage') {
-            await watchAndImageView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await watchAndImageView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'listenAndSpeak') {
-            await listenAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await listenAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'read') {
-            await readView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await readView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'conversationalQuestionsBot') {
-            await conversationalQuestionsBotView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await conversationalQuestionsBotView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'conversationalMonologueBot') {
-            await conversationalMonologueBotView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await conversationalMonologueBotView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'conversationalAgencyBot') {
-            await conversationalAgencyBotView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await conversationalAgencyBotView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'speakingPractice') {
-            await speakingPracticeView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await speakingPracticeView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'feedbackAudio') {
-            await feedbackAudioView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await feedbackAudioView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'feedbackMcqs') {
-            await feedbackMcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await feedbackMcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'assessmentMcqs') {
-            await assessmentMcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher', buttonId);
+            await assessmentMcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona, buttonId);
         }
         else if (activity == 'assessmentWatchAndSpeak') {
-            await assessmentWatchAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'teacher');
+            await assessmentWatchAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
     } catch (error) {
-        console.log('Error sending lesson to user:', error);
+        console.error('Error sending lesson to user:', error);
         error.fileName = 'chatBotService.js';
         throw error;
     }
 };
 
-const sendCourseLessonToKid = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, buttonId = null) => {
-    try {
-        const activity = startingLesson.dataValues.activity;
-        if (activity == 'video') {
-            await videoView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'videoEnd') {
-            await videoEndView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'mcqs') {
-            await mcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid', buttonId);
-        }
-        else if (activity == 'watchAndSpeak') {
-            await watchAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'listenAndSpeak') {
-            await listenAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'read') {
-            await readView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'speakingPractice') {
-            await speakingPracticeView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'assessmentMcqs') {
-            await assessmentMcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid', buttonId);
-        }
-        else if (activity == 'assessmentWatchAndSpeak') {
-            await assessmentWatchAndSpeakView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'watchAndAudio') {
-            await watchAndAudioView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'watchAndImage') {
-            await watchAndImageView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'conversationalQuestionsBot') {
-            await conversationalQuestionsBotView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'conversationalMonologueBot') {
-            await conversationalMonologueBotView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'conversationalAgencyBot') {
-            await conversationalAgencyBotView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'feedbackAudio') {
-            await feedbackAudioView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-        else if (activity == 'feedbackMcqs') {
-            await feedbackMcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, 'kid');
-        }
-    } catch (error) {
-        console.log('Error sending lesson to user:', error);
-        error.fileName = 'chatBotService.js';
-        throw error;
-    }
-};
-
-export {
-    removeUser,
-    getNextCourse,
-    startCourseForUser,
-    sendCourseLessonToTeacher,
-    sendCourseLessonToKid,
-    weekEndScoreCalculation,
-    studentReportCardCalculation,
-    removeUserTillCourse,
-    resetCourseKid
-};
+export { getNextCourse, startCourseForUser, sendCourseLesson, weekEndScoreCalculation, studentReportCardCalculation, talkToBeajRep };

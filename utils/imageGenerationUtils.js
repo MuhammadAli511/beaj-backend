@@ -84,7 +84,7 @@ const weekEndImage = async (score, week) => {
         const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
         return imageUrl;
     } catch (err) {
-        console.log('Error creating and uploading image:', err);
+        console.error('Error creating and uploading image:', err);
         throw new Error('Failed to create and upload image');
     }
 };
@@ -269,7 +269,7 @@ const createAndUploadScoreImage = async (pronunciationAssessment, threshold) => 
         const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
         return imageUrl;
     } catch (err) {
-        console.log('Error creating and uploading image:', err);
+        console.error('Error creating and uploading image:', err);
         throw new Error('Failed to create and upload image');
     }
 };
@@ -434,7 +434,7 @@ const createAndUploadScoreImageNoAnswer = async (pronunciationAssessment, thresh
         const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
         return imageUrl;
     } catch (err) {
-        console.log('Error creating and uploading image:', err);
+        console.error('Error creating and uploading image:', err);
         throw new Error('Failed to create and upload image');
     }
 };
@@ -695,7 +695,7 @@ const createAndUploadKidsScoreImage = async (pronunciationAssessment, threshold,
         const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
         return imageUrl;
     } catch (err) {
-        console.log('Error creating and uploading image:', err);
+        console.error('Error creating and uploading image:', err);
         throw new Error('Failed to create and upload image');
     }
 };
@@ -840,7 +840,7 @@ const createAndUploadMonologueScoreImage = async (pronunciationAssessment, thres
         const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
         return imageUrl;
     } catch (err) {
-        console.log('Error creating and uploading image:', err);
+        console.error('Error creating and uploading image:', err);
         throw new Error('Failed to create and upload image');
     }
 };
@@ -985,7 +985,7 @@ const createAndUploadSpeakingPracticeScoreImage = async (pronunciationAssessment
         const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
         return imageUrl;
     } catch (err) {
-        console.log('Error creating and uploading image:', err);
+        console.error('Error creating and uploading image:', err);
         throw new Error('Failed to create and upload image');
     }
 };
@@ -1184,7 +1184,7 @@ const generateInvoiceImage = async (userMobileNumber, registrationsSummary) => {
         const imageUrl = await azureBlobStorage.uploadImageToBlobStorage(buffer);
         return imageUrl;
     } catch (err) {
-        console.log('Error creating and uploading invoice image:', err);
+        console.error('Error creating and uploading invoice image:', err);
         throw new Error('Failed to create and upload invoice image');
     }
 };

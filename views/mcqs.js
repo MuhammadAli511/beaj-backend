@@ -141,13 +141,11 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
 
                 // **KEY CHECK** - If button was for a different question, ignore it
                 if (questionIdFromButton && questionIdFromButton != currentMCQsQuestion.dataValues.Id && buttonId.includes("_")) {
-                    console.log(`Ignoring late click for question ${questionIdFromButton}, user is now on question ${currentMCQsQuestion.dataValues.Id}`);
                     return;
                 }
                 // If button was for the same and record already exists, ignore it
                 const existingRecord = await waQuestionResponsesRepository.getByQuestionIdAndAnswer(currentMCQsQuestion.dataValues.Id, profileId);
                 if (existingRecord) {
-                    console.log(`Ignoring duplicate click for question ${currentMCQsQuestion.dataValues.Id}, user already answered`);
                     await getNextMcqQuestion(currentUserState, profileId, userMobileNumber, startingLesson);
                     return;
                 }
@@ -296,13 +294,11 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
 
                 // **KEY CHECK** - If button was for a different question, ignore it
                 if (questionIdFromButton && questionIdFromButton != currentMCQsQuestion.dataValues.Id && buttonId.includes("_")) {
-                    console.log(`Ignoring late click for question ${questionIdFromButton}, user is now on question ${currentMCQsQuestion.dataValues.Id}`);
                     return;
                 }
                 // If button was for the same and record already exists, ignore it
                 const existingRecord = await waQuestionResponsesRepository.getByQuestionIdAndAnswer(currentMCQsQuestion.dataValues.Id, profileId);
                 if (existingRecord) {
-                    console.log(`Ignoring duplicate click for question ${currentMCQsQuestion.dataValues.Id}, user already answered`);
                     await getNextMcqQuestion(currentUserState, profileId, userMobileNumber, startingLesson);
                     return;
                 }
@@ -449,7 +445,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
         }
         return;
     } catch (error) {
-        console.log('Error sending lesson to user:', error);
+        console.error('Error sending lesson to user:', error);
         error.fileName = 'mcqsView.js';
         throw error;
     }

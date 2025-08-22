@@ -2,10 +2,12 @@ import axios from "axios";
 import { getBotPhoneNumberIdForRequest } from './requestContext.js';
 import DocumentFile from '../models/DocumentFile.js';
 import SpeakActivityQuestion from '../models/SpeakActivityQuestion.js';
-import MultipleChoiceQuestion from '../models/MultipleChoiceQuestion.js';
+import MultipleChoiceQuestion from '../models/MultipleChoiceQuestion.js'
 import MultipleChoiceQuestionAnswer from '../models/MultipleChoiceQuestionAnswer.js';
 import WA_Constants from '../models/WA_Constants.js';
 import Lesson from "../models/Lesson.js";
+import dotenv from 'dotenv';
+dotenv.config();
 
 const modelToMediaIdField = {
     "DocumentFile": DocumentFile,

@@ -4,7 +4,79 @@ import waProfileRepository from "../repositories/waProfileRepository.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
 import waUsersMetadataRepository from "../repositories/waUsersMetadataRepository.js";
+import { format } from "date-fns";
+import { v4 as uuidv4 } from "uuid";
+import { BlobServiceClient } from "@azure/storage-blob";
+import { retrieveMediaURL } from "./whatsappUtils.js";
+import { PassThrough } from "stream";
+import ffmpeg from "fluent-ffmpeg";
+import dotenv from 'dotenv';
+dotenv.config();
 
+const studentBotPhoneNumberId = process.env.STUDENT_BOT_PHONE_NUMBER_ID;
+const teacherBotPhoneNumberId = process.env.TEACHER_BOT_PHONE_NUMBER_ID;
+const marketingBotPhoneNumberId = process.env.MARKETING_BOT_PHONE_NUMBER_ID;
+
+const uploadAudioToAzure = async (audioData) => {
+    // Generate a unique file name with timestamp and UUID
+    const timestamp = format(new Date(), "yyyyMMddHHmmssSSS");
+    const uniqueID = uuidv4();
+    const baseFileName = `tts_audio_${uniqueID}.mp3`;
+    const filename = `${timestamp}-${uniqueID}-${baseFileName}`;
+
+    const containerName = "beajdocuments";
+    const azureBlobConnectionString =
+        process.env.AZURE_BLOB_CONNECTION_STRING;
+
+    if (!azureBlobConnectionString) {
+        throw new Error(
+            "Azure Blob Storage connection string is not defined in environment variables."
+        );
+    }
+
+    const blobServiceClient = BlobServiceClient.fromConnectionString(
+        azureBlobConnectionString
+    );
+
+    const containerClient =
+        blobServiceClient.getContainerClient(containerName);
+
+    await containerClient.createIfNotExists({
+        access: "container",
+    });
+
+    const blobClient = containerClient.getBlockBlobClient(filename);
+    const blockBlobClient = blobClient.getBlockBlobClient();
+
+    await blockBlobClient.uploadData(audioData, {
+        blobHTTPHeaders: { blobContentType: "audio/mpeg" },
+    });
+
+    const blobUrl = blockBlobClient.url;
+    return blobUrl;
+};
+
+
+const convertOggToWav = async (oggBuffer) => {
+    return new Promise((resolve, reject) => {
+        const oggStream = new PassThrough();
+        oggStream.end(oggBuffer);
+
+        const wavData = [];
+        const wavStream = new PassThrough();
+        wavStream.on("data", (chunk) => wavData.push(chunk));
+        wavStream.on("end", () => resolve(Buffer.concat(wavData)));
+        wavStream.on("error", (err) => reject(err));
+
+        ffmpeg(oggStream)
+            .format("wav")
+            .audioCodec("pcm_s16le")
+            .audioChannels(1)
+            .audioFrequency(16000)
+            .on("error", (err) => reject(err))
+            .pipe(wavStream);
+    });
+};
 
 const sleep = (ms) => {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -27,6 +99,59 @@ const extractTranscript = (results) => {
 
     return transcript;
 };
+
+
+const extractMessageContent = async (message, userMobileNumber) => {
+    let messageContent = null;
+    let inboundUploadedImage = null;
+    let buttonId = null;
+
+    switch (message.type) {
+        case "image":
+            inboundUploadedImage = await createActivityLog(userMobileNumber, "image", "inbound", message, null);
+            messageContent = await retrieveMediaURL(message.image.id);
+            break;
+        case "audio":
+            await createActivityLog(userMobileNumber, "audio", "inbound", message, null);
+            messageContent = await retrieveMediaURL(message.audio.id);
+            break;
+        case "video":
+            await createActivityLog(userMobileNumber, "video", "inbound", message, null);
+            messageContent = await retrieveMediaURL(message.video.id);
+            break;
+        case "text":
+            messageContent = message.text?.body.toLowerCase().trim() || "";
+            createActivityLog(userMobileNumber, "text", "inbound", message.text?.body, null);
+            break;
+        case "interactive":
+            messageContent = message.interactive.button_reply.title.toLowerCase().trim();
+            createActivityLog(userMobileNumber, "template", "inbound", messageContent, null);
+            buttonId = message.interactive.button_reply.id;
+            break;
+        case "button":
+            messageContent = message.button.text.toLowerCase().trim();
+            createActivityLog(userMobileNumber, "template", "inbound", messageContent, null);
+            break;
+        default:
+            return null;
+    }
+
+    return { messageContent, inboundUploadedImage, buttonId };
+};
+
+
+const getProfileTypeFromBotId = (botPhoneNumberId) => {
+    if (botPhoneNumberId === teacherBotPhoneNumberId) {
+        return "teacher";
+    } else if (botPhoneNumberId === studentBotPhoneNumberId) {
+        return "student";
+    } else if (botPhoneNumberId === marketingBotPhoneNumberId) {
+        return "marketing";
+    } else {
+        throw new Error(`Unhandled botPhoneNumberId ${botPhoneNumberId}`);
+    }
+};
+
 
 const getLevelFromCourseName = (courseName) => {
     if (courseName == "Free Trial - Kids - Level 1") {
@@ -305,5 +430,9 @@ export {
     getDaysPerWeek,
     getTotalLessonsForCourse,
     difficultyLevelCalculation,
-    getLevelFromCourseName
+    getLevelFromCourseName,
+    extractMessageContent,
+    getProfileTypeFromBotId,
+    uploadAudioToAzure,
+    convertOggToWav
 };

@@ -53,12 +53,10 @@ const getAllUserProgressService = async (botType, rollout, level, cohort, target
     array_list = array_list.map(obj => Object.values(obj).map(value => value));
     array_list = capitalizeNames(array_list);
     let leaderboardBase64 = [];
-    // let columnIndex = await getColumnIndexWithPercentageValues(array_list, 1);
     for (let j = 4; j < 16; j++) {
       const buffer = await generateStarTeachersImage(array_list, j);
 
       // Convert buffer to base64 string
-      // leaderboardBase64 = buffer.toString('base64');
       if (buffer) {
         leaderboardBase64.push({
           columnIndex: j,

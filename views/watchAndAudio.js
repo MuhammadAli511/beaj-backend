@@ -380,7 +380,7 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
         }
         return;
     } catch (error) {
-        console.log('Error sending lesson to user:', error);
+        console.error('Error sending lesson to user:', error);
         error.fileName = 'watchAndAudioView.js';
         throw error;
     }

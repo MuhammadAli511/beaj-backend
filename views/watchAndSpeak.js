@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
 import { sleep, extractTranscript, convertNumberToEmoji, getAudioBufferFromAudioFileUrl, getLevelFromCourseName } from "../utils/utils.js";
-import AIServices from "../utils/AIServices.js";
+import speechToText from "../utils/speechToText.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import { createAndUploadScoreImage, createAndUploadScoreImageNoAnswer, createAndUploadKidsScoreImage } from "../utils/imageGenerationUtils.js";
 import courseRepository from "../repositories/courseRepository.js";
@@ -138,10 +138,10 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                 // Azure Pronunciation Assessment
                 let pronunciationAssessment = null;
                 if (!currentWatchAndSpeakQuestion?.dataValues?.answer?.[0]) {
-                    const userTranscription = await AIServices.azureOpenAISpeechToText(audioBuffer);
-                    pronunciationAssessment = await AIServices.azurePronunciationAssessment(audioBuffer, userTranscription);
+                    const userTranscription = await speechToText.azureOpenAISpeechToText(audioBuffer);
+                    pronunciationAssessment = await speechToText.azurePronunciationAssessment(audioBuffer, userTranscription);
                 } else {
-                    pronunciationAssessment = await AIServices.azurePronunciationAssessment(audioBuffer, currentWatchAndSpeakQuestion.dataValues.answer[0]);
+                    pronunciationAssessment = await speechToText.azurePronunciationAssessment(audioBuffer, currentWatchAndSpeakQuestion.dataValues.answer[0]);
                 }
 
                 // Extract user transcription from words
@@ -348,10 +348,10 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                 // Azure Pronunciation Assessment
                 let pronunciationAssessment = null;
                 if (!currentWatchAndSpeakQuestion?.dataValues?.answer?.[0]) {
-                    const userTranscription = await AIServices.azureOpenAISpeechToText(audioBuffer);
-                    pronunciationAssessment = await AIServices.azurePronunciationAssessment(audioBuffer, userTranscription);
+                    const userTranscription = await speechToText.azureOpenAISpeechToText(audioBuffer);
+                    pronunciationAssessment = await speechToText.azurePronunciationAssessment(audioBuffer, userTranscription);
                 } else {
-                    pronunciationAssessment = await AIServices.azurePronunciationAssessment(audioBuffer, currentWatchAndSpeakQuestion.dataValues.answer[0]);
+                    pronunciationAssessment = await speechToText.azurePronunciationAssessment(audioBuffer, currentWatchAndSpeakQuestion.dataValues.answer[0]);
                 }
 
                 // Extract user transcription from words
@@ -437,7 +437,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
         }
         return;
     } catch (error) {
-        console.log('Error sending lesson to user:', error);
+        console.error('Error sending lesson to user:', error);
         error.fileName = 'watchAndSpeakView.js';
         throw error;
     }
