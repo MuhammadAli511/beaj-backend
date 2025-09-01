@@ -143,6 +143,16 @@ const getSpeakActivityQuestionByIdService = async (id) => {
     }
 };
 
+const getSpeakActivityQuestionsByLessonIdService = async (lessonId) => {
+    try {
+        const speakActivityQuestions = await speakActivityQuestionRepository.getByLessonId(lessonId);
+        return speakActivityQuestions;
+    } catch (error) {
+        error.fileName = 'speakActivityQuestionService.js';
+        throw error;
+    }
+};
+
 const deleteSpeakActivityQuestionService = async (id) => {
     try {
         await speakActivityQuestionRepository.deleteSpeakActivityQuestion(id);
@@ -157,5 +167,6 @@ export default {
     getAllSpeakActivityQuestionService,
     getSpeakActivityQuestionByIdService,
     updateSpeakActivityQuestionService,
-    deleteSpeakActivityQuestionService
+    deleteSpeakActivityQuestionService,
+    getSpeakActivityQuestionsByLessonIdService
 };

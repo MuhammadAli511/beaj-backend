@@ -183,8 +183,6 @@ const findFolder = async (drive, folderName, parentFolderId = null) => {
   }
 };
 
-
-
 const uploadCertificateToDrive = async (buffer, name, cohort, targetGrp) => {
   try {
     // Load credentials

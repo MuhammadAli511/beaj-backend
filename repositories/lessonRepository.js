@@ -267,6 +267,19 @@ const getLessonIdsByCourseAndWeekAndActivityType = async (courseId, weekNumber, 
     return lessons.map(lesson => lesson.LessonId);
 };
 
+const getLessonIdsByCourseWeekDaySeq = async (courseId, weekNumber, dayNumber, sequenceNumber) => {
+    const lessons = await Lesson.findOne({
+        where: {
+            courseId: courseId,
+            weekNumber: weekNumber,
+            dayNumber: dayNumber,
+            SequenceNumber: sequenceNumber
+        },
+        attributes: ['LessonId']
+    });
+    return lessons ? lessons.LessonId : null;
+};
+
 const getLessonIdsByCourseAndAliasAndWeekAndDay = async (courseId, alias, weekDayPairs) => {
     let whereClause = {
         courseId: courseId,
@@ -353,4 +366,5 @@ export default {
     getLessonsByCourseOrdered,
     getLessonIdsByCourseAndAliasAndWeekAndDay,
     getLessonIdsByCourseAndAlias,
+    getLessonIdsByCourseWeekDaySeq,
 };

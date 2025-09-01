@@ -37,6 +37,9 @@ router.post('/migrateLesson', beajEmployeesAuth, lessonController.migrateLessonC
 
 router.post('/testLesson', beajEmployeesAuth, lessonController.testLessonController);
 
+router.post('/validateIngestion', beajEmployeesAuth, lessonController.validateIngestionController);
+
+router.post('/processIngestion', beajEmployeesAuth, lessonController.processIngestionController);
 
 // Use error handler middleware
 router.use(errorHandler);
