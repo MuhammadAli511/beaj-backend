@@ -8,7 +8,7 @@ import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRe
 import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
-
+import { sendAliasAndStartingInstruction } from "../utils/aliasAndInstructionsUtils.js";
 
 const watchAndImageView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
@@ -18,25 +18,10 @@ const watchAndImageView = async (profileId, userMobileNumber, currentUserState, 
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
-                let defaultTextInstruction = "Watch the videos. Then send an image response.";
-                const lessonTextInstruction = startingLesson.dataValues.textInstruction;
-                let finalTextInstruction = defaultTextInstruction;
-                if (lessonTextInstruction != null && lessonTextInstruction != "") {
-                    finalTextInstruction = lessonTextInstruction.replace(/\\n/g, '\n');
-                }
-                const lessonAudioInstruction = startingLesson.dataValues.audioInstructionUrl;
-                if (lessonAudioInstruction != null && lessonAudioInstruction != "") {
-                    await sendMediaMessage(userMobileNumber, lessonAudioInstruction, 'audio', null, 0, "Lesson", startingLesson.dataValues.LessonId, startingLesson.dataValues.audioInstructionMediaId, "audioInstructionMediaId");
-                    await createActivityLog(userMobileNumber, "audio", "outbound", lessonAudioInstruction, null);
-                }
+                // Send alias and starting instruction
+                await sendAliasAndStartingInstruction(userMobileNumber, startingLesson);
 
-                // Send lesson message
-                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n');;
-                lessonMessage += "\n\n" + finalTextInstruction;
-                await sendMessage(userMobileNumber, lessonMessage);
-                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
-
-                // Send first Watch and Speak question
+                // Send first Watch and Image question
                 const firstWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null, currentUserState.dataValues.currentDifficultyLevel);
 
                 // Update question number
@@ -101,23 +86,8 @@ const watchAndImageView = async (profileId, userMobileNumber, currentUserState, 
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
-                let defaultTextInstruction = "Watch the videos. Then send an image response.";
-                const lessonTextInstruction = startingLesson.dataValues.textInstruction;
-                let finalTextInstruction = defaultTextInstruction;
-                if (lessonTextInstruction != null && lessonTextInstruction != "") {
-                    finalTextInstruction = lessonTextInstruction.replace(/\\n/g, '\n');
-                }
-                const lessonAudioInstruction = startingLesson.dataValues.audioInstructionUrl;
-                if (lessonAudioInstruction != null && lessonAudioInstruction != "") {
-                    await sendMediaMessage(userMobileNumber, lessonAudioInstruction, 'audio', null, 0, "Lesson", startingLesson.dataValues.LessonId, startingLesson.dataValues.audioInstructionMediaId, "audioInstructionMediaId");
-                    await createActivityLog(userMobileNumber, "audio", "outbound", lessonAudioInstruction, null);
-                }
-
-                // Send lesson message
-                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n');;
-                lessonMessage += "\n\n" + finalTextInstruction;
-                await sendMessage(userMobileNumber, lessonMessage);
-                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+                // Send alias and starting instruction
+                await sendAliasAndStartingInstruction(userMobileNumber, startingLesson);
 
                 // Send first Watch and Speak question
                 const firstWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null, currentUserState.dataValues.currentDifficultyLevel);

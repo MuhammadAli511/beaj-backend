@@ -170,6 +170,25 @@ const kids_trial_flow_engagement_types = [
     "Thankyou Message - School Owner"
 ];
 
+const default_starting_instruction = {
+    "assessmentMcqs": "👇 *Answer the following questions.*",
+    "assessmentWatchAndSpeak": "Watch the videos. Then practise speaking by sending voice messages. 💬",
+    "conversationalAgencyBot": "Listen to the audio and send your answer as a voice message.",
+    "conversationalMonologueBot": "Watch the video 👇🏽 and practise speaking by sending a voice message.💬",
+    "conversationalQuestionsBot": "Listen to the audio and send your answer as a voice message.",
+    "feedbackAudio": "Listen to the audio instruction and send your response as a voice message.💬\nOR\n Type *next* to skip this activity!",
+    "feedbackMcqs": "👇 *Answer the following questions.*",
+    "listenAndSpeak": "Listen to the audio question and send your answer as a voice message.💬",
+    "mcqs": "👇 *Answer the following questions.*",
+    "read": "Listen to the passage carefully.",
+    "speakingPractice": "Listen to the audio and respond to the question by sending a voice message.💬\n*Speak for at least 30 seconds*",
+    "video": "👀 *Watch the video.*",
+    "videoEnd": "👀 *Watch the video.*",
+    "watchAndAudio": "Watch the video 👇🏽 and send your response as a voice message.",
+    "watchAndImage": "Watch the videos. Then send an image response.",
+    "watchAndSpeak": "Watch the videos. Then practise speaking by sending voice messages. 💬"
+}
+
 export {
     activity_types_to_repeat,
     text_message_types,
@@ -188,5 +207,6 @@ export {
     course_start_acceptable_messages,
     course_start_states,
     teacher_trial_flow_engagement_types,
-    kids_trial_flow_engagement_types
+    kids_trial_flow_engagement_types,
+    default_starting_instruction
 };
