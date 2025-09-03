@@ -53,19 +53,10 @@ const contentIngestionUtils = {
           return await this.processSpeakingPracticeActivity(activity, courseId, activityType, existingLessonId);
           
         default:
-          console.warn(`Unknown activity type: ${activityType}`);
-          return {
-            success: false,
-            activity: activity.alias,
-            error: `Unknown activity type: ${activityType}`
-          };
+          return `success: false, activityType: ${activityType}, Alias: ${activity.alias}, error: "Unknown activity type"`;
       }
     } catch (error) {
-      return {
-        success: false,
-        activity: activity.alias,
-        error: error.message
-      };
+      return `success: false, activityType: ${activity.activityType}, Alias: ${activity.alias}, error: ${error.message}`;
     }
   },
 
@@ -216,10 +207,9 @@ const contentIngestionUtils = {
           }
         }
       }
-
-      return { success: true, activity: activity.alias, lessonId };
+      return `success: true, activityType: ${activityType}, Alias: ${activity.alias}, LessonId: ${lessonId}`;
     } catch (error) {
-      return { success: false, activity: activity.alias, error: error.message };
+      return `success: false, activityType: ${activityType}, Alias: ${activity.alias}, error: ${error.message}`;
     }
   },
 
@@ -235,7 +225,7 @@ const contentIngestionUtils = {
         const firstDifficulty = firstQuestion.difficulties[0];
 
         if (!firstDifficulty.qVideo) {
-          throw new Error('Video is required for video activity');
+          return `success: false, activityType: ${activityType}, Alias: ${activity.alias}, error: "Video is required for video activity"`;
         }
 
         let existingDocuments = [];
@@ -265,14 +255,13 @@ const contentIngestionUtils = {
           );
 
           if (videoResponse.status !== 200) {
-            throw new Error('Failed to upload video file');
+            return `success: false, activityType: ${activityType}, Alias: ${activity.alias}, error: "Failed to upload video file"`;
           }
         }
       }
-
-      return { success: true, activity: activity.alias, lessonId };
+      return `success: true, activityType: ${activityType}, Alias: ${activity.alias}, LessonId: ${lessonId}`;
     } catch (error) {
-      return { success: false, activity: activity.alias, error: error.message };
+      return `success: false, activityType: ${activityType}, Alias: ${activity.alias}, error: ${error.message}`;
     }
   },
 
@@ -288,7 +277,7 @@ const contentIngestionUtils = {
         const firstDifficulty = firstQuestion.difficulties[0];
 
         if (!firstDifficulty.qVideo) {
-          throw new Error('Video is required for read activity');
+          return `success: false, activityType: ${activityType}, Alias: ${activity.alias}, error: "Video is required for read activity"`;
         }
 
         let existingDocuments = [];
@@ -318,14 +307,14 @@ const contentIngestionUtils = {
           );
 
           if (videoResponse.status !== 200) {
-            throw new Error('Failed to upload video file');
+            return `success: false, activityType: ${activityType}, Alias: ${activity.alias}, error: "Video upload failed"`;
           }
         }
       }
 
-      return { success: true, activity: activity.alias, lessonId };
+      return `success: true, activityType: ${activityType}, Alias: ${activity.alias}, LessonId: ${lessonId}`;
     } catch (error) {
-      return { success: false, activity: activity.alias, error: error.message };
+      return `success: false, activityType: ${activityType}, Alias: ${activity.alias}, error: ${error.message}`;
     }
   },
 
@@ -383,9 +372,9 @@ const contentIngestionUtils = {
         }
       }
 
-      return { success: true, activity: activity.alias, lessonId };
+      return `success: true, activityType: ${activityType}, Alias: ${activity.alias}, LessonId: ${lessonId}`;
     } catch (error) {
-      return { success: false, activity: activity.alias, error: error.message };
+      return `success: false, activityType: ${activityType}, Alias: ${activity.alias}, error: ${error.message}`;
     }
   },
 
@@ -454,9 +443,9 @@ const contentIngestionUtils = {
         }
       }
 
-      return { success: true, activity: activity.alias, lessonId };
+      return `success: true, activityType: ${activityType}, Alias: ${activity.alias}, LessonId: ${lessonId}`;
     } catch (error) {
-      return { success: false, activity: activity.alias, error: error.message };
+      return `success: false, activityType: ${activityType}, Alias: ${activity.alias}, error: ${error.message}`;
     }
   },
 
@@ -577,9 +566,9 @@ const contentIngestionUtils = {
         }
       }
 
-      return { success: true, activity: activity.alias, lessonId };
+      return `success: true, activityType: ${activityType}, Alias: ${activity.alias}, LessonId: ${lessonId}`;
     } catch (error) {
-      return { success: false, activity: activity.alias, error: error.message };
+      return `success: false, activityType: ${activityType}, Alias: ${activity.alias}, error: ${error.message}`;
     }
   },
 
@@ -632,9 +621,9 @@ const contentIngestionUtils = {
         }
       }
 
-      return { success: true, activity: activity.alias, lessonId };
+      return `success: true, activityType: ${activityType}, Alias: ${activity.alias}, LessonId: ${lessonId}`;
     } catch (error) {
-      return { success: false, activity: activity.alias, error: error.message };
+      return `success: false, activityType: ${activityType}, Alias: ${activity.alias}, error: ${error.message}`;
     }
   },
 
