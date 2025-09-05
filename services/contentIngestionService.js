@@ -2,7 +2,6 @@ import { getSheetsObj, getAuthSheetClient } from "../utils/sheetUtils.js";
 import { isCellHighlighted } from "../utils/sheetUtils.js";
 import { columns_order } from "../constants/constants.js";
 
-// Helper function to extract and structure activity data properly
 const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) => {
     const questionsMap = new Map();
     let currentQuestion = null;
@@ -321,24 +320,24 @@ const validateIngestionService = async (sheetId, sheetTitle) => {
 
             // Call all validation functions concurrently using Promise.all
             const [
-                videoErrors,
-                videoEndErrors,
-                mcqsErrors,
-                feedbackAudioErrors,
-                listenAndSpeakErrors,
-                watchAndSpeakErrors,
-                watchAndAudioErrors,
-                assessmentWatchAndSpeakErrors,
-                assessmentMcqsErrors,
-                feedbackMcqsErrors,
-                speakingPracticeErrors,
-                conversationalQuestionsBotErrors,
-                readErrors,
-                watchAndImageErrors,
-                conversationalMonologueBotErrors,
-                conversationalAgencyBotErrors,
-                watchErrors,
-                watchEndErrors
+                videoValidationResult,
+                videoEndValidationResult,
+                mcqsValidationResult,
+                feedbackAudioValidationResult,
+                listenAndSpeakValidationResult,
+                watchAndSpeakValidationResult,
+                watchAndAudioValidationResult,
+                assessmentWatchAndSpeakValidationResult,
+                assessmentMcqsValidationResult,
+                feedbackMcqsValidationResult,
+                speakingPracticeValidationResult,
+                conversationalQuestionsBotValidationResult,
+                readValidationResult,
+                watchAndImageValidationResult,
+                conversationalMonologueBotValidationResult,
+                conversationalAgencyBotValidationResult,
+                watchValidationResult,
+                watchEndValidationResult
             ] = await Promise.all([
                 ingestion.videoValidation(videoActivities),
                 ingestion.videoEndValidation(videoEndActivities),
@@ -360,40 +359,88 @@ const validateIngestionService = async (sheetId, sheetTitle) => {
                 ingestion.watchEndValidation(watchEndActivities)
             ]);
 
-            // Collect all non-null validation errors
-            const allValidationErrors = {
-                videoErrors: videoErrors || null,
-                videoEndErrors: videoEndErrors || null,
-                mcqsErrors: mcqsErrors || null,
-                feedbackAudioErrors: feedbackAudioErrors || null,
-                listenAndSpeakErrors: listenAndSpeakErrors || null,
-                watchAndSpeakErrors: watchAndSpeakErrors || null,
-                watchAndAudioErrors: watchAndAudioErrors || null,
-                assessmentWatchAndSpeakErrors: assessmentWatchAndSpeakErrors || null,
-                assessmentMcqsErrors: assessmentMcqsErrors || null,
-                feedbackMcqsErrors: feedbackMcqsErrors || null,
-                speakingPracticeErrors: speakingPracticeErrors || null,
-                conversationalQuestionsBotErrors: conversationalQuestionsBotErrors || null,
-                readErrors: readErrors || null,
-                watchAndImageErrors: watchAndImageErrors || null,
-                conversationalMonologueBotErrors: conversationalMonologueBotErrors || null,
-                conversationalAgencyBotErrors: conversationalAgencyBotErrors || null,
-                watchErrors: watchErrors || null,
-                watchEndErrors: watchEndErrors || null
+            // Collect all non-null validation results
+            const allValidationResults = {
+                videoValidation: videoValidationResult || null,
+                videoEndValidation: videoEndValidationResult || null,
+                mcqsValidation: mcqsValidationResult || null,
+                feedbackAudioValidation: feedbackAudioValidationResult || null,
+                listenAndSpeakValidation: listenAndSpeakValidationResult || null,
+                watchAndSpeakValidation: watchAndSpeakValidationResult || null,
+                watchAndAudioValidation: watchAndAudioValidationResult || null,
+                assessmentWatchAndSpeakValidation: assessmentWatchAndSpeakValidationResult || null,
+                assessmentMcqsValidation: assessmentMcqsValidationResult || null,
+                feedbackMcqsValidation: feedbackMcqsValidationResult || null,
+                speakingPracticeValidation: speakingPracticeValidationResult || null,
+                conversationalQuestionsBotValidation: conversationalQuestionsBotValidationResult || null,
+                readValidation: readValidationResult || null,
+                watchAndImageValidation: watchAndImageValidationResult || null,
+                conversationalMonologueBotValidation: conversationalMonologueBotValidationResult || null,
+                conversationalAgencyBotValidation: conversationalAgencyBotValidationResult || null,
+                watchValidation: watchValidationResult || null,
+                watchEndValidation: watchEndValidationResult || null
             };
 
             // Filter out null values
-            const validationErrors = Object.fromEntries(
-                Object.entries(allValidationErrors).filter(([key, value]) => value !== null)
+            const validationResults = Object.fromEntries(
+                Object.entries(allValidationResults).filter(([key, value]) => value !== null)
             );
+
+            // Aggregate totals and individual counts from all validation results
+            let totalToCreate = 0;
+            let totalToUpdate = 0;
+            let totalToDelete = 0;
+            let allValidationErrors = [];
+            let activityTypeCounts = {};
+
+            Object.entries(validationResults).forEach(([activityType, result]) => {
+                if (result && typeof result === 'object') {
+                    const createCount = result.toCreateCount || 0;
+                    const updateCount = result.toUpdateCount || 0;
+                    const deleteCount = result.toDeleteCount || 0;
+
+                    // Track individual activity type counts
+                    activityTypeCounts[activityType] = {
+                        toCreateCount: createCount,
+                        toUpdateCount: updateCount,
+                        toDeleteCount: deleteCount,
+                        totalCount: createCount + updateCount + deleteCount
+                    };
+
+                    // Add to totals
+                    totalToCreate += createCount;
+                    totalToUpdate += updateCount;
+                    totalToDelete += deleteCount;
+
+                    if (result.errors && Array.isArray(result.errors)) {
+                        allValidationErrors = allValidationErrors.concat(result.errors);
+                    }
+
+                    // Add individual activity type summary to valid messages (only if there are activities)
+                    if (createCount > 0 || updateCount > 0 || deleteCount > 0) {
+                        const activityTypeName = activityType.replace('Validation', '').replace(/([A-Z])/g, ' $1').trim();
+                        valid.push(`success: true, ${activityTypeName} - Create: ${createCount}, Update: ${updateCount}, Delete: ${deleteCount}`);
+                    }
+                }
+            });
+
+            // Add overall validation summary to valid messages after validation is complete
+            valid.push(`success: true, TOTAL Summary - To Create: ${totalToCreate}, To Update: ${totalToUpdate}, To Delete: ${totalToDelete}`);
 
 
             return {
                 valid: valid,
-                errors: errors,
+                errors: errors.concat(allValidationErrors), // Include validation errors with other errors
                 warnings: warnings,
                 activities: activities, // Include the grouped activities in the response
-                validationErrors: validationErrors // Include all non-null validation errors
+                validationSummary: {
+                    totalToCreate: totalToCreate,
+                    totalToUpdate: totalToUpdate,
+                    totalToDelete: totalToDelete,
+                    totalAll: totalToCreate + totalToUpdate + totalToDelete,
+                    activityTypeCounts: activityTypeCounts, // Individual counts per activity type
+                    validationResults: validationResults // Detailed validation results by activity type
+                }
             }
         } catch (error) {
             console.error("Error during validation:", error)
