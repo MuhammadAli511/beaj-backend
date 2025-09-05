@@ -170,6 +170,49 @@ const kids_trial_flow_engagement_types = [
     "Thankyou Message - School Owner"
 ];
 
+const activity_types = [
+    "watchandaudio",
+    "video",
+    "videoend",
+    "mcqs",
+    "feedbackaudio",
+    "listenandspeak",
+    "watchandspeak",
+    "assessmentwatchandspeak",
+    "assessmentmcqs",
+    "feedbackmcqs",
+    "speakingpractice",
+    "conversationalquestionsbot",
+    "read",
+    "watchandimage",
+    "conversationalmonologuebot",
+    "conversationalagencybot",
+    "watch",
+    "watchend",
+]
+
+const columns_order = {
+    UPLOAD: 0,
+    WEEK_NO: 1,
+    DAY_NO: 2,
+    SEQ_NO: 3,
+    ALIAS: 4,
+    ACTIVITY_TYPE: 5,
+    TEXT_INSTRUCTION: 6,
+    AUDIO_INSTRUCTION: 7,
+    COMPLETION_STICKER: 8,
+    Q_NO: 9,
+    DIFFICULTY_LEVEL: 10,
+    Q_TEXT: 11,
+    Q_VIDEO_LINK: 12,
+    Q_AUDIO_LINK: 13,
+    Q_IMAGE_LINK: 14,
+    ANSWER: 15,
+    CF_TEXT: 16,
+    CF_IMAGE: 17,
+    CF_AUDIO: 18,
+}
+
 export {
     activity_types_to_repeat,
     text_message_types,
@@ -188,5 +231,8 @@ export {
     course_start_acceptable_messages,
     course_start_states,
     teacher_trial_flow_engagement_types,
-    kids_trial_flow_engagement_types
+    kids_trial_flow_engagement_types,
+    activity_types,
+    columns_order
 };
+

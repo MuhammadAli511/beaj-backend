@@ -12,7 +12,6 @@ import azure_blob from "../utils/azureBlobStorage.js";
 import waUserActivityLogsRepository from "../repositories/waUserActivityLogsRepository.js";
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRepository.js";
-import { validateIngestion, processIngestion } from "../google_sheet_utils/masterSheetUtils.js";
 
 const createLessonService = async (lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status, textInstruction, audioInstruction) => {
     try {
@@ -500,25 +499,7 @@ const testLessonService = async (phoneNumber, lesson) => {
     }
 };
 
-const validateIngestionService = async (sheetId, sheetTitle) => {
-    try {
-        const result = await validateIngestion(sheetId, sheetTitle);
-        return result;
-    } catch (error) {
-        error.fileName = 'lessonService.js';
-        throw error;
-    }
-};
 
-const processIngestionService = async (courseId, sheetId, sheetTitle) => {
-    try {
-        const result = await processIngestion(courseId, sheetId, sheetTitle);
-        return result;
-    } catch (error) {
-        error.fileName = 'lessonService.js';
-        throw error;
-    }
-};
 const getByCourseWeekDaySeqService = async (courseId, weekNumber, dayNumber, sequenceNumber) => {
     try {
         const result = await lessonRepository.getLessonIdsByCourseWeekDaySeq(courseId, weekNumber, dayNumber, sequenceNumber);
@@ -539,7 +520,5 @@ export default {
     migrateLessonService,
     getLessonByCourseIdService,
     testLessonService,
-    validateIngestionService,
-    processIngestionService,
     getByCourseWeekDaySeqService,
 };

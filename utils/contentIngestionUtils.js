@@ -1,23 +1,23 @@
-import { getDriveMediaUrl } from "../google_sheet_utils/masterSheetUtils.js";
-import createLessonService1 from "../services/lessonService.js";
-import createMultipleChoiceQuestionService1 from "../services/multipleChoiceQuestionService.js";
-import createMultipleChoiceQuestionAnswerService1 from "../services/multipleChoiceQuestionAnswerService.js";
-import createSpeakActivityQuestionService1 from "../services/speakActivityQuestionService.js";
-import uploadDocumentFileService1 from "../services/documentFilesService.js";
+import { getDriveMediaUrl } from "../utils/sheetUtils.js";
+import lessonService from "../services/lessonService.js";
+import multipleChoiceQuestionService from "../services/multipleChoiceQuestionService.js";
+import multipleChoiceQuestionAnswerService from "../services/multipleChoiceQuestionAnswerService.js";
+import speakActivityQuestionService from "../services/speakActivityQuestionService.js";
+import documentFilesService from "../services/documentFilesService.js";
 
 
 const contentIngestionUtils = {
   // Main function to process any activity type
-  processActivity: async function(activity, courseId) {
+  processActivity: async function (activity, courseId) {
     try {
       let activityType = activity.activityType.toLowerCase();
       activityType = await this.activityTypeCase(activityType);
-      
+
       // Check if lesson exists
-      const existingLessonId = await createLessonService1.getByCourseWeekDaySeqService(
-        courseId, 
-        activity.week, 
-        activity.day, 
+      const existingLessonId = await lessonService.getByCourseWeekDaySeqService(
+        courseId,
+        activity.week,
+        activity.day,
         activity.seq
       );
 
@@ -26,32 +26,32 @@ const contentIngestionUtils = {
         case 'feedbackMcqs':
         case 'assessmentMcqs':
           return await this.processMCQActivity(activity, courseId, activityType, existingLessonId);
-        
+
         case 'video':
         case 'videoEnd':
           return await this.processVideoActivity(activity, courseId, activityType, existingLessonId);
-          
+
         case 'read':
           return await this.processReadActivity(activity, courseId, activityType, existingLessonId);
-          
+
         case 'listenAndSpeak':
         case 'feedbackAudio':
           return await this.processListenAndSpeakActivity(activity, courseId, activityType, existingLessonId);
-          
+
         case 'watchAndSpeak':
         case 'assessmentWatchAndSpeak':
         case 'watchAndAudio':
         case 'watchAndImage':
           return await this.processWatchAndSpeakActivity(activity, courseId, activityType, existingLessonId);
-          
+
         case 'conversationalQuestionsBot':
         case 'conversationalMonologueBot':
         case 'conversationalAgencyBot':
           return await this.processConversationalBotActivity(activity, courseId, activityType, existingLessonId);
-          
+
         case 'speakingPractice':
           return await this.processSpeakingPracticeActivity(activity, courseId, activityType, existingLessonId);
-          
+
         default:
           return `success: false, activityType: ${activityType}, Alias: ${activity.alias}, error: "Unknown activity type"`;
       }
@@ -61,7 +61,7 @@ const contentIngestionUtils = {
   },
 
   // Create base lesson for any activity
-  createBaseLesson: async function(activity, courseId, activityType, existingLessonId = null) {
+  createBaseLesson: async function (activity, courseId, activityType, existingLessonId = null) {
     // Download audio instruction if exists
     let audioInstructionFile = null;
     if (activity.audioInstruction) {
@@ -71,7 +71,7 @@ const contentIngestionUtils = {
     let response;
     if (existingLessonId) {
       // Update existing lesson
-      response = await createLessonService1.updateLessonService(
+      response = await lessonService.updateLessonService(
         existingLessonId,
         "week",
         activity.day,
@@ -88,7 +88,7 @@ const contentIngestionUtils = {
       response.LessonId = existingLessonId;
     } else {
       // Create new lesson
-      response = await createLessonService1.createLessonService(
+      response = await lessonService.createLessonService(
         "week",
         activity.day,
         activityType,
@@ -107,7 +107,7 @@ const contentIngestionUtils = {
   },
 
   // Process MCQ activities
-  processMCQActivity: async function(activity, courseId, activityType, existingLessonId = null) {
+  processMCQActivity: async function (activity, courseId, activityType, existingLessonId = null) {
     try {
       const response = await this.createBaseLesson(activity, courseId, activityType, existingLessonId);
       const lessonId = response.LessonId;
@@ -115,7 +115,7 @@ const contentIngestionUtils = {
       let existingQuestions = [];
       if (existingLessonId) {
         // Get existing questions
-        existingQuestions = await createMultipleChoiceQuestionService1.getMultipleChoiceQuestionsByLessonIdService(existingLessonId);
+        existingQuestions = await multipleChoiceQuestionService.getMultipleChoiceQuestionsByLessonIdService(existingLessonId);
       }
 
       for (const question of activity.questions || []) {
@@ -126,7 +126,7 @@ const contentIngestionUtils = {
 
         for (let diffIndex = 0; diffIndex < question.difficulties.length; diffIndex++) {
           const diff = question.difficulties[diffIndex];
-          
+
           // Find existing question to update or create new one
           const questionIndex = (parseInt(qNo) - 1) * question.difficulties.length + diffIndex;
           const existingQuestion = existingQuestions[questionIndex];
@@ -134,7 +134,7 @@ const contentIngestionUtils = {
           let questionResponse;
           if (existingQuestion) {
             // Update existing question
-            questionResponse = await createMultipleChoiceQuestionService1.updateMultipleChoiceQuestionService(
+            questionResponse = await multipleChoiceQuestionService.updateMultipleChoiceQuestionService(
               existingQuestion.Id,
               diff.qAudio,
               diff.qImage,
@@ -151,7 +151,7 @@ const contentIngestionUtils = {
             questionResponse.Id = existingQuestion.Id;
           } else {
             // Create new question
-            questionResponse = await createMultipleChoiceQuestionService1.createMultipleChoiceQuestionService(
+            questionResponse = await multipleChoiceQuestionService.createMultipleChoiceQuestionService(
               diff.qAudio,
               diff.qImage,
               diff.qVideo,
@@ -168,7 +168,7 @@ const contentIngestionUtils = {
           // Handle answers
           let existingAnswers = [];
           if (existingQuestion) {
-            existingAnswers = await createMultipleChoiceQuestionAnswerService1.getMultipleChoiceQuestionAnswerByQuestionIdService(questionId);
+            existingAnswers = await multipleChoiceQuestionAnswerService.getMultipleChoiceQuestionAnswerByQuestionIdService(questionId);
           }
 
           for (let ansIndex = 0; ansIndex < diff.answers.length; ansIndex++) {
@@ -178,7 +178,7 @@ const contentIngestionUtils = {
 
             if (existingAnswer) {
               // Update existing answer
-              await createMultipleChoiceQuestionAnswerService1.updateMultipleChoiceQuestionAnswerService(
+              await multipleChoiceQuestionAnswerService.updateMultipleChoiceQuestionAnswerService(
                 existingAnswer.Id,
                 ans.aText,
                 ans.aImage,
@@ -192,7 +192,7 @@ const contentIngestionUtils = {
               );
             } else {
               // Create new answer
-              await createMultipleChoiceQuestionAnswerService1.createMultipleChoiceQuestionAnswerService(
+              await multipleChoiceQuestionAnswerService.createMultipleChoiceQuestionAnswerService(
                 ans.aText,
                 ans.aImage,
                 ans.aAudio,
@@ -214,7 +214,7 @@ const contentIngestionUtils = {
   },
 
   // Process Video activities
-  processVideoActivity: async function(activity, courseId, activityType, existingLessonId = null) {
+  processVideoActivity: async function (activity, courseId, activityType, existingLessonId = null) {
     try {
       const response = await this.createBaseLesson(activity, courseId, activityType, existingLessonId);
       const lessonId = response.LessonId;
@@ -230,7 +230,7 @@ const contentIngestionUtils = {
 
         let existingDocuments = [];
         if (existingLessonId) {
-          existingDocuments = await uploadDocumentFileService1.getDocumentFilesByLessonIdService(existingLessonId);
+          existingDocuments = await documentFilesService.getDocumentFilesByLessonIdService(existingLessonId);
         }
 
         // Find existing video document
@@ -238,7 +238,7 @@ const contentIngestionUtils = {
 
         if (existingVideoDoc) {
           // Update existing video
-          const videoResponse = await uploadDocumentFileService1.updateDocumentFilesService(
+          const videoResponse = await documentFilesService.updateDocumentFilesService(
             existingVideoDoc.id,
             firstDifficulty.qVideo,
             lessonId,
@@ -247,7 +247,7 @@ const contentIngestionUtils = {
           );
         } else {
           // Create new video
-          const videoResponse = await uploadDocumentFileService1.createDocumentFilesService(
+          const videoResponse = await documentFilesService.createDocumentFilesService(
             firstDifficulty.qVideo,
             lessonId,
             "English",
@@ -266,7 +266,7 @@ const contentIngestionUtils = {
   },
 
   // Process Read activities
-  processReadActivity: async function(activity, courseId, activityType, existingLessonId = null) {
+  processReadActivity: async function (activity, courseId, activityType, existingLessonId = null) {
     try {
       const response = await this.createBaseLesson(activity, courseId, activityType, existingLessonId);
       const lessonId = response.LessonId;
@@ -282,7 +282,7 @@ const contentIngestionUtils = {
 
         let existingDocuments = [];
         if (existingLessonId) {
-          existingDocuments = await uploadDocumentFileService1.getDocumentFilesByLessonIdService(existingLessonId);
+          existingDocuments = await documentFilesService.getDocumentFilesByLessonIdService(existingLessonId);
         }
 
         // Find existing video document
@@ -290,7 +290,7 @@ const contentIngestionUtils = {
 
         if (existingVideoDoc) {
           // Update existing video
-          const videoResponse = await uploadDocumentFileService1.updateDocumentFilesService(
+          const videoResponse = await documentFilesService.updateDocumentFilesService(
             existingVideoDoc.id,
             firstDifficulty.qVideo,
             lessonId,
@@ -299,7 +299,7 @@ const contentIngestionUtils = {
           );
         } else {
           // Create new video
-          const videoResponse = await uploadDocumentFileService1.createDocumentFilesService(
+          const videoResponse = await documentFilesService.createDocumentFilesService(
             firstDifficulty.qVideo,
             lessonId,
             "English",
@@ -319,14 +319,14 @@ const contentIngestionUtils = {
   },
 
   // Process Listen and Speak activities
-  processListenAndSpeakActivity: async function(activity, courseId, activityType, existingLessonId = null) {
+  processListenAndSpeakActivity: async function (activity, courseId, activityType, existingLessonId = null) {
     try {
       const response = await this.createBaseLesson(activity, courseId, activityType, existingLessonId);
       const lessonId = response.LessonId;
 
       let existingQuestions = [];
       if (existingLessonId) {
-        existingQuestions = await createSpeakActivityQuestionService1.getSpeakActivityQuestionsByLessonIdService(existingLessonId);
+        existingQuestions = await speakActivityQuestionService.getSpeakActivityQuestionsByLessonIdService(existingLessonId);
       }
 
       for (let qIndex = 0; qIndex < activity.questions.length; qIndex++) {
@@ -340,7 +340,7 @@ const contentIngestionUtils = {
 
         if (existingQuestion) {
           // Update existing question
-          await createSpeakActivityQuestionService1.updateSpeakActivityQuestionService(
+          await speakActivityQuestionService.updateSpeakActivityQuestionService(
             existingQuestion.id,
             question.qText,
             question.difficulties[0]?.qVideo || null,
@@ -356,7 +356,7 @@ const contentIngestionUtils = {
           );
         } else {
           // Create new question
-          await createSpeakActivityQuestionService1.createSpeakActivityQuestionService(
+          await speakActivityQuestionService.createSpeakActivityQuestionService(
             question.qText,
             question.difficulties[0]?.qVideo || null,
             question.difficulties[0]?.qAudio || null,
@@ -379,25 +379,25 @@ const contentIngestionUtils = {
   },
 
   // Process Watch and Speak activities
-  processWatchAndSpeakActivity: async function(activity, courseId, activityType, existingLessonId = null) {
+  processWatchAndSpeakActivity: async function (activity, courseId, activityType, existingLessonId = null) {
     try {
       const response = await this.createBaseLesson(activity, courseId, activityType, existingLessonId);
       const lessonId = response.LessonId;
 
       let existingQuestions = [];
       if (existingLessonId) {
-        existingQuestions = await createSpeakActivityQuestionService1.getSpeakActivityQuestionsByLessonIdService(existingLessonId);
+        existingQuestions = await speakActivityQuestionService.getSpeakActivityQuestionsByLessonIdService(existingLessonId);
       }
 
       let questionCounter = 0;
       for (let qIndex = 0; qIndex < activity.questions.length; qIndex++) {
         const question = activity.questions[qIndex];
-        
+
         for (let diffIndex = 0; diffIndex < question.difficulties.length; diffIndex++) {
           const difficulty = question.difficulties[diffIndex];
           const answers = difficulty?.answers || [];
           let answersArray = null;
-          
+
           if (activityType === 'watchAndSpeak' || activityType === 'assessmentWatchAndSpeak') {
             answersArray = answers
               .map(answer => `"${answer.aText.replace(/"/g, '\\"')}"`)
@@ -408,7 +408,7 @@ const contentIngestionUtils = {
 
           if (existingQuestion) {
             // Update existing question
-            await createSpeakActivityQuestionService1.updateSpeakActivityQuestionService(
+            await speakActivityQuestionService.updateSpeakActivityQuestionService(
               existingQuestion.id,
               question.qText,
               question.difficulties[0]?.qVideo || null,
@@ -424,7 +424,7 @@ const contentIngestionUtils = {
             );
           } else {
             // Create new question
-            await createSpeakActivityQuestionService1.createSpeakActivityQuestionService(
+            await speakActivityQuestionService.createSpeakActivityQuestionService(
               question.qText,
               question.difficulties[0]?.qVideo || null,
               question.difficulties[0]?.qAudio || null,
@@ -438,7 +438,7 @@ const contentIngestionUtils = {
               difficulty?.answers[0]?.cfAudio || null
             );
           }
-          
+
           questionCounter++;
         }
       }
@@ -450,14 +450,14 @@ const contentIngestionUtils = {
   },
 
   // Process Conversational Bot activities
-  processConversationalBotActivity: async function(activity, courseId, activityType, existingLessonId = null) {
+  processConversationalBotActivity: async function (activity, courseId, activityType, existingLessonId = null) {
     try {
       const response = await this.createBaseLesson(activity, courseId, activityType, existingLessonId);
       const lessonId = response.LessonId;
 
       let existingQuestions = [];
       if (existingLessonId) {
-        existingQuestions = await createSpeakActivityQuestionService1.getSpeakActivityQuestionsByLessonIdService(existingLessonId);
+        existingQuestions = await speakActivityQuestionService.getSpeakActivityQuestionsByLessonIdService(existingLessonId);
       }
 
       for (let qIndex = 0; qIndex < activity.questions.length; qIndex++) {
@@ -467,7 +467,7 @@ const contentIngestionUtils = {
         if (activityType === "conversationalQuestionsBot") {
           if (existingQuestion) {
             // Update existing question
-            await createSpeakActivityQuestionService1.updateSpeakActivityQuestionService(
+            await speakActivityQuestionService.updateSpeakActivityQuestionService(
               existingQuestion.id,
               question.qText,
               null,
@@ -483,7 +483,7 @@ const contentIngestionUtils = {
             );
           } else {
             // Create new question
-            await createSpeakActivityQuestionService1.createSpeakActivityQuestionService(
+            await speakActivityQuestionService.createSpeakActivityQuestionService(
               question.qText,
               null,
               null,
@@ -500,7 +500,7 @@ const contentIngestionUtils = {
         } else if (activityType === "conversationalMonologueBot") {
           if (existingQuestion) {
             // Update existing question
-            await createSpeakActivityQuestionService1.updateSpeakActivityQuestionService(
+            await speakActivityQuestionService.updateSpeakActivityQuestionService(
               existingQuestion.id,
               question.qText,
               question.difficulties[0]?.qVideo || null,
@@ -516,7 +516,7 @@ const contentIngestionUtils = {
             );
           } else {
             // Create new question
-            await createSpeakActivityQuestionService1.createSpeakActivityQuestionService(
+            await speakActivityQuestionService.createSpeakActivityQuestionService(
               question.qText,
               question.difficulties[0]?.qVideo || null,
               null,
@@ -533,7 +533,7 @@ const contentIngestionUtils = {
         } else if (activityType === "conversationalAgencyBot") {
           if (existingQuestion) {
             // Update existing question
-            await createSpeakActivityQuestionService1.updateSpeakActivityQuestionService(
+            await speakActivityQuestionService.updateSpeakActivityQuestionService(
               existingQuestion.id,
               question.qText,
               null,
@@ -549,7 +549,7 @@ const contentIngestionUtils = {
             );
           } else {
             // Create new question
-            await createSpeakActivityQuestionService1.createSpeakActivityQuestionService(
+            await speakActivityQuestionService.createSpeakActivityQuestionService(
               question.qText,
               null,
               null,
@@ -573,14 +573,14 @@ const contentIngestionUtils = {
   },
 
   // Process Speaking Practice activities
-  processSpeakingPracticeActivity: async function(activity, courseId, activityType, existingLessonId = null) {
+  processSpeakingPracticeActivity: async function (activity, courseId, activityType, existingLessonId = null) {
     try {
       const response = await this.createBaseLesson(activity, courseId, activityType, existingLessonId);
       const lessonId = response.LessonId;
 
       let existingQuestions = [];
       if (existingLessonId) {
-        existingQuestions = await createSpeakActivityQuestionService1.getSpeakActivityQuestionsByLessonIdService(existingLessonId);
+        existingQuestions = await speakActivityQuestionService.getSpeakActivityQuestionsByLessonIdService(existingLessonId);
       }
 
       for (let qIndex = 0; qIndex < activity.questions.length; qIndex++) {
@@ -589,7 +589,7 @@ const contentIngestionUtils = {
 
         if (existingQuestion) {
           // Update existing question
-          await createSpeakActivityQuestionService1.updateSpeakActivityQuestionService(
+          await speakActivityQuestionService.updateSpeakActivityQuestionService(
             existingQuestion.id,
             question.qText,
             question.difficulties[0]?.qAudio || null,
@@ -605,7 +605,7 @@ const contentIngestionUtils = {
           );
         } else {
           // Create new question
-          await createSpeakActivityQuestionService1.createSpeakActivityQuestionService(
+          await speakActivityQuestionService.createSpeakActivityQuestionService(
             question.qText,
             question.difficulties[0]?.qAudio || null,
             null,
@@ -627,50 +627,50 @@ const contentIngestionUtils = {
     }
   },
 
-  activityTypeCase: async function (activityType){
-    if(activityType == "assessmentwatchandspeak") {
-        activityType = "assessmentWatchAndSpeak";
-      }
-      else if(activityType == "feedbackmcqs") {
-        activityType = "feedbackMcqs";
-      }
-      else if(activityType == "assessmentmcqs") {
-        activityType = "assessmentMcqs";
-      }
-      else if(activityType == "watchandspeak") {
-        activityType = "watchAndSpeak";
-      }
-      else if(activityType == "conversationalquestionsbot") {
-        activityType = "conversationalQuestionsBot";
-      }
-      else if(activityType == "conversationalmonologuebot") {
-        activityType = "conversationalMonologueBot";
-      }
-      else if(activityType == "conversationalagencybot") {
-        activityType = "conversationalAgencyBot";
-      }
-      else if(activityType == "speakingpractice") {
-        activityType = "speakingPractice";
-      }
-      else if(activityType == "listenandspeak") {
-        activityType = "listenAndSpeak";
-      }
-      else if(activityType == "feedbackaudio") {
-        activityType = "feedbackAudio";
-      }
-      else if(activityType == "watchandaudio") {
-        activityType = "watchAndAudio";
-      }
-      else if(activityType == "videoend" || activityType == "watchend") {
-        activityType = "videoEnd";
-      }
-       else if(activityType == "video" || activityType == "watch") {
-        activityType = "video";
-      }
-      else if(activityType == "watchandimage") {
-        activityType = "watchAndImage";
-      }
-      return activityType;
+  activityTypeCase: async function (activityType) {
+    if (activityType == "assessmentwatchandspeak") {
+      activityType = "assessmentWatchAndSpeak";
+    }
+    else if (activityType == "feedbackmcqs") {
+      activityType = "feedbackMcqs";
+    }
+    else if (activityType == "assessmentmcqs") {
+      activityType = "assessmentMcqs";
+    }
+    else if (activityType == "watchandspeak") {
+      activityType = "watchAndSpeak";
+    }
+    else if (activityType == "conversationalquestionsbot") {
+      activityType = "conversationalQuestionsBot";
+    }
+    else if (activityType == "conversationalmonologuebot") {
+      activityType = "conversationalMonologueBot";
+    }
+    else if (activityType == "conversationalagencybot") {
+      activityType = "conversationalAgencyBot";
+    }
+    else if (activityType == "speakingpractice") {
+      activityType = "speakingPractice";
+    }
+    else if (activityType == "listenandspeak") {
+      activityType = "listenAndSpeak";
+    }
+    else if (activityType == "feedbackaudio") {
+      activityType = "feedbackAudio";
+    }
+    else if (activityType == "watchandaudio") {
+      activityType = "watchAndAudio";
+    }
+    else if (activityType == "videoend" || activityType == "watchend") {
+      activityType = "videoEnd";
+    }
+    else if (activityType == "video" || activityType == "watch") {
+      activityType = "video";
+    }
+    else if (activityType == "watchandimage") {
+      activityType = "watchAndImage";
+    }
+    return activityType;
   },
 };
 

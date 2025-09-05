@@ -6,6 +6,7 @@ import { createCanvas, loadImage } from 'canvas';
 import { fileURLToPath } from 'url';
 import { Readable } from 'stream';
 import azureBlobStorage from '../utils/azureBlobStorage.js';
+import { getSheetsObj } from '../utils/sheetUtils.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -274,24 +275,11 @@ const processCertificate = async (name, cohort, targetGrp) => {
   }
 };
 
-
-const initializeSheets = async () => {
-  const creds = JSON.parse(
-    await readFile(new URL('../my_cred.json', import.meta.url), 'utf-8')
-  );
-  const auth = new google.auth.GoogleAuth({
-    credentials: creds,
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-  });
-  const authClient = await auth.getClient();
-  return google.sheets({ version: 'v4', auth: authClient });
-};
-
-const loadTrackingSheet = async (spreadsheetId, sheetName) => {
+const loadTrackingSheet = async (sheetId, sheetName) => {
   try {
-    const sheets = await initializeSheets();
+    const sheets = await getSheetsObj();
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId,
+      spreadsheetId: sheetId,
       range: `${sheetName}!A2:C`, // Skip header row
     });
 
@@ -311,13 +299,13 @@ const loadTrackingSheet = async (spreadsheetId, sheetName) => {
   }
 };
 
-const updateTrackingSheet = async (spreadsheetId, sheetName, newStudents) => {
+const updateTrackingSheet = async (sheetId, sheetName, newStudents) => {
   try {
-    const sheets = await initializeSheets();
+    const sheets = await getSheetsObj();
     const rowsToAppend = newStudents.map(student => [student.phoneNumber, student.name, student.cohort]);
 
     await sheets.spreadsheets.values.append({
-      spreadsheetId,
+      spreadsheetId: sheetId,
       range: `${sheetName}!A2:C`, // Append after last row
       valueInputOption: 'RAW',
       insertDataOption: 'INSERT_ROWS',
@@ -330,11 +318,11 @@ const updateTrackingSheet = async (spreadsheetId, sheetName, newStudents) => {
   }
 };
 
-const updateCohortInTrackingSheet = async (spreadsheetId, sheetName, phoneNumber, cohort) => {
-  const sheets = await initializeSheets();
+const updateCohortInTrackingSheet = async (sheetId, sheetName, phoneNumber, cohort) => {
+  const sheets = await getSheetsObj();
 
   const res = await sheets.spreadsheets.values.get({
-    spreadsheetId,
+    spreadsheetId: sheetId,
     range: `${sheetName}!A2:A`, // Column A has phone numbers, assume header in row 1
   });
 
@@ -351,7 +339,7 @@ const updateCohortInTrackingSheet = async (spreadsheetId, sheetName, phoneNumber
   const cohortRange = `${sheetName}!C${rowNumber}`;
 
   await sheets.spreadsheets.values.update({
-    spreadsheetId,
+    spreadsheetId: sheetId,
     range: cohortRange,
     valueInputOption: 'RAW',
     requestBody: {
