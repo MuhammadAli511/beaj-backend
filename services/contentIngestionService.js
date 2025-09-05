@@ -1,6 +1,8 @@
-import { getSheetsObj, getAuthSheetClient } from "../utils/sheetUtils.js";
-import { isCellHighlighted } from "../utils/sheetUtils.js";
-import { columns_order } from "../constants/constants.js";
+import { getSheetsObj, getAuthSheetClient, isCellHighlighted } from "../utils/sheetUtils.js";
+import { toCamelCase } from "../utils/utils.js";
+import { activity_types, columns_order } from "../constants/constants.js";
+import ingestion from '../ingestion/index.js';
+
 
 const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) => {
     const questionsMap = new Map();
@@ -12,7 +14,6 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
         const row = rows[r];
         const cells = row.values || [];
         const get = (col) => cells[col]?.formattedValue?.trim() || "";
-        const rowNum = r + 1;
 
         // Check if this row starts a new question (has Q No)
         const questionNumber = get(columns_order.Q_NO);
@@ -243,9 +244,7 @@ const validateIngestionService = async (sheetId, sheetTitle) => {
 
                 // Check if this row starts a new activity (has UPLOAD checkbox)
                 if (get(columns_order.UPLOAD)) {
-                    // Save previous activity if exists
                     if (currentActivity) {
-                        // Extract structured data for the completed activity
                         currentActivity.questions = extractStructuredActivityData(rows, currentActivity.startRow, currentActivity.endRow);
                         activities.push(currentActivity);
                     }
@@ -253,7 +252,7 @@ const validateIngestionService = async (sheetId, sheetTitle) => {
                     // Start new activity
                     currentActivity = {
                         startRow: rowNum,
-                        endRow: rowNum, // Will be updated as we add more rows
+                        endRow: rowNum,
                         upload: get(columns_order.UPLOAD),
                         week: get(columns_order.WEEK_NO),
                         day: get(columns_order.DAY_NO),
@@ -263,7 +262,7 @@ const validateIngestionService = async (sheetId, sheetTitle) => {
                         textInstruction: get(columns_order.TEXT_INSTRUCTION),
                         audioInstruction: get(columns_order.AUDIO_INSTRUCTION),
                         completionSticker: get(columns_order.COMPLETION_STICKER),
-                        questions: [] // Will be populated when activity is complete
+                        questions: []
                     };
                 } else if (currentActivity) {
                     // This row belongs to the current activity
@@ -286,10 +285,19 @@ const validateIngestionService = async (sheetId, sheetTitle) => {
                 activities.push(currentActivity);
             }
 
-            // Add activity grouping information to valid messages
-            valid.push(`success: true, Activities Count: ${activities.length}`);
+            // Filter out activities with ticked checkboxes (upload === "TRUE") and group by type
+            const untickedActivities = activities.filter(activity => activity.upload?.toLowerCase() === "false");
+            const skippedActivities = activities.filter(activity => activity.upload?.toLowerCase() === "true");
 
-            activities.forEach((activity, index) => {
+            // Add activity grouping information to valid messages
+            valid.push(`success: true, Total Activities Count: ${activities.length}`);
+            valid.push(`success: true, Activities to Process (unticked): ${untickedActivities.length}`);
+
+            if (skippedActivities.length > 0) {
+                valid.push(`success: true, Skipped ${skippedActivities.length} activities with ticked checkboxes (upload = TRUE)`);
+            }
+
+            untickedActivities.forEach((activity, index) => {
                 const rowRange = activity.startRow === activity.endRow
                     ? `Row ${activity.startRow}`
                     : `Rows ${activity.startRow}-${activity.endRow}`;
@@ -298,91 +306,33 @@ const validateIngestionService = async (sheetId, sheetTitle) => {
 
             valid.push(`success: true, All activities successfully extracted and grouped!`);
 
-            // Create validation calls for all activity types
-            const videoActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'video');
-            const videoEndActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'videoend');
-            const mcqsActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'mcqs');
-            const feedbackAudioActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'feedbackaudio');
-            const listenAndSpeakActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'listenandspeak');
-            const watchAndSpeakActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'watchandspeak');
-            const watchAndAudioActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'watchandaudio');
-            const assessmentWatchAndSpeakActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'assessmentwatchandspeak');
-            const assessmentMcqsActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'assessmentmcqs');
-            const feedbackMcqsActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'feedbackmcqs');
-            const speakingPracticeActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'speakingpractice');
-            const conversationalQuestionsBotActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'conversationalquestionsbot');
-            const readActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'read');
-            const watchAndImageActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'watchandimage');
-            const conversationalMonologueBotActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'conversationalmonologuebot');
-            const conversationalAgencyBotActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'conversationalagencybot');
-            const watchActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'watch');
-            const watchEndActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'watchend');
+            // Create validation calls for all activity types dynamically (only unticked activities)
+            const activityTypeFilters = Object.fromEntries(
+                activity_types.map(type => [
+                    `${toCamelCase(type)}Activities`,
+                    untickedActivities.filter(activity => activity.activityType?.toLowerCase() === type.toLowerCase())
+                ])
+            );
 
             // Call all validation functions concurrently using Promise.all
-            const [
-                videoValidationResult,
-                videoEndValidationResult,
-                mcqsValidationResult,
-                feedbackAudioValidationResult,
-                listenAndSpeakValidationResult,
-                watchAndSpeakValidationResult,
-                watchAndAudioValidationResult,
-                assessmentWatchAndSpeakValidationResult,
-                assessmentMcqsValidationResult,
-                feedbackMcqsValidationResult,
-                speakingPracticeValidationResult,
-                conversationalQuestionsBotValidationResult,
-                readValidationResult,
-                watchAndImageValidationResult,
-                conversationalMonologueBotValidationResult,
-                conversationalAgencyBotValidationResult,
-                watchValidationResult,
-                watchEndValidationResult
-            ] = await Promise.all([
-                ingestion.videoValidation(videoActivities),
-                ingestion.videoEndValidation(videoEndActivities),
-                ingestion.mcqsValidation(mcqsActivities),
-                ingestion.feedbackAudioValidation(feedbackAudioActivities),
-                ingestion.listenAndSpeakValidation(listenAndSpeakActivities),
-                ingestion.watchAndSpeakValidation(watchAndSpeakActivities),
-                ingestion.watchAndAudioValidation(watchAndAudioActivities),
-                ingestion.assessmentWatchAndSpeakValidation(assessmentWatchAndSpeakActivities),
-                ingestion.assessmentMcqsValidation(assessmentMcqsActivities),
-                ingestion.feedbackMcqsValidation(feedbackMcqsActivities),
-                ingestion.speakingPracticeValidation(speakingPracticeActivities),
-                ingestion.conversationalQuestionsBotValidation(conversationalQuestionsBotActivities),
-                ingestion.readValidation(readActivities),
-                ingestion.watchAndImageValidation(watchAndImageActivities),
-                ingestion.conversationalMonologueBotValidation(conversationalMonologueBotActivities),
-                ingestion.conversationalAgencyBotValidation(conversationalAgencyBotActivities),
-                ingestion.watchValidation(watchActivities),
-                ingestion.watchEndValidation(watchEndActivities)
-            ]);
+            const validationPromises = activity_types.map(type => {
+                const functionName = `${toCamelCase(type)}Validation`;
+                const activitiesKey = `${toCamelCase(type)}Activities`;
+                return ingestion[functionName](activityTypeFilters[activitiesKey]);
+            });
 
-            // Collect all non-null validation results
-            const allValidationResults = {
-                videoValidation: videoValidationResult || null,
-                videoEndValidation: videoEndValidationResult || null,
-                mcqsValidation: mcqsValidationResult || null,
-                feedbackAudioValidation: feedbackAudioValidationResult || null,
-                listenAndSpeakValidation: listenAndSpeakValidationResult || null,
-                watchAndSpeakValidation: watchAndSpeakValidationResult || null,
-                watchAndAudioValidation: watchAndAudioValidationResult || null,
-                assessmentWatchAndSpeakValidation: assessmentWatchAndSpeakValidationResult || null,
-                assessmentMcqsValidation: assessmentMcqsValidationResult || null,
-                feedbackMcqsValidation: feedbackMcqsValidationResult || null,
-                speakingPracticeValidation: speakingPracticeValidationResult || null,
-                conversationalQuestionsBotValidation: conversationalQuestionsBotValidationResult || null,
-                readValidation: readValidationResult || null,
-                watchAndImageValidation: watchAndImageValidationResult || null,
-                conversationalMonologueBotValidation: conversationalMonologueBotValidationResult || null,
-                conversationalAgencyBotValidation: conversationalAgencyBotValidationResult || null,
-                watchValidation: watchValidationResult || null,
-                watchEndValidation: watchEndValidationResult || null
-            };
+            const validationResults = await Promise.all(validationPromises);
+
+            // Create validation results object with proper keys
+            const allValidationResults = Object.fromEntries(
+                activity_types.map((type, index) => [
+                    `${toCamelCase(type)}Validation`,
+                    validationResults[index] || null
+                ])
+            );
 
             // Filter out null values
-            const validationResults = Object.fromEntries(
+            const filteredValidationResults = Object.fromEntries(
                 Object.entries(allValidationResults).filter(([key, value]) => value !== null)
             );
 
@@ -393,7 +343,7 @@ const validateIngestionService = async (sheetId, sheetTitle) => {
             let allValidationErrors = [];
             let activityTypeCounts = {};
 
-            Object.entries(validationResults).forEach(([activityType, result]) => {
+            Object.entries(filteredValidationResults).forEach(([activityType, result]) => {
                 if (result && typeof result === 'object') {
                     const createCount = result.toCreateCount || 0;
                     const updateCount = result.toUpdateCount || 0;
@@ -430,16 +380,16 @@ const validateIngestionService = async (sheetId, sheetTitle) => {
 
             return {
                 valid: valid,
-                errors: errors.concat(allValidationErrors), // Include validation errors with other errors
+                errors: errors.concat(allValidationErrors),
                 warnings: warnings,
-                activities: activities, // Include the grouped activities in the response
+                activities: activities,
                 validationSummary: {
                     totalToCreate: totalToCreate,
                     totalToUpdate: totalToUpdate,
                     totalToDelete: totalToDelete,
                     totalAll: totalToCreate + totalToUpdate + totalToDelete,
-                    activityTypeCounts: activityTypeCounts, // Individual counts per activity type
-                    validationResults: validationResults // Detailed validation results by activity type
+                    activityTypeCounts: activityTypeCounts,
+                    validationResults: filteredValidationResults
                 }
             }
         } catch (error) {
@@ -531,91 +481,41 @@ const processIngestionService = async (courseId, sheetId, sheetTitle) => {
             activities.push(currentActivity);
         }
 
-        // Filter activities by type for ingestion
-        const videoActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'video');
-        const videoEndActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'videoend');
-        const mcqsActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'mcqs');
-        const feedbackAudioActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'feedbackaudio');
-        const listenAndSpeakActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'listenandspeak');
-        const watchAndSpeakActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'watchandspeak');
-        const watchAndAudioActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'watchandaudio');
-        const assessmentWatchAndSpeakActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'assessmentwatchandspeak');
-        const assessmentMcqsActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'assessmentmcqs');
-        const feedbackMcqsActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'feedbackmcqs');
-        const speakingPracticeActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'speakingpractice');
-        const conversationalQuestionsBotActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'conversationalquestionsbot');
-        const readActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'read');
-        const watchAndImageActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'watchandimage');
-        const conversationalMonologueBotActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'conversationalmonologuebot');
-        const conversationalAgencyBotActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'conversationalagencybot');
-        const watchActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'watch');
-        const watchEndActivities = activities.filter(activity => activity.activityType?.toLowerCase() === 'watchend');
+        // Filter out activities with ticked checkboxes (upload === "TRUE") and group by type
+        const untickedActivities = activities.filter(activity => activity.upload?.toLowerCase() === "false");
+        const skippedActivities = activities.filter(activity => activity.upload?.toLowerCase() === "true");
+
+        if (skippedActivities.length > 0) {
+            valid.push(`success: true, Skipped ${skippedActivities.length} activities with ticked checkboxes (upload = TRUE)`);
+        }
+
+        // Filter activities by type for ingestion dynamically (only unticked activities)
+        const activityTypeFilters = Object.fromEntries(
+            activity_types.map(type => [
+                `${toCamelCase(type)}Activities`,
+                untickedActivities.filter(activity => activity.activityType?.toLowerCase() === type.toLowerCase())
+            ])
+        );
 
         // Call all ingestion functions concurrently using Promise.all
-        const [
-            videoResults,
-            videoEndResults,
-            mcqsResults,
-            feedbackAudioResults,
-            listenAndSpeakResults,
-            watchAndSpeakResults,
-            watchAndAudioResults,
-            assessmentWatchAndSpeakResults,
-            assessmentMcqsResults,
-            feedbackMcqsResults,
-            speakingPracticeResults,
-            conversationalQuestionsBotResults,
-            readResults,
-            watchAndImageResults,
-            conversationalMonologueBotResults,
-            conversationalAgencyBotResults,
-            watchResults,
-            watchEndResults
-        ] = await Promise.all([
-            ingestion.videoIngestion(videoActivities, courseId),
-            ingestion.videoEndIngestion(videoEndActivities, courseId),
-            ingestion.mcqsIngestion(mcqsActivities, courseId),
-            ingestion.feedbackAudioIngestion(feedbackAudioActivities, courseId),
-            ingestion.listenAndSpeakIngestion(listenAndSpeakActivities, courseId),
-            ingestion.watchAndSpeakIngestion(watchAndSpeakActivities, courseId),
-            ingestion.watchAndAudioIngestion(watchAndAudioActivities, courseId),
-            ingestion.assessmentWatchAndSpeakIngestion(assessmentWatchAndSpeakActivities, courseId),
-            ingestion.assessmentMcqsIngestion(assessmentMcqsActivities, courseId),
-            ingestion.feedbackMcqsIngestion(feedbackMcqsActivities, courseId),
-            ingestion.speakingPracticeIngestion(speakingPracticeActivities, courseId),
-            ingestion.conversationalQuestionsBotIngestion(conversationalQuestionsBotActivities, courseId),
-            ingestion.readIngestion(readActivities, courseId),
-            ingestion.watchAndImageIngestion(watchAndImageActivities, courseId),
-            ingestion.conversationalMonologueBotIngestion(conversationalMonologueBotActivities, courseId),
-            ingestion.conversationalAgencyBotIngestion(conversationalAgencyBotActivities, courseId),
-            ingestion.watchIngestion(watchActivities, courseId),
-            ingestion.watchEndIngestion(watchEndActivities, courseId)
-        ]);
+        const ingestionPromises = activity_types.map(type => {
+            const functionName = `${toCamelCase(type)}Ingestion`;
+            const activitiesKey = `${toCamelCase(type)}Activities`;
+            return ingestion[functionName](activityTypeFilters[activitiesKey], courseId);
+        });
 
-        // Collect all non-null ingestion results
-        const allIngestionResults = {
-            videoResults: videoResults || null,
-            videoEndResults: videoEndResults || null,
-            mcqsResults: mcqsResults || null,
-            feedbackAudioResults: feedbackAudioResults || null,
-            listenAndSpeakResults: listenAndSpeakResults || null,
-            watchAndSpeakResults: watchAndSpeakResults || null,
-            watchAndAudioResults: watchAndAudioResults || null,
-            assessmentWatchAndSpeakResults: assessmentWatchAndSpeakResults || null,
-            assessmentMcqsResults: assessmentMcqsResults || null,
-            feedbackMcqsResults: feedbackMcqsResults || null,
-            speakingPracticeResults: speakingPracticeResults || null,
-            conversationalQuestionsBotResults: conversationalQuestionsBotResults || null,
-            readResults: readResults || null,
-            watchAndImageResults: watchAndImageResults || null,
-            conversationalMonologueBotResults: conversationalMonologueBotResults || null,
-            conversationalAgencyBotResults: conversationalAgencyBotResults || null,
-            watchResults: watchResults || null,
-            watchEndResults: watchEndResults || null
-        };
+        const ingestionResults = await Promise.all(ingestionPromises);
+
+        // Create ingestion results object with proper keys
+        const allIngestionResults = Object.fromEntries(
+            activity_types.map((type, index) => [
+                `${toCamelCase(type)}Results`,
+                ingestionResults[index] || null
+            ])
+        );
 
         // Filter out null values
-        const ingestionResults = Object.fromEntries(
+        const filteredIngestionResults = Object.fromEntries(
             Object.entries(allIngestionResults).filter(([key, value]) => value !== null)
         );
 
@@ -623,7 +523,7 @@ const processIngestionService = async (courseId, sheetId, sheetTitle) => {
             valid: valid,
             errors: errors,
             warnings: warnings,
-            ingestionResults: ingestionResults // Include all non-null ingestion results
+            ingestionResults: filteredIngestionResults
         };
     } catch (error) {
         error.fileName = 'contentIngestionService.js';
