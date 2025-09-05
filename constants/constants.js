@@ -171,13 +171,13 @@ const kids_trial_flow_engagement_types = [
 ];
 
 const activity_types = [
-    "watchandaudio",
     "video",
     "videoend",
     "mcqs",
     "feedbackaudio",
     "listenandspeak",
     "watchandspeak",
+    "watchandaudio",
     "assessmentwatchandspeak",
     "assessmentmcqs",
     "feedbackmcqs",
