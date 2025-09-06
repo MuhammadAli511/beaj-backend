@@ -78,10 +78,21 @@ const deleteMultipleChoiceQuestionService = async (id) => {
     }
 };
 
+const getMultipleChoiceQuestionsByLessonIdService  = async (lessonId) => {
+    try {
+        const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonId(lessonId);
+        return multipleChoiceQuestions;
+    } catch (error) {
+        error.fileName = 'multipleChoiceQuestionService.js';
+        throw error;
+    }
+};
+
 export default {
     createMultipleChoiceQuestionService,
     getAllMultipleChoiceQuestionService,
     getMultipleChoiceQuestionByIdService,
     updateMultipleChoiceQuestionService,
-    deleteMultipleChoiceQuestionService
+    deleteMultipleChoiceQuestionService,
+    getMultipleChoiceQuestionsByLessonIdService,
 };

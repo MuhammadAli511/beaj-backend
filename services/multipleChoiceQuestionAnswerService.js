@@ -48,6 +48,16 @@ const getMultipleChoiceQuestionAnswerByIdService = async (id) => {
     }
 };
 
+const getMultipleChoiceQuestionAnswerByQuestionIdService = async (questionId) => {
+    try {
+        const multipleChoiceQuestionAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(questionId);
+        return multipleChoiceQuestionAnswers;
+    } catch (error) {
+        error.fileName = 'multipleChoiceQuestionAnswerService.js';
+        throw error;
+    }
+};
+
 const updateMultipleChoiceQuestionAnswerService = async (id, answerText, answerImageUrl, answerAudioUrl, isCorrect, multipleChoiceQuestionId, sequenceNumber, customAnswerFeedbackText, customAnswerFeedbackImage, customAnswerFeedbackAudio) => {
     try {
         let imageUrl = null;
@@ -88,5 +98,6 @@ export default {
     getAllMultipleChoiceQuestionAnswerService,
     getMultipleChoiceQuestionAnswerByIdService,
     updateMultipleChoiceQuestionAnswerService,
-    deleteMultipleChoiceQuestionAnswerService
+    deleteMultipleChoiceQuestionAnswerService,
+    getMultipleChoiceQuestionAnswerByQuestionIdService,
 };

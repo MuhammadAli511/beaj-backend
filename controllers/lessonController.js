@@ -101,6 +101,28 @@ const testLessonController = async (req, res, next) => {
     }
 };
 
+const validateIngestionController = async (req, res, next) => {
+    try {
+        const { sheetId, sheetTitle, courseId } = req.body;
+        const result = await service.validateIngestionService(sheetId, sheetTitle, courseId);
+        res.status(200).send({ message: "Ingestion validated successfully", result });
+    } catch (error) {
+        error.fileName = 'lessonController.js';
+        next(error);
+    }
+};
+
+const processIngestionController = async (req, res, next) => {
+    try {
+        const { courseId, sheetId, sheetTitle, validationResult } = req.body;
+        const result = await service.processIngestionService(courseId, sheetId, sheetTitle, validationResult);
+        res.status(200).send({ message: "Ingestion processed successfully", result });
+    } catch (error) {
+        error.fileName = 'lessonController.js';
+        next(error);
+    }
+};
+
 export default {
     createLessonController,
     getAllLessonController,
@@ -111,4 +133,6 @@ export default {
     migrateLessonController,
     getLessonByCourseIdController,
     testLessonController,
+    validateIngestionController,
+    processIngestionController,
 };
