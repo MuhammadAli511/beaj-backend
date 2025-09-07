@@ -6,6 +6,7 @@ import { createWriteStream, createReadStream, unlinkSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import azureBlobStorage from "./azureBlobStorage.js";
+import { createCanvas, loadImage } from "canvas";
 
 // Set ffmpeg path
 ffmpeg.setFfmpegPath(ffmpegStatic);
@@ -319,6 +320,163 @@ const compressVideo = async (videoFileObject) => {
     }
 };
 
+// Function to compress audio if it's larger than 15MB
+const compressAudio = async (audioFileObject) => {
+    const MAX_SIZE_MB = 15;
+    const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+
+    try {
+        // Check if compression is needed
+        if (audioFileObject.size <= MAX_SIZE_BYTES) {
+            console.log('Audio is already under 15MB, uploading without compression');
+            return await azureBlobStorage.uploadToBlobStorage(audioFileObject);
+        }
+
+        console.log(`Audio size: ${(audioFileObject.size / (1024 * 1024)).toFixed(2)}MB - compression needed`);
+
+        // Calculate compression ratio for proportional reduction
+        const targetSizeRatio = MAX_SIZE_MB / (audioFileObject.size / (1024 * 1024));
+        console.log(`Target compression ratio: ${(targetSizeRatio * 100).toFixed(1)}%`);
+
+        // Create temporary files
+        const timestamp = Date.now();
+        const randomDigits = Math.floor(100000 + Math.random() * 900000); // 6 digit random number
+        const tempInputPath = join(tmpdir(), `input_${timestamp}_${randomDigits}.audio`);
+        const tempOutputPath = join(tmpdir(), `output_${timestamp}_${randomDigits}.mp3`);
+
+        // Write input buffer to temporary file
+        const inputStream = createWriteStream(tempInputPath);
+        inputStream.write(audioFileObject.buffer);
+        inputStream.end();
+
+        await new Promise((resolve, reject) => {
+            inputStream.on('finish', resolve);
+            inputStream.on('error', reject);
+        });
+
+        // Compress audio using ffmpeg
+        await new Promise((resolve, reject) => {
+            ffmpeg(tempInputPath)
+                .output(tempOutputPath)
+                .audioCodec('mp3')
+                .audioBitrate('128k') // Reduce bitrate for compression
+                .audioChannels(2)
+                .audioFrequency(44100)
+                .on('end', () => {
+                    console.log('Audio compression completed');
+                    resolve();
+                })
+                .on('error', (err) => {
+                    console.error('FFmpeg audio compression error:', err);
+                    reject(err);
+                })
+                .on('progress', (progress) => {
+                    console.log(`Compression progress: ${progress.percent?.toFixed(1)}%`);
+                })
+                .run();
+        });
+
+        // Read compressed audio
+        const compressedBuffer = await new Promise((resolve, reject) => {
+            const chunks = [];
+            const readStream = createReadStream(tempOutputPath);
+
+            readStream.on('data', (chunk) => chunks.push(chunk));
+            readStream.on('end', () => resolve(Buffer.concat(chunks)));
+            readStream.on('error', reject);
+        });
+
+        console.log(`Compressed audio size: ${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB`);
+
+        // Create file object for upload with custom filename
+        const compressedFileObject = {
+            buffer: compressedBuffer,
+            size: compressedBuffer.length,
+            originalname: `${timestamp}_${randomDigits}.mp3`,
+            mimetype: 'audio/mp3'
+        };
+
+        // Upload to Azure blob storage
+        const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(compressedFileObject);
+
+        // Cleanup temporary files
+        try {
+            unlinkSync(tempInputPath);
+            unlinkSync(tempOutputPath);
+        } catch (cleanupError) {
+            console.warn('Failed to cleanup temporary files:', cleanupError.message);
+        }
+
+        return uploadedUrl;
+
+    } catch (error) {
+        console.error('Audio compression error:', error);
+        throw new Error(`Failed to compress audio: ${error.message}`);
+    }
+};
+
+// Function to compress image if it's larger than 4MB
+const compressImage = async (imageFileObject) => {
+    const MAX_SIZE_MB = 4;
+    const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+
+    try {
+        // Check if compression is needed
+        if (imageFileObject.size <= MAX_SIZE_BYTES) {
+            console.log('Image is already under 4MB, uploading without compression');
+            return await azureBlobStorage.uploadToBlobStorage(imageFileObject);
+        }
+
+        console.log(`Image size: ${(imageFileObject.size / (1024 * 1024)).toFixed(2)}MB - compression needed`);
+
+        // Calculate compression ratio for proportional reduction
+        const targetSizeRatio = MAX_SIZE_MB / (imageFileObject.size / (1024 * 1024));
+        console.log(`Target compression ratio: ${(targetSizeRatio * 100).toFixed(1)}%`);
+
+        // Load image using canvas
+        const image = await loadImage(imageFileObject.buffer);
+
+        // Calculate new dimensions maintaining aspect ratio
+        const scaleFactor = Math.sqrt(targetSizeRatio);
+        const newWidth = Math.floor(image.width * scaleFactor);
+        const newHeight = Math.floor(image.height * scaleFactor);
+
+        console.log(`Original dimensions: ${image.width}x${image.height}`);
+        console.log(`New dimensions: ${newWidth}x${newHeight}`);
+
+        // Create canvas with new dimensions
+        const canvas = createCanvas(newWidth, newHeight);
+        const ctx = canvas.getContext('2d');
+
+        // Draw resized image
+        ctx.drawImage(image, 0, 0, newWidth, newHeight);
+
+        // Convert to buffer with compression
+        const compressedBuffer = canvas.toBuffer('image/jpeg', { quality: 0.8 });
+
+        console.log(`Compressed image size: ${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB`);
+
+        // Create file object for upload with custom filename
+        const timestamp = Date.now();
+        const randomDigits = Math.floor(100000 + Math.random() * 900000); // 6 digit random number
+        const compressedFileObject = {
+            buffer: compressedBuffer,
+            size: compressedBuffer.length,
+            originalname: `${timestamp}_${randomDigits}.jpg`,
+            mimetype: 'image/jpeg'
+        };
+
+        // Upload to Azure blob storage
+        const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(compressedFileObject);
+
+        return uploadedUrl;
+
+    } catch (error) {
+        console.error('Image compression error:', error);
+        throw new Error(`Failed to compress image: ${error.message}`);
+    }
+};
+
 export {
     getDriveMediaUrl,
     validateDriveUrl,
@@ -331,5 +489,7 @@ export {
     getDriveObj,
     getSheetsObj,
     getAuthSheetClient,
-    compressVideo
+    compressVideo,
+    compressAudio,
+    compressImage
 };

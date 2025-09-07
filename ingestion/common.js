@@ -1,5 +1,6 @@
 import { containsUrl, validateDriveUrl } from "../utils/sheetUtils.js";
 import lessonRepository from "../repositories/lessonRepository.js";
+import { getDriveMediaUrl, compressAudio } from "../utils/sheetUtils.js";
 
 const commonValidation = async (activity) => {
     let errors = [];
@@ -133,10 +134,15 @@ const commonValidation = async (activity) => {
 
 const commonIngestion = async (activity, exists) => {
     let lessonCreation = null;
+    let audioFile, compressedAudioUrl;
+    if (activity.audioInstruction) {
+        audioFile = await getDriveMediaUrl(activity.audioInstruction);
+        compressedAudioUrl = await compressAudio(audioFile);
+    }
     if (exists) {
-        lessonCreation = await lessonRepository.updateByCourseWeekDaySeq(activity.courseId, activity.week, activity.day, activity.seq, activity.activityType, activity.alias, activity.text, activity.textInstruction, activity.audioInstructionUrl);
+        lessonCreation = await lessonRepository.updateByCourseWeekDaySeq(activity.courseId, activity.week, activity.day, activity.seq, activity.activityType, activity.alias, activity.text, activity.textInstruction, compressedAudioUrl);
     } else {
-        lessonCreation = await lessonRepository.create("week", activity.day, activity.activityType, activity.alias, activity.week, activity.text, activity.courseId, activity.seq, "Active", activity.textInstruction, activity.audioInstructionUrl);
+        lessonCreation = await lessonRepository.create("week", activity.day, activity.activityType, activity.alias, activity.week, activity.text, activity.courseId, activity.seq, "Active", activity.textInstruction, compressedAudioUrl);
     }
     return lessonCreation;
 }
