@@ -3,25 +3,25 @@ import lessonRepository from "../repositories/lessonRepository.js";
 
 
 const validation = async (activities) => {
-    const errors = [];
+    let allErrors = [];
     let toCreateCount = 0;
     let toUpdateCount = 0;
 
     try {
         for (const activity of activities) {
             const { errors, toCreate, toUpdate } = await commonValidation(activity);
-            errors.push(...errors);
+            allErrors.push(...errors);
             toCreateCount += toCreate;
             toUpdateCount += toUpdate;
 
             // For watch activity questionVideo should exist (This is only extra validation for watch activity)
             if (!activity.questions?.some(q => q.questionVideo)) {
-                errors.push(`Watch activity "${activity.alias}" should have question video`);
+                allErrors.push(`Watch activity from "${activity.startRow}" to "${activity.endRow}" should have question video`);
             }
         }
 
         return {
-            errors,
+            errors: allErrors,
             toCreateCount,
             toUpdateCount,
         };
@@ -39,7 +39,7 @@ const ingestion = async (activities, courseId) => {
     try {
         let createdCount = 0;
         let updatedCount = 0;
-        const errors = [];
+        let allErrors = [];
         const results = [];
 
         for (const activity of activities) {
@@ -49,7 +49,7 @@ const ingestion = async (activities, courseId) => {
             // - Process questions and media content
             // - Handle video/audio links
 
-            console.log(`Processing watch activity: ${activity.alias} for course: ${courseId}`);
+            console.log(`Processing watch activity from "${activity.startRow}" to "${activity.endRow}" for course: ${courseId}`);
 
             try {
                 // Example processing logic - replace with your actual business logic
@@ -91,7 +91,7 @@ const ingestion = async (activities, courseId) => {
                 }
 
             } catch (activityError) {
-                errors.push(`Error processing watch activity "${activity.alias}": ${activityError.message}`);
+                allErrors.push(`Error processing watch activity from "${activity.startRow}" to "${activity.endRow}": ${activityError.message}`);
             }
         }
 
@@ -100,7 +100,7 @@ const ingestion = async (activities, courseId) => {
             message: `Successfully processed ${createdCount + updatedCount} watch activities`,
             createdCount,
             updatedCount,
-            errors,
+            errors: allErrors,
             results
         };
     } catch (error) {
@@ -109,7 +109,7 @@ const ingestion = async (activities, courseId) => {
             message: `Watch ingestion error: ${error.message}`,
             createdCount: 0,
             updatedCount: 0,
-            errors: [error.message]
+            errors: [`Watch ingestion error: ${error.message}`]
         };
     }
 };

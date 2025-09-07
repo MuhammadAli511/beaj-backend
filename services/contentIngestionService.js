@@ -5,6 +5,29 @@ import ingestion from '../ingestion/index.js';
 import lessonRepository from '../repositories/lessonRepository.js';
 
 
+// Helper function to check if a row contains meaningful activity data
+const hasActivityData = (get) => {
+    return get(columns_order.WEEK_NO) ||
+        get(columns_order.DAY_NO) ||
+        get(columns_order.SEQ_NO) ||
+        get(columns_order.ALIAS) ||
+        get(columns_order.ACTIVITY_TYPE) ||
+        get(columns_order.TEXT_INSTRUCTION) ||
+        get(columns_order.AUDIO_INSTRUCTION) ||
+        get(columns_order.COMPLETION_STICKER) ||
+        get(columns_order.Q_NO) ||
+        get(columns_order.Q_TEXT) ||
+        get(columns_order.Q_VIDEO_LINK) ||
+        get(columns_order.Q_AUDIO_LINK) ||
+        get(columns_order.Q_IMAGE_LINK) ||
+        get(columns_order.DIFFICULTY_LEVEL) ||
+        get(columns_order.ANSWER) ||
+        get(columns_order.CF_TEXT) ||
+        get(columns_order.CF_IMAGE) ||
+        get(columns_order.CF_AUDIO);
+};
+
+
 const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) => {
     const questionsMap = new Map();
     let currentQuestion = null;
@@ -276,8 +299,10 @@ const validateIngestionService = async (courseId, sheetId, sheetTitle) => {
                         questions: []
                     };
                 } else if (currentActivity) {
-                    // This row belongs to the current activity
-                    currentActivity.endRow = rowNum;
+                    // Only extend activity range if this row has meaningful data
+                    if (hasActivityData(get)) {
+                        currentActivity.endRow = rowNum;
+                    }
 
                     // Update activity info if empty and found in current row
                     if (!currentActivity.week && get(columns_order.WEEK_NO)) {
@@ -351,19 +376,11 @@ const validateIngestionService = async (courseId, sheetId, sheetTitle) => {
             let totalToCreate = 0;
             let totalToUpdate = 0;
             let allValidationErrors = [];
-            let activityTypeCounts = {};
 
             Object.entries(filteredValidationResults).forEach(([activityType, result]) => {
                 if (result && typeof result === 'object') {
                     const createCount = result.toCreateCount || 0;
                     const updateCount = result.toUpdateCount || 0;
-
-                    // Track individual activity type counts
-                    activityTypeCounts[activityType] = {
-                        toCreateCount: createCount,
-                        toUpdateCount: updateCount,
-                        totalCount: createCount + updateCount
-                    };
 
                     // Add to totals
                     totalToCreate += createCount;
@@ -401,7 +418,6 @@ const validateIngestionService = async (courseId, sheetId, sheetTitle) => {
                     totalToCreate: totalToCreate,
                     totalToUpdate: totalToUpdate,
                     totalAll: totalToCreate + totalToUpdate,
-                    activityTypeCounts: activityTypeCounts,
                     validationResults: filteredValidationResults,
                     deletionSummary: deletionValidation.deletionSummary || null
                 }
@@ -476,8 +492,10 @@ const processIngestionService = async (courseId, sheetId, sheetTitle) => {
                     questions: []
                 };
             } else if (currentActivity) {
-                // This row belongs to the current activity
-                currentActivity.endRow = rowNum;
+                // Only extend activity range if this row has meaningful data
+                if (hasActivityData(get)) {
+                    currentActivity.endRow = rowNum;
+                }
 
                 // Update activity info if empty and found in current row
                 if (!currentActivity.week && get(columns_order.WEEK_NO)) {
@@ -538,19 +556,11 @@ const processIngestionService = async (courseId, sheetId, sheetTitle) => {
         let totalCreated = 0;
         let totalUpdated = 0;
         let allIngestionErrors = [];
-        let activityTypeCounts = {};
 
         Object.entries(filteredIngestionResults).forEach(([activityType, result]) => {
             if (result && typeof result === 'object') {
                 const createdCount = result.createdCount || 0;
                 const updatedCount = result.updatedCount || 0;
-
-                // Track individual activity type counts
-                activityTypeCounts[activityType] = {
-                    createdCount: createdCount,
-                    updatedCount: updatedCount,
-                    totalCount: createdCount + updatedCount
-                };
 
                 // Add to totals
                 totalCreated += createdCount;
@@ -587,7 +597,6 @@ const processIngestionService = async (courseId, sheetId, sheetTitle) => {
                 totalCreated: totalCreated,
                 totalUpdated: totalUpdated,
                 totalAll: totalCreated + totalUpdated,
-                activityTypeCounts: activityTypeCounts, // Individual counts per activity type
                 ingestionResults: filteredIngestionResults, // Detailed ingestion results by activity type
                 deletionSummary: deletionProcessing.deletionSummary || null
             }
@@ -737,9 +746,7 @@ const deleteActivitiesService = async (courseId, sheetId, sheetTitle, processDel
                 };
             } else {
                 // Validation mode - just return what would be deleted
-                valid.push(`success: true, Found ${existingLessons.length} existing lessons in database`);
-                valid.push(`success: true, Found ${sheetActivities.length} activities in sheet`);
-                valid.push(`success: true, Identified ${lessonsToDelete.length} lessons to delete (exist in DB but not in sheet)`);
+                valid.push(`success: true, Identified ${lessonsToDelete.length} lessons to delete`);
 
                 lessonsToDelete.forEach((lesson, index) => {
                     valid.push(`success: true, To Delete ${index + 1}: Week ${lesson.week}, Day ${lesson.day}, Seq ${lesson.seq}, Type: ${lesson.activityType}, Alias: ${lesson.alias}`);
