@@ -204,6 +204,121 @@ const streamToBuffer = (stream) => {
     })
 };
 
+// Function to compress video if it's larger than 15MB
+const compressVideo = async (videoFileObject) => {
+    const MAX_SIZE_MB = 15;
+    const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+
+    try {
+        // Check if compression is needed
+        if (videoFileObject.size <= MAX_SIZE_BYTES) {
+            console.log('Video is already under 15MB, uploading without compression');
+            return await azureBlobStorage.uploadToBlobStorage(videoFileObject);
+        }
+
+        console.log(`Video size: ${(videoFileObject.size / (1024 * 1024)).toFixed(2)}MB - compression needed`);
+
+        // Calculate compression ratio for proportional reduction
+        // If 100MB needs to become 15MB, that's a reduction to 15% of original
+        // We'll use this same percentage for all videos
+        const targetSizeRatio = MAX_SIZE_MB / (videoFileObject.size / (1024 * 1024));
+        console.log(`Target compression ratio: ${(targetSizeRatio * 100).toFixed(1)}%`);
+
+        // Create temporary files
+        const timestamp = Date.now();
+        const randomDigits = Math.floor(100000 + Math.random() * 900000); // 6 digit random number
+        const tempInputPath = join(tmpdir(), `input_${timestamp}_${randomDigits}.mp4`);
+        const tempOutputPath = join(tmpdir(), `output_${timestamp}_${randomDigits}.mp4`);
+
+        // Write input buffer to temporary file
+        const inputStream = createWriteStream(tempInputPath);
+        inputStream.write(videoFileObject.buffer);
+        inputStream.end();
+
+        await new Promise((resolve, reject) => {
+            inputStream.on('finish', resolve);
+            inputStream.on('error', reject);
+        });
+
+        // Compress video using ffmpeg
+        await new Promise((resolve, reject) => {
+            ffmpeg(tempInputPath)
+                .output(tempOutputPath)
+                .videoCodec('libx264')
+                .audioCodec('aac')
+                .outputOptions([
+                    '-preset', 'medium',
+                    '-crf', '28', // Higher CRF = more compression
+                    '-movflags', '+faststart',
+                    '-maxrate', '1M',
+                    '-bufsize', '2M'
+                ])
+                .on('end', () => {
+                    console.log('Video compression completed');
+                    resolve();
+                })
+                .on('error', (err) => {
+                    console.error('FFmpeg compression error:', err);
+                    reject(err);
+                })
+                .on('progress', (progress) => {
+                    console.log(`Compression progress: ${progress.percent?.toFixed(1)}%`);
+                })
+                .run();
+        });
+
+        // Read compressed video
+        const compressedBuffer = await new Promise((resolve, reject) => {
+            const chunks = [];
+            const readStream = createReadStream(tempOutputPath);
+
+            readStream.on('data', (chunk) => chunks.push(chunk));
+            readStream.on('end', () => resolve(Buffer.concat(chunks)));
+            readStream.on('error', reject);
+        });
+
+        console.log(`Compressed video size: ${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB`);
+
+        // Create file object for upload with custom filename
+        const compressedFileObject = {
+            buffer: compressedBuffer,
+            size: compressedBuffer.length,
+            originalname: `${timestamp}_${randomDigits}.mp4`,
+            mimetype: 'video/mp4'
+        };
+
+        // Upload to Azure blob storage
+        const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(compressedFileObject);
+
+        // Cleanup temporary files
+        try {
+            unlinkSync(tempInputPath);
+            unlinkSync(tempOutputPath);
+        } catch (cleanupError) {
+            console.warn('Failed to cleanup temporary files:', cleanupError.message);
+        }
+
+        return uploadedUrl;
+
+    } catch (error) {
+        console.error('Video compression error:', error);
+
+        // Cleanup temporary files in case of error
+        try {
+            const timestamp = Date.now();
+            const randomDigits = Math.floor(100000 + Math.random() * 900000);
+            const tempInputPath = join(tmpdir(), `input_${timestamp}_${randomDigits}.mp4`);
+            const tempOutputPath = join(tmpdir(), `output_${timestamp}_${randomDigits}.mp4`);
+            unlinkSync(tempInputPath);
+            unlinkSync(tempOutputPath);
+        } catch (cleanupError) {
+            // Ignore cleanup errors during error handling
+        }
+
+        throw new Error(`Failed to compress video: ${error.message}`);
+    }
+};
+
 export {
     getDriveMediaUrl,
     validateDriveUrl,
@@ -215,5 +330,6 @@ export {
     streamToBuffer,
     getDriveObj,
     getSheetsObj,
-    getAuthSheetClient
+    getAuthSheetClient,
+    compressVideo
 };

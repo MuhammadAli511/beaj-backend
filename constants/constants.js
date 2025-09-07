@@ -171,22 +171,22 @@ const kids_trial_flow_engagement_types = [
 ];
 
 const activity_types = [
-    "watch",
-    "watchend",
+    "video",
+    "videoEnd",
     "mcqs",
-    "feedbackaudio",
-    "listenandspeak",
-    "watchandspeak",
-    "watchandaudio",
-    "assessmentwatchandspeak",
-    "assessmentmcqs",
-    "feedbackmcqs",
-    "speakingpractice",
-    "conversationalquestionsbot",
+    "feedbackAudio",
+    "listenAndSpeak",
+    "watchAndSpeak",
+    "watchAndAudio",
+    "assessmentWatchAndSpeak",
+    "assessmentMcqs",
+    "feedbackMcqs",
+    "speakingPractice",
+    "conversationalQuestionsBot",
     "read",
-    "watchandimage",
-    "conversationalmonologuebot",
-    "conversationalagencybot"
+    "watchAndImage",
+    "conversationalMonologueBot",
+    "conversationalAgencyBot"
 ]
 
 const columns_order = {

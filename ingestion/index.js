@@ -3,9 +3,8 @@ import { toCamelCase } from '../utils/utils.js';
 
 // Import all activity type modules
 // You can uncomment these as you create each file
-import watch from './watch.js';
-// import watchend from './watchend.js';
-// import videoend from './videoend.js';
+import video from './video.js';
+import videoEnd from './videoEnd.js';
 // import mcqs from './mcqs.js';
 // import feedbackaudio from './feedbackaudio.js';
 // import listenandspeak from './listenandspeak.js';
@@ -24,8 +23,8 @@ import watch from './watch.js';
 
 // Map of activity types to their modules (add as you create files)
 const activityModules = {
-    watch: watch,
-    // watchend: watchend,
+    video: video,
+    videoEnd: videoEnd,
     // mcqs: mcqs,
     // Add other modules as you create them...
 };
@@ -55,9 +54,9 @@ activity_types.forEach(activityType => {
 
     // Add ingestion function
     const ingestionFunctionName = `${camelCaseType}Ingestion`;
-    ingestion[ingestionFunctionName] = async (activities, courseId) => {
+    ingestion[ingestionFunctionName] = async (activities) => {
         if (module && module.ingestion) {
-            return await module.ingestion(activities, courseId);
+            return await module.ingestion(activities);
         }
         // Default ingestion response if module doesn't exist
         return {

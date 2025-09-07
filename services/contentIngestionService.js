@@ -213,6 +213,7 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
 
 
 const validateIngestionService = async (courseId, sheetId, sheetTitle) => {
+    // TODO: Check in sheet if there is an activity with same week, day, seq
     try {
         let errors = [];
         const sheets = await getSheetsObj();
@@ -541,7 +542,7 @@ const processIngestionService = async (courseId, sheetId, sheetTitle) => {
         const ingestionPromises = activity_types.map(type => {
             const functionName = `${toCamelCase(type)}Ingestion`;
             const activitiesKey = `${toCamelCase(type)}Activities`;
-            return ingestion[functionName](activityTypeFilters[activitiesKey], courseId);
+            return ingestion[functionName](activityTypeFilters[activitiesKey]);
         });
 
         const ingestionResults = await Promise.all(ingestionPromises);
