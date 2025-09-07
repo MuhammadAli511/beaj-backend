@@ -217,35 +217,28 @@ const validateIngestionService = async (courseId, sheetId, sheetTitle) => {
         const sheets = await getSheetsObj();
         const authSheetClient = await getAuthSheetClient();
         try {
-            // Step 1: Check if sheet is accessible and tab exists
+            // Step 1: Get sheet data with formatting and validate (combined with tab validation)
+            let res;
             try {
-                const sheetInfo = await sheets.spreadsheets.get({
+                res = await sheets.spreadsheets.get({
                     auth: authSheetClient,
                     spreadsheetId: sheetId,
+                    ranges: [sheetTitle],
+                    includeGridData: true,
                 });
-
-                const sheetTab = sheetInfo.data.sheets?.find((sheet) => sheet.properties.title === sheetTitle)
-
-                if (!sheetTab) {
-                    errors.push(`Sheet tab "${sheetTitle}" not found in the spreadsheet`)
-                    return { errors: errors }
-                }
-
             } catch (error) {
                 errors.push(`Cannot access Google Sheet: ${error.message}`)
                 return { errors: errors }
             }
 
-
-            // Step 2: Get sheet data with formatting and validate
-            const res = await sheets.spreadsheets.get({
-                auth: authSheetClient,
-                spreadsheetId: sheetId,
-                ranges: [sheetTitle],
-                includeGridData: true,
-            })
-
             const sheet = res.data.sheets?.[0]
+
+            // Validate sheet tab exists
+            if (!sheet) {
+                errors.push(`Sheet tab "${sheetTitle}" not found in the spreadsheet`)
+                return { errors: errors }
+            }
+
             const rows = sheet.data?.[0]?.rowData ?? []
 
             if (rows.length === 0) {
@@ -335,7 +328,6 @@ const validateIngestionService = async (courseId, sheetId, sheetTitle) => {
             const tickedActivities = activities.filter(activity => activity.upload?.toLowerCase() === "true");
             const skippedActivities = activities.filter(activity => activity.upload?.toLowerCase() === "false");
 
-
             // Create validation calls for all activity types dynamically (only ticked activities)
             const activityTypeFilters = Object.fromEntries(
                 activity_types.map(type => [
@@ -394,14 +386,14 @@ const validateIngestionService = async (courseId, sheetId, sheetTitle) => {
             }
 
             // Call deletion validation service to check for orphaned activities
-            const deletionValidation = await deleteActivitiesService(courseId, sheetId, sheetTitle, false);
+            const deletionValidation = await deleteActivitiesService(courseId, sheetId, sheetTitle, false, rows);
 
             // Merge deletion validation results
             if (deletionValidation.errors) {
                 errors = errors.concat(deletionValidation.errors);
             }
 
-            return {
+            const finalResult = {
                 errors: errors.concat(allValidationErrors),
                 activities: activities,
                 stats: {
@@ -414,7 +406,8 @@ const validateIngestionService = async (courseId, sheetId, sheetTitle) => {
                 },
                 validationResults: filteredValidationResults,
                 deletionSummary: deletionValidation.deletionSummary || null
-            }
+            };
+            return finalResult;
         } catch (error) {
             console.error("Error during validation:", error)
             errors.push(`Validation failed: ${error.message}`)
@@ -591,7 +584,7 @@ const processIngestionService = async (courseId, sheetId, sheetTitle) => {
         }
 
         // Call deletion processing service to remove orphaned activities
-        const deletionProcessing = await deleteActivitiesService(courseId, sheetId, sheetTitle, true);
+        const deletionProcessing = await deleteActivitiesService(courseId, sheetId, sheetTitle, true, rows);
 
         // Merge deletion processing results
         if (deletionProcessing.errors) {
@@ -616,11 +609,10 @@ const processIngestionService = async (courseId, sheetId, sheetTitle) => {
 };
 
 
-const deleteActivitiesService = async (courseId, sheetId, sheetTitle, processDelete = false) => {
+const deleteActivitiesService = async (courseId, sheetId, sheetTitle, processDelete = false, providedRows = null) => {
     try {
         let errors = [];
-        const sheets = await getSheetsObj();
-        const authSheetClient = await getAuthSheetClient();
+        let rows;
 
         // Step 1: Get all existing lessons from DB for this course
         const existingLessons = await lessonRepository.getByCourse(courseId);
@@ -637,127 +629,135 @@ const deleteActivitiesService = async (courseId, sheetId, sheetTitle, processDel
         }
 
         // Step 2: Get sheet data to see what activities currently exist in the sheet
-        try {
-            const res = await sheets.spreadsheets.get({
-                auth: authSheetClient,
-                spreadsheetId: sheetId,
-                ranges: [sheetTitle],
-                includeGridData: true,
-            });
+        if (providedRows) {
+            // Use already-retrieved data to avoid duplicate API call
+            rows = providedRows;
+        } else {
+            // Fallback: make API call if data not provided
+            try {
+                const sheets = await getSheetsObj();
+                const authSheetClient = await getAuthSheetClient();
 
-            const sheet = res.data.sheets?.[0];
-            const rows = sheet.data?.[0]?.rowData ?? [];
+                const res = await sheets.spreadsheets.get({
+                    auth: authSheetClient,
+                    spreadsheetId: sheetId,
+                    ranges: [sheetTitle],
+                    includeGridData: true,
+                });
 
-            if (rows.length === 0) {
-                errors.push("Sheet is empty - cannot check for orphaned activities");
+                const sheet = res.data.sheets?.[0];
+                rows = sheet.data?.[0]?.rowData ?? [];
+            } catch (sheetError) {
+                errors.push(`Cannot access Google Sheet: ${sheetError.message}`);
                 return { errors: errors };
             }
+        }
 
-            // Step 3: Extract all activities from sheet (both ticked and unticked)
-            const sheetActivities = [];
-            let currentActivity = null;
-
-            for (let r = 1; r < rows.length; r++) {
-                const row = rows[r];
-                const cells = row.values || [];
-                const get = (col) => cells[col]?.formattedValue?.trim() || "";
-                const rowNum = r + 1;
-
-                // Check if this row starts a new activity (has UPLOAD checkbox)
-                if (get(columns_order.UPLOAD)) {
-                    if (currentActivity) {
-                        sheetActivities.push(currentActivity);
-                    }
-
-                    // Start new activity
-                    currentActivity = {
-                        week: parseInt(get(columns_order.WEEK_NO)) || null,
-                        day: parseInt(get(columns_order.DAY_NO)) || null,
-                        seq: parseInt(get(columns_order.SEQ_NO)) || null,
-                        activityType: get(columns_order.ACTIVITY_TYPE) || null,
-                        alias: get(columns_order.ALIAS) || null
-                    };
-                } else if (currentActivity) {
-                    // Update activity info if empty and found in current row
-                    if (!currentActivity.week && get(columns_order.WEEK_NO)) {
-                        currentActivity.week = parseInt(get(columns_order.WEEK_NO));
-                    }
-                    if (!currentActivity.day && get(columns_order.DAY_NO)) {
-                        currentActivity.day = parseInt(get(columns_order.DAY_NO));
-                    }
-                    if (!currentActivity.seq && get(columns_order.SEQ_NO)) {
-                        currentActivity.seq = parseInt(get(columns_order.SEQ_NO));
-                    }
-                    if (!currentActivity.activityType && get(columns_order.ACTIVITY_TYPE)) {
-                        currentActivity.activityType = get(columns_order.ACTIVITY_TYPE);
-                    }
-                }
-            }
-
-            // Don't forget the last activity
-            if (currentActivity) {
-                sheetActivities.push(currentActivity);
-            }
-
-            // Step 4: Find lessons in DB that don't exist in sheet
-            const lessonsToDelete = [];
-
-            for (const dbLesson of existingLessons) {
-                const matchFound = sheetActivities.some(sheetActivity =>
-                    sheetActivity.week === dbLesson.weekNumber &&
-                    sheetActivity.day === dbLesson.dayNumber &&
-                    sheetActivity.seq === dbLesson.SequenceNumber &&
-                    sheetActivity.activityType?.toLowerCase() === dbLesson.activity?.toLowerCase()
-                );
-
-                if (!matchFound) {
-                    lessonsToDelete.push({
-                        lessonId: dbLesson.LessonId,
-                        week: dbLesson.weekNumber,
-                        day: dbLesson.dayNumber,
-                        seq: dbLesson.SequenceNumber,
-                        activityType: dbLesson.activity,
-                        alias: dbLesson.activityAlias,
-                        lessonType: dbLesson.lessonType
-                    });
-                }
-            }
-
-            // Step 5: Process results based on mode
-            if (processDelete) {
-                // Actually delete the lessons
-                let deletedCount = 0;
-                for (const lessonToDelete of lessonsToDelete) {
-                    try {
-                        await lessonRepository.deleteLesson(lessonToDelete.lessonId);
-                        deletedCount++;
-                    } catch (deleteError) {
-                        errors.push(`Failed to delete activity: ${lessonToDelete.alias} (${deleteError.message})`);
-                    }
-                }
-
-                return {
-                    errors: errors,
-                    deletionSummary: {
-                        totalToDelete: lessonsToDelete.length,
-                        totalDeleted: deletedCount,
-                        lessonsToDelete: lessonsToDelete
-                    }
-                };
-            } else {
-                return {
-                    errors: errors,
-                    deletionSummary: {
-                        totalToDelete: lessonsToDelete.length,
-                        totalDeleted: 0,
-                        lessonsToDelete: lessonsToDelete
-                    }
-                };
-            }
-
-        } catch (sheetError) {
-            errors.push(`Cannot access Google Sheet: ${sheetError.message}`);
+        if (rows.length === 0) {
+            errors.push("Sheet is empty - cannot check for orphaned activities");
             return { errors: errors };
+        }
+
+        // Step 3: Extract all activities from sheet (both ticked and unticked)
+        const sheetActivities = [];
+        let currentActivity = null;
+
+        for (let r = 1; r < rows.length; r++) {
+            const row = rows[r];
+            const cells = row.values || [];
+            const get = (col) => cells[col]?.formattedValue?.trim() || "";
+            const rowNum = r + 1;
+
+            // Check if this row starts a new activity (has UPLOAD checkbox)
+            if (get(columns_order.UPLOAD)) {
+                if (currentActivity) {
+                    sheetActivities.push(currentActivity);
+                }
+
+                // Start new activity
+                currentActivity = {
+                    week: parseInt(get(columns_order.WEEK_NO)) || null,
+                    day: parseInt(get(columns_order.DAY_NO)) || null,
+                    seq: parseInt(get(columns_order.SEQ_NO)) || null,
+                    activityType: get(columns_order.ACTIVITY_TYPE) || null,
+                    alias: get(columns_order.ALIAS) || null
+                };
+            } else if (currentActivity) {
+                // Update activity info if empty and found in current row
+                if (!currentActivity.week && get(columns_order.WEEK_NO)) {
+                    currentActivity.week = parseInt(get(columns_order.WEEK_NO));
+                }
+                if (!currentActivity.day && get(columns_order.DAY_NO)) {
+                    currentActivity.day = parseInt(get(columns_order.DAY_NO));
+                }
+                if (!currentActivity.seq && get(columns_order.SEQ_NO)) {
+                    currentActivity.seq = parseInt(get(columns_order.SEQ_NO));
+                }
+                if (!currentActivity.activityType && get(columns_order.ACTIVITY_TYPE)) {
+                    currentActivity.activityType = get(columns_order.ACTIVITY_TYPE);
+                }
+            }
+        }
+
+        // Don't forget the last activity
+        if (currentActivity) {
+            sheetActivities.push(currentActivity);
+        }
+
+        // Step 4: Find lessons in DB that don't exist in sheet
+        const lessonsToDelete = [];
+
+        for (const dbLesson of existingLessons) {
+            const matchFound = sheetActivities.some(sheetActivity =>
+                sheetActivity.week === dbLesson.weekNumber &&
+                sheetActivity.day === dbLesson.dayNumber &&
+                sheetActivity.seq === dbLesson.SequenceNumber &&
+                sheetActivity.activityType?.toLowerCase() === dbLesson.activity?.toLowerCase()
+            );
+
+            if (!matchFound) {
+                lessonsToDelete.push({
+                    lessonId: dbLesson.LessonId,
+                    week: dbLesson.weekNumber,
+                    day: dbLesson.dayNumber,
+                    seq: dbLesson.SequenceNumber,
+                    activityType: dbLesson.activity,
+                    alias: dbLesson.activityAlias,
+                    lessonType: dbLesson.lessonType
+                });
+            }
+        }
+
+        // Step 5: Process results based on mode
+        if (processDelete) {
+            // Actually delete the lessons
+            let deletedCount = 0;
+            for (const lessonToDelete of lessonsToDelete) {
+                try {
+                    await lessonRepository.deleteLesson(lessonToDelete.lessonId);
+                    deletedCount++;
+                } catch (deleteError) {
+                    errors.push(`Failed to delete activity: ${lessonToDelete.alias} (${deleteError.message})`);
+                }
+            }
+
+            return {
+                errors: errors,
+                deletionSummary: {
+                    totalToDelete: lessonsToDelete.length,
+                    totalDeleted: deletedCount,
+                    lessonsToDelete: lessonsToDelete
+                }
+            };
+        } else {
+            return {
+                errors: errors,
+                deletionSummary: {
+                    totalToDelete: lessonsToDelete.length,
+                    totalDeleted: 0,
+                    lessonsToDelete: lessonsToDelete
+                }
+            };
         }
 
     } catch (error) {
