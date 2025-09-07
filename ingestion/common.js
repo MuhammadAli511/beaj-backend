@@ -1,18 +1,17 @@
 import { containsUrl, validateDriveUrl } from "../utils/sheetUtils.js";
-import lessonRepository from "../repositories/lessonRepository.js";
 
 const commonValidation = async (activity) => {
     let errors = [];
-    let toCreate = false;
-    let toUpdate = false;
+    let toCreate = 0;
+    let toUpdate = 0;
 
-    // Get lesson by week, day, seq
-    const lesson = await lessonRepository.getLessonIdsByCourseWeekDaySeq(activity.courseId, activity.week, activity.day, activity.seq);
-    if (lesson) {
-        toUpdate = true;
-    } else {
-        toCreate = true;
+    // Use the status already determined in contentIngestionService
+    if (activity.status === "CREATE") {
+        toCreate = 1;
+    } else if (activity.status === "UPDATE") {
+        toUpdate = 1;
     }
+    // For "SKIP" status, both remain 0
 
     // WEEK, DAY, SEQ
     if (isNaN(activity.week) || activity.week <= 0) {
