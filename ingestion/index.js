@@ -4,15 +4,15 @@ import video from './video.js';
 import videoEnd from './videoEnd.js';
 import feedbackAudio from './feedbackAudio.js';
 import read from './read.js';
+import watchAndImage from './watchAndImage.js';
+import watchAndAudio from './watchAndAudio.js';
 // import listenandspeak from './listenandspeak.js';
 // import watchandspeak from './watchandspeak.js';
-// import watchandaudio from './watchandaudio.js';
 // import assessmentwatchandspeak from './assessmentwatchandspeak.js';
 // import assessmentmcqs from './assessmentmcqs.js';
 // import feedbackmcqs from './feedbackmcqs.js';
 // import speakingpractice from './speakingpractice.js';
 // import conversationalquestionsbot from './conversationalquestionsbot.js';
-// import watchandimage from './watchandimage.js';
 // import conversationalmonologuebot from './conversationalmonologuebot.js';
 // import conversationalagencybot from './conversationalagencybot.js';
 // import mcqs from './mcqs.js';
@@ -24,6 +24,8 @@ const activityModules = {
     videoEnd: videoEnd,
     feedbackAudio: feedbackAudio,
     read: read,
+    watchAndImage: watchAndImage,
+    watchAndAudio: watchAndAudio,
 };
 
 // Create unified ingestion object
