@@ -213,7 +213,6 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
 
 
 const validateIngestionService = async (courseId, sheetId, sheetTitle) => {
-    // TODO: Check in sheet if there is an activity with same week, day, seq
     try {
         let errors = [];
         const sheets = await getSheetsObj();
@@ -304,6 +303,28 @@ const validateIngestionService = async (courseId, sheetId, sheetTitle) => {
                 // Extract structured data for the last activity
                 currentActivity.questions = extractStructuredActivityData(rows, currentActivity.startRow, currentActivity.endRow);
                 activities.push(currentActivity);
+            }
+
+            // Check for duplicate activities with same week, day, seq
+            const activityMap = new Map();
+            for (const activity of activities) {
+                const week = activity.week ? parseInt(activity.week) : null;
+                const day = activity.day ? parseInt(activity.day) : null;
+                const seq = activity.seq ? parseInt(activity.seq) : null;
+
+                // Skip activities without complete week/day/seq information
+                if (week === null || day === null || seq === null) {
+                    continue;
+                }
+
+                const key = `${week}-${day}-${seq}`;
+
+                if (activityMap.has(key)) {
+                    const existingActivity = activityMap.get(key);
+                    errors.push(`Duplicate activity found: Week ${week}, Day ${day}, Sequence ${seq}. Found at rows ${existingActivity.startRow} and ${activity.startRow}`);
+                } else {
+                    activityMap.set(key, activity);
+                }
             }
 
             // Add status to each activity (created, updated, or skipped)
