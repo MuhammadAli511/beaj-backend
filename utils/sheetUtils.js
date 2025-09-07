@@ -1,5 +1,14 @@
 import { google } from "googleapis"
 import { readFile } from "fs/promises";
+import ffmpeg from "fluent-ffmpeg";
+import ffmpegStatic from "ffmpeg-static";
+import { createWriteStream, createReadStream, unlinkSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
+import azureBlobStorage from "./azureBlobStorage.js";
+
+// Set ffmpeg path
+ffmpeg.setFfmpegPath(ffmpegStatic);
 
 const getDriveObj = async () => {
     const creds = JSON.parse(await readFile(new URL("../my_cred.json", import.meta.url), "utf-8"));

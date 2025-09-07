@@ -1,4 +1,5 @@
 import { containsUrl, validateDriveUrl } from "../utils/sheetUtils.js";
+import lessonRepository from "../repositories/lessonRepository.js";
 
 const commonValidation = async (activity) => {
     let errors = [];
@@ -129,4 +130,15 @@ const commonValidation = async (activity) => {
     };
 };
 
-export default commonValidation;
+
+const commonIngestion = async (activity, exists) => {
+    let lessonCreation = null;
+    if (exists) {
+        lessonCreation = await lessonRepository.updateByCourseWeekDaySeq(activity.courseId, activity.week, activity.day, activity.seq, activity.activityType, activity.alias, activity.text, activity.textInstruction, activity.audioInstructionUrl);
+    } else {
+        lessonCreation = await lessonRepository.create("week", activity.day, activity.activityType, activity.alias, activity.week, activity.text, activity.courseId, activity.seq, "Active", activity.textInstruction, activity.audioInstructionUrl);
+    }
+    return lessonCreation;
+}
+
+export { commonValidation, commonIngestion };

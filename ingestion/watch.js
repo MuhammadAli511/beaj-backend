@@ -1,4 +1,6 @@
-import commonValidation from "./common.js";
+import { commonValidation, commonIngestion } from "./common.js";
+import { getDriveMediaUrl } from "../utils/sheetUtils.js";
+import documentFileRepository from "../repositories/documentFileRepository.js";
 import lessonRepository from "../repositories/lessonRepository.js";
 
 
@@ -36,80 +38,86 @@ const validation = async (activities) => {
 
 
 const ingestion = async (activities, courseId) => {
+    let createdCount = 0;
+    let updatedCount = 0;
+    let errors = [];
+
     try {
-        let createdCount = 0;
-        let updatedCount = 0;
-        let allErrors = [];
-        const results = [];
-
         for (const activity of activities) {
-            // Add your ingestion logic here for watch activities
-            // For example:
-            // - Create/update activity in database
-            // - Process questions and media content
-            // - Handle video/audio links
-
-            console.log(`Processing watch activity from "${activity.startRow}" to "${activity.endRow}" for course: ${courseId}`);
-
             try {
-                // Example processing logic - replace with your actual business logic
-                // Check if activity exists in database
-                const exists = !!(await lessonRepository.getLessonIdsByCourseWeekDaySeq(activity.courseId, activity.week, activity.day, activity.seq));
+                // Check if lesson exists
+                const exists = await lessonRepository.getLessonIdsByCourseWeekDaySeq(activity.courseId, activity.week, activity.day, activity.seq);
 
-                if (exists) {
-                    // Update existing activity
-                    updatedCount++;
-                    results.push({
-                        activityId: activity.seq,
-                        alias: activity.alias,
-                        action: 'updated',
-                        questionsProcessed: activity.questions?.length || 0,
-                        videoContent: activity.questions?.filter(q => q.questionVideo || q.questionAudio).length || 0
-                    });
-                } else {
-                    // Create new activity
-                    createdCount++;
-                    results.push({
-                        activityId: activity.seq,
-                        alias: activity.alias,
-                        action: 'created',
-                        questionsProcessed: activity.questions?.length || 0,
-                        videoContent: activity.questions?.filter(q => q.questionVideo || q.questionAudio).length || 0
-                    });
+                // Create or update the lesson
+                const lessonCreation = await commonIngestion(activity, exists);
+                const lessonId = lessonCreation.LessonId || lessonCreation.dataValues?.LessonId;
+
+                if (!lessonId) {
+                    errors.push(`Failed to get lesson ID for activity from "${activity.startRow}" to "${activity.endRow}"`);
+                    continue;
                 }
 
-                // Process each question's media content
-                for (const question of activity.questions || []) {
-                    if (question.questionVideo) {
-                        console.log(`Processing video link: ${question.questionVideo}`);
-                        // Add video processing logic here
+                // Handle video files for questions
+                if (activity.questions && activity.questions.length > 0) {
+                    for (const question of activity.questions) {
+                        if (question.questionVideo) {
+                            try {
+                                // Check if document file already exists for this lesson
+                                const existingDocFiles = await documentFileRepository.getByLessonId(lessonId);
+                                const existingVideoFile = existingDocFiles.find(doc => doc.video === question.questionVideo);
+
+                                if (existingVideoFile) {
+                                    // Update existing document file
+                                    await documentFileRepository.update(
+                                        existingVideoFile.id,
+                                        lessonId,
+                                        "", // language hardcoded as empty string
+                                        null, // image
+                                        question.questionVideo, // video
+                                        null, // audio
+                                        "video" // mediaType
+                                    );
+                                } else {
+                                    // Create new document file
+                                    await documentFileRepository.create(
+                                        lessonId,
+                                        "", // language hardcoded as empty string
+                                        null, // image
+                                        question.questionVideo, // video
+                                        null, // audio
+                                        "video" // mediaType
+                                    );
+                                }
+                            } catch (docError) {
+                                errors.push(`Failed to handle video file for activity from "${activity.startRow}" to "${activity.endRow}": ${docError.message}`);
+                            }
+                        }
                     }
-                    if (question.questionAudio) {
-                        console.log(`Processing audio link: ${question.questionAudio}`);
-                        // Add audio processing logic here
-                    }
+                }
+
+                // Count the operation
+                if (exists) {
+                    updatedCount++;
+                } else {
+                    createdCount++;
                 }
 
             } catch (activityError) {
-                allErrors.push(`Error processing watch activity from "${activity.startRow}" to "${activity.endRow}": ${activityError.message}`);
+                errors.push(`Failed to process activity from "${activity.startRow}" to "${activity.endRow}": ${activityError.message}`);
             }
         }
 
         return {
-            success: true,
-            message: `Successfully processed ${createdCount + updatedCount} watch activities`,
+            errors,
             createdCount,
-            updatedCount,
-            errors: allErrors,
-            results
+            updatedCount
         };
+
     } catch (error) {
         return {
-            success: false,
-            message: `Watch ingestion error: ${error.message}`,
+            errors: [`Watch ingestion error: ${error.message}`],
             createdCount: 0,
-            updatedCount: 0,
-            errors: [`Watch ingestion error: ${error.message}`]
+            updatedCount: 0
         };
     }
 };

@@ -92,6 +92,30 @@ const update = async (id, lessonType, dayNumber, activity, activityAlias, weekNu
     return lesson;
 };
 
+
+const updateByCourseWeekDaySeq = async (courseId, weekNumber, dayNumber, sequenceNumber, activity, activityAlias, text, textInstruction, audioInstructionUrl) => {
+    const lesson = await Lesson.findOne({
+        where: {
+            courseId: courseId,
+            weekNumber: weekNumber,
+            dayNumber: dayNumber,
+            SequenceNumber: sequenceNumber
+        }
+    });
+
+    if (!lesson) {
+        return null;
+    }
+    lesson.dayNumber = dayNumber;
+    lesson.activity = activity;
+    lesson.activityAlias = activityAlias;
+    lesson.text = text;
+    lesson.textInstruction = textInstruction;
+    lesson.audioInstructionUrl = audioInstructionUrl;
+    await lesson.save();
+    return lesson;
+};
+
 const deleteLesson = async (id) => {
     const lesson = await Lesson.findByPk(id);
     await lesson.destroy();
@@ -375,5 +399,6 @@ export default {
     getLessonIdsByCourseAndAliasAndWeekAndDay,
     getLessonIdsByCourseAndAlias,
     getLessonIdsByCourseWeekDaySeq,
-    getByCourse
+    getByCourse,
+    updateByCourseWeekDaySeq
 };

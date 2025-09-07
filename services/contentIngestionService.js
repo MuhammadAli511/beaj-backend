@@ -12,6 +12,7 @@ const hasActivityData = (get) => {
         get(columns_order.SEQ_NO) ||
         get(columns_order.ALIAS) ||
         get(columns_order.ACTIVITY_TYPE) ||
+        get(columns_order.LESSON_TEXT) ||
         get(columns_order.TEXT_INSTRUCTION) ||
         get(columns_order.AUDIO_INSTRUCTION) ||
         get(columns_order.COMPLETION_STICKER) ||
@@ -275,6 +276,7 @@ const validateIngestionService = async (courseId, sheetId, sheetTitle) => {
                         seq: get(columns_order.SEQ_NO),
                         alias: get(columns_order.ALIAS),
                         activityType: get(columns_order.ACTIVITY_TYPE),
+                        text: get(columns_order.LESSON_TEXT),
                         textInstruction: get(columns_order.TEXT_INSTRUCTION),
                         audioInstruction: get(columns_order.AUDIO_INSTRUCTION),
                         completionSticker: get(columns_order.COMPLETION_STICKER),
@@ -472,6 +474,7 @@ const processIngestionService = async (courseId, sheetId, sheetTitle) => {
                     seq: get(columns_order.SEQ_NO),
                     alias: get(columns_order.ALIAS),
                     activityType: get(columns_order.ACTIVITY_TYPE),
+                    text: get(columns_order.LESSON_TEXT),
                     textInstruction: get(columns_order.TEXT_INSTRUCTION),
                     audioInstruction: get(columns_order.AUDIO_INSTRUCTION),
                     completionSticker: get(columns_order.COMPLETION_STICKER),
