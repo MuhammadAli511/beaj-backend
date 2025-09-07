@@ -66,6 +66,14 @@ const getByCourseActivity = async (course, activity) => {
     });
 };
 
+const getByCourse = async (course) => {
+    return await Lesson.findAll({
+        where: {
+            courseId: course,
+        }
+    });
+};
+
 
 const update = async (id, lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status, textInstruction, audioInstructionUrl) => {
     const lesson = await Lesson.findByPk(id);
@@ -367,4 +375,5 @@ export default {
     getLessonIdsByCourseAndAliasAndWeekAndDay,
     getLessonIdsByCourseAndAlias,
     getLessonIdsByCourseWeekDaySeq,
+    getByCourse
 };

@@ -2,6 +2,7 @@ import { getSheetsObj, getAuthSheetClient, isCellHighlighted } from "../utils/sh
 import { toCamelCase } from "../utils/utils.js";
 import { activity_types, columns_order } from "../constants/constants.js";
 import ingestion from '../ingestion/index.js';
+import lessonRepository from '../repositories/lessonRepository.js';
 
 
 const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) => {
@@ -187,7 +188,10 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
 };
 
 
-const validateIngestionService = async (sheetId, sheetTitle) => {
+
+
+
+const validateIngestionService = async (courseId, sheetId, sheetTitle) => {
     try {
         let valid = [], errors = [], warnings = [];
         const sheets = await getSheetsObj();
@@ -232,6 +236,12 @@ const validateIngestionService = async (sheetId, sheetTitle) => {
             }
 
 
+
+
+
+
+
+
             // Extract and group activities by UPLOAD checkboxes
             const activities = [];
             let currentActivity = null;
@@ -253,6 +263,7 @@ const validateIngestionService = async (sheetId, sheetTitle) => {
                     currentActivity = {
                         startRow: rowNum,
                         endRow: rowNum,
+                        courseId: courseId,
                         upload: get(columns_order.UPLOAD),
                         week: get(columns_order.WEEK_NO),
                         day: get(columns_order.DAY_NO),
@@ -285,19 +296,19 @@ const validateIngestionService = async (sheetId, sheetTitle) => {
                 activities.push(currentActivity);
             }
 
-            // Filter out activities with ticked checkboxes (upload === "TRUE") and group by type
-            const untickedActivities = activities.filter(activity => activity.upload?.toLowerCase() === "false");
-            const skippedActivities = activities.filter(activity => activity.upload?.toLowerCase() === "true");
+            // Filter out activities with unticked checkboxes (upload === "FALSE") and group by type
+            const tickedActivities = activities.filter(activity => activity.upload?.toLowerCase() === "true");
+            const skippedActivities = activities.filter(activity => activity.upload?.toLowerCase() === "false");
 
             // Add activity grouping information to valid messages
             valid.push(`success: true, Total Activities Count: ${activities.length}`);
-            valid.push(`success: true, Activities to Process (unticked): ${untickedActivities.length}`);
+            valid.push(`success: true, Activities to Process (ticked): ${tickedActivities.length}`);
 
             if (skippedActivities.length > 0) {
-                valid.push(`success: true, Skipped ${skippedActivities.length} activities with ticked checkboxes (upload = TRUE)`);
+                valid.push(`success: true, Skipped ${skippedActivities.length} activities with unticked checkboxes (upload = FALSE)`);
             }
 
-            untickedActivities.forEach((activity, index) => {
+            tickedActivities.forEach((activity, index) => {
                 const rowRange = activity.startRow === activity.endRow
                     ? `Row ${activity.startRow}`
                     : `Rows ${activity.startRow}-${activity.endRow}`;
@@ -306,11 +317,11 @@ const validateIngestionService = async (sheetId, sheetTitle) => {
 
             valid.push(`success: true, All activities successfully extracted and grouped!`);
 
-            // Create validation calls for all activity types dynamically (only unticked activities)
+            // Create validation calls for all activity types dynamically (only ticked activities)
             const activityTypeFilters = Object.fromEntries(
                 activity_types.map(type => [
                     `${toCamelCase(type)}Activities`,
-                    untickedActivities.filter(activity => activity.activityType?.toLowerCase() === type.toLowerCase())
+                    tickedActivities.filter(activity => activity.activityType?.toLowerCase() === type.toLowerCase())
                 ])
             );
 
@@ -339,7 +350,6 @@ const validateIngestionService = async (sheetId, sheetTitle) => {
             // Aggregate totals and individual counts from all validation results
             let totalToCreate = 0;
             let totalToUpdate = 0;
-            let totalToDelete = 0;
             let allValidationErrors = [];
             let activityTypeCounts = {};
 
@@ -347,36 +357,40 @@ const validateIngestionService = async (sheetId, sheetTitle) => {
                 if (result && typeof result === 'object') {
                     const createCount = result.toCreateCount || 0;
                     const updateCount = result.toUpdateCount || 0;
-                    const deleteCount = result.toDeleteCount || 0;
 
                     // Track individual activity type counts
                     activityTypeCounts[activityType] = {
                         toCreateCount: createCount,
                         toUpdateCount: updateCount,
-                        toDeleteCount: deleteCount,
-                        totalCount: createCount + updateCount + deleteCount
+                        totalCount: createCount + updateCount
                     };
 
                     // Add to totals
                     totalToCreate += createCount;
                     totalToUpdate += updateCount;
-                    totalToDelete += deleteCount;
 
                     if (result.errors && Array.isArray(result.errors)) {
                         allValidationErrors = allValidationErrors.concat(result.errors);
                     }
 
                     // Add individual activity type summary to valid messages (only if there are activities)
-                    if (createCount > 0 || updateCount > 0 || deleteCount > 0) {
+                    if (createCount > 0 || updateCount > 0) {
                         const activityTypeName = activityType.replace('Validation', '').replace(/([A-Z])/g, ' $1').trim();
-                        valid.push(`success: true, ${activityTypeName} - Create: ${createCount}, Update: ${updateCount}, Delete: ${deleteCount}`);
+                        valid.push(`success: true, ${activityTypeName} - Create: ${createCount}, Update: ${updateCount}`);
                     }
                 }
             });
 
             // Add overall validation summary to valid messages after validation is complete
-            valid.push(`success: true, TOTAL Summary - To Create: ${totalToCreate}, To Update: ${totalToUpdate}, To Delete: ${totalToDelete}`);
+            valid.push(`success: true, TOTAL Summary - To Create: ${totalToCreate}, To Update: ${totalToUpdate}`);
 
+            // Call deletion validation service to check for orphaned activities
+            const deletionValidation = await deleteActivitiesService(courseId, sheetId, sheetTitle, false);
+
+            // Merge deletion validation results
+            valid = valid.concat(deletionValidation.valid || []);
+            errors = errors.concat(deletionValidation.errors || []);
+            warnings = warnings.concat(deletionValidation.warnings || []);
 
             return {
                 valid: valid,
@@ -386,10 +400,10 @@ const validateIngestionService = async (sheetId, sheetTitle) => {
                 validationSummary: {
                     totalToCreate: totalToCreate,
                     totalToUpdate: totalToUpdate,
-                    totalToDelete: totalToDelete,
-                    totalAll: totalToCreate + totalToUpdate + totalToDelete,
+                    totalAll: totalToCreate + totalToUpdate,
                     activityTypeCounts: activityTypeCounts,
-                    validationResults: filteredValidationResults
+                    validationResults: filteredValidationResults,
+                    deletionSummary: deletionValidation.deletionSummary || null
                 }
             }
         } catch (error) {
@@ -448,7 +462,8 @@ const processIngestionService = async (courseId, sheetId, sheetTitle) => {
                 // Start new activity
                 currentActivity = {
                     startRow: rowNum,
-                    endRow: rowNum, // Will be updated as we add more rows
+                    endRow: rowNum,
+                    courseId: courseId,
                     upload: get(columns_order.UPLOAD),
                     week: get(columns_order.WEEK_NO),
                     day: get(columns_order.DAY_NO),
@@ -458,7 +473,7 @@ const processIngestionService = async (courseId, sheetId, sheetTitle) => {
                     textInstruction: get(columns_order.TEXT_INSTRUCTION),
                     audioInstruction: get(columns_order.AUDIO_INSTRUCTION),
                     completionSticker: get(columns_order.COMPLETION_STICKER),
-                    questions: [] // Will be populated when activity is complete
+                    questions: []
                 };
             } else if (currentActivity) {
                 // This row belongs to the current activity
@@ -481,19 +496,19 @@ const processIngestionService = async (courseId, sheetId, sheetTitle) => {
             activities.push(currentActivity);
         }
 
-        // Filter out activities with ticked checkboxes (upload === "TRUE") and group by type
-        const untickedActivities = activities.filter(activity => activity.upload?.toLowerCase() === "false");
-        const skippedActivities = activities.filter(activity => activity.upload?.toLowerCase() === "true");
+        // Filter out activities with unticked checkboxes (upload === "FALSE") and group by type
+        const tickedActivities = activities.filter(activity => activity.upload?.toLowerCase() === "true");
+        const skippedActivities = activities.filter(activity => activity.upload?.toLowerCase() === "false");
 
         if (skippedActivities.length > 0) {
-            valid.push(`success: true, Skipped ${skippedActivities.length} activities with ticked checkboxes (upload = TRUE)`);
+            valid.push(`success: true, Skipped ${skippedActivities.length} activities with unticked checkboxes (upload = FALSE)`);
         }
 
-        // Filter activities by type for ingestion dynamically (only unticked activities)
+        // Filter activities by type for ingestion dynamically (only ticked activities)
         const activityTypeFilters = Object.fromEntries(
             activity_types.map(type => [
                 `${toCamelCase(type)}Activities`,
-                untickedActivities.filter(activity => activity.activityType?.toLowerCase() === type.toLowerCase())
+                tickedActivities.filter(activity => activity.activityType?.toLowerCase() === type.toLowerCase())
             ])
         );
 
@@ -519,12 +534,234 @@ const processIngestionService = async (courseId, sheetId, sheetTitle) => {
             Object.entries(allIngestionResults).filter(([key, value]) => value !== null)
         );
 
+        // Aggregate totals and individual counts from all ingestion results
+        let totalCreated = 0;
+        let totalUpdated = 0;
+        let allIngestionErrors = [];
+        let activityTypeCounts = {};
+
+        Object.entries(filteredIngestionResults).forEach(([activityType, result]) => {
+            if (result && typeof result === 'object') {
+                const createdCount = result.createdCount || 0;
+                const updatedCount = result.updatedCount || 0;
+
+                // Track individual activity type counts
+                activityTypeCounts[activityType] = {
+                    createdCount: createdCount,
+                    updatedCount: updatedCount,
+                    totalCount: createdCount + updatedCount
+                };
+
+                // Add to totals
+                totalCreated += createdCount;
+                totalUpdated += updatedCount;
+
+                if (result.errors && Array.isArray(result.errors)) {
+                    allIngestionErrors = allIngestionErrors.concat(result.errors);
+                }
+
+                // Add individual activity type summary to valid messages (only if there are activities)
+                if (createdCount > 0 || updatedCount > 0) {
+                    const activityTypeName = activityType.replace('Results', '').replace(/([A-Z])/g, ' $1').trim();
+                    valid.push(`success: true, ${activityTypeName} - Created: ${createdCount}, Updated: ${updatedCount}`);
+                }
+            }
+        });
+
+        // Add overall ingestion summary to valid messages after ingestion is complete
+        valid.push(`success: true, TOTAL Ingestion Summary - Created: ${totalCreated}, Updated: ${totalUpdated}`);
+
+        // Call deletion processing service to remove orphaned activities
+        const deletionProcessing = await deleteActivitiesService(courseId, sheetId, sheetTitle, true);
+
+        // Merge deletion processing results
+        valid = valid.concat(deletionProcessing.valid || []);
+        errors = errors.concat(deletionProcessing.errors || []);
+        warnings = warnings.concat(deletionProcessing.warnings || []);
+
         return {
             valid: valid,
-            errors: errors,
+            errors: errors.concat(allIngestionErrors), // Include ingestion errors with other errors
             warnings: warnings,
-            ingestionResults: filteredIngestionResults
+            ingestionSummary: {
+                totalCreated: totalCreated,
+                totalUpdated: totalUpdated,
+                totalAll: totalCreated + totalUpdated,
+                activityTypeCounts: activityTypeCounts, // Individual counts per activity type
+                ingestionResults: filteredIngestionResults, // Detailed ingestion results by activity type
+                deletionSummary: deletionProcessing.deletionSummary || null
+            }
         };
+    } catch (error) {
+        error.fileName = 'contentIngestionService.js';
+        throw error;
+    }
+};
+
+
+const deleteActivitiesService = async (courseId, sheetId, sheetTitle, processDelete = false) => {
+    try {
+        let valid = [], errors = [], warnings = [];
+        const sheets = await getSheetsObj();
+        const authSheetClient = await getAuthSheetClient();
+
+        // Step 1: Get all existing lessons from DB for this course
+        const existingLessons = await lessonRepository.getByCourse(courseId);
+
+        if (!existingLessons || existingLessons.length === 0) {
+            valid.push("success: true, No existing lessons found in database for this course");
+            return {
+                valid: valid,
+                errors: errors,
+                warnings: warnings,
+                deletionSummary: {
+                    totalToDelete: 0,
+                    totalDeleted: 0,
+                    lessonsToDelete: []
+                }
+            };
+        }
+
+        // Step 2: Get sheet data to see what activities currently exist in the sheet
+        try {
+            const res = await sheets.spreadsheets.get({
+                auth: authSheetClient,
+                spreadsheetId: sheetId,
+                ranges: [sheetTitle],
+                includeGridData: true,
+            });
+
+            const sheet = res.data.sheets?.[0];
+            const rows = sheet.data?.[0]?.rowData ?? [];
+
+            if (rows.length === 0) {
+                errors.push("success: false, Sheet is empty");
+                return { valid: valid, errors: errors, warnings: warnings };
+            }
+
+            // Step 3: Extract all activities from sheet (both ticked and unticked)
+            const sheetActivities = [];
+            let currentActivity = null;
+
+            for (let r = 1; r < rows.length; r++) {
+                const row = rows[r];
+                const cells = row.values || [];
+                const get = (col) => cells[col]?.formattedValue?.trim() || "";
+                const rowNum = r + 1;
+
+                // Check if this row starts a new activity (has UPLOAD checkbox)
+                if (get(columns_order.UPLOAD)) {
+                    if (currentActivity) {
+                        sheetActivities.push(currentActivity);
+                    }
+
+                    // Start new activity
+                    currentActivity = {
+                        week: parseInt(get(columns_order.WEEK_NO)) || null,
+                        day: parseInt(get(columns_order.DAY_NO)) || null,
+                        seq: parseInt(get(columns_order.SEQ_NO)) || null,
+                        activityType: get(columns_order.ACTIVITY_TYPE) || null,
+                        alias: get(columns_order.ALIAS) || null
+                    };
+                } else if (currentActivity) {
+                    // Update activity info if empty and found in current row
+                    if (!currentActivity.week && get(columns_order.WEEK_NO)) {
+                        currentActivity.week = parseInt(get(columns_order.WEEK_NO));
+                    }
+                    if (!currentActivity.day && get(columns_order.DAY_NO)) {
+                        currentActivity.day = parseInt(get(columns_order.DAY_NO));
+                    }
+                    if (!currentActivity.seq && get(columns_order.SEQ_NO)) {
+                        currentActivity.seq = parseInt(get(columns_order.SEQ_NO));
+                    }
+                    if (!currentActivity.activityType && get(columns_order.ACTIVITY_TYPE)) {
+                        currentActivity.activityType = get(columns_order.ACTIVITY_TYPE);
+                    }
+                }
+            }
+
+            // Don't forget the last activity
+            if (currentActivity) {
+                sheetActivities.push(currentActivity);
+            }
+
+            // Step 4: Find lessons in DB that don't exist in sheet
+            const lessonsToDelete = [];
+
+            for (const dbLesson of existingLessons) {
+                const matchFound = sheetActivities.some(sheetActivity =>
+                    sheetActivity.week === dbLesson.weekNumber &&
+                    sheetActivity.day === dbLesson.dayNumber &&
+                    sheetActivity.seq === dbLesson.SequenceNumber &&
+                    sheetActivity.activityType?.toLowerCase() === dbLesson.activity?.toLowerCase()
+                );
+
+                if (!matchFound) {
+                    lessonsToDelete.push({
+                        lessonId: dbLesson.LessonId,
+                        week: dbLesson.weekNumber,
+                        day: dbLesson.dayNumber,
+                        seq: dbLesson.SequenceNumber,
+                        activityType: dbLesson.activity,
+                        alias: dbLesson.activityAlias,
+                        lessonType: dbLesson.lessonType
+                    });
+                }
+            }
+
+            // Step 5: Process results based on mode
+            if (processDelete) {
+                // Actually delete the lessons
+                let deletedCount = 0;
+                for (const lessonToDelete of lessonsToDelete) {
+                    try {
+                        await lessonRepository.deleteLesson(lessonToDelete.lessonId);
+                        deletedCount++;
+                        valid.push(`success: true, Deleted lesson - Week ${lessonToDelete.week}, Day ${lessonToDelete.day}, Seq ${lessonToDelete.seq}, Type: ${lessonToDelete.activityType}, Alias: ${lessonToDelete.alias}`);
+                    } catch (deleteError) {
+                        errors.push(`success: false, Failed to delete lesson ID ${lessonToDelete.lessonId}: ${deleteError.message}`);
+                    }
+                }
+
+                valid.push(`success: true, TOTAL Deletion Summary - Deleted: ${deletedCount} lessons`);
+
+                return {
+                    valid: valid,
+                    errors: errors,
+                    warnings: warnings,
+                    deletionSummary: {
+                        totalToDelete: lessonsToDelete.length,
+                        totalDeleted: deletedCount,
+                        lessonsToDelete: lessonsToDelete
+                    }
+                };
+            } else {
+                // Validation mode - just return what would be deleted
+                valid.push(`success: true, Found ${existingLessons.length} existing lessons in database`);
+                valid.push(`success: true, Found ${sheetActivities.length} activities in sheet`);
+                valid.push(`success: true, Identified ${lessonsToDelete.length} lessons to delete (exist in DB but not in sheet)`);
+
+                lessonsToDelete.forEach((lesson, index) => {
+                    valid.push(`success: true, To Delete ${index + 1}: Week ${lesson.week}, Day ${lesson.day}, Seq ${lesson.seq}, Type: ${lesson.activityType}, Alias: ${lesson.alias}`);
+                });
+
+                return {
+                    valid: valid,
+                    errors: errors,
+                    warnings: warnings,
+                    deletionSummary: {
+                        totalToDelete: lessonsToDelete.length,
+                        totalDeleted: 0,
+                        lessonsToDelete: lessonsToDelete
+                    }
+                };
+            }
+
+        } catch (sheetError) {
+            errors.push(`success: false, Cannot access Google Sheet: ${sheetError.message}`);
+            return { valid: valid, errors: errors, warnings: warnings };
+        }
+
     } catch (error) {
         error.fileName = 'contentIngestionService.js';
         throw error;
@@ -534,5 +771,5 @@ const processIngestionService = async (courseId, sheetId, sheetTitle) => {
 
 export default {
     validateIngestionService,
-    processIngestionService,
+    processIngestionService
 };

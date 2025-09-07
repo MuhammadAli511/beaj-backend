@@ -171,8 +171,8 @@ const kids_trial_flow_engagement_types = [
 ];
 
 const activity_types = [
-    "video",
-    "videoend",
+    "watch",
+    "watchend",
     "mcqs",
     "feedbackaudio",
     "listenandspeak",
@@ -186,9 +186,7 @@ const activity_types = [
     "read",
     "watchandimage",
     "conversationalmonologuebot",
-    "conversationalagencybot",
-    "watch",
-    "watchend",
+    "conversationalagencybot"
 ]
 
 const columns_order = {

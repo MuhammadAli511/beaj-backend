@@ -3,8 +3,8 @@ import service from '../services/contentIngestionService.js';
 
 const validateIngestionController = async (req, res, next) => {
     try {
-        const { sheetId, sheetTitle } = req.body;
-        const result = await service.validateIngestionService(sheetId, sheetTitle);
+        const { courseId, sheetId, sheetTitle } = req.body;
+        const result = await service.validateIngestionService(courseId, sheetId, sheetTitle);
         res.status(200).send({ message: "Ingestion validated successfully", result });
     } catch (error) {
         error.fileName = 'contentIngestionController.js';

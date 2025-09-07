@@ -3,7 +3,8 @@ import { toCamelCase } from '../utils/utils.js';
 
 // Import all activity type modules
 // You can uncomment these as you create each file
-import video from './video.js';
+import watch from './watch.js';
+// import watchend from './watchend.js';
 // import videoend from './videoend.js';
 // import mcqs from './mcqs.js';
 // import feedbackaudio from './feedbackaudio.js';
@@ -19,13 +20,12 @@ import video from './video.js';
 // import watchandimage from './watchandimage.js';
 // import conversationalmonologuebot from './conversationalmonologuebot.js';
 // import conversationalagencybot from './conversationalagencybot.js';
-// import watch from './watch.js';
-// import watchend from './watchend.js';
+
 
 // Map of activity types to their modules (add as you create files)
 const activityModules = {
-    video: video,
-    // videoend: videoend,
+    watch: watch,
+    // watchend: watchend,
     // mcqs: mcqs,
     // Add other modules as you create them...
 };
