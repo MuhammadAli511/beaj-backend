@@ -211,10 +211,14 @@ const compressVideo = async (videoFileObject) => {
     const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
     try {
+        const timestamp = Date.now();
+        const randomDigits = Math.floor(100000 + Math.random() * 900000);
+        const fileNameFinal = `${timestamp}_${randomDigits}.mp4`;
+
         // Check if compression is needed
         if (videoFileObject.size <= MAX_SIZE_BYTES) {
             console.log('Video is already under 15MB, uploading without compression');
-            return await azureBlobStorage.uploadToBlobStorage(videoFileObject);
+            return await azureBlobStorage.uploadToBlobStorage(videoFileObject.buffer, fileNameFinal);
         }
 
         console.log(`Video size: ${(videoFileObject.size / (1024 * 1024)).toFixed(2)}MB - compression needed`);
@@ -226,8 +230,6 @@ const compressVideo = async (videoFileObject) => {
         console.log(`Target compression ratio: ${(targetSizeRatio * 100).toFixed(1)}%`);
 
         // Create temporary files
-        const timestamp = Date.now();
-        const randomDigits = Math.floor(100000 + Math.random() * 900000); // 6 digit random number
         const tempInputPath = join(tmpdir(), `input_${timestamp}_${randomDigits}.mp4`);
         const tempOutputPath = join(tmpdir(), `output_${timestamp}_${randomDigits}.mp4`);
 
@@ -289,7 +291,7 @@ const compressVideo = async (videoFileObject) => {
         };
 
         // Upload to Azure blob storage
-        const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(compressedFileObject);
+        const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(compressedFileObject.buffer, fileNameFinal);
 
         // Cleanup temporary files
         try {
@@ -326,10 +328,13 @@ const compressAudio = async (audioFileObject) => {
     const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
     try {
+        const timestamp = Date.now();
+        const randomDigits = Math.floor(100000 + Math.random() * 900000);
+        const fileNameFinal = `${timestamp}_${randomDigits}.mp3`;
         // Check if compression is needed
         if (audioFileObject.size <= MAX_SIZE_BYTES) {
             console.log('Audio is already under 15MB, uploading without compression');
-            return await azureBlobStorage.uploadToBlobStorage(audioFileObject);
+            return await azureBlobStorage.uploadToBlobStorage(audioFileObject.buffer, fileNameFinal);
         }
 
         console.log(`Audio size: ${(audioFileObject.size / (1024 * 1024)).toFixed(2)}MB - compression needed`);
@@ -339,8 +344,6 @@ const compressAudio = async (audioFileObject) => {
         console.log(`Target compression ratio: ${(targetSizeRatio * 100).toFixed(1)}%`);
 
         // Create temporary files
-        const timestamp = Date.now();
-        const randomDigits = Math.floor(100000 + Math.random() * 900000); // 6 digit random number
         const tempInputPath = join(tmpdir(), `input_${timestamp}_${randomDigits}.audio`);
         const tempOutputPath = join(tmpdir(), `output_${timestamp}_${randomDigits}.mp3`);
 
@@ -397,7 +400,7 @@ const compressAudio = async (audioFileObject) => {
         };
 
         // Upload to Azure blob storage
-        const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(compressedFileObject);
+        const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(compressedFileObject.buffer, fileNameFinal);
 
         // Cleanup temporary files
         try {
@@ -421,10 +424,13 @@ const compressImage = async (imageFileObject) => {
     const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
     try {
+        const timestamp = Date.now();
+        const randomDigits = Math.floor(100000 + Math.random() * 900000);
+        const fileNameFinal = `${timestamp}_${randomDigits}.jpg`;
         // Check if compression is needed
         if (imageFileObject.size <= MAX_SIZE_BYTES) {
             console.log('Image is already under 4MB, uploading without compression');
-            return await azureBlobStorage.uploadToBlobStorage(imageFileObject);
+            return await azureBlobStorage.uploadToBlobStorage(imageFileObject.buffer, fileNameFinal);
         }
 
         console.log(`Image size: ${(imageFileObject.size / (1024 * 1024)).toFixed(2)}MB - compression needed`);
@@ -457,8 +463,6 @@ const compressImage = async (imageFileObject) => {
         console.log(`Compressed image size: ${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB`);
 
         // Create file object for upload with custom filename
-        const timestamp = Date.now();
-        const randomDigits = Math.floor(100000 + Math.random() * 900000); // 6 digit random number
         const compressedFileObject = {
             buffer: compressedBuffer,
             size: compressedBuffer.length,
@@ -467,7 +471,7 @@ const compressImage = async (imageFileObject) => {
         };
 
         // Upload to Azure blob storage
-        const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(compressedFileObject);
+        const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(compressedFileObject.buffer, fileNameFinal);
 
         return uploadedUrl;
 

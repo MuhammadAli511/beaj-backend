@@ -158,7 +158,7 @@ const ingestion = async (activities) => {
 
     } catch (error) {
         return {
-            errors: [`video ingestion error: ${error.message}`],
+            errors: [`feedbackAudio ingestion error: ${error.message}`],
             createdCount: 0,
             updatedCount: 0
         };

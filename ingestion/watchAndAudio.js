@@ -70,7 +70,7 @@ const ingestion = async (activities) => {
                         if (question.questionVideo || question.questionAudio) {
                             hasRequiredProcessing = true;
                             try {
-                                let videoFile, audioFile, compressedVideoUrl, compressedAudioUrl;
+                                let videoFile = null, audioFile = null, compressedVideoUrl = null, compressedAudioUrl = null;
                                 if (question.questionVideo) {
                                     // Download video from Google Drive
                                     console.log(`Downloading video from Google Drive: ${question.questionVideo}`);
@@ -105,7 +105,7 @@ const ingestion = async (activities) => {
 
 
                                 const existingSpeakActivityQuestion = existingSpeakActivityQuestions.find(question => question.questionNumber === question.questionNumber);
-                                let compressedCustomFeedbackImageUrl, compressedCustomFeedbackAudioUrl;
+                                let compressedCustomFeedbackImageUrl = null, compressedCustomFeedbackAudioUrl = null;
                                 if (question?.answers[0]?.customFeedbackImage) {
                                     let customFeedbackImageDriveUrl = await getDriveMediaUrl(question?.answers[0]?.customFeedbackImage);
                                     if (customFeedbackImageDriveUrl) {

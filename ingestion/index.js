@@ -6,16 +6,16 @@ import feedbackAudio from './feedbackAudio.js';
 import read from './read.js';
 import watchAndImage from './watchAndImage.js';
 import watchAndAudio from './watchAndAudio.js';
+import speakingPractice from './speakingPractice.js';
+import watchAndSpeak from './watchAndSpeak.js';
+import assessmentWatchAndSpeak from './assessmentWatchAndSpeak.js';
 // import listenandspeak from './listenandspeak.js';
-// import watchandspeak from './watchandspeak.js';
-// import assessmentwatchandspeak from './assessmentwatchandspeak.js';
-// import assessmentmcqs from './assessmentmcqs.js';
-// import feedbackmcqs from './feedbackmcqs.js';
-// import speakingpractice from './speakingpractice.js';
 // import conversationalquestionsbot from './conversationalquestionsbot.js';
 // import conversationalmonologuebot from './conversationalmonologuebot.js';
 // import conversationalagencybot from './conversationalagencybot.js';
 // import mcqs from './mcqs.js';
+// import assessmentmcqs from './assessmentmcqs.js';
+// import feedbackmcqs from './feedbackmcqs.js';
 
 
 // Map of activity types to their modules
@@ -26,6 +26,9 @@ const activityModules = {
     read: read,
     watchAndImage: watchAndImage,
     watchAndAudio: watchAndAudio,
+    speakingPractice: speakingPractice,
+    watchAndSpeak: watchAndSpeak,
+    assessmentWatchAndSpeak: assessmentWatchAndSpeak,
 };
 
 // Create unified ingestion object

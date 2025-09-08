@@ -1,5 +1,5 @@
 import { commonValidation, commonIngestion } from "./common.js";
-import { getDriveMediaUrl, compressVideo, compressAudio, compressImage } from "../utils/sheetUtils.js";
+import { getDriveMediaUrl, compressAudio } from "../utils/sheetUtils.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import lessonRepository from "../repositories/lessonRepository.js";
 
@@ -16,9 +16,9 @@ const validation = async (activities) => {
             toCreateCount += toCreate;
             toUpdateCount += toUpdate;
 
-            // For watchAndImage activity questionVideo should exist
-            if (!activity.questions?.some(q => q.questionVideo)) {
-                allErrors.push(`watchAndImage activity from "${activity.startRow}" to "${activity.endRow}" should have question video`);
+            // For speakingPractice activity questionAudio should exist
+            if (!activity.questions?.some(q => q.questionAudio)) {
+                allErrors.push(`speakingPractice activity from "${activity.startRow}" to "${activity.endRow}" should have question audio`);
             }
         }
 
@@ -29,7 +29,7 @@ const validation = async (activities) => {
         };
     } catch (error) {
         return {
-            errors: [`watchAndImage validation error: ${error.message}`],
+            errors: [`speakingPractice validation error: ${error.message}`],
             toCreateCount: 0,
             toUpdateCount: 0,
         };
@@ -64,68 +64,56 @@ const ingestion = async (activities) => {
                 // Check if speak activity question already exists for this lesson using lessonId and questionNumber
                 const existingSpeakActivityQuestions = await speakActivityQuestionRepository.getByLessonId(lessonId);
 
-                // Handle video files for questions
+                // Handle audio files for questions
                 if (activity.questions && activity.questions.length > 0) {
                     for (const question of activity.questions) {
-                        if (question.questionVideo) {
+                        if (question.questionAudio) {
                             hasRequiredProcessing = true;
                             try {
-                                // Download video from Google Drive
-                                console.log(`Downloading video from Google Drive: ${question.questionVideo}`);
-                                const videoFile = await getDriveMediaUrl(question.questionVideo);
+                                // Download audio from Google Drive
+                                console.log(`Downloading audio from Google Drive: ${question.questionAudio}`);
+                                const audioFile = await getDriveMediaUrl(question.questionAudio);
 
-                                if (!videoFile) {
-                                    errors.push(`Failed to download video from Google Drive for activity from "${activity.startRow}" to "${activity.endRow}"`);
+                                if (!audioFile) {
+                                    errors.push(`Failed to download audio from Google Drive for activity from "${activity.startRow}" to "${activity.endRow}"`);
                                     processingSuccessful = false;
                                     continue;
                                 }
 
-                                // Compress video and upload to Azure
-                                console.log(`Video downloaded successfully for activity from "${activity.startRow}" to "${activity.endRow}"`);
-                                const compressedVideoUrl = await compressVideo(videoFile);
+                                // Compress audio and upload to Azure
+                                console.log(`Audio downloaded successfully for activity from "${activity.startRow}" to "${activity.endRow}"`);
+                                const compressedAudioUrl = await compressAudio(audioFile);
+
 
                                 const existingSpeakActivityQuestion = existingSpeakActivityQuestions.find(question => question.questionNumber === question.questionNumber);
-                                let compressedCustomFeedbackImageUrl = null, compressedCustomFeedbackAudioUrl = null;
-                                if (question?.answers[0]?.customFeedbackImage) {
-                                    let customFeedbackImageDriveUrl = await getDriveMediaUrl(question?.answers[0]?.customFeedbackImage);
-                                    if (customFeedbackImageDriveUrl) {
-                                        compressedCustomFeedbackImageUrl = await compressImage(customFeedbackImageDriveUrl);
-                                    }
-                                }
-                                if (question?.answers[0]?.customFeedbackAudio) {
-                                    let customFeedbackAudioDriveUrl = await getDriveMediaUrl(question?.answers[0]?.customFeedbackAudio);
-                                    if (customFeedbackAudioDriveUrl) {
-                                        compressedCustomFeedbackAudioUrl = await compressAudio(customFeedbackAudioDriveUrl);
-                                    }
-                                }
                                 if (existingSpeakActivityQuestion) {
-                                    // Update existing speak activity question with new compressed video URL
+                                    // Update existing speak activity question with new compressed audio URL
                                     await speakActivityQuestionRepository.update(
                                         existingSpeakActivityQuestion.id,
                                         null,
-                                        compressedVideoUrl,
+                                        compressedAudioUrl,
                                         null,
                                         null,
                                         lessonId,
                                         question.questionNumber,
-                                        question.difficultyLevel,
-                                        question?.answers[0]?.customFeedbackText,
-                                        question?.answers[0]?.customFeedbackImage,
-                                        question?.answers[0]?.customFeedbackAudio,
+                                        null,
+                                        null,
+                                        null,
+                                        null,
                                     );
                                 } else {
-                                    // Create new speak activity question with new compressed video URL
+                                    // Create new speak activity question with new compressed audio URL
                                     await speakActivityQuestionRepository.create(
                                         null,
-                                        compressedVideoUrl,
+                                        compressedAudioUrl,
                                         null,
                                         null,
                                         lessonId,
                                         question.questionNumber,
-                                        question.difficultyLevel,
-                                        question?.answers[0]?.customFeedbackText,
-                                        question?.answers[0]?.customFeedbackImage,
-                                        question?.answers[0]?.customFeedbackAudio,
+                                        null,
+                                        null,
+                                        null,
+                                        null,
                                     );
                                 }
 
@@ -165,7 +153,7 @@ const ingestion = async (activities) => {
 
     } catch (error) {
         return {
-            errors: [`watchAndImage ingestion error: ${error.message}`],
+            errors: [`speakingPractice ingestion error: ${error.message}`],
             createdCount: 0,
             updatedCount: 0
         };

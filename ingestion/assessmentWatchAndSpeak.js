@@ -16,9 +16,14 @@ const validation = async (activities) => {
             toCreateCount += toCreate;
             toUpdateCount += toUpdate;
 
-            // For watchAndImage activity questionVideo should exist
+            // For assessmentWatchAndSpeak activity questionText should exist
+            if (!activity.questions?.some(q => q.questionText)) {
+                allErrors.push(`assessmentWatchAndSpeak activity from "${activity.startRow}" to "${activity.endRow}" should have question text`);
+            }
+
+            // For assessmentWatchAndSpeak activity questionVideo should exist
             if (!activity.questions?.some(q => q.questionVideo)) {
-                allErrors.push(`watchAndImage activity from "${activity.startRow}" to "${activity.endRow}" should have question video`);
+                allErrors.push(`assessmentWatchAndSpeak activity from "${activity.startRow}" to "${activity.endRow}" should have question video`);
             }
         }
 
@@ -29,7 +34,7 @@ const validation = async (activities) => {
         };
     } catch (error) {
         return {
-            errors: [`watchAndImage validation error: ${error.message}`],
+            errors: [`assessmentWatchAndSpeak validation error: ${error.message}`],
             toCreateCount: 0,
             toUpdateCount: 0,
         };
@@ -67,22 +72,42 @@ const ingestion = async (activities) => {
                 // Handle video files for questions
                 if (activity.questions && activity.questions.length > 0) {
                     for (const question of activity.questions) {
-                        if (question.questionVideo) {
+                        if (question.questionVideo && question.questionText) {
                             hasRequiredProcessing = true;
                             try {
-                                // Download video from Google Drive
-                                console.log(`Downloading video from Google Drive: ${question.questionVideo}`);
-                                const videoFile = await getDriveMediaUrl(question.questionVideo);
+                                let videoFile = null, imageFile = null, compressedVideoUrl = null, compressedImageUrl = null;
+                                if (question.questionVideo) {
+                                    // Download video from Google Drive
+                                    console.log(`Downloading video from Google Drive: ${question.questionVideo}`);
+                                    videoFile = await getDriveMediaUrl(question.questionVideo);
 
-                                if (!videoFile) {
-                                    errors.push(`Failed to download video from Google Drive for activity from "${activity.startRow}" to "${activity.endRow}"`);
-                                    processingSuccessful = false;
-                                    continue;
+                                    if (!videoFile) {
+                                        errors.push(`Failed to download video from Google Drive for activity from "${activity.startRow}" to "${activity.endRow}"`);
+                                        processingSuccessful = false;
+                                        continue;
+                                    }
+
+                                    // Compress video and upload to Azure
+                                    console.log(`Video downloaded successfully for activity from "${activity.startRow}" to "${activity.endRow}"`);
+                                    compressedVideoUrl = await compressVideo(videoFile);
                                 }
 
-                                // Compress video and upload to Azure
-                                console.log(`Video downloaded successfully for activity from "${activity.startRow}" to "${activity.endRow}"`);
-                                const compressedVideoUrl = await compressVideo(videoFile);
+                                if (question.questionImage) {
+                                    // Download audio from Google Drive
+                                    console.log(`Downloading image from Google Drive: ${question.questionImage}`);
+                                    imageFile = await getDriveMediaUrl(question.questionImage);
+
+                                    if (!imageFile) {
+                                        errors.push(`Failed to download image from Google Drive for activity from "${activity.startRow}" to "${activity.endRow}"`);
+                                        processingSuccessful = false;
+                                        continue;
+                                    }
+
+                                    // Compress audio and upload to Azure
+                                    console.log(`Image downloaded successfully for activity from "${activity.startRow}" to "${activity.endRow}"`);
+                                    compressedImageUrl = await compressImage(imageFile);
+                                }
+
 
                                 const existingSpeakActivityQuestion = existingSpeakActivityQuestions.find(question => question.questionNumber === question.questionNumber);
                                 let compressedCustomFeedbackImageUrl = null, compressedCustomFeedbackAudioUrl = null;
@@ -102,33 +127,32 @@ const ingestion = async (activities) => {
                                     // Update existing speak activity question with new compressed video URL
                                     await speakActivityQuestionRepository.update(
                                         existingSpeakActivityQuestion.id,
-                                        null,
+                                        question.questionText,
                                         compressedVideoUrl,
-                                        null,
-                                        null,
+                                        compressedImageUrl,
+                                        [question?.answers[0]?.answerText],
                                         lessonId,
                                         question.questionNumber,
                                         question.difficultyLevel,
                                         question?.answers[0]?.customFeedbackText,
-                                        question?.answers[0]?.customFeedbackImage,
-                                        question?.answers[0]?.customFeedbackAudio,
+                                        compressedCustomFeedbackImageUrl,
+                                        compressedCustomFeedbackAudioUrl,
                                     );
                                 } else {
                                     // Create new speak activity question with new compressed video URL
                                     await speakActivityQuestionRepository.create(
-                                        null,
+                                        question.questionText,
                                         compressedVideoUrl,
-                                        null,
-                                        null,
+                                        compressedImageUrl,
+                                        [question?.answers[0]?.answerText],
                                         lessonId,
                                         question.questionNumber,
                                         question.difficultyLevel,
                                         question?.answers[0]?.customFeedbackText,
-                                        question?.answers[0]?.customFeedbackImage,
-                                        question?.answers[0]?.customFeedbackAudio,
+                                        compressedCustomFeedbackImageUrl,
+                                        compressedCustomFeedbackAudioUrl,
                                     );
                                 }
-
 
                             } catch (docError) {
                                 console.error(`Processing error for lesson ${lessonId}:`, docError);
@@ -165,7 +189,7 @@ const ingestion = async (activities) => {
 
     } catch (error) {
         return {
-            errors: [`watchAndImage ingestion error: ${error.message}`],
+            errors: [`assessmentWatchAndSpeak ingestion error: ${error.message}`],
             createdCount: 0,
             updatedCount: 0
         };
