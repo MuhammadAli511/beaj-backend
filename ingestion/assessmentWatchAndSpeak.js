@@ -109,7 +109,7 @@ const ingestion = async (activities) => {
                                 }
 
 
-                                const existingSpeakActivityQuestion = existingSpeakActivityQuestions.find(question => question.questionNumber === question.questionNumber);
+                                const existingSpeakActivityQuestion = existingSpeakActivityQuestions.find(existingQ => existingQ.questionNumber == question.questionNumber && existingQ.difficultyLevel == question.difficultyLevel);
                                 let compressedCustomFeedbackImageUrl = null, compressedCustomFeedbackAudioUrl = null;
                                 if (question?.answers[0]?.customFeedbackImage) {
                                     let customFeedbackImageDriveUrl = await getDriveMediaUrl(question?.answers[0]?.customFeedbackImage);

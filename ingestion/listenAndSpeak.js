@@ -114,7 +114,7 @@ const ingestion = async (activities) => {
                                 }
 
 
-                                const existingSpeakActivityQuestion = existingSpeakActivityQuestions.find(question => question.questionNumber === question.questionNumber);
+                                const existingSpeakActivityQuestion = existingSpeakActivityQuestions.find(existingQ => existingQ.questionNumber == question.questionNumber && existingQ.difficultyLevel == question.difficultyLevel);
                                 let answersArray = [];
                                 for (const answer of question.answers) {
                                     // Merge all answerText in an array

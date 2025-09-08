@@ -10,12 +10,12 @@ import speakingPractice from './speakingPractice.js';
 import watchAndSpeak from './watchAndSpeak.js';
 import assessmentWatchAndSpeak from './assessmentWatchAndSpeak.js';
 import listenAndSpeak from './listenAndSpeak.js';
-// import conversationalquestionsbot from './conversationalquestionsbot.js';
-// import conversationalmonologuebot from './conversationalmonologuebot.js';
-// import conversationalagencybot from './conversationalagencybot.js';
-// import mcqs from './mcqs.js';
-// import assessmentmcqs from './assessmentmcqs.js';
-// import feedbackmcqs from './feedbackmcqs.js';
+import conversationalQuestionsBot from './conversationalQuestionsBot.js';
+import conversationalMonologueBot from './conversationalMonologueBot.js';
+import conversationalAgencyBot from './conversationalAgencyBot.js';
+import mcqs from './mcqs.js';
+import assessmentMcqs from './assessmentMcqs.js';
+import feedbackMcqs from './feedbackMcqs.js';
 
 
 // Map of activity types to their modules
@@ -30,6 +30,12 @@ const activityModules = {
     watchAndSpeak: watchAndSpeak,
     assessmentWatchAndSpeak: assessmentWatchAndSpeak,
     listenAndSpeak: listenAndSpeak,
+    conversationalQuestionsBot: conversationalQuestionsBot,
+    conversationalMonologueBot: conversationalMonologueBot,
+    conversationalAgencyBot: conversationalAgencyBot,
+    mcqs: mcqs,
+    assessmentMcqs: assessmentMcqs,
+    feedbackMcqs: feedbackMcqs,
 };
 
 // Create unified ingestion object

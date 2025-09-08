@@ -33,6 +33,7 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
     const questionsMap = new Map();
     let currentQuestion = null;
     let currentQuestionData = {};
+    let currentDifficultyLevel = ""; // Track current difficulty level context
     let answerCounters = {};
 
     for (let r = activityStartRow - 1; r < activityEndRow && r < rows.length; r++) {
@@ -44,6 +45,7 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
         const questionNumber = get(columns_order.Q_NO);
         if (questionNumber) {
             currentQuestion = questionNumber;
+            currentDifficultyLevel = ""; // Reset difficulty level for new question
 
             if (!questionsMap.has(questionNumber)) {
                 questionsMap.set(questionNumber, {
@@ -84,6 +86,11 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
         const cfImage = get(columns_order.CF_IMAGE);
         const cfAudio = get(columns_order.CF_AUDIO);
 
+        // Update current difficulty level if specified
+        if (difficultyLevel) {
+            currentDifficultyLevel = difficultyLevel.toLowerCase();
+        }
+
         // Handle activities without questions (single row activities)
         if (!currentQuestion && (questionVideo || questionAudio || questionImage || answerText || cfText || cfImage || cfAudio)) {
             // Create a default question for activities without Q No
@@ -103,12 +110,13 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
 
         // If we have question data or answer data, process it
         if (currentQuestion && currentQuestionData && (difficultyLevel || questionText || questionVideo || questionAudio || questionImage || answerText || cfText || cfImage || cfAudio)) {
-            const diffKey = difficultyLevel.toLowerCase() || "default";
+            // Use current difficulty level if no difficulty specified in this row, otherwise use "default"
+            const diffKey = difficultyLevel ? difficultyLevel.toLowerCase() : (currentDifficultyLevel || "default");
             const counterKey = `${currentQuestion}_${diffKey}`;
 
             if (!currentQuestionData.difficultiesMap.has(diffKey)) {
                 currentQuestionData.difficultiesMap.set(diffKey, {
-                    difficultyLevel: difficultyLevel.toLowerCase() || "",
+                    difficultyLevel: diffKey === "default" ? "" : diffKey,
                     questionText: "",
                     questionVideo: "",
                     questionAudio: "",

@@ -90,7 +90,7 @@ const ingestion = async (activities) => {
                                 const compressedAudioUrl = await compressAudio(audioFile);
 
 
-                                const existingSpeakActivityQuestion = existingSpeakActivityQuestions.find(question => question.questionNumber === question.questionNumber);
+                                const existingSpeakActivityQuestion = existingSpeakActivityQuestions.find(existingQ => existingQ.questionNumber == question.questionNumber && existingQ.difficultyLevel == question.difficultyLevel);
                                 if (existingSpeakActivityQuestion) {
                                     // Update existing speak activity question with new compressed audio URL
                                     await speakActivityQuestionRepository.update(

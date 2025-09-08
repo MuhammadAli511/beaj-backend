@@ -84,7 +84,7 @@ const ingestion = async (activities) => {
                                 console.log(`Video downloaded successfully for activity from "${activity.startRow}" to "${activity.endRow}"`);
                                 const compressedVideoUrl = await compressVideo(videoFile);
 
-                                const existingSpeakActivityQuestion = existingSpeakActivityQuestions.find(question => question.questionNumber === question.questionNumber);
+                                const existingSpeakActivityQuestion = existingSpeakActivityQuestions.find(existingQ => existingQ.questionNumber == question.questionNumber && existingQ.difficultyLevel == question.difficultyLevel);
                                 let compressedCustomFeedbackImageUrl = null, compressedCustomFeedbackAudioUrl = null;
                                 if (question?.answers[0]?.customFeedbackImage) {
                                     let customFeedbackImageDriveUrl = await getDriveMediaUrl(question?.answers[0]?.customFeedbackImage);

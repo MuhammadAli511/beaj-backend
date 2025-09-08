@@ -1,5 +1,5 @@
 import { commonValidation, commonIngestion } from "./common.js";
-import { getDriveMediaUrl, compressAudio } from "../utils/sheetUtils.js";
+import textToSpeech from '../utils/textToSpeech.js';
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import lessonRepository from "../repositories/lessonRepository.js";
 
@@ -16,9 +16,15 @@ const validation = async (activities) => {
             toCreateCount += toCreate;
             toUpdateCount += toUpdate;
 
-            // For speakingPractice activity questionAudio should exist
-            if (!activity.questions?.some(q => q.questionAudio)) {
-                allErrors.push(`speakingPractice activity from "${activity.startRow}" to "${activity.endRow}" should have question audio`);
+            // For conversationalAgencyBot activity questionText should exist and questionText should have <question> and </question> tags. And text between these tags should not be empty.
+            if (!activity.questions?.some(q => q.questionText)) {
+                allErrors.push(`conversationalAgencyBot activity from "${activity.startRow}" to "${activity.endRow}" should have question text`);
+            }
+            if (!activity.questions?.some(q => q.questionText.includes("<question>") && q.questionText.includes("</question>"))) {
+                allErrors.push(`conversationalAgencyBot activity from "${activity.startRow}" to "${activity.endRow}" should have question text that has <question> and </question> tags`);
+            }
+            if (!activity.questions?.some(q => q.questionText.match(/<question>(.*?)<\/question>/s)[1].trim() != "")) {
+                allErrors.push(`conversationalAgencyBot activity from "${activity.startRow}" to "${activity.endRow}" should have question text that has text between <question> and </question> tags`);
             }
         }
 
@@ -29,7 +35,7 @@ const validation = async (activities) => {
         };
     } catch (error) {
         return {
-            errors: [`speakingPractice validation error: ${error.message}`],
+            errors: [`conversationalAgencyBot validation error: ${error.message}`],
             toCreateCount: 0,
             toUpdateCount: 0,
         };
@@ -64,34 +70,28 @@ const ingestion = async (activities) => {
                 // Check if speak activity question already exists for this lesson using lessonId and questionNumber
                 const existingSpeakActivityQuestions = await speakActivityQuestionRepository.getByLessonId(lessonId);
 
-                // Handle audio files for questions
+                // Handle video files for questions
                 if (activity.questions && activity.questions.length > 0) {
                     for (const question of activity.questions) {
-                        if (question.questionAudio) {
+                        if (question.questionText) {
                             hasRequiredProcessing = true;
                             try {
-                                // Download audio from Google Drive
-                                console.log(`Downloading audio from Google Drive: ${question.questionAudio}`);
-                                const audioFile = await getDriveMediaUrl(question.questionAudio);
-
-                                if (!audioFile) {
-                                    errors.push(`Failed to download audio from Google Drive for activity from "${activity.startRow}" to "${activity.endRow}"`);
-                                    processingSuccessful = false;
-                                    continue;
+                                let botMediaUrl = null;
+                                if (question.questionText.includes("<question>")) {
+                                    const questionText = question.questionText.match(/<question>(.*?)<\/question>/s)[1].trim();
+                                    if (questionText != "") {
+                                        botMediaUrl = await textToSpeech.azureOpenAITextToSpeech(questionText);
+                                    }
                                 }
-
-                                // Compress audio and upload to Azure
-                                console.log(`Audio downloaded successfully for activity from "${activity.startRow}" to "${activity.endRow}"`);
-                                const compressedAudioUrl = await compressAudio(audioFile);
 
 
                                 const existingSpeakActivityQuestion = existingSpeakActivityQuestions.find(existingQ => existingQ.questionNumber == question.questionNumber && existingQ.difficultyLevel == question.difficultyLevel);
                                 if (existingSpeakActivityQuestion) {
-                                    // Update existing speak activity question with new compressed audio URL
+                                    // Update existing speak activity question with new bot media URL
                                     await speakActivityQuestionRepository.update(
                                         existingSpeakActivityQuestion.id,
-                                        null,
-                                        compressedAudioUrl,
+                                        question.questionText,
+                                        botMediaUrl,
                                         null,
                                         null,
                                         lessonId,
@@ -102,10 +102,10 @@ const ingestion = async (activities) => {
                                         null,
                                     );
                                 } else {
-                                    // Create new speak activity question with new compressed audio URL
+                                    // Create new speak activity question with new bot media URL
                                     await speakActivityQuestionRepository.create(
-                                        null,
-                                        compressedAudioUrl,
+                                        question.questionText,
+                                        botMediaUrl,
                                         null,
                                         null,
                                         lessonId,
@@ -153,7 +153,7 @@ const ingestion = async (activities) => {
 
     } catch (error) {
         return {
-            errors: [`speakingPractice ingestion error: ${error.message}`],
+            errors: [`conversationalAgencyBot ingestion error: ${error.message}`],
             createdCount: 0,
             updatedCount: 0
         };

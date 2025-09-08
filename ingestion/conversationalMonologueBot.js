@@ -1,5 +1,5 @@
 import { commonValidation, commonIngestion } from "./common.js";
-import { getDriveMediaUrl, compressVideo, compressAudio, compressImage } from "../utils/sheetUtils.js";
+import { getDriveMediaUrl, compressVideo } from "../utils/sheetUtils.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import lessonRepository from "../repositories/lessonRepository.js";
 
@@ -16,14 +16,14 @@ const validation = async (activities) => {
             toCreateCount += toCreate;
             toUpdateCount += toUpdate;
 
-            // For watchAndSpeak activity questionText should exist
-            if (!activity.questions?.some(q => q.questionText)) {
-                allErrors.push(`watchAndSpeak activity from "${activity.startRow}" to "${activity.endRow}" should have question text`);
+            // For conversationalMonologueBot activity questionVideo should exist
+            if (!activity.questions?.some(q => q.questionVideo)) {
+                allErrors.push(`conversationalMonologueBot activity from "${activity.startRow}" to "${activity.endRow}" should have question video`);
             }
 
-            // For watchAndSpeak activity questionVideo should exist
-            if (!activity.questions?.some(q => q.questionVideo)) {
-                allErrors.push(`watchAndSpeak activity from "${activity.startRow}" to "${activity.endRow}" should have question video`);
+            // For conversationalMonologueBot activity questionText should exist
+            if (!activity.questions?.some(q => q.questionText)) {
+                allErrors.push(`conversationalMonologueBot activity from "${activity.startRow}" to "${activity.endRow}" should have question text`);
             }
         }
 
@@ -34,7 +34,7 @@ const validation = async (activities) => {
         };
     } catch (error) {
         return {
-            errors: [`watchAndSpeak validation error: ${error.message}`],
+            errors: [`conversationalMonologueBot validation error: ${error.message}`],
             toCreateCount: 0,
             toUpdateCount: 0,
         };
@@ -72,87 +72,56 @@ const ingestion = async (activities) => {
                 // Handle video files for questions
                 if (activity.questions && activity.questions.length > 0) {
                     for (const question of activity.questions) {
-                        if (question.questionVideo && question.questionText) {
+                        if (question.questionVideo) {
                             hasRequiredProcessing = true;
                             try {
-                                let videoFile = null, imageFile = null, compressedVideoUrl = null, compressedImageUrl = null;
-                                if (question.questionVideo) {
-                                    // Download video from Google Drive
-                                    console.log(`Downloading video from Google Drive: ${question.questionVideo}`);
-                                    videoFile = await getDriveMediaUrl(question.questionVideo);
+                                // Download video from Google Drive
+                                console.log(`Downloading video from Google Drive: ${question.questionVideo}`);
+                                const videoFile = await getDriveMediaUrl(question.questionVideo);
 
-                                    if (!videoFile) {
-                                        errors.push(`Failed to download video from Google Drive for activity from "${activity.startRow}" to "${activity.endRow}"`);
-                                        processingSuccessful = false;
-                                        continue;
-                                    }
-
-                                    // Compress video and upload to Azure
-                                    console.log(`Video downloaded successfully for activity from "${activity.startRow}" to "${activity.endRow}"`);
-                                    compressedVideoUrl = await compressVideo(videoFile);
+                                if (!videoFile) {
+                                    errors.push(`Failed to download video from Google Drive for activity from "${activity.startRow}" to "${activity.endRow}"`);
+                                    processingSuccessful = false;
+                                    continue;
                                 }
 
-                                if (question.questionImage) {
-                                    // Download audio from Google Drive
-                                    console.log(`Downloading image from Google Drive: ${question.questionImage}`);
-                                    imageFile = await getDriveMediaUrl(question.questionImage);
-
-                                    if (!imageFile) {
-                                        errors.push(`Failed to download image from Google Drive for activity from "${activity.startRow}" to "${activity.endRow}"`);
-                                        processingSuccessful = false;
-                                        continue;
-                                    }
-
-                                    // Compress audio and upload to Azure
-                                    console.log(`Image downloaded successfully for activity from "${activity.startRow}" to "${activity.endRow}"`);
-                                    compressedImageUrl = await compressImage(imageFile);
-                                }
+                                // Compress video and upload to Azure
+                                console.log(`Video downloaded successfully for activity from "${activity.startRow}" to "${activity.endRow}"`);
+                                const compressedVideoUrl = await compressVideo(videoFile);
 
 
                                 const existingSpeakActivityQuestion = existingSpeakActivityQuestions.find(existingQ => existingQ.questionNumber == question.questionNumber && existingQ.difficultyLevel == question.difficultyLevel);
-                                let compressedCustomFeedbackImageUrl = null, compressedCustomFeedbackAudioUrl = null;
-                                if (question?.answers[0]?.customFeedbackImage) {
-                                    let customFeedbackImageDriveUrl = await getDriveMediaUrl(question?.answers[0]?.customFeedbackImage);
-                                    if (customFeedbackImageDriveUrl) {
-                                        compressedCustomFeedbackImageUrl = await compressImage(customFeedbackImageDriveUrl);
-                                    }
-                                }
-                                if (question?.answers[0]?.customFeedbackAudio) {
-                                    let customFeedbackAudioDriveUrl = await getDriveMediaUrl(question?.answers[0]?.customFeedbackAudio);
-                                    if (customFeedbackAudioDriveUrl) {
-                                        compressedCustomFeedbackAudioUrl = await compressAudio(customFeedbackAudioDriveUrl);
-                                    }
-                                }
                                 if (existingSpeakActivityQuestion) {
                                     // Update existing speak activity question with new compressed video URL
                                     await speakActivityQuestionRepository.update(
                                         existingSpeakActivityQuestion.id,
                                         question.questionText,
                                         compressedVideoUrl,
-                                        compressedImageUrl,
-                                        [question?.answers[0]?.answerText],
+                                        null,
+                                        null,
                                         lessonId,
                                         question.questionNumber,
-                                        question.difficultyLevel,
-                                        question?.answers[0]?.customFeedbackText,
-                                        compressedCustomFeedbackImageUrl,
-                                        compressedCustomFeedbackAudioUrl,
+                                        null,
+                                        null,
+                                        null,
+                                        null,
                                     );
                                 } else {
                                     // Create new speak activity question with new compressed video URL
                                     await speakActivityQuestionRepository.create(
                                         question.questionText,
                                         compressedVideoUrl,
-                                        compressedImageUrl,
-                                        [question?.answers[0]?.answerText],
+                                        null,
+                                        null,
                                         lessonId,
                                         question.questionNumber,
-                                        question.difficultyLevel,
-                                        question?.answers[0]?.customFeedbackText,
-                                        compressedCustomFeedbackImageUrl,
-                                        compressedCustomFeedbackAudioUrl,
+                                        null,
+                                        null,
+                                        null,
+                                        null,
                                     );
                                 }
+
 
                             } catch (docError) {
                                 console.error(`Processing error for lesson ${lessonId}:`, docError);
@@ -189,7 +158,7 @@ const ingestion = async (activities) => {
 
     } catch (error) {
         return {
-            errors: [`watchAndSpeak ingestion error: ${error.message}`],
+            errors: [`conversationalMonologueBot ingestion error: ${error.message}`],
             createdCount: 0,
             updatedCount: 0
         };

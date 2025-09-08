@@ -1,5 +1,5 @@
 import { commonValidation, commonIngestion } from "./common.js";
-import { getDriveMediaUrl, compressAudio } from "../utils/sheetUtils.js";
+import textToSpeech from '../utils/textToSpeech.js';
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import lessonRepository from "../repositories/lessonRepository.js";
 
@@ -16,9 +16,9 @@ const validation = async (activities) => {
             toCreateCount += toCreate;
             toUpdateCount += toUpdate;
 
-            // For speakingPractice activity questionAudio should exist
-            if (!activity.questions?.some(q => q.questionAudio)) {
-                allErrors.push(`speakingPractice activity from "${activity.startRow}" to "${activity.endRow}" should have question audio`);
+            // For conversationalQuestionsBot activity questionText should exist
+            if (!activity.questions?.some(q => q.questionText)) {
+                allErrors.push(`conversationalQuestionsBot activity from "${activity.startRow}" to "${activity.endRow}" should have question text`);
             }
         }
 
@@ -29,7 +29,7 @@ const validation = async (activities) => {
         };
     } catch (error) {
         return {
-            errors: [`speakingPractice validation error: ${error.message}`],
+            errors: [`conversationalQuestionsBot validation error: ${error.message}`],
             toCreateCount: 0,
             toUpdateCount: 0,
         };
@@ -64,34 +64,21 @@ const ingestion = async (activities) => {
                 // Check if speak activity question already exists for this lesson using lessonId and questionNumber
                 const existingSpeakActivityQuestions = await speakActivityQuestionRepository.getByLessonId(lessonId);
 
-                // Handle audio files for questions
+                // Handle video files for questions
                 if (activity.questions && activity.questions.length > 0) {
                     for (const question of activity.questions) {
-                        if (question.questionAudio) {
+                        if (question.questionText) {
                             hasRequiredProcessing = true;
                             try {
-                                // Download audio from Google Drive
-                                console.log(`Downloading audio from Google Drive: ${question.questionAudio}`);
-                                const audioFile = await getDriveMediaUrl(question.questionAudio);
-
-                                if (!audioFile) {
-                                    errors.push(`Failed to download audio from Google Drive for activity from "${activity.startRow}" to "${activity.endRow}"`);
-                                    processingSuccessful = false;
-                                    continue;
-                                }
-
-                                // Compress audio and upload to Azure
-                                console.log(`Audio downloaded successfully for activity from "${activity.startRow}" to "${activity.endRow}"`);
-                                const compressedAudioUrl = await compressAudio(audioFile);
-
+                                const botAudioUrl = await textToSpeech.azureOpenAITextToSpeech(question.questionText);
 
                                 const existingSpeakActivityQuestion = existingSpeakActivityQuestions.find(existingQ => existingQ.questionNumber == question.questionNumber && existingQ.difficultyLevel == question.difficultyLevel);
                                 if (existingSpeakActivityQuestion) {
-                                    // Update existing speak activity question with new compressed audio URL
+                                    // Update existing speak activity question with new compressed video URL
                                     await speakActivityQuestionRepository.update(
                                         existingSpeakActivityQuestion.id,
                                         null,
-                                        compressedAudioUrl,
+                                        botAudioUrl,
                                         null,
                                         null,
                                         lessonId,
@@ -102,10 +89,10 @@ const ingestion = async (activities) => {
                                         null,
                                     );
                                 } else {
-                                    // Create new speak activity question with new compressed audio URL
+                                    // Create new speak activity question with new compressed video URL
                                     await speakActivityQuestionRepository.create(
                                         null,
-                                        compressedAudioUrl,
+                                        botAudioUrl,
                                         null,
                                         null,
                                         lessonId,
@@ -153,7 +140,7 @@ const ingestion = async (activities) => {
 
     } catch (error) {
         return {
-            errors: [`speakingPractice ingestion error: ${error.message}`],
+            errors: [`conversationalQuestionsBot ingestion error: ${error.message}`],
             createdCount: 0,
             updatedCount: 0
         };
