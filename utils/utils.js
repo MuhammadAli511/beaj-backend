@@ -18,7 +18,6 @@ const teacherBotPhoneNumberId = process.env.TEACHER_BOT_PHONE_NUMBER_ID;
 const marketingBotPhoneNumberId = process.env.MARKETING_BOT_PHONE_NUMBER_ID;
 
 const uploadAudioToAzure = async (audioData) => {
-    // Generate a unique file name with timestamp and UUID
     const timestamp = format(new Date(), "yyyyMMddHHmmssSSS");
     const uniqueID = uuidv4();
     const baseFileName = `tts_audio_${uniqueID}.mp3`;
@@ -78,9 +77,18 @@ const convertOggToWav = async (oggBuffer) => {
     });
 };
 
+
 const sleep = (ms) => {
     return new Promise(resolve => setTimeout(resolve, ms));
 };
+
+
+const toCamelCase = (str) => {
+    return str.replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) => {
+        return index === 0 ? word.toLowerCase() : word.toUpperCase();
+    }).replace(/\s+/g, '');
+};
+
 
 const extractTranscript = (results) => {
     if (!results?.words) {
@@ -179,6 +187,7 @@ const getLevelFromCourseName = (courseName) => {
     }
 };
 
+
 const extractMispronouncedWords = (results) => {
     if (!results?.words) {
         return [];
@@ -195,11 +204,13 @@ const extractMispronouncedWords = (results) => {
     return mispronouncedWords;
 };
 
+
 const getAudioBufferFromAudioFileUrl = async (audioUrl) => {
     const response = await fetch(audioUrl);
     const arrayBuffer = await response.arrayBuffer();
     return Buffer.from(arrayBuffer);
 };
+
 
 const convertNumberToEmoji = async (number) => {
     const emojiMap = {
@@ -217,6 +228,7 @@ const convertNumberToEmoji = async (number) => {
 
     return number.toString().split('').map(digit => emojiMap[digit]).join('');
 };
+
 
 const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber, currentUserState, messageType, messageContent) => {
     const acceptableMessagesList = currentUserState.dataValues.acceptableMessages;
@@ -375,6 +387,7 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
     return false;
 };
 
+
 const getAcceptableMessagesList = async (activityType) => {
     if (
         activityType === "listenAndSpeak" || activityType === "watchAndSpeak" || activityType === "watchAndAudio" ||
@@ -388,15 +401,18 @@ const getAcceptableMessagesList = async (activityType) => {
     }
 };
 
+
 const getDaysPerWeek = async (profileId) => {
     const profile = await waProfileRepository.getByProfileId(profileId);
     return profile.dataValues.profile_type === 'teacher' ? 6 : 5;
 };
 
+
 const getTotalLessonsForCourse = async (profileId) => {
     const daysPerWeek = await getDaysPerWeek(profileId);
     return 4 * daysPerWeek;
 };
+
 
 const difficultyLevelCalculation = async (profileId, userMobileNumber, currentUserState, messageContent) => {
     if (messageContent != 'easy' && messageContent != 'hard') {
@@ -418,7 +434,6 @@ const difficultyLevelCalculation = async (profileId, userMobileNumber, currentUs
 };
 
 
-
 export {
     sleep,
     extractTranscript,
@@ -434,5 +449,6 @@ export {
     extractMessageContent,
     getProfileTypeFromBotId,
     uploadAudioToAzure,
-    convertOggToWav
+    convertOggToWav,
+    toCamelCase
 };

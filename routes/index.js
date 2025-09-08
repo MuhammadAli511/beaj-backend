@@ -21,6 +21,7 @@ import waQuestionResponsesRoutes from './waQuestionResponsesRoutes.js';
 import userProgressRoutes from './userProgressRoutes.js';
 import waActiveSessionRoutes from './waActiveSessionRoutes.js';
 import aiServicesRoutes from './aiServicesRoutes.js';
+import contentIngestionRoutes from './contentIngestionRoutes.js';
 
 const router = express.Router();
 
@@ -51,5 +52,6 @@ router.use('/etl_pipline', etlRoutes);
 router.use('/userProgress', userProgressRoutes);
 router.use('/waActiveSession', waActiveSessionRoutes);
 router.use('/aiServices', aiServicesRoutes);
+router.use('/contentIngestion', contentIngestionRoutes);
 
 export default router;

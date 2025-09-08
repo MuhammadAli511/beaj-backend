@@ -499,6 +499,17 @@ const testLessonService = async (phoneNumber, lesson) => {
     }
 };
 
+
+const getByCourseWeekDaySeqService = async (courseId, weekNumber, dayNumber, sequenceNumber) => {
+    try {
+        const result = await lessonRepository.getLessonIdsByCourseWeekDaySeq(courseId, weekNumber, dayNumber, sequenceNumber);
+        return result;
+    } catch (error) {
+        error.fileName = 'lessonService.js';
+        throw error;
+    }
+};
+
 export default {
     createLessonService,
     getAllLessonService,
@@ -508,5 +519,6 @@ export default {
     getLessonsByActivity,
     migrateLessonService,
     getLessonByCourseIdService,
-    testLessonService
+    testLessonService,
+    getByCourseWeekDaySeqService,
 };

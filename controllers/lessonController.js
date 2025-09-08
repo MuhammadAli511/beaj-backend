@@ -101,6 +101,7 @@ const testLessonController = async (req, res, next) => {
     }
 };
 
+
 export default {
     createLessonController,
     getAllLessonController,
@@ -110,5 +111,5 @@ export default {
     getLessonsByActivityController,
     migrateLessonController,
     getLessonByCourseIdController,
-    testLessonController,
+    testLessonController
 };

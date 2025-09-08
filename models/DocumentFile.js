@@ -21,7 +21,7 @@ DocumentFile.init({
   },
   language: {
     type: DataTypes.TEXT,
-    allowNull: false
+    allowNull: true
   },
   video: {
     type: DataTypes.TEXT,
