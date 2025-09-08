@@ -331,7 +331,7 @@ const validateIngestionService = async (courseId, sheetId, sheetTitle) => {
             for (const activity of activities) {
                 if (activity.upload?.toLowerCase() === "true") {
                     // Check if activity exists in database
-                    const existingLesson = await lessonRepository.getLessonIdsByCourseWeekDaySeq(
+                    const existingLesson = await lessonRepository.getLessonWithActivityTypeByCourseWeekDaySeq(
                         activity.courseId,
                         parseInt(activity.week),
                         parseInt(activity.day),
@@ -339,7 +339,14 @@ const validateIngestionService = async (courseId, sheetId, sheetTitle) => {
                     );
 
                     if (existingLesson) {
-                        activity.status = "UPDATE";
+                        // Check if activityType matches for updates
+                        if (existingLesson.activity === activity.activityType) {
+                            activity.status = "UPDATE";
+                        } else {
+                            // Throw error if week, day, seq match but activityType doesn't match
+                            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" cannot be updated because an activity with the same week (${activity.week}), day (${activity.day}), and sequence (${activity.seq}) already exists with a different activity type (${existingLesson.activity}). Update function cannot run on different activity types.`);
+                            activity.status = "SKIP";
+                        }
                     } else {
                         activity.status = "CREATE";
                     }
@@ -529,7 +536,7 @@ const processIngestionService = async (courseId, sheetId, sheetTitle) => {
         for (const activity of activities) {
             if (activity.upload?.toLowerCase() === "true") {
                 // Check if activity exists in database
-                const existingLesson = await lessonRepository.getLessonIdsByCourseWeekDaySeq(
+                const existingLesson = await lessonRepository.getLessonWithActivityTypeByCourseWeekDaySeq(
                     activity.courseId,
                     parseInt(activity.week),
                     parseInt(activity.day),
@@ -537,7 +544,14 @@ const processIngestionService = async (courseId, sheetId, sheetTitle) => {
                 );
 
                 if (existingLesson) {
-                    activity.status = "UPDATE";
+                    // Check if activityType matches for updates
+                    if (existingLesson.activity === activity.activityType) {
+                        activity.status = "UPDATE";
+                    } else {
+                        // Throw error if week, day, seq match but activityType doesn't match
+                        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" cannot be processed because an activity with the same week (${activity.week}), day (${activity.day}), and sequence (${activity.seq}) already exists with a different activity type (${existingLesson.activity}). Update function cannot run on different activity types.`);
+                        activity.status = "SKIP";
+                    }
                 } else {
                     activity.status = "CREATE";
                 }

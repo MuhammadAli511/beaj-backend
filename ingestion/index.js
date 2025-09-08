@@ -9,7 +9,7 @@ import watchAndAudio from './watchAndAudio.js';
 import speakingPractice from './speakingPractice.js';
 import watchAndSpeak from './watchAndSpeak.js';
 import assessmentWatchAndSpeak from './assessmentWatchAndSpeak.js';
-// import listenandspeak from './listenandspeak.js';
+import listenAndSpeak from './listenAndSpeak.js';
 // import conversationalquestionsbot from './conversationalquestionsbot.js';
 // import conversationalmonologuebot from './conversationalmonologuebot.js';
 // import conversationalagencybot from './conversationalagencybot.js';
@@ -29,6 +29,7 @@ const activityModules = {
     speakingPractice: speakingPractice,
     watchAndSpeak: watchAndSpeak,
     assessmentWatchAndSpeak: assessmentWatchAndSpeak,
+    listenAndSpeak: listenAndSpeak,
 };
 
 // Create unified ingestion object
