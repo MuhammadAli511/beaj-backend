@@ -42,6 +42,16 @@ const getDocumentFilesByIdService = async (id) => {
     }
 };
 
+const getDocumentFilesByLessonIdService = async (lessonId) => {
+    try {
+        const documentFiles = await documentFileRepository.getByLessonId(lessonId);
+        return documentFiles;
+    } catch (error) {
+        error.fileName = 'documentFilesService.js';
+        throw error;
+    }
+};
+
 const updateDocumentFilesService = async (id, file, lessonId, language, mediaType) => {
     try {
         const blob_url = await azure_blob.uploadToBlobStorage(file);
@@ -77,5 +87,6 @@ export default {
     getAllDocumentFilesService,
     getDocumentFilesByIdService,
     updateDocumentFilesService,
-    deleteDocumentFilesService
+    deleteDocumentFilesService,
+    getDocumentFilesByLessonIdService
 };

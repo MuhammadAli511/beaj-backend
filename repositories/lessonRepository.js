@@ -66,6 +66,14 @@ const getByCourseActivity = async (course, activity) => {
     });
 };
 
+const getByCourse = async (course) => {
+    return await Lesson.findAll({
+        where: {
+            courseId: course,
+        }
+    });
+};
+
 
 const update = async (id, lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status, textInstruction, audioInstructionUrl) => {
     const lesson = await Lesson.findByPk(id);
@@ -78,6 +86,30 @@ const update = async (id, lessonType, dayNumber, activity, activityAlias, weekNu
     lesson.courseId = courseId;
     lesson.SequenceNumber = sequenceNumber;
     lesson.status = status;
+    lesson.textInstruction = textInstruction;
+    lesson.audioInstructionUrl = audioInstructionUrl;
+    await lesson.save();
+    return lesson;
+};
+
+
+const updateByCourseWeekDaySeq = async (courseId, weekNumber, dayNumber, sequenceNumber, activity, activityAlias, text, textInstruction, audioInstructionUrl) => {
+    const lesson = await Lesson.findOne({
+        where: {
+            courseId: courseId,
+            weekNumber: weekNumber,
+            dayNumber: dayNumber,
+            SequenceNumber: sequenceNumber
+        }
+    });
+
+    if (!lesson) {
+        return null;
+    }
+    lesson.dayNumber = dayNumber;
+    lesson.activity = activity;
+    lesson.activityAlias = activityAlias;
+    lesson.text = text;
     lesson.textInstruction = textInstruction;
     lesson.audioInstructionUrl = audioInstructionUrl;
     await lesson.save();
@@ -267,6 +299,32 @@ const getLessonIdsByCourseAndWeekAndActivityType = async (courseId, weekNumber, 
     return lessons.map(lesson => lesson.LessonId);
 };
 
+const getLessonIdsByCourseWeekDaySeq = async (courseId, weekNumber, dayNumber, sequenceNumber) => {
+    const lessons = await Lesson.findOne({
+        where: {
+            courseId: courseId,
+            weekNumber: weekNumber,
+            dayNumber: dayNumber,
+            SequenceNumber: sequenceNumber
+        },
+        attributes: ['LessonId']
+    });
+    return lessons ? lessons.LessonId : null;
+};
+
+const getLessonWithActivityTypeByCourseWeekDaySeq = async (courseId, weekNumber, dayNumber, sequenceNumber) => {
+    const lesson = await Lesson.findOne({
+        where: {
+            courseId: courseId,
+            weekNumber: weekNumber,
+            dayNumber: dayNumber,
+            SequenceNumber: sequenceNumber
+        },
+        attributes: ['LessonId', 'activity']
+    });
+    return lesson ? { LessonId: lesson.LessonId, activity: lesson.activity } : null;
+};
+
 const getLessonIdsByCourseAndAliasAndWeekAndDay = async (courseId, alias, weekDayPairs) => {
     let whereClause = {
         courseId: courseId,
@@ -353,4 +411,8 @@ export default {
     getLessonsByCourseOrdered,
     getLessonIdsByCourseAndAliasAndWeekAndDay,
     getLessonIdsByCourseAndAlias,
+    getLessonIdsByCourseWeekDaySeq,
+    getLessonWithActivityTypeByCourseWeekDaySeq,
+    getByCourse,
+    updateByCourseWeekDaySeq
 };

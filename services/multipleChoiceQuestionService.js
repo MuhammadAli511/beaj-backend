@@ -43,6 +43,16 @@ const getMultipleChoiceQuestionByIdService = async (id) => {
     }
 };
 
+const getMultipleChoiceQuestionsByLessonIdService  = async (lessonId) => {
+    try {
+        const multipleChoiceQuestions = await multipleChoiceQuestionRepository.getByLessonId(lessonId);
+        return multipleChoiceQuestions;
+    } catch (error) {
+        error.fileName = 'multipleChoiceQuestionService.js';
+        throw error;
+    }
+};
+
 const updateMultipleChoiceQuestionService = async (id, file, image, video, questionType, questionText, questionNumber, lessonId, optionsType, existingFileUrl, existingImageUrl, existingVideoUrl) => {
     try {
         let fileUrl = existingFileUrl;
@@ -83,5 +93,6 @@ export default {
     getAllMultipleChoiceQuestionService,
     getMultipleChoiceQuestionByIdService,
     updateMultipleChoiceQuestionService,
-    deleteMultipleChoiceQuestionService
+    deleteMultipleChoiceQuestionService,
+    getMultipleChoiceQuestionsByLessonIdService,
 };

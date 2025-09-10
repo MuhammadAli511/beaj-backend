@@ -246,7 +246,6 @@ const getLessonCompletions = async (botType, rollout, level, cohort, targetGroup
         } else {
             classLevel = `and m."classLevel" = '${level}'`;
             course_list = `${courseId1}`;
-            // botType = 'teacher';
             course_array = `
                 MAX(CASE WHEN lc."courseId" = ${courseId1} AND lc."weekNumber" = 1 THEN lc."days_completed" END) AS "course1_week1",
                 MAX(CASE WHEN lc."courseId" = ${courseId1} AND lc."weekNumber" = 2 THEN lc."days_completed" END) AS "course1_week2",
@@ -1375,7 +1374,6 @@ const getActivity_Completions = async (botType, rollout, level, cohort, grp, cou
         }
         else if (botType === 'student') {
             classLevel = `and m."classLevel" = '${level}'`;
-            // botType = 'teacher'
             course_list = `${course1_id}`;
             course_array = `SUM(CASE WHEN s."weekNumber" = 1 AND s."courseId" = ${course1_id} THEN 1 ELSE NULL END) AS "course1_week1_activities",
                 SUM(CASE WHEN s."weekNumber" = 2 AND s."courseId" = ${course1_id} THEN 1 ELSE NULL END) AS "course1_week2_activities",
