@@ -39,6 +39,19 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                 await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, mediaType, null, 0, "SpeakActivityQuestion", firstWatchAndSpeakQuestion.dataValues.id, firstWatchAndSpeakQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
                 await createActivityLog(userMobileNumber, mediaType, "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
 
+                const secondMediaType = firstWatchAndSpeakQuestion?.dataValues?.mediaFileSecond?.endsWith('.mp4') ? 'video' : 'audio';
+
+                if (mediaType == 'video' && (secondMediaType != null && secondMediaType != "null" && secondMediaType != "")) {
+                    await sleep(5000);
+                } else {
+                    await sleep(2000);
+                }
+
+                if (secondMediaType != null && secondMediaType != "null" && secondMediaType != "") {
+                    await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFileSecond, secondMediaType, null, 0, "SpeakActivityQuestion", firstWatchAndSpeakQuestion.dataValues.id, firstWatchAndSpeakQuestion.dataValues.mediaFileSecondMediaId, "mediaFileSecondMediaId");
+                    await createActivityLog(userMobileNumber, secondMediaType, "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFileSecond, null);
+                }
+
                 // Update acceptable messages list for the user
                 await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
             }
@@ -127,6 +140,18 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                     await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, mediaType, null, 0, "SpeakActivityQuestion", nextWatchAndSpeakQuestion.dataValues.id, nextWatchAndSpeakQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
                     await createActivityLog(userMobileNumber, mediaType, "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
 
+                    const secondMediaType = nextWatchAndSpeakQuestion?.dataValues?.mediaFileSecond?.endsWith('.mp4') ? 'video' : 'audio';
+                    if (mediaType == 'video' && (secondMediaType != null && secondMediaType != "null" && secondMediaType != "")) {
+                        await sleep(5000);
+                    } else {
+                        await sleep(2000);
+                    }
+
+                    if (secondMediaType != null && secondMediaType != "null" && secondMediaType != "") {
+                        await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, secondMediaType, null, 0, "SpeakActivityQuestion", nextWatchAndSpeakQuestion.dataValues.id, nextWatchAndSpeakQuestion.dataValues.mediaFileSecondMediaId, "mediaFileSecondMediaId");
+                        await createActivityLog(userMobileNumber, secondMediaType, "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, null);
+                    }
+
                     // Update acceptable messages list for the user
                     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
                 } else {
@@ -178,13 +203,16 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                 await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, mediaType, null, 0, "SpeakActivityQuestion", firstWatchAndSpeakQuestion.dataValues.id, firstWatchAndSpeakQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
                 await createActivityLog(userMobileNumber, mediaType, "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
 
+                const secondMediaType = firstWatchAndSpeakQuestion?.dataValues?.mediaFileSecond?.endsWith('.mp4') ? 'video' : 'audio';
+                if (mediaType == 'video' && (secondMediaType != null && secondMediaType != "null" && secondMediaType != "")) {
+                    await sleep(5000);
+                } else {
+                    await sleep(2000);
+                }
 
-                // Lesson Text
-                let lessonText = startingLesson.dataValues.text;
-                lessonText = lessonText.replace(/\\n/g, '\n');
-                if (lessonText != null && lessonText != "") {
-                    await sendMessage(userMobileNumber, lessonText);
-                    await createActivityLog(userMobileNumber, "text", "outbound", lessonText, null);
+                if (secondMediaType != null && secondMediaType != "null" && secondMediaType != "") {
+                    await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFileSecond, secondMediaType, null, 0, "SpeakActivityQuestion", firstWatchAndSpeakQuestion.dataValues.id, firstWatchAndSpeakQuestion.dataValues.mediaFileSecondMediaId, "mediaFileSecondMediaId");
+                    await createActivityLog(userMobileNumber, secondMediaType, "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFileSecond, null);
                 }
 
                 // Update acceptable messages list for the user
@@ -301,6 +329,17 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                     await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, mediaType, null, 0, "SpeakActivityQuestion", nextWatchAndSpeakQuestion.dataValues.id, nextWatchAndSpeakQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
                     await createActivityLog(userMobileNumber, mediaType, "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
 
+                    const secondMediaType = nextWatchAndSpeakQuestion?.dataValues?.mediaFileSecond?.endsWith('.mp4') ? 'video' : 'audio';
+                    if (mediaType == 'video' && (secondMediaType != null && secondMediaType != "null" && secondMediaType != "")) {
+                        await sleep(5000);
+                    } else {
+                        await sleep(2000);
+                    }
+
+                    if (secondMediaType != null && secondMediaType != "null" && secondMediaType != "") {
+                        await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, secondMediaType, null, 0, "SpeakActivityQuestion", nextWatchAndSpeakQuestion.dataValues.id, nextWatchAndSpeakQuestion.dataValues.mediaFileSecondMediaId, "mediaFileSecondMediaId");
+                        await createActivityLog(userMobileNumber, secondMediaType, "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFileSecond, null);
+                    }
 
                     if (currentUserState.dataValues.currentCourseId == 119 || currentUserState.dataValues.currentCourseId == 120) {
                         if (

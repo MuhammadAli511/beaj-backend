@@ -2,6 +2,10 @@ import { activity_types } from '../constants/constants.js';
 import { toCamelCase } from '../utils/utils.js';
 import video from './video.js';
 import videoEnd from './videoEnd.js';
+import audio from './audio.js';
+import audioEnd from './audioEnd.js';
+import image from './image.js';
+import imageEnd from './imageEnd.js';
 import feedbackAudio from './feedbackAudio.js';
 import read from './read.js';
 import watchAndImage from './watchAndImage.js';
@@ -22,6 +26,10 @@ import feedbackMcqs from './feedbackMcqs.js';
 const activityModules = {
     video: video,
     videoEnd: videoEnd,
+    audio: audio,
+    audioEnd: audioEnd,
+    image: image,
+    imageEnd: imageEnd,
     feedbackAudio: feedbackAudio,
     read: read,
     watchAndImage: watchAndImage,

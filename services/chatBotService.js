@@ -29,7 +29,7 @@ import kidsTrialFlow from "../flows/kidsTrialFlow.js";
 import { chooseProfileFlow, userSwitchingFlow } from "../flows/profileFlows.js";
 import { dayBlockingFlow } from "../flows/dayBlockingFlow.js";
 import { courseEndingFlow } from "../flows/courseEndingFlow.js";
-import { handleVideoFlow } from "../flows/handleVideoFlow.js";
+import { handleVideoAudioImageFlow } from "../flows/handleVideoAudioImageFlow.js";
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -248,8 +248,8 @@ const webhookService = async (body, res) => {
                         await waUserProgressRepository.update(profileId, userMobileNumber, currentUserState.dataValues.currentCourseId, startingLesson.dataValues.weekNumber, startingLesson.dataValues.dayNumber, startingLesson.dataValues.LessonId, startingLesson.dataValues.SequenceNumber, startingLesson.dataValues.activity, null, null, null);
                         currentUserState = await waUserProgressRepository.getByProfileId(profileId);
                         await sendCourseLesson(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona, buttonId);
-                        if (startingLesson.dataValues.activity == "video") {
-                            await handleVideoFlow(profileId, userMobileNumber, currentUserState, messageType, messageContent, persona, buttonId);
+                        if (startingLesson.dataValues.activity == "video" || startingLesson.dataValues.activity == "audio" || startingLesson.dataValues.activity == "image") {
+                            await handleVideoAudioImageFlow(profileId, userMobileNumber, currentUserState, messageType, messageContent, persona, buttonId);
                         }
                         return;
                     }
@@ -330,8 +330,8 @@ const webhookService = async (body, res) => {
                     await sendCourseLesson(profileId, userMobileNumber, latestUserState, nextLesson, messageType, messageContent, persona, buttonId);
 
                     // VIDEO ACTIVITY FLOW
-                    if (nextLesson.dataValues.activity == "video") {
-                        await handleVideoFlow(profileId, userMobileNumber, latestUserState, messageType, messageContent, persona, buttonId);
+                    if (nextLesson.dataValues.activity == "video" || nextLesson.dataValues.activity == "audio" || nextLesson.dataValues.activity == "image") {
+                        await handleVideoAudioImageFlow(profileId, userMobileNumber, latestUserState, messageType, messageContent, persona, buttonId);
                     }
                     return;
                 }

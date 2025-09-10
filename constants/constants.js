@@ -194,6 +194,10 @@ const default_starting_instruction = {
 const activity_types = [
     "video",
     "videoEnd",
+    "audio",
+    "audioEnd",
+    "image",
+    "imageEnd",
     "mcqs",
     "feedbackAudio",
     "listenAndSpeak",
