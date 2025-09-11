@@ -7,6 +7,8 @@ import { tmpdir } from "os";
 import { join } from "path";
 import azureBlobStorage from "./azureBlobStorage.js";
 import { createCanvas, loadImage } from "canvas";
+import fs from "fs";
+
 
 // Set ffmpeg path
 ffmpeg.setFfmpegPath(ffmpegStatic);
@@ -244,132 +246,194 @@ const compressVideo = async (videoFileObject) => {
         });
 
         // Try multiple compression strategies to achieve target size
+        const VIDEO_TARGET_MB = 10;
+        const VIDEO_TARGET_BYTES = VIDEO_TARGET_MB * 1024 * 1024;
         let compressionSuccessful = false;
         let finalOutputPath = tempOutputPath;
 
-        // Strategy 1: Ultra-aggressive compression
+        // Strategy 1: Balanced compression for quality-size balance
         try {
-            console.log('Attempting ultra-aggressive video compression...');
+            console.log('Attempting balanced video compression (6-10MB target)...');
             await new Promise((resolve, reject) => {
                 ffmpeg(tempInputPath)
                     .output(tempOutputPath)
                     .videoCodec('libx264')
                     .audioCodec('aac')
                     .outputOptions([
-                        '-preset', 'veryslow', // Maximum compression quality
-                        '-crf', '45', // Very high CRF for maximum compression
+                        '-preset', 'slow', // Good compression quality balance
+                        '-crf', '32', // Balanced CRF for quality-size ratio
                         '-movflags', '+faststart',
-                        '-maxrate', '400k', // Very low max bitrate
-                        '-bufsize', '800k', // Low buffer size
-                        '-vf', 'scale=-2:360', // Scale to 360p height max for maximum compression
-                        '-r', '15', // Very low frame rate
-                        '-g', '30', // Keyframe interval
-                        '-keyint_min', '15', // Minimum keyframe interval
+                        '-maxrate', '800k', // Moderate bitrate for quality
+                        '-bufsize', '1.6M', // Moderate buffer size
+                        '-vf', 'scale=-2:480', // Scale to 480p for decent quality
+                        '-r', '20', // Moderate frame rate
+                        '-g', '40', // Keyframe interval
+                        '-keyint_min', '20', // Minimum keyframe interval
                         '-sc_threshold', '0', // Disable scene change detection
                         '-pix_fmt', 'yuv420p' // Standard pixel format
                     ])
-                    .audioBitrate('48k') // Very low audio bitrate
-                    .audioChannels(1) // Mono audio
-                    .audioFrequency(22050) // Lower sample rate
+                    .audioBitrate('80k') // Decent audio quality
+                    .audioChannels(2) // Stereo audio
+                    .audioFrequency(44100) // Standard sample rate
                     .on('end', () => {
-                        console.log('Ultra-aggressive video compression completed');
+                        console.log('Balanced video compression completed');
                         compressionSuccessful = true;
                         resolve();
                     })
                     .on('error', (err) => {
-                        console.log('Ultra-aggressive compression failed, trying maximum compression...');
+                        console.log('Balanced compression failed, trying moderate compression...');
                         reject(err);
                     })
                     .on('progress', (progress) => {
-                        console.log(`Ultra-aggressive compression progress: ${progress.percent?.toFixed(1)}%`);
+                        console.log(`Balanced compression progress: ${progress.percent?.toFixed(1)}%`);
                     })
                     .run();
             });
-        } catch (aggressiveError) {
-            console.log('Aggressive compression failed, trying very aggressive settings...');
 
-            // Strategy 2: Maximum compression (lowest quality)
+            // Check if Strategy 1 result meets target
+            const strategy1Buffer = await new Promise((resolve, reject) => {
+                const chunks = [];
+                const readStream = createReadStream(tempOutputPath);
+                readStream.on('data', (chunk) => chunks.push(chunk));
+                readStream.on('end', () => resolve(Buffer.concat(chunks)));
+                readStream.on('error', reject);
+            });
+
+            console.log(`Strategy 1 result: ${(strategy1Buffer.length / (1024 * 1024)).toFixed(2)}MB`);
+            if (strategy1Buffer.length <= VIDEO_TARGET_BYTES) {
+                console.log('Strategy 1 achieved target size!');
+                finalOutputPath = tempOutputPath;
+            } else {
+                console.log('Strategy 1 result still over target, trying Strategy 2...');
+                compressionSuccessful = false; // Reset to try next strategy
+            }
+        } catch (strategy1Error) {
+            console.log('Strategy 1 failed, trying Strategy 2...');
+            compressionSuccessful = false;
+        }
+
+        // Strategy 2: Moderate compression (if Strategy 1 didn't meet target)
+        if (!compressionSuccessful) {
             try {
-                const veryAggressiveOutputPath = join(tmpdir(), `output_very_aggressive_${timestamp}_${randomDigits}.mp4`);
+                const moderateOutputPath = join(tmpdir(), `output_moderate_${timestamp}_${randomDigits}.mp4`);
+                console.log('Attempting moderate video compression...');
                 await new Promise((resolve, reject) => {
                     ffmpeg(tempInputPath)
-                        .output(veryAggressiveOutputPath)
+                        .output(moderateOutputPath)
                         .videoCodec('libx264')
                         .audioCodec('aac')
                         .outputOptions([
-                            '-preset', 'ultrafast', // Fast encoding for maximum compression
-                            '-crf', '51', // Maximum CRF for maximum compression (almost lossy)
+                            '-preset', 'medium', // Balanced preset
+                            '-crf', '35', // Higher CRF for better quality
                             '-movflags', '+faststart',
-                            '-maxrate', '250k', // Extremely low bitrate
-                            '-bufsize', '500k',
-                            '-vf', 'scale=-2:240', // Scale to 240p for maximum compression
-                            '-r', '10', // Very low frame rate
-                            '-g', '20',
-                            '-keyint_min', '10',
-                            '-pix_fmt', 'yuv420p',
-                            '-sc_threshold', '0' // Disable scene change detection
+                            '-maxrate', '600k', // Higher bitrate for quality
+                            '-bufsize', '1.2M',
+                            '-vf', 'scale=-2:360', // Scale to 360p for decent quality
+                            '-r', '18', // Moderate frame rate
+                            '-g', '36',
+                            '-keyint_min', '18',
+                            '-pix_fmt', 'yuv420p'
                         ])
-                        .audioBitrate('32k') // Extremely low audio bitrate
-                        .audioChannels(1) // Mono audio
-                        .audioFrequency(16000) // Very low sample rate
+                        .audioBitrate('64k') // Better audio quality
+                        .audioChannels(1) // Mono for size
+                        .audioFrequency(22050) // Decent sample rate
                         .on('end', () => {
-                            console.log('Maximum compression video completed');
+                            console.log('Moderate compression video completed');
                             compressionSuccessful = true;
-                            finalOutputPath = veryAggressiveOutputPath;
                             resolve();
                         })
                         .on('error', (err) => {
-                            console.log('Maximum compression failed, trying basic compression...');
+                            console.log('Moderate compression failed, trying emergency compression...');
                             reject(err);
                         })
                         .on('progress', (progress) => {
-                            console.log(`Maximum compression progress: ${progress.percent?.toFixed(1)}%`);
+                            console.log(`Moderate compression progress: ${progress.percent?.toFixed(1)}%`);
                         })
                         .run();
                 });
-            } catch (veryAggressiveError) {
-                console.log('Very aggressive compression failed, trying basic approach...');
 
-                // Strategy 3: Emergency compression (last resort, very low quality)
-                try {
-                    const basicOutputPath = join(tmpdir(), `output_basic_${timestamp}_${randomDigits}.mp4`);
-                    await new Promise((resolve, reject) => {
-                        ffmpeg(tempInputPath)
-                            .output(basicOutputPath)
-                            .videoCodec('libx264')
-                            .audioCodec('aac')
-                            .outputOptions([
-                                '-preset', 'ultrafast',
-                                '-crf', '40', // High CRF for compression
-                                '-movflags', '+faststart',
-                                '-maxrate', '300k',
-                                '-bufsize', '600k',
-                                '-vf', 'scale=-2:320', // Scale to 320p
-                                '-r', '12', // Low frame rate
-                                '-g', '24',
-                                '-keyint_min', '12'
-                            ])
-                            .audioBitrate('40k') // Low audio bitrate
-                            .audioChannels(1) // Mono
-                            .audioFrequency(22050)
-                            .on('end', () => {
-                                console.log('Emergency video compression completed');
-                                compressionSuccessful = true;
-                                finalOutputPath = basicOutputPath;
-                                resolve();
-                            })
-                            .on('error', (err) => {
-                                console.error('All video compression strategies failed');
-                                reject(err);
-                            })
-                            .on('progress', (progress) => {
-                                console.log(`Emergency compression progress: ${progress.percent?.toFixed(1)}%`);
-                            })
-                            .run();
-                    });
-                } catch (basicError) {
-                    throw new Error('All video compression strategies failed');
+                // Check if Strategy 2 result meets target
+                const strategy2Buffer = await new Promise((resolve, reject) => {
+                    const chunks = [];
+                    const readStream = createReadStream(moderateOutputPath);
+                    readStream.on('data', (chunk) => chunks.push(chunk));
+                    readStream.on('end', () => resolve(Buffer.concat(chunks)));
+                    readStream.on('error', reject);
+                });
+
+                console.log(`Strategy 2 result: ${(strategy2Buffer.length / (1024 * 1024)).toFixed(2)}MB`);
+                if (strategy2Buffer.length <= VIDEO_TARGET_BYTES) {
+                    console.log('Strategy 2 achieved target size!');
+                    finalOutputPath = moderateOutputPath;
+                } else {
+                    console.log('Strategy 2 result still over target, trying Strategy 3...');
+                    compressionSuccessful = false; // Reset to try next strategy
                 }
+            } catch (strategy2Error) {
+                console.log('Strategy 2 failed, trying Strategy 3...');
+                compressionSuccessful = false;
+            }
+        }
+
+        // Strategy 3: Emergency compression (last resort)
+        if (!compressionSuccessful) {
+            try {
+                const basicOutputPath = join(tmpdir(), `output_basic_${timestamp}_${randomDigits}.mp4`);
+                console.log('Attempting emergency video compression...');
+                await new Promise((resolve, reject) => {
+                    ffmpeg(tempInputPath)
+                        .output(basicOutputPath)
+                        .videoCodec('libx264')
+                        .audioCodec('aac')
+                        .outputOptions([
+                            '-preset', 'fast',
+                            '-crf', '38', // Moderate CRF for emergency
+                            '-movflags', '+faststart',
+                            '-maxrate', '500k', // Still reasonable bitrate
+                            '-bufsize', '1M',
+                            '-vf', 'scale=-2:480', // Keep 480p even in emergency
+                            '-r', '15', // Reasonable frame rate
+                            '-g', '30',
+                            '-keyint_min', '15'
+                        ])
+                        .audioBitrate('48k') // Reasonable audio quality
+                        .audioChannels(1) // Mono
+                        .audioFrequency(22050)
+                        .on('end', () => {
+                            console.log('Emergency video compression completed');
+                            compressionSuccessful = true;
+                            resolve();
+                        })
+                        .on('error', (err) => {
+                            console.error('All video compression strategies failed');
+                            reject(err);
+                        })
+                        .on('progress', (progress) => {
+                            console.log(`Emergency compression progress: ${progress.percent?.toFixed(1)}%`);
+                        })
+                        .run();
+                });
+
+                // Check if Strategy 3 result meets target
+                const strategy3Buffer = await new Promise((resolve, reject) => {
+                    const chunks = [];
+                    const readStream = createReadStream(basicOutputPath);
+                    readStream.on('data', (chunk) => chunks.push(chunk));
+                    readStream.on('end', () => resolve(Buffer.concat(chunks)));
+                    readStream.on('error', reject);
+                });
+
+                console.log(`Strategy 3 result: ${(strategy3Buffer.length / (1024 * 1024)).toFixed(2)}MB`);
+                if (strategy3Buffer.length <= VIDEO_TARGET_BYTES) {
+                    console.log('Strategy 3 achieved target size!');
+                    finalOutputPath = basicOutputPath;
+                } else {
+                    console.log('Strategy 3 result still over target - all strategies failed');
+                    compressionSuccessful = false;
+                }
+            } catch (strategy3Error) {
+                console.log('Strategy 3 failed - all strategies failed');
+                compressionSuccessful = false;
             }
         }
 
@@ -377,7 +441,7 @@ const compressVideo = async (videoFileObject) => {
             throw new Error('Video compression failed with all strategies');
         }
 
-        // Read compressed video
+        // Read the final compressed video
         const compressedBuffer = await new Promise((resolve, reject) => {
             const chunks = [];
             const readStream = createReadStream(finalOutputPath);
@@ -387,23 +451,11 @@ const compressVideo = async (videoFileObject) => {
             readStream.on('error', reject);
         });
 
-        console.log(`Compressed video size: ${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB`);
+        console.log(`Final compressed video size: ${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB`);
 
-        // Check if compression actually reduced file size and meets target
-        const VIDEO_TARGET_MB = 10;
-        const VIDEO_TARGET_BYTES = VIDEO_TARGET_MB * 1024 * 1024;
-
-        if (compressedBuffer.length >= VIDEO_TARGET_BYTES) {
-            throw new Error(`Video compression failed: Final size ${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB exceeds ${VIDEO_TARGET_MB}MB target limit`);
-        }
-
+        // Final safety check - if compression made file larger, use original
         if (compressedBuffer.length >= videoFileObject.size) {
             console.log(`Warning: Compressed video (${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB) is larger than original (${(videoFileObject.size / (1024 * 1024)).toFixed(2)}MB). Using original file.`);
-            // Check if original file meets target
-            if (videoFileObject.size >= VIDEO_TARGET_BYTES) {
-                throw new Error(`Original video file ${(videoFileObject.size / (1024 * 1024)).toFixed(2)}MB exceeds ${VIDEO_TARGET_MB}MB target limit`);
-            }
-            // Use original file instead
             const originalFileObject = {
                 buffer: videoFileObject.buffer,
                 size: videoFileObject.size,
@@ -429,9 +481,9 @@ const compressVideo = async (videoFileObject) => {
             unlinkSync(tempInputPath);
             unlinkSync(tempOutputPath);
             // Also cleanup any alternative output files that might exist
-            const veryAggressivePath = join(tmpdir(), `output_very_aggressive_${timestamp}_${randomDigits}.mp4`);
+            const moderatePath = join(tmpdir(), `output_moderate_${timestamp}_${randomDigits}.mp4`);
             const basicPath = join(tmpdir(), `output_basic_${timestamp}_${randomDigits}.mp4`);
-            if (existsSync(veryAggressivePath)) unlinkSync(veryAggressivePath);
+            if (existsSync(moderatePath)) unlinkSync(moderatePath);
             if (existsSync(basicPath)) unlinkSync(basicPath);
         } catch (cleanupError) {
             console.warn('Failed to cleanup temporary files:', cleanupError.message);
@@ -490,8 +542,11 @@ const compressAudio = async (audioFileObject) => {
             inputStream.on('error', reject);
         });
 
-        // Try multiple compression strategies in order of preference
+        // Try multiple compression strategies to achieve target size
+        const AUDIO_TARGET_MB = 5;
+        const AUDIO_TARGET_BYTES = AUDIO_TARGET_MB * 1024 * 1024;
         let compressionSuccessful = false;
+        let finalOutputPath = tempOutputPath;
 
         // Strategy 1: Ultra-aggressive MP3 compression for 5MB target
         try {
@@ -518,14 +573,37 @@ const compressAudio = async (audioFileObject) => {
                     })
                     .run();
             });
-        } catch (mp3Error) {
-            console.log('MP3 with libmp3lame failed, trying AAC codec...');
 
-            // Strategy 2: Extreme AAC compression for 5MB target
+            // Check if Strategy 1 result meets target
+            const strategy1Buffer = await new Promise((resolve, reject) => {
+                const chunks = [];
+                const readStream = createReadStream(tempOutputPath);
+                readStream.on('data', (chunk) => chunks.push(chunk));
+                readStream.on('end', () => resolve(Buffer.concat(chunks)));
+                readStream.on('error', reject);
+            });
+
+            console.log(`Strategy 1 result: ${(strategy1Buffer.length / (1024 * 1024)).toFixed(2)}MB`);
+            if (strategy1Buffer.length <= AUDIO_TARGET_BYTES) {
+                console.log('Strategy 1 achieved target size!');
+                finalOutputPath = tempOutputPath;
+            } else {
+                console.log('Strategy 1 result still over target, trying Strategy 2...');
+                compressionSuccessful = false; // Reset to try next strategy
+            }
+        } catch (strategy1Error) {
+            console.log('Strategy 1 failed, trying Strategy 2...');
+            compressionSuccessful = false;
+        }
+
+        // Strategy 2: Extreme AAC compression (if Strategy 1 didn't meet target)
+        if (!compressionSuccessful) {
             try {
+                const aacOutputPath = join(tmpdir(), `output_aac_${timestamp}_${randomDigits}.mp3`);
+                console.log('Attempting extreme AAC compression...');
                 await new Promise((resolve, reject) => {
                     ffmpeg(tempInputPath)
-                        .output(tempOutputPath)
+                        .output(aacOutputPath)
                         .audioCodec('aac')
                         .audioBitrate('16k') // Extremely low bitrate for 5MB target
                         .audioChannels(1) // Mono
@@ -537,7 +615,7 @@ const compressAudio = async (audioFileObject) => {
                             resolve();
                         })
                         .on('error', (err) => {
-                            console.log('AAC failed, trying basic MP3 codec...');
+                            console.log('AAC failed, trying emergency MP3 codec...');
                             reject(err);
                         })
                         .on('progress', (progress) => {
@@ -545,95 +623,100 @@ const compressAudio = async (audioFileObject) => {
                         })
                         .run();
                 });
-            } catch (aacError) {
-                console.log('AAC failed, trying basic mp3 codec...');
 
-                // Strategy 3: Emergency MP3 compression for 5MB target
-                try {
-                    await new Promise((resolve, reject) => {
-                        ffmpeg(tempInputPath)
-                            .output(tempOutputPath)
-                            .audioCodec('mp3')
-                            .audioBitrate('12k') // Extremely low bitrate for emergency compression
-                            .audioChannels(1) // Mono
-                            .audioFrequency(6000) // Very low sample rate
-                            .outputOptions(['-f', 'mp3', '-q:a', '9']) // Lowest quality
-                            .on('end', () => {
-                                console.log('Emergency MP3 compression completed');
-                                compressionSuccessful = true;
-                                resolve();
-                            })
-                            .on('error', (err) => {
-                                console.log('All MP3 strategies failed, trying WAV fallback...');
-                                reject(err);
-                            })
-                            .on('progress', (progress) => {
-                                console.log(`Emergency MP3 compression progress: ${progress.percent?.toFixed(1)}%`);
-                            })
-                            .run();
-                    });
-                } catch (basicError) {
-                    console.log('All MP3 strategies failed, converting to WAV as last resort...');
+                // Check if Strategy 2 result meets target
+                const strategy2Buffer = await new Promise((resolve, reject) => {
+                    const chunks = [];
+                    const readStream = createReadStream(aacOutputPath);
+                    readStream.on('data', (chunk) => chunks.push(chunk));
+                    readStream.on('end', () => resolve(Buffer.concat(chunks)));
+                    readStream.on('error', reject);
+                });
 
-                    // Strategy 4: Convert to WAV with compression (last resort)
-                    const wavOutputPath = join(tmpdir(), `output_${timestamp}_${randomDigits}.wav`);
-                    await new Promise((resolve, reject) => {
-                        ffmpeg(tempInputPath)
-                            .output(wavOutputPath)
-                            .audioCodec('pcm_s16le')
-                            .audioBitrate('128k')
-                            .audioChannels(1)
-                            .audioFrequency(22050)
-                            .on('end', () => {
-                                console.log('WAV conversion completed as fallback');
-                                compressionSuccessful = true;
-                                // Rename to use WAV file
-                                // Rename WAV file to MP3 extension
-                                const fs = require('fs');
-                                fs.renameSync(wavOutputPath, tempOutputPath);
-                                resolve();
-                            })
-                            .on('error', (err) => {
-                                console.error('All compression strategies failed');
-                                reject(err);
-                            })
-                            .run();
-                    });
+                console.log(`Strategy 2 result: ${(strategy2Buffer.length / (1024 * 1024)).toFixed(2)}MB`);
+                if (strategy2Buffer.length <= AUDIO_TARGET_BYTES) {
+                    console.log('Strategy 2 achieved target size!');
+                    finalOutputPath = aacOutputPath;
+                } else {
+                    console.log('Strategy 2 result still over target, trying Strategy 3...');
+                    compressionSuccessful = false; // Reset to try next strategy
                 }
+            } catch (strategy2Error) {
+                console.log('Strategy 2 failed, trying Strategy 3...');
+                compressionSuccessful = false;
+            }
+        }
+
+        // Strategy 3: Emergency MP3 compression (last resort)
+        if (!compressionSuccessful) {
+            try {
+                const emergencyOutputPath = join(tmpdir(), `output_emergency_${timestamp}_${randomDigits}.mp3`);
+                console.log('Attempting emergency MP3 compression...');
+                await new Promise((resolve, reject) => {
+                    ffmpeg(tempInputPath)
+                        .output(emergencyOutputPath)
+                        .audioCodec('mp3')
+                        .audioBitrate('12k') // Extremely low bitrate for emergency compression
+                        .audioChannels(1) // Mono
+                        .audioFrequency(6000) // Very low sample rate
+                        .outputOptions(['-f', 'mp3', '-q:a', '9']) // Lowest quality
+                        .on('end', () => {
+                            console.log('Emergency MP3 compression completed');
+                            compressionSuccessful = true;
+                            resolve();
+                        })
+                        .on('error', (err) => {
+                            console.log('All MP3 strategies failed - only MP3 output supported');
+                            reject(err);
+                        })
+                        .on('progress', (progress) => {
+                            console.log(`Emergency MP3 compression progress: ${progress.percent?.toFixed(1)}%`);
+                        })
+                        .run();
+                });
+
+                // Check if Strategy 3 result meets target
+                const strategy3Buffer = await new Promise((resolve, reject) => {
+                    const chunks = [];
+                    const readStream = createReadStream(emergencyOutputPath);
+                    readStream.on('data', (chunk) => chunks.push(chunk));
+                    readStream.on('end', () => resolve(Buffer.concat(chunks)));
+                    readStream.on('error', reject);
+                });
+
+                console.log(`Strategy 3 result: ${(strategy3Buffer.length / (1024 * 1024)).toFixed(2)}MB`);
+                if (strategy3Buffer.length <= AUDIO_TARGET_BYTES) {
+                    console.log('Strategy 3 achieved target size!');
+                    finalOutputPath = emergencyOutputPath;
+                } else {
+                    console.log('Strategy 3 result still over target - all strategies failed');
+                    compressionSuccessful = false;
+                }
+            } catch (strategy3Error) {
+                console.log('Strategy 3 failed - all strategies failed');
+                compressionSuccessful = false;
             }
         }
 
         if (!compressionSuccessful) {
-            throw new Error('All audio compression strategies failed');
+            throw new Error('All audio compression strategies failed - only MP3 output supported');
         }
 
-        // Read compressed audio
+        // Read the final compressed audio
         const compressedBuffer = await new Promise((resolve, reject) => {
             const chunks = [];
-            const readStream = createReadStream(tempOutputPath);
+            const readStream = createReadStream(finalOutputPath);
 
             readStream.on('data', (chunk) => chunks.push(chunk));
             readStream.on('end', () => resolve(Buffer.concat(chunks)));
             readStream.on('error', reject);
         });
 
-        console.log(`Compressed audio size: ${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB`);
+        console.log(`Final compressed audio size: ${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB`);
 
-        // Check if compression actually reduced file size and meets target
-        const AUDIO_TARGET_MB = 5;
-        const AUDIO_TARGET_BYTES = AUDIO_TARGET_MB * 1024 * 1024;
-
-        if (compressedBuffer.length >= AUDIO_TARGET_BYTES) {
-            throw new Error(`Audio compression failed: Final size ${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB exceeds ${AUDIO_TARGET_MB}MB target limit`);
-        }
-
+        // Final safety check - if compression made file larger, use original
         if (compressedBuffer.length >= audioFileObject.size) {
             console.log(`Warning: Compressed audio (${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB) is larger than original (${(audioFileObject.size / (1024 * 1024)).toFixed(2)}MB). Using original file.`);
-            // Check if original file meets target
-            if (audioFileObject.size >= AUDIO_TARGET_BYTES) {
-                throw new Error(`Original audio file ${(audioFileObject.size / (1024 * 1024)).toFixed(2)}MB exceeds ${AUDIO_TARGET_MB}MB target limit`);
-            }
-            // Use original file instead
             const originalFileObject = {
                 buffer: audioFileObject.buffer,
                 size: audioFileObject.size,
@@ -658,6 +741,11 @@ const compressAudio = async (audioFileObject) => {
         try {
             unlinkSync(tempInputPath);
             unlinkSync(tempOutputPath);
+            // Also cleanup any alternative output files that might exist
+            const aacPath = join(tmpdir(), `output_aac_${timestamp}_${randomDigits}.mp3`);
+            const emergencyPath = join(tmpdir(), `output_emergency_${timestamp}_${randomDigits}.mp3`);
+            if (fs.existsSync(aacPath)) unlinkSync(aacPath);
+            if (fs.existsSync(emergencyPath)) unlinkSync(emergencyPath);
         } catch (cleanupError) {
             console.warn('Failed to cleanup temporary files:', cleanupError.message);
         }
@@ -742,6 +830,11 @@ const compressImage = async (imageFileObject) => {
             console.log(`Final progressive JPEG size: ${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB`);
         }
 
+        // Final check before uploading - if still too large, throw error
+        if (compressedBuffer.length > MAX_SIZE_BYTES) {
+            throw new Error(`Image compression failed: Could not reduce image below ${MAX_SIZE_MB}MB limit after trying all quality levels and progressive JPEG`);
+        }
+
         // Create file object for upload with custom filename
         const compressedFileObject = {
             buffer: compressedBuffer,
@@ -761,6 +854,15 @@ const compressImage = async (imageFileObject) => {
 
         if (compressedBuffer.length >= IMAGE_TARGET_BYTES) {
             throw new Error(`Image compression failed: Final size ${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB exceeds ${IMAGE_TARGET_MB}MB target limit`);
+        }
+
+        // Additional safety check - if compression made file larger, throw error
+        if (compressedBuffer.length >= imageFileObject.size) {
+            console.log(`Warning: Compressed image (${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB) is larger than original (${(imageFileObject.size / (1024 * 1024)).toFixed(2)}MB)`);
+            // Check if original file meets target
+            if (imageFileObject.size >= IMAGE_TARGET_BYTES) {
+                throw new Error(`Original image file ${(imageFileObject.size / (1024 * 1024)).toFixed(2)}MB exceeds ${IMAGE_TARGET_MB}MB target limit`);
+            }
         }
 
         return uploadedUrl;

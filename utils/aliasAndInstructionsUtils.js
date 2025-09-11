@@ -6,18 +6,19 @@ import { createActivityLog } from "./createActivityLogUtils.js";
 const sendAliasAndStartingInstruction = async (userMobileNumber, startingLesson) => {
     // Activity Alias and Starting Text Instruction
     let alias = startingLesson.dataValues.activityAlias;
+    let lessonMessage = "";
     if (alias != null && alias != "") {
-        let lessonTextInstruction = startingLesson.dataValues.textInstruction;
-        if (lessonTextInstruction == null || lessonTextInstruction == "") {
-            lessonTextInstruction = default_starting_instruction[startingLesson.dataValues.activity];
-        }
-        lessonTextInstruction = lessonTextInstruction.replace(/\\n/g, '\n');
-
-        let lessonMessage = "Activity: " + alias.replace(/\\n/g, '\n');
-        lessonMessage += "\n\n" + lessonTextInstruction;
-        await sendMessage(userMobileNumber, lessonMessage);
-        await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+        lessonMessage = "Activity: " + alias.replace(/\\n/g, '\n') + "\n\n";
     }
+
+    let lessonTextInstruction = startingLesson.dataValues.textInstruction;
+    if (lessonTextInstruction == null || lessonTextInstruction == "") {
+        lessonTextInstruction = default_starting_instruction[startingLesson.dataValues.activity];
+    }
+    lessonTextInstruction = lessonTextInstruction.replace(/\\n/g, '\n');
+    lessonMessage += lessonTextInstruction;
+    await sendMessage(userMobileNumber, lessonMessage);
+    await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 
     // Starting Audio Instruction
     let lessonAudioInstruction = startingLesson.dataValues.audioInstructionUrl;

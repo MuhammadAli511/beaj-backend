@@ -66,7 +66,10 @@ const checkIfDifficultyLevelExists = async (lessonId) => {
         where: {
             lessonId: lessonId,
             difficultyLevel: {
-                [Sequelize.Op.ne]: null
+                [Sequelize.Op.and]: [
+                    { [Sequelize.Op.ne]: null },
+                    { [Sequelize.Op.ne]: "" }
+                ]
             }
         }
     });

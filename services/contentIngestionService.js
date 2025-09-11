@@ -86,9 +86,11 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
         const cfImage = get(columns_order.CF_IMAGE);
         const cfAudio = get(columns_order.CF_AUDIO);
 
-        // Update current difficulty level if specified
-        if (difficultyLevel) {
+        // Update current difficulty level if specified (convert empty strings to null)
+        if (difficultyLevel && difficultyLevel.trim() !== "") {
             currentDifficultyLevel = difficultyLevel.toLowerCase();
+        } else if (difficultyLevel === "" || difficultyLevel === "''") {
+            currentDifficultyLevel = null;
         }
 
         // Handle activities without questions (single row activities)
@@ -116,7 +118,7 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
 
             if (!currentQuestionData.difficultiesMap.has(diffKey)) {
                 currentQuestionData.difficultiesMap.set(diffKey, {
-                    difficultyLevel: diffKey === "default" ? "" : diffKey,
+                    difficultyLevel: diffKey === "default" ? null : diffKey,
                     questionText: "",
                     questionVideo: "",
                     questionAudio: "",
@@ -183,7 +185,7 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
             // No difficulty levels, just create a basic question
             questions.push({
                 questionNumber: questionData.questionNumber,
-                difficultyLevel: "",
+                difficultyLevel: null,
                 questionText: questionData.questionText,
                 questionVideo: questionData.questionVideo,
                 questionAudio: questionData.questionAudio,
@@ -212,8 +214,8 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
         if (a.questionNumber !== b.questionNumber) {
             return a.questionNumber - b.questionNumber;
         }
-        const diffOrder = { 'easy': 1, 'medium': 2, 'hard': 3, '': 4 };
-        return (diffOrder[a.difficultyLevel] || 4) - (diffOrder[b.difficultyLevel] || 4);
+        const diffOrder = { 'easy': 1, 'medium': 2, 'hard': 3, null: 4 };
+        return (diffOrder[a.difficultyLevel] || (a.difficultyLevel === null ? 4 : 5)) - (diffOrder[b.difficultyLevel] || (b.difficultyLevel === null ? 4 : 5));
     });
 
     return questions;
