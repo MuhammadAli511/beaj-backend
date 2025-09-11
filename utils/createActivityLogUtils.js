@@ -41,26 +41,17 @@ const createActivityLog = async (
     if (actionType === "image" && messageDirection == 'inbound') {
         const mediaId = messageContent.image.id;
         const mediaResponse = await retrieveMediaURL(mediaId);
-        const azureUrl = await azureBlobStorage.uploadToBlobStorage(
-            mediaResponse.data,
-            mediaId
-        );
+        const azureUrl = await azureBlobStorage.uploadToBlobStorage(mediaResponse.data, mediaId, "image/jpeg");
         finalMessageContent = azureUrl;
     } else if (actionType === "audio" && messageDirection == 'inbound') {
         const mediaId = messageContent.audio.id;
         const mediaResponse = await retrieveMediaURL(mediaId);
-        const azureUrl = await azureBlobStorage.uploadToBlobStorage(
-            mediaResponse.data,
-            mediaId
-        );
+        const azureUrl = await azureBlobStorage.uploadToBlobStorage(mediaResponse.data, mediaId, "audio/ogg");
         finalMessageContent = azureUrl;
     } else if (actionType === "video" && messageDirection == 'inbound') {
         const mediaId = messageContent.video.id;
         const mediaResponse = await retrieveMediaURL(mediaId);
-        const azureUrl = await azureBlobStorage.uploadToBlobStorage(
-            mediaResponse.data,
-            mediaId
-        );
+        const azureUrl = await azureBlobStorage.uploadToBlobStorage(mediaResponse.data, mediaId, "video/mp4");
         finalMessageContent = azureUrl;
     } else if (actionType === "text" && messageDirection == 'inbound') {
         finalMessageContent = messageContent;

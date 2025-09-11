@@ -12,7 +12,7 @@ import speechToText from "../utils/speechToText.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import { createAndUploadScoreImage, createAndUploadScoreImageNoAnswer, createAndUploadKidsScoreImage } from "../utils/imageGenerationUtils.js";
 import courseRepository from "../repositories/courseRepository.js";
-
+import { sendAliasAndStartingInstruction } from "../utils/aliasAndInstructionsUtils.js";
 
 const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
@@ -22,23 +22,8 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
-                let defaultTextInstruction = "Watch the videos. Then practise speaking by sending voice messages. 💬";
-                const lessonTextInstruction = startingLesson.dataValues.textInstruction;
-                let finalTextInstruction = defaultTextInstruction;
-                if (lessonTextInstruction != null && lessonTextInstruction != "") {
-                    finalTextInstruction = lessonTextInstruction.replace(/\\n/g, '\n');
-                }
-                const lessonAudioInstruction = startingLesson.dataValues.audioInstructionUrl;
-                if (lessonAudioInstruction != null && lessonAudioInstruction != "") {
-                    await sendMediaMessage(userMobileNumber, lessonAudioInstruction, 'audio', null, 0, "Lesson", startingLesson.dataValues.LessonId, startingLesson.dataValues.audioInstructionMediaId, "audioInstructionMediaId");
-                    await createActivityLog(userMobileNumber, "audio", "outbound", lessonAudioInstruction, null);
-                }
-
-                // Send lesson message
-                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n');
-                lessonMessage += "\n\n" + finalTextInstruction;
-                await sendMessage(userMobileNumber, lessonMessage);
-                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+                // Send alias and starting instruction
+                await sendAliasAndStartingInstruction(userMobileNumber, startingLesson);
 
                 // Send first Watch and Speak question
                 const firstWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null, currentUserState.dataValues.currentDifficultyLevel);
@@ -70,7 +55,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                 const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
                 const uniqueID = uuidv4();
                 const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
-                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio, "audio/ogg");
                 const submissionDate = new Date();
 
                 const existingAudioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(
@@ -226,23 +211,8 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
-                let defaultTextInstruction = "Watch the videos. Then practise speaking by sending voice messages. 💬";
-                const lessonTextInstruction = startingLesson.dataValues.textInstruction;
-                let finalTextInstruction = defaultTextInstruction;
-                if (lessonTextInstruction != null && lessonTextInstruction != "") {
-                    finalTextInstruction = lessonTextInstruction.replace(/\\n/g, '\n');
-                }
-                const lessonAudioInstruction = startingLesson.dataValues.audioInstructionUrl;
-                if (lessonAudioInstruction != null && lessonAudioInstruction != "") {
-                    await sendMediaMessage(userMobileNumber, lessonAudioInstruction, 'audio', null, 0, "Lesson", startingLesson.dataValues.LessonId, startingLesson.dataValues.audioInstructionMediaId, "audioInstructionMediaId");
-                    await createActivityLog(userMobileNumber, "audio", "outbound", lessonAudioInstruction, null);
-                }
-
-                // Send lesson message
-                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n');
-                lessonMessage += "\n\n" + finalTextInstruction;
-                await sendMessage(userMobileNumber, lessonMessage);
-                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
+                // Send alias and starting instruction
+                await sendAliasAndStartingInstruction(userMobileNumber, startingLesson);
 
                 // Send first Watch and Speak question
                 const firstWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null, currentUserState.dataValues.currentDifficultyLevel);
@@ -279,7 +249,7 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                 const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
                 const uniqueID = uuidv4();
                 const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
-                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio, "audio/ogg");
                 const submissionDate = new Date();
 
                 // Check if record already exists for this question

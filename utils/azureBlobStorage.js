@@ -60,7 +60,7 @@ async function uploadPdfToBlobStorage(pdfBuffer, pdfName = 'output-score.pdf') {
 }
 
 
-async function uploadToBlobStorage(exact_file, originalName = null) {
+async function uploadToBlobStorage(exact_file, originalName = null, type = null) {
     try {
         let newFileName = originalName;
         if (!newFileName) {
@@ -77,9 +77,9 @@ async function uploadToBlobStorage(exact_file, originalName = null) {
         const blobClient = containerClient.getBlobClient(filename);
         const blockBlobClient = blobClient.getBlockBlobClient();
 
-        if (originalName) {
+        if (originalName && type) {
             await blockBlobClient.upload(exact_file, exact_file.length, {
-                blobHTTPHeaders: { blobContentType: "audio/ogg" },
+                blobHTTPHeaders: { blobContentType: type },
             });
         } else {
             await blockBlobClient.upload(exact_file.buffer, exact_file.size, {

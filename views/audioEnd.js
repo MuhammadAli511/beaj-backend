@@ -1,5 +1,5 @@
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
-import { sendMessage, sendMediaMessage } from "../utils/whatsappUtils.js";
+import { sendMediaMessage } from "../utils/whatsappUtils.js";
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
 import { sleep } from "../utils/utils.js";
 import documentFileRepository from "../repositories/documentFileRepository.js";
@@ -7,7 +7,7 @@ import { endingMessage } from "../utils/endingMessageUtils.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
 import { sendAliasAndStartingInstruction } from "../utils/aliasAndInstructionsUtils.js";
 
-const videoEndView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
+const audioEndView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
         if (persona == 'teacher') {
             // Lesson Started Record
@@ -16,13 +16,13 @@ const videoEndView = async (profileId, userMobileNumber, currentUserState, start
             // Send alias and starting instruction
             await sendAliasAndStartingInstruction(userMobileNumber, startingLesson);
 
-            // Send video content
+            // Send audio content
             const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
-            let videoURL = documentFile[0].dataValues.video;
+            let audioURL = documentFile[0].dataValues.audio;
 
             // Media message
-            await sendMediaMessage(userMobileNumber, videoURL, 'video', null, 0, "DocumentFile", documentFile[0].dataValues.id, documentFile[0].dataValues.videoMediaId, "videoMediaId");
-            await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
+            await sendMediaMessage(userMobileNumber, audioURL, 'audio', null, 0, "DocumentFile", documentFile[0].dataValues.id, documentFile[0].dataValues.audioMediaId, "audioMediaId");
+            await createActivityLog(userMobileNumber, "audio", "outbound", audioURL, null);
 
             // Sleep
             await sleep(5000);
@@ -40,13 +40,13 @@ const videoEndView = async (profileId, userMobileNumber, currentUserState, start
             // Send alias and starting instruction
             await sendAliasAndStartingInstruction(userMobileNumber, startingLesson);
 
-            // Send video content
+            // Send audio content
             const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
-            let videoURL = documentFile[0].dataValues.video;
+            let audioURL = documentFile[0].dataValues.audio;
 
             // Media message
-            await sendMediaMessage(userMobileNumber, videoURL, 'video', null, 0, "DocumentFile", documentFile[0].dataValues.id, documentFile[0].dataValues.videoMediaId, "videoMediaId");
-            await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
+            await sendMediaMessage(userMobileNumber, audioURL, 'audio', null, 0, "DocumentFile", documentFile[0].dataValues.id, documentFile[0].dataValues.audioMediaId, "audioMediaId");
+            await createActivityLog(userMobileNumber, "audio", "outbound", audioURL, null);
 
             // Reset Question Number, Retry Counter, and Activity Type
             await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
@@ -60,9 +60,9 @@ const videoEndView = async (profileId, userMobileNumber, currentUserState, start
         return;
     } catch (error) {
         console.error('Error sending lesson to user:', error);
-        error.fileName = 'videoEndView.js';
+        error.fileName = 'audioEndView.js';
         throw error;
     }
 };
 
-export { videoEndView };
+export { audioEndView };

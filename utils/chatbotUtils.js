@@ -15,6 +15,10 @@ import { watchAndAudioView } from "../views/watchAndAudio.js";
 import { readView } from "../views/read.js";
 import { videoView } from "../views/video.js";
 import { videoEndView } from "../views/videoEnd.js";
+import { audioView } from "../views/audio.js";
+import { audioEndView } from "../views/audioEnd.js";
+import { imageView } from "../views/image.js";
+import { imageEndView } from "../views/imageEnd.js";
 import { getLevelFromCourseName, sleep } from "./utils.js";
 import { conversationalQuestionsBotView } from "../views/conversationalQuestionsBot.js";
 import { conversationalMonologueBotView } from "../views/conversationalMonologueBot.js";
@@ -451,6 +455,18 @@ const sendCourseLesson = async (profileId, userMobileNumber, currentUserState, s
         }
         else if (activity == 'videoEnd') {
             await videoEndView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
+        }
+        else if (activity == 'audio') {
+            await audioView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
+        }
+        else if (activity == 'audioEnd') {
+            await audioEndView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
+        }
+        else if (activity == 'image') {
+            await imageView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
+        }
+        else if (activity == 'imageEnd') {
+            await imageEndView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona);
         }
         else if (activity == 'mcqs') {
             await mcqsView(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona, buttonId);

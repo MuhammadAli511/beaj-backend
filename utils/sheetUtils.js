@@ -2,11 +2,13 @@ import { google } from "googleapis"
 import { readFile } from "fs/promises";
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegStatic from "ffmpeg-static";
-import { createWriteStream, createReadStream, unlinkSync } from "fs";
+import { createWriteStream, createReadStream, unlinkSync, existsSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import azureBlobStorage from "./azureBlobStorage.js";
 import { createCanvas, loadImage } from "canvas";
+import fs from "fs";
+
 
 // Set ffmpeg path
 ffmpeg.setFfmpegPath(ffmpegStatic);
@@ -205,9 +207,9 @@ const streamToBuffer = (stream) => {
     })
 };
 
-// Function to compress video if it's larger than 15MB
+// Function to compress video if it's larger than 10MB
 const compressVideo = async (videoFileObject) => {
-    const MAX_SIZE_MB = 15;
+    const MAX_SIZE_MB = 10;
     const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
     try {
@@ -217,14 +219,14 @@ const compressVideo = async (videoFileObject) => {
 
         // Check if compression is needed
         if (videoFileObject.size <= MAX_SIZE_BYTES) {
-            console.log('Video is already under 15MB, uploading without compression');
-            return await azureBlobStorage.uploadToBlobStorage(videoFileObject.buffer, fileNameFinal);
+            console.log('Video is already under 10MB, uploading without compression');
+            return await azureBlobStorage.uploadToBlobStorage(videoFileObject.buffer, fileNameFinal, "video/mp4");
         }
 
         console.log(`Video size: ${(videoFileObject.size / (1024 * 1024)).toFixed(2)}MB - compression needed`);
 
         // Calculate compression ratio for proportional reduction
-        // If 100MB needs to become 15MB, that's a reduction to 15% of original
+        // If 100MB needs to become 10MB, that's a reduction to 10% of original
         // We'll use this same percentage for all videos
         const targetSizeRatio = MAX_SIZE_MB / (videoFileObject.size / (1024 * 1024));
         console.log(`Target compression ratio: ${(targetSizeRatio * 100).toFixed(1)}%`);
@@ -243,44 +245,225 @@ const compressVideo = async (videoFileObject) => {
             inputStream.on('error', reject);
         });
 
-        // Compress video using ffmpeg
-        await new Promise((resolve, reject) => {
-            ffmpeg(tempInputPath)
-                .output(tempOutputPath)
-                .videoCodec('libx264')
-                .audioCodec('aac')
-                .outputOptions([
-                    '-preset', 'medium',
-                    '-crf', '28', // Higher CRF = more compression
-                    '-movflags', '+faststart',
-                    '-maxrate', '1M',
-                    '-bufsize', '2M'
-                ])
-                .on('end', () => {
-                    console.log('Video compression completed');
-                    resolve();
-                })
-                .on('error', (err) => {
-                    console.error('FFmpeg compression error:', err);
-                    reject(err);
-                })
-                .on('progress', (progress) => {
-                    console.log(`Compression progress: ${progress.percent?.toFixed(1)}%`);
-                })
-                .run();
-        });
+        // Try multiple compression strategies to achieve target size
+        const VIDEO_TARGET_MB = 10;
+        const VIDEO_TARGET_BYTES = VIDEO_TARGET_MB * 1024 * 1024;
+        let compressionSuccessful = false;
+        let finalOutputPath = tempOutputPath;
 
-        // Read compressed video
+        // Strategy 1: Balanced compression for quality-size balance
+        try {
+            console.log('Attempting balanced video compression (6-10MB target)...');
+            await new Promise((resolve, reject) => {
+                ffmpeg(tempInputPath)
+                    .output(tempOutputPath)
+                    .videoCodec('libx264')
+                    .audioCodec('aac')
+                    .outputOptions([
+                        '-preset', 'slow', // Good compression quality balance
+                        '-crf', '32', // Balanced CRF for quality-size ratio
+                        '-movflags', '+faststart',
+                        '-maxrate', '800k', // Moderate bitrate for quality
+                        '-bufsize', '1.6M', // Moderate buffer size
+                        '-vf', 'scale=-2:480', // Scale to 480p for decent quality
+                        '-r', '20', // Moderate frame rate
+                        '-g', '40', // Keyframe interval
+                        '-keyint_min', '20', // Minimum keyframe interval
+                        '-sc_threshold', '0', // Disable scene change detection
+                        '-pix_fmt', 'yuv420p' // Standard pixel format
+                    ])
+                    .audioBitrate('80k') // Decent audio quality
+                    .audioChannels(2) // Stereo audio
+                    .audioFrequency(44100) // Standard sample rate
+                    .on('end', () => {
+                        console.log('Balanced video compression completed');
+                        compressionSuccessful = true;
+                        resolve();
+                    })
+                    .on('error', (err) => {
+                        console.log('Balanced compression failed, trying moderate compression...');
+                        reject(err);
+                    })
+                    .on('progress', (progress) => {
+                        console.log(`Balanced compression progress: ${progress.percent?.toFixed(1)}%`);
+                    })
+                    .run();
+            });
+
+            // Check if Strategy 1 result meets target
+            const strategy1Buffer = await new Promise((resolve, reject) => {
+                const chunks = [];
+                const readStream = createReadStream(tempOutputPath);
+                readStream.on('data', (chunk) => chunks.push(chunk));
+                readStream.on('end', () => resolve(Buffer.concat(chunks)));
+                readStream.on('error', reject);
+            });
+
+            console.log(`Strategy 1 result: ${(strategy1Buffer.length / (1024 * 1024)).toFixed(2)}MB`);
+            if (strategy1Buffer.length <= VIDEO_TARGET_BYTES) {
+                console.log('Strategy 1 achieved target size!');
+                finalOutputPath = tempOutputPath;
+            } else {
+                console.log('Strategy 1 result still over target, trying Strategy 2...');
+                compressionSuccessful = false; // Reset to try next strategy
+            }
+        } catch (strategy1Error) {
+            console.log('Strategy 1 failed, trying Strategy 2...');
+            compressionSuccessful = false;
+        }
+
+        // Strategy 2: Moderate compression (if Strategy 1 didn't meet target)
+        if (!compressionSuccessful) {
+            try {
+                const moderateOutputPath = join(tmpdir(), `output_moderate_${timestamp}_${randomDigits}.mp4`);
+                console.log('Attempting moderate video compression...');
+                await new Promise((resolve, reject) => {
+                    ffmpeg(tempInputPath)
+                        .output(moderateOutputPath)
+                        .videoCodec('libx264')
+                        .audioCodec('aac')
+                        .outputOptions([
+                            '-preset', 'medium', // Balanced preset
+                            '-crf', '35', // Higher CRF for better quality
+                            '-movflags', '+faststart',
+                            '-maxrate', '600k', // Higher bitrate for quality
+                            '-bufsize', '1.2M',
+                            '-vf', 'scale=-2:360', // Scale to 360p for decent quality
+                            '-r', '18', // Moderate frame rate
+                            '-g', '36',
+                            '-keyint_min', '18',
+                            '-pix_fmt', 'yuv420p'
+                        ])
+                        .audioBitrate('64k') // Better audio quality
+                        .audioChannels(1) // Mono for size
+                        .audioFrequency(22050) // Decent sample rate
+                        .on('end', () => {
+                            console.log('Moderate compression video completed');
+                            compressionSuccessful = true;
+                            resolve();
+                        })
+                        .on('error', (err) => {
+                            console.log('Moderate compression failed, trying emergency compression...');
+                            reject(err);
+                        })
+                        .on('progress', (progress) => {
+                            console.log(`Moderate compression progress: ${progress.percent?.toFixed(1)}%`);
+                        })
+                        .run();
+                });
+
+                // Check if Strategy 2 result meets target
+                const strategy2Buffer = await new Promise((resolve, reject) => {
+                    const chunks = [];
+                    const readStream = createReadStream(moderateOutputPath);
+                    readStream.on('data', (chunk) => chunks.push(chunk));
+                    readStream.on('end', () => resolve(Buffer.concat(chunks)));
+                    readStream.on('error', reject);
+                });
+
+                console.log(`Strategy 2 result: ${(strategy2Buffer.length / (1024 * 1024)).toFixed(2)}MB`);
+                if (strategy2Buffer.length <= VIDEO_TARGET_BYTES) {
+                    console.log('Strategy 2 achieved target size!');
+                    finalOutputPath = moderateOutputPath;
+                } else {
+                    console.log('Strategy 2 result still over target, trying Strategy 3...');
+                    compressionSuccessful = false; // Reset to try next strategy
+                }
+            } catch (strategy2Error) {
+                console.log('Strategy 2 failed, trying Strategy 3...');
+                compressionSuccessful = false;
+            }
+        }
+
+        // Strategy 3: Emergency compression (last resort)
+        if (!compressionSuccessful) {
+            try {
+                const basicOutputPath = join(tmpdir(), `output_basic_${timestamp}_${randomDigits}.mp4`);
+                console.log('Attempting emergency video compression...');
+                await new Promise((resolve, reject) => {
+                    ffmpeg(tempInputPath)
+                        .output(basicOutputPath)
+                        .videoCodec('libx264')
+                        .audioCodec('aac')
+                        .outputOptions([
+                            '-preset', 'fast',
+                            '-crf', '38', // Moderate CRF for emergency
+                            '-movflags', '+faststart',
+                            '-maxrate', '500k', // Still reasonable bitrate
+                            '-bufsize', '1M',
+                            '-vf', 'scale=-2:480', // Keep 480p even in emergency
+                            '-r', '15', // Reasonable frame rate
+                            '-g', '30',
+                            '-keyint_min', '15'
+                        ])
+                        .audioBitrate('48k') // Reasonable audio quality
+                        .audioChannels(1) // Mono
+                        .audioFrequency(22050)
+                        .on('end', () => {
+                            console.log('Emergency video compression completed');
+                            compressionSuccessful = true;
+                            resolve();
+                        })
+                        .on('error', (err) => {
+                            console.error('All video compression strategies failed');
+                            reject(err);
+                        })
+                        .on('progress', (progress) => {
+                            console.log(`Emergency compression progress: ${progress.percent?.toFixed(1)}%`);
+                        })
+                        .run();
+                });
+
+                // Check if Strategy 3 result meets target
+                const strategy3Buffer = await new Promise((resolve, reject) => {
+                    const chunks = [];
+                    const readStream = createReadStream(basicOutputPath);
+                    readStream.on('data', (chunk) => chunks.push(chunk));
+                    readStream.on('end', () => resolve(Buffer.concat(chunks)));
+                    readStream.on('error', reject);
+                });
+
+                console.log(`Strategy 3 result: ${(strategy3Buffer.length / (1024 * 1024)).toFixed(2)}MB`);
+                if (strategy3Buffer.length <= VIDEO_TARGET_BYTES) {
+                    console.log('Strategy 3 achieved target size!');
+                    finalOutputPath = basicOutputPath;
+                } else {
+                    console.log('Strategy 3 result still over target - all strategies failed');
+                    compressionSuccessful = false;
+                }
+            } catch (strategy3Error) {
+                console.log('Strategy 3 failed - all strategies failed');
+                compressionSuccessful = false;
+            }
+        }
+
+        if (!compressionSuccessful) {
+            throw new Error('Video compression failed with all strategies');
+        }
+
+        // Read the final compressed video
         const compressedBuffer = await new Promise((resolve, reject) => {
             const chunks = [];
-            const readStream = createReadStream(tempOutputPath);
+            const readStream = createReadStream(finalOutputPath);
 
             readStream.on('data', (chunk) => chunks.push(chunk));
             readStream.on('end', () => resolve(Buffer.concat(chunks)));
             readStream.on('error', reject);
         });
 
-        console.log(`Compressed video size: ${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB`);
+        console.log(`Final compressed video size: ${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB`);
+
+        // Final safety check - if compression made file larger, use original
+        if (compressedBuffer.length >= videoFileObject.size) {
+            console.log(`Warning: Compressed video (${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB) is larger than original (${(videoFileObject.size / (1024 * 1024)).toFixed(2)}MB). Using original file.`);
+            const originalFileObject = {
+                buffer: videoFileObject.buffer,
+                size: videoFileObject.size,
+                originalname: videoFileObject.originalname,
+                mimetype: videoFileObject.mimetype
+            };
+            return await azureBlobStorage.uploadToBlobStorage(originalFileObject.buffer, fileNameFinal, "video/mp4");
+        }
 
         // Create file object for upload with custom filename
         const compressedFileObject = {
@@ -291,12 +474,17 @@ const compressVideo = async (videoFileObject) => {
         };
 
         // Upload to Azure blob storage
-        const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(compressedFileObject.buffer, fileNameFinal);
+        const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(compressedFileObject.buffer, fileNameFinal, "video/mp4");
 
         // Cleanup temporary files
         try {
             unlinkSync(tempInputPath);
             unlinkSync(tempOutputPath);
+            // Also cleanup any alternative output files that might exist
+            const moderatePath = join(tmpdir(), `output_moderate_${timestamp}_${randomDigits}.mp4`);
+            const basicPath = join(tmpdir(), `output_basic_${timestamp}_${randomDigits}.mp4`);
+            if (existsSync(moderatePath)) unlinkSync(moderatePath);
+            if (existsSync(basicPath)) unlinkSync(basicPath);
         } catch (cleanupError) {
             console.warn('Failed to cleanup temporary files:', cleanupError.message);
         }
@@ -322,26 +510,23 @@ const compressVideo = async (videoFileObject) => {
     }
 };
 
-// Function to compress audio if it's larger than 15MB
+// Function to compress audio if it's larger than 10MB
 const compressAudio = async (audioFileObject) => {
-    const MAX_SIZE_MB = 15;
+    const MAX_SIZE_MB = 10;
     const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
     try {
         const timestamp = Date.now();
         const randomDigits = Math.floor(100000 + Math.random() * 900000);
         const fileNameFinal = `${timestamp}_${randomDigits}.mp3`;
+
         // Check if compression is needed
         if (audioFileObject.size <= MAX_SIZE_BYTES) {
-            console.log('Audio is already under 15MB, uploading without compression');
-            return await azureBlobStorage.uploadToBlobStorage(audioFileObject.buffer, fileNameFinal);
+            console.log('Audio is already under 10MB, uploading without compression');
+            return await azureBlobStorage.uploadToBlobStorage(audioFileObject.buffer, fileNameFinal, "audio/mpeg");
         }
 
         console.log(`Audio size: ${(audioFileObject.size / (1024 * 1024)).toFixed(2)}MB - compression needed`);
-
-        // Calculate compression ratio for proportional reduction
-        const targetSizeRatio = MAX_SIZE_MB / (audioFileObject.size / (1024 * 1024));
-        console.log(`Target compression ratio: ${(targetSizeRatio * 100).toFixed(1)}%`);
 
         // Create temporary files
         const tempInputPath = join(tmpdir(), `input_${timestamp}_${randomDigits}.audio`);
@@ -357,55 +542,210 @@ const compressAudio = async (audioFileObject) => {
             inputStream.on('error', reject);
         });
 
-        // Compress audio using ffmpeg
-        await new Promise((resolve, reject) => {
-            ffmpeg(tempInputPath)
-                .output(tempOutputPath)
-                .audioCodec('mp3')
-                .audioBitrate('128k') // Reduce bitrate for compression
-                .audioChannels(2)
-                .audioFrequency(44100)
-                .on('end', () => {
-                    console.log('Audio compression completed');
-                    resolve();
-                })
-                .on('error', (err) => {
-                    console.error('FFmpeg audio compression error:', err);
-                    reject(err);
-                })
-                .on('progress', (progress) => {
-                    console.log(`Compression progress: ${progress.percent?.toFixed(1)}%`);
-                })
-                .run();
-        });
+        // Try multiple compression strategies to achieve target size
+        const AUDIO_TARGET_MB = 5;
+        const AUDIO_TARGET_BYTES = AUDIO_TARGET_MB * 1024 * 1024;
+        let compressionSuccessful = false;
+        let finalOutputPath = tempOutputPath;
 
-        // Read compressed audio
+        // Strategy 1: Ultra-aggressive MP3 compression for 5MB target
+        try {
+            console.log('Attempting ultra-aggressive MP3 compression for 5MB target...');
+            await new Promise((resolve, reject) => {
+                ffmpeg(tempInputPath)
+                    .output(tempOutputPath)
+                    .audioCodec('libmp3lame')
+                    .audioBitrate('24k') // Very low bitrate for 5MB target
+                    .audioChannels(1) // Mono
+                    .audioFrequency(12000) // Low sample rate
+                    .outputOptions(['-f', 'mp3', '-compression_level', '9', '-q:a', '9']) // Maximum compression, lowest quality
+                    .on('end', () => {
+                        console.log('Ultra-aggressive MP3 compression completed');
+                        compressionSuccessful = true;
+                        resolve();
+                    })
+                    .on('error', (err) => {
+                        console.log('Ultra-aggressive MP3 failed, trying extreme compression...');
+                        reject(err);
+                    })
+                    .on('progress', (progress) => {
+                        console.log(`Ultra-aggressive MP3 compression progress: ${progress.percent?.toFixed(1)}%`);
+                    })
+                    .run();
+            });
+
+            // Check if Strategy 1 result meets target
+            const strategy1Buffer = await new Promise((resolve, reject) => {
+                const chunks = [];
+                const readStream = createReadStream(tempOutputPath);
+                readStream.on('data', (chunk) => chunks.push(chunk));
+                readStream.on('end', () => resolve(Buffer.concat(chunks)));
+                readStream.on('error', reject);
+            });
+
+            console.log(`Strategy 1 result: ${(strategy1Buffer.length / (1024 * 1024)).toFixed(2)}MB`);
+            if (strategy1Buffer.length <= AUDIO_TARGET_BYTES) {
+                console.log('Strategy 1 achieved target size!');
+                finalOutputPath = tempOutputPath;
+            } else {
+                console.log('Strategy 1 result still over target, trying Strategy 2...');
+                compressionSuccessful = false; // Reset to try next strategy
+            }
+        } catch (strategy1Error) {
+            console.log('Strategy 1 failed, trying Strategy 2...');
+            compressionSuccessful = false;
+        }
+
+        // Strategy 2: Extreme AAC compression (if Strategy 1 didn't meet target)
+        if (!compressionSuccessful) {
+            try {
+                const aacOutputPath = join(tmpdir(), `output_aac_${timestamp}_${randomDigits}.mp3`);
+                console.log('Attempting extreme AAC compression...');
+                await new Promise((resolve, reject) => {
+                    ffmpeg(tempInputPath)
+                        .output(aacOutputPath)
+                        .audioCodec('aac')
+                        .audioBitrate('16k') // Extremely low bitrate for 5MB target
+                        .audioChannels(1) // Mono
+                        .audioFrequency(8000) // Very low sample rate
+                        .outputOptions(['-f', 'mp3', '-strict', 'experimental', '-b:a', '16k'])
+                        .on('end', () => {
+                            console.log('Extreme AAC to MP3 compression completed');
+                            compressionSuccessful = true;
+                            resolve();
+                        })
+                        .on('error', (err) => {
+                            console.log('AAC failed, trying emergency MP3 codec...');
+                            reject(err);
+                        })
+                        .on('progress', (progress) => {
+                            console.log(`Extreme AAC compression progress: ${progress.percent?.toFixed(1)}%`);
+                        })
+                        .run();
+                });
+
+                // Check if Strategy 2 result meets target
+                const strategy2Buffer = await new Promise((resolve, reject) => {
+                    const chunks = [];
+                    const readStream = createReadStream(aacOutputPath);
+                    readStream.on('data', (chunk) => chunks.push(chunk));
+                    readStream.on('end', () => resolve(Buffer.concat(chunks)));
+                    readStream.on('error', reject);
+                });
+
+                console.log(`Strategy 2 result: ${(strategy2Buffer.length / (1024 * 1024)).toFixed(2)}MB`);
+                if (strategy2Buffer.length <= AUDIO_TARGET_BYTES) {
+                    console.log('Strategy 2 achieved target size!');
+                    finalOutputPath = aacOutputPath;
+                } else {
+                    console.log('Strategy 2 result still over target, trying Strategy 3...');
+                    compressionSuccessful = false; // Reset to try next strategy
+                }
+            } catch (strategy2Error) {
+                console.log('Strategy 2 failed, trying Strategy 3...');
+                compressionSuccessful = false;
+            }
+        }
+
+        // Strategy 3: Emergency MP3 compression (last resort)
+        if (!compressionSuccessful) {
+            try {
+                const emergencyOutputPath = join(tmpdir(), `output_emergency_${timestamp}_${randomDigits}.mp3`);
+                console.log('Attempting emergency MP3 compression...');
+                await new Promise((resolve, reject) => {
+                    ffmpeg(tempInputPath)
+                        .output(emergencyOutputPath)
+                        .audioCodec('mp3')
+                        .audioBitrate('12k') // Extremely low bitrate for emergency compression
+                        .audioChannels(1) // Mono
+                        .audioFrequency(6000) // Very low sample rate
+                        .outputOptions(['-f', 'mp3', '-q:a', '9']) // Lowest quality
+                        .on('end', () => {
+                            console.log('Emergency MP3 compression completed');
+                            compressionSuccessful = true;
+                            resolve();
+                        })
+                        .on('error', (err) => {
+                            console.log('All MP3 strategies failed - only MP3 output supported');
+                            reject(err);
+                        })
+                        .on('progress', (progress) => {
+                            console.log(`Emergency MP3 compression progress: ${progress.percent?.toFixed(1)}%`);
+                        })
+                        .run();
+                });
+
+                // Check if Strategy 3 result meets target
+                const strategy3Buffer = await new Promise((resolve, reject) => {
+                    const chunks = [];
+                    const readStream = createReadStream(emergencyOutputPath);
+                    readStream.on('data', (chunk) => chunks.push(chunk));
+                    readStream.on('end', () => resolve(Buffer.concat(chunks)));
+                    readStream.on('error', reject);
+                });
+
+                console.log(`Strategy 3 result: ${(strategy3Buffer.length / (1024 * 1024)).toFixed(2)}MB`);
+                if (strategy3Buffer.length <= AUDIO_TARGET_BYTES) {
+                    console.log('Strategy 3 achieved target size!');
+                    finalOutputPath = emergencyOutputPath;
+                } else {
+                    console.log('Strategy 3 result still over target - all strategies failed');
+                    compressionSuccessful = false;
+                }
+            } catch (strategy3Error) {
+                console.log('Strategy 3 failed - all strategies failed');
+                compressionSuccessful = false;
+            }
+        }
+
+        if (!compressionSuccessful) {
+            throw new Error('All audio compression strategies failed - only MP3 output supported');
+        }
+
+        // Read the final compressed audio
         const compressedBuffer = await new Promise((resolve, reject) => {
             const chunks = [];
-            const readStream = createReadStream(tempOutputPath);
+            const readStream = createReadStream(finalOutputPath);
 
             readStream.on('data', (chunk) => chunks.push(chunk));
             readStream.on('end', () => resolve(Buffer.concat(chunks)));
             readStream.on('error', reject);
         });
 
-        console.log(`Compressed audio size: ${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB`);
+        console.log(`Final compressed audio size: ${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB`);
+
+        // Final safety check - if compression made file larger, use original
+        if (compressedBuffer.length >= audioFileObject.size) {
+            console.log(`Warning: Compressed audio (${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB) is larger than original (${(audioFileObject.size / (1024 * 1024)).toFixed(2)}MB). Using original file.`);
+            const originalFileObject = {
+                buffer: audioFileObject.buffer,
+                size: audioFileObject.size,
+                originalname: audioFileObject.originalname,
+                mimetype: audioFileObject.mimetype
+            };
+            return await azureBlobStorage.uploadToBlobStorage(originalFileObject.buffer, fileNameFinal, "audio/mpeg");
+        }
 
         // Create file object for upload with custom filename
         const compressedFileObject = {
             buffer: compressedBuffer,
             size: compressedBuffer.length,
             originalname: `${timestamp}_${randomDigits}.mp3`,
-            mimetype: 'audio/mp3'
+            mimetype: 'audio/mpeg'
         };
 
         // Upload to Azure blob storage
-        const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(compressedFileObject.buffer, fileNameFinal);
+        const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(compressedFileObject.buffer, fileNameFinal, "audio/mpeg");
 
         // Cleanup temporary files
         try {
             unlinkSync(tempInputPath);
             unlinkSync(tempOutputPath);
+            // Also cleanup any alternative output files that might exist
+            const aacPath = join(tmpdir(), `output_aac_${timestamp}_${randomDigits}.mp3`);
+            const emergencyPath = join(tmpdir(), `output_emergency_${timestamp}_${randomDigits}.mp3`);
+            if (fs.existsSync(aacPath)) unlinkSync(aacPath);
+            if (fs.existsSync(emergencyPath)) unlinkSync(emergencyPath);
         } catch (cleanupError) {
             console.warn('Failed to cleanup temporary files:', cleanupError.message);
         }
@@ -414,53 +754,86 @@ const compressAudio = async (audioFileObject) => {
 
     } catch (error) {
         console.error('Audio compression error:', error);
+
+        // Cleanup temporary files in case of error
+        try {
+            const timestamp = Date.now();
+            const randomDigits = Math.floor(100000 + Math.random() * 900000);
+            const tempInputPath = join(tmpdir(), `input_${timestamp}_${randomDigits}.audio`);
+            const tempOutputPath = join(tmpdir(), `output_${timestamp}_${randomDigits}.mp3`);
+            if (existsSync(tempInputPath)) unlinkSync(tempInputPath);
+            if (existsSync(tempOutputPath)) unlinkSync(tempOutputPath);
+        } catch (cleanupError) {
+            // Ignore cleanup errors during error handling
+        }
+
         throw new Error(`Failed to compress audio: ${error.message}`);
     }
 };
 
-// Function to compress image if it's larger than 4MB
+// Function to compress image if it's larger than 1MB
 const compressImage = async (imageFileObject) => {
-    const MAX_SIZE_MB = 4;
+    const MAX_SIZE_MB = 1;
     const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
     try {
         const timestamp = Date.now();
         const randomDigits = Math.floor(100000 + Math.random() * 900000);
         const fileNameFinal = `${timestamp}_${randomDigits}.jpg`;
+
         // Check if compression is needed
         if (imageFileObject.size <= MAX_SIZE_BYTES) {
-            console.log('Image is already under 4MB, uploading without compression');
-            return await azureBlobStorage.uploadToBlobStorage(imageFileObject.buffer, fileNameFinal);
+            console.log('Image is already under 1MB, uploading without compression');
+            return await azureBlobStorage.uploadToBlobStorage(imageFileObject.buffer, fileNameFinal, "image/jpeg");
         }
 
         console.log(`Image size: ${(imageFileObject.size / (1024 * 1024)).toFixed(2)}MB - compression needed`);
 
-        // Calculate compression ratio for proportional reduction
-        const targetSizeRatio = MAX_SIZE_MB / (imageFileObject.size / (1024 * 1024));
-        console.log(`Target compression ratio: ${(targetSizeRatio * 100).toFixed(1)}%`);
-
         // Load image using canvas
         const image = await loadImage(imageFileObject.buffer);
 
-        // Calculate new dimensions maintaining aspect ratio
-        const scaleFactor = Math.sqrt(targetSizeRatio);
-        const newWidth = Math.floor(image.width * scaleFactor);
-        const newHeight = Math.floor(image.height * scaleFactor);
+        console.log(`Original dimensions: ${image.width}x${image.height} (preserving dimensions)`);
 
-        console.log(`Original dimensions: ${image.width}x${image.height}`);
-        console.log(`New dimensions: ${newWidth}x${newHeight}`);
-
-        // Create canvas with new dimensions
-        const canvas = createCanvas(newWidth, newHeight);
+        // Create canvas with original dimensions
+        const canvas = createCanvas(image.width, image.height);
         const ctx = canvas.getContext('2d');
 
-        // Draw resized image
-        ctx.drawImage(image, 0, 0, newWidth, newHeight);
+        // Draw image at original size
+        ctx.drawImage(image, 0, 0, image.width, image.height);
 
-        // Convert to buffer with compression
-        const compressedBuffer = canvas.toBuffer('image/jpeg', { quality: 0.8 });
+        // Try different quality levels until we get under the size limit
+        let quality = 0.8;
+        let compressedBuffer;
+        let attempts = 0;
+        const maxAttempts = 5;
 
-        console.log(`Compressed image size: ${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB`);
+        do {
+            compressedBuffer = canvas.toBuffer('image/jpeg', { quality });
+            console.log(`Attempt ${attempts + 1}: Quality ${quality}, Size: ${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB`);
+
+            if (compressedBuffer.length <= MAX_SIZE_BYTES) {
+                break;
+            }
+
+            quality -= 0.1; // Reduce quality by 10% each attempt
+            attempts++;
+        } while (quality > 0.1 && attempts < maxAttempts);
+
+        // If still too large after quality reduction, try progressive JPEG with lower quality
+        if (compressedBuffer.length > MAX_SIZE_BYTES) {
+            console.log('Trying progressive JPEG with lower quality...');
+            compressedBuffer = canvas.toBuffer('image/jpeg', {
+                quality: 0.5,
+                progressive: true,
+                chromaSubsampling: '4:2:0'
+            });
+            console.log(`Final progressive JPEG size: ${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB`);
+        }
+
+        // Final check before uploading - if still too large, throw error
+        if (compressedBuffer.length > MAX_SIZE_BYTES) {
+            throw new Error(`Image compression failed: Could not reduce image below ${MAX_SIZE_MB}MB limit after trying all quality levels and progressive JPEG`);
+        }
 
         // Create file object for upload with custom filename
         const compressedFileObject = {
@@ -471,7 +844,26 @@ const compressImage = async (imageFileObject) => {
         };
 
         // Upload to Azure blob storage
-        const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(compressedFileObject.buffer, fileNameFinal);
+        const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(compressedFileObject.buffer, fileNameFinal, "image/jpeg");
+
+        console.log(`Final compressed image size: ${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB`);
+
+        // Check if final compressed image meets target size
+        const IMAGE_TARGET_MB = 1;
+        const IMAGE_TARGET_BYTES = IMAGE_TARGET_MB * 1024 * 1024;
+
+        if (compressedBuffer.length >= IMAGE_TARGET_BYTES) {
+            throw new Error(`Image compression failed: Final size ${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB exceeds ${IMAGE_TARGET_MB}MB target limit`);
+        }
+
+        // Additional safety check - if compression made file larger, throw error
+        if (compressedBuffer.length >= imageFileObject.size) {
+            console.log(`Warning: Compressed image (${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB) is larger than original (${(imageFileObject.size / (1024 * 1024)).toFixed(2)}MB)`);
+            // Check if original file meets target
+            if (imageFileObject.size >= IMAGE_TARGET_BYTES) {
+                throw new Error(`Original image file ${(imageFileObject.size / (1024 * 1024)).toFixed(2)}MB exceeds ${IMAGE_TARGET_MB}MB target limit`);
+            }
+        }
 
         return uploadedUrl;
 

@@ -7,7 +7,7 @@ import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRe
 import { sleep, convertNumberToEmoji } from "../utils/utils.js";
 import multipleChoiceQuestionRepository from "../repositories/multipleChoiceQuestionRepository.js";
 import multipleChoiceQuestionAnswerRepository from "../repositories/multipleChoiceQuestionAnswerRepository.js";
-
+import { sendAliasAndStartingInstruction } from "../utils/aliasAndInstructionsUtils.js";
 
 const sendQuestion = async (nextMCQsQuestion, totalQuestions, currentUserState, userMobileNumber, profileId) => {
     // Send question
@@ -101,25 +101,8 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
-                let defaultTextInstruction = "👇 *Answer the following questions.*";
-                const lessonTextInstruction = startingLesson.dataValues.textInstruction;
-                let finalTextInstruction = defaultTextInstruction;
-                if (lessonTextInstruction != null && lessonTextInstruction != "") {
-                    finalTextInstruction = lessonTextInstruction.replace(/\\n/g, '\n');
-                }
-                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n');;
-                lessonMessage += "\n\n" + finalTextInstruction;
-
-                // Text message
-                await sendMessage(userMobileNumber, lessonMessage);
-                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
-
-                // Audio message
-                const lessonAudioInstruction = startingLesson.dataValues.audioInstructionUrl;
-                if (lessonAudioInstruction != null && lessonAudioInstruction != "") {
-                    await sendMediaMessage(userMobileNumber, lessonAudioInstruction, 'audio', null, 0, "Lesson", startingLesson.dataValues.LessonId, startingLesson.dataValues.audioInstructionMediaId, "audioInstructionMediaId");
-                    await createActivityLog(userMobileNumber, "audio", "outbound", lessonAudioInstruction, null);
-                }
+                // Send alias and starting instruction
+                await sendAliasAndStartingInstruction(userMobileNumber, startingLesson);
 
                 // Send first MCQs question
                 const firstMCQsQuestion = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, null);
@@ -252,27 +235,8 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                 // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
-                let defaultTextInstruction = "👇 *Answer the following questions.*";
-                const lessonTextInstruction = startingLesson.dataValues.textInstruction;
-                let finalTextInstruction = defaultTextInstruction;
-                if (lessonTextInstruction != null && lessonTextInstruction != "") {
-                    finalTextInstruction = lessonTextInstruction.replace(/\\n/g, '\n');
-                }
-
-                // Send lesson message
-                let lessonMessage = "Activity: " + startingLesson.dataValues.activityAlias.replace(/\\n/g, '\n');
-                lessonMessage += "\n\n" + finalTextInstruction;
-
-                // Text message
-                await sendMessage(userMobileNumber, lessonMessage);
-                await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
-
-                // Audio message
-                const lessonAudioInstruction = startingLesson.dataValues.audioInstructionUrl;
-                if (lessonAudioInstruction != null && lessonAudioInstruction != "") {
-                    await sendMediaMessage(userMobileNumber, lessonAudioInstruction, 'audio', null, 0, "Lesson", startingLesson.dataValues.LessonId, startingLesson.dataValues.audioInstructionMediaId, "audioInstructionMediaId");
-                    await createActivityLog(userMobileNumber, "audio", "outbound", lessonAudioInstruction, null);
-                }
+                // Send alias and starting instruction
+                await sendAliasAndStartingInstruction(userMobileNumber, startingLesson);
 
                 // Send first MCQs question
                 const firstMCQsQuestion = await multipleChoiceQuestionRepository.getNextMultipleChoiceQuestion(currentUserState.dataValues.currentLessonId, null);

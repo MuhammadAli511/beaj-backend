@@ -5,7 +5,7 @@ import { sleep } from "../utils/utils.js";
 import documentFileRepository from "../repositories/documentFileRepository.js";
 import { sendAliasAndStartingInstruction } from "../utils/aliasAndInstructionsUtils.js";
 
-const videoView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
+const audioView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
         if (persona == 'teacher') {
             // Lesson Started Record
@@ -14,13 +14,13 @@ const videoView = async (profileId, userMobileNumber, currentUserState, starting
             // Send alias and starting instruction
             await sendAliasAndStartingInstruction(userMobileNumber, startingLesson);
 
-            // Send video content
+            // Send audio content
             const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
-            let videoURL = documentFile[0].dataValues.video;
+            let audioURL = documentFile[0].dataValues.audio;
 
             // Media message
-            await sendMediaMessage(userMobileNumber, videoURL, 'video', null, 0, "DocumentFile", documentFile[0].dataValues.id, documentFile[0].dataValues.videoMediaId, "videoMediaId");
-            await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
+            await sendMediaMessage(userMobileNumber, audioURL, 'audio', null, 0, "DocumentFile", documentFile[0].dataValues.id, documentFile[0].dataValues.audioMediaId, "audioMediaId");
+            await createActivityLog(userMobileNumber, "audio", "outbound", audioURL, null);
 
             // Sleep
             await sleep(5000);
@@ -32,13 +32,13 @@ const videoView = async (profileId, userMobileNumber, currentUserState, starting
             // Send alias and starting instruction
             await sendAliasAndStartingInstruction(userMobileNumber, startingLesson);
 
-            // Send video content
+            // Send audio content
             const documentFile = await documentFileRepository.getByLessonId(startingLesson.dataValues.LessonId);
-            let videoURL = documentFile[0].dataValues.video;
+            let audioURL = documentFile[0].dataValues.audio;
 
             // Media message
-            await sendMediaMessage(userMobileNumber, videoURL, 'video', null, 0, "DocumentFile", documentFile[0].dataValues.id, documentFile[0].dataValues.videoMediaId, "videoMediaId");
-            await createActivityLog(userMobileNumber, "video", "outbound", videoURL, null);
+            await sendMediaMessage(userMobileNumber, audioURL, 'audio', null, 0, "DocumentFile", documentFile[0].dataValues.id, documentFile[0].dataValues.audioMediaId, "audioMediaId");
+            await createActivityLog(userMobileNumber, "audio", "outbound", audioURL, null);
 
             // Sleep
             await sleep(5000);
@@ -46,9 +46,9 @@ const videoView = async (profileId, userMobileNumber, currentUserState, starting
         return;
     } catch (error) {
         console.error('Error sending lesson to user:', error);
-        error.fileName = 'videoView.js';
+        error.fileName = 'audioView.js';
         throw error;
     }
 };
 
-export { videoView };
+export { audioView };
