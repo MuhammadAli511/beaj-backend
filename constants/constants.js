@@ -185,6 +185,10 @@ const default_starting_instruction = {
     "speakingPractice": "Listen to the audio and respond to the question by sending a voice message.💬\n*Speak for at least 30 seconds*",
     "video": "👀 *Watch the video.*",
     "videoEnd": "👀 *Watch the video.*",
+    "audio": "👂 *Listen to the audio.*",
+    "audioEnd": "👂 *Listen to the audio.*",
+    "image": "👀 *Observe the image.*",
+    "imageEnd": "👀 *Observe the image.*",
     "watchAndAudio": "Watch the video 👇🏽 and send your response as a voice message.",
     "watchAndImage": "Watch the videos. Then send an image response.",
     "watchAndSpeak": "Watch the videos. Then practise speaking by sending voice messages. 💬"

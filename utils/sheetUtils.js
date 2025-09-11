@@ -218,7 +218,7 @@ const compressVideo = async (videoFileObject) => {
         // Check if compression is needed
         if (videoFileObject.size <= MAX_SIZE_BYTES) {
             console.log('Video is already under 15MB, uploading without compression');
-            return await azureBlobStorage.uploadToBlobStorage(videoFileObject.buffer, fileNameFinal);
+            return await azureBlobStorage.uploadToBlobStorage(videoFileObject.buffer, fileNameFinal, "video/mp4");
         }
 
         console.log(`Video size: ${(videoFileObject.size / (1024 * 1024)).toFixed(2)}MB - compression needed`);
@@ -291,7 +291,7 @@ const compressVideo = async (videoFileObject) => {
         };
 
         // Upload to Azure blob storage
-        const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(compressedFileObject.buffer, fileNameFinal);
+        const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(compressedFileObject.buffer, fileNameFinal, "video/mp4");
 
         // Cleanup temporary files
         try {
@@ -334,7 +334,7 @@ const compressAudio = async (audioFileObject) => {
         // Check if compression is needed
         if (audioFileObject.size <= MAX_SIZE_BYTES) {
             console.log('Audio is already under 15MB, uploading without compression');
-            return await azureBlobStorage.uploadToBlobStorage(audioFileObject.buffer, fileNameFinal);
+            return await azureBlobStorage.uploadToBlobStorage(audioFileObject.buffer, fileNameFinal, "audio/mpeg");
         }
 
         console.log(`Audio size: ${(audioFileObject.size / (1024 * 1024)).toFixed(2)}MB - compression needed`);
@@ -396,11 +396,11 @@ const compressAudio = async (audioFileObject) => {
             buffer: compressedBuffer,
             size: compressedBuffer.length,
             originalname: `${timestamp}_${randomDigits}.mp3`,
-            mimetype: 'audio/mp3'
+            mimetype: 'audio/mpeg'
         };
 
         // Upload to Azure blob storage
-        const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(compressedFileObject.buffer, fileNameFinal);
+        const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(compressedFileObject.buffer, fileNameFinal, "audio/mpeg");
 
         // Cleanup temporary files
         try {
@@ -430,7 +430,7 @@ const compressImage = async (imageFileObject) => {
         // Check if compression is needed
         if (imageFileObject.size <= MAX_SIZE_BYTES) {
             console.log('Image is already under 4MB, uploading without compression');
-            return await azureBlobStorage.uploadToBlobStorage(imageFileObject.buffer, fileNameFinal);
+            return await azureBlobStorage.uploadToBlobStorage(imageFileObject.buffer, fileNameFinal, "image/jpeg");
         }
 
         console.log(`Image size: ${(imageFileObject.size / (1024 * 1024)).toFixed(2)}MB - compression needed`);
@@ -471,7 +471,7 @@ const compressImage = async (imageFileObject) => {
         };
 
         // Upload to Azure blob storage
-        const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(compressedFileObject.buffer, fileNameFinal);
+        const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(compressedFileObject.buffer, fileNameFinal, "image/jpeg");
 
         return uploadedUrl;
 

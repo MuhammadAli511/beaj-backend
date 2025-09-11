@@ -46,7 +46,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
                 const uniqueID = uuidv4();
                 const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
-                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio, "audio/ogg");
                 const submissionDate = new Date();
 
                 const existingAudioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(
@@ -230,7 +230,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
                 const uniqueID = uuidv4();
                 const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
-                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio);
+                const userAudioFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userAudio, "audio/ogg");
                 const submissionDate = new Date();
 
                 const existingAudioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(

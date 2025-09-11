@@ -42,7 +42,7 @@ const watchAndImageView = async (profileId, userMobileNumber, currentUserState, 
                 const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
                 const uniqueID = uuidv4();
                 const userImage = `${timestamp}-${uniqueID}-` + "imageFile.jpg";
-                const userImageFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userImage);
+                const userImageFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userImage, "image/jpeg");
                 const submissionDate = new Date();
                 const response = await waQuestionResponsesRepository.create(
                     profileId,
@@ -110,7 +110,7 @@ const watchAndImageView = async (profileId, userMobileNumber, currentUserState, 
                 const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
                 const uniqueID = uuidv4();
                 const userImage = `${timestamp}-${uniqueID}-` + "imageFile.jpg";
-                const userImageFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userImage);
+                const userImageFileUrl = await azureBlobStorage.uploadToBlobStorage(messageContent.data, userImage, "image/jpeg");
                 const submissionDate = new Date();
                 const response = await waQuestionResponsesRepository.create(
                     profileId,

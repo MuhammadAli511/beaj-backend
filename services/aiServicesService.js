@@ -70,7 +70,7 @@ const speechToTextService = async (audioFile, language, provider) => {
             const client = new ElevenLabsClient({
                 apiKey: process.env.ELEVENLABS_API_KEY,
             });
-            const audioBlob = new Blob([audioFile.buffer], { type: "audio/mp3" });
+            const audioBlob = new Blob([audioFile.buffer], { type: "audio/mpeg" });
             const params = {
                 file: audioBlob,
                 model_id: "scribe_v1"

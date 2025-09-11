@@ -27,7 +27,7 @@ const elevenLabsSpeechToText = async (audioBuffer) => {
         const client = new ElevenLabsClient({
             apiKey: process.env.ELEVENLABS_API_KEY,
         });
-        const audioBlob = new Blob([audioBuffer], { type: "audio/mp3" });
+        const audioBlob = new Blob([audioBuffer], { type: "audio/mpeg" });
         const transcription = await client.speechToText.convert({
             file: audioBlob,
             model_id: "scribe_v1",
