@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import csvParser from "csv-parser";
-import { studentReportCardCalculation } from './chatbotUtils.js';
+import { extractStudentReportData } from './chatbotUtils.js';
 
 // Input and output file paths
 const inputFile = path.join(process.cwd(), "users.csv");
@@ -29,8 +29,9 @@ const headers = [
 
 // Helper → format report into row
 function formatReport(user, report) {
-  const english = report?.English || {};
-  const maths = report?.Maths || {};
+  const reportCard = report?.reportCard || {};
+  const english = reportCard?.English || {};
+  const maths = reportCard?.Maths || {};
 
   return [
     user.PhoneNumber || "",
@@ -78,7 +79,7 @@ async function processCSV() {
 
           console.log(`Processing student: ${student.name} (${profileId}) with phone ${phone}`);
 
-          const report = await studentReportCardCalculation(
+          const report = await extractStudentReportData(
             profileId,
             phone
           );
@@ -87,7 +88,7 @@ async function processCSV() {
             PhoneNumber: phone,
             profile_id: profileId,
             name: student.name,
-            grade: student.classLevel,   // map correctly
+            grade: student.grade,
           }, report));
         } catch (err) {
           console.error(`❌ Error processing ${student.name}:`, err);

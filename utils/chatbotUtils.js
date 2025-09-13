@@ -517,4 +517,261 @@ const sendCourseLesson = async (profileId, userMobileNumber, currentUserState, s
     }
 };
 
-export { getNextCourse, startCourseForUser, sendCourseLesson, weekEndScoreCalculation, studentReportCardCalculation, talkToBeajRep };
+// Function to extract raw report data without generating image
+const extractStudentReportData = async (profileId, phoneNumber) => {
+    // Parallel fetch of initial data
+    const [purchasedCourses, courses, userMetadata] = await Promise.all([
+        waPurchasedCoursesRepository.getPurchasedCoursesByProfileId(profileId),
+        courseRepository.getAll(),
+        waUsersMetadataRepository.getByProfileId(profileId)
+    ]);
+
+    // Match purchased courses with course details to get course names
+    const purchasedCoursesWithNames = purchasedCourses.map(purchasedCourse => {
+        const courseDetails = courses.find(course => course.dataValues.CourseId === purchasedCourse.dataValues.courseId);
+        return {
+            ...purchasedCourse.dataValues,
+            courseName: courseDetails ? courseDetails.dataValues.CourseName : null
+        };
+    });
+
+    const gradeCourse = purchasedCoursesWithNames.filter(course => course.courseName && course.courseName.toLowerCase().includes("grade"));
+
+    if (gradeCourse.length === 0) {
+        return null;
+    }
+
+    const gradeCourseId = gradeCourse[0].courseId;
+    const gradeCourseName = gradeCourse[0].courseName;
+
+    // Prepare all lesson ID fetching operations based on grade
+    const lessonFetchPromises = [];
+    let mathsSubjects = [];
+    let englishSubjects = [];
+
+    // MATHS lesson fetching based on grade
+    if (gradeCourseName.toLowerCase().includes("grade 1") || gradeCourseName.toLowerCase().includes("grade 2")) {
+        mathsSubjects = ['placeValue', 'addition', 'subtraction', 'patterns'];
+        lessonFetchPromises.push(
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[1, 2], [1, 4], [2, 2]]), // placeValue
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[2, 4], [3, 2], [4, 2]]), // addition
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[3, 4]]), // subtraction
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[4, 4]]) // patterns
+        );
+    } else if (gradeCourseName.toLowerCase().includes("grade 3") || gradeCourseName.toLowerCase().includes("grade 4")) {
+        mathsSubjects = ['placeValue', 'addition', 'subtraction', 'multiplication'];
+        lessonFetchPromises.push(
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[1, 2], [1, 4]]), // placeValue
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[2, 2], [3, 4]]), // addition
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[2, 4], [3, 2], [4, 2]]), // subtraction
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[4, 4]]) // multiplication
+        );
+    } else if (gradeCourseName.toLowerCase().includes("grade 5") || gradeCourseName.toLowerCase().includes("grade 6")) {
+        mathsSubjects = ['placeValue', 'additionAndSubtraction', 'multiplication', 'fractions'];
+        lessonFetchPromises.push(
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[1, 2], [1, 4]]), // placeValue
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[1, 4]]), // additionAndSubtraction
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[2, 2], [2, 4], [3, 2], [3, 4]]), // multiplication
+            lessonRepository.getLessonIdsByCourseAndAliasAndWeekAndDay(gradeCourseId, "🧮 *Maths Challenge!*", [[4, 2], [4, 4]]) // fractions
+        );
+    }
+
+    // ENGLISH lesson fetching
+    if (gradeCourseName.toLowerCase().includes("grade 7")) {
+        englishSubjects = ['comprehension', 'vocabulary', 'reading', 'speaking1', 'speaking2'];
+        lessonFetchPromises.push(
+            lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["*What Did They Say?*", "What Did They Say?"]), // comprehension
+            lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["*End of Week Challenge!* 💪🏽"]), // vocabulary
+            lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["📖 *Let's Read!*"]), // reading
+            lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["*Let's Listen and Speak*"]), // speaking1
+            lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["*Let's Watch* 🎦 *and Speak* 🗣️", "*Let's Watch* 🎦 *and Speak* 🗣️"]) // speaking2
+        );
+    } else {
+        englishSubjects = ['comprehension', 'vocabulary', 'reading', 'speaking1'];
+        lessonFetchPromises.push(
+            lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["📕 *Do you Remember?*"]), // comprehension
+            lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["🔡 *Let's Learn New Words!*", "🔡 *Let's Learn New Words!*", "🔠 *Let's Learn New Words!*", "🔠 *Let's Learn New Words!*"]), // vocabulary
+            lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["📖 *Let's Read!*"]), // reading
+            lessonRepository.getLessonIdsByCourseAndAlias(gradeCourseId, ["🗣️ *You Can Speak!*", "🗣️ *You Can Speak!* ", "🗣 *Let's Practise Speaking!*", "🗣 *Let's Practise Speaking!*"]) // speaking1
+        );
+    }
+
+    // Execute all lesson ID fetching in parallel
+    const lessonResults = await Promise.all(lessonFetchPromises);
+
+    // Map results to appropriate variables
+    const mathsLessonIds = lessonResults.slice(0, mathsSubjects.length);
+    const englishLessonIds = lessonResults.slice(mathsSubjects.length);
+
+    // Prepare all score calculation promises
+    const scorePromises = [];
+    const scoreTypes = [];
+
+    // Add maths score calculations
+    mathsLessonIds.forEach((lessonIds, index) => {
+        if (lessonIds.length > 0) {
+            scorePromises.push(
+                waQuestionResponsesRepository.getTotalQuestionsForList(profileId, phoneNumber, lessonIds),
+                waQuestionResponsesRepository.getTotalScoreForList(profileId, phoneNumber, lessonIds)
+            );
+            scoreTypes.push(`maths_${mathsSubjects[index]}_total`, `maths_${mathsSubjects[index]}_correct`);
+        }
+    });
+
+    // Add english score calculations
+    englishLessonIds.forEach((lessonIds, index) => {
+        if (lessonIds.length > 0) {
+            if (englishSubjects[index] === 'reading') {
+                // Special case for reading (watchAndSpeak)
+                scorePromises.push(waQuestionResponsesRepository.watchAndSpeakScoreForList(profileId, phoneNumber, lessonIds));
+                scoreTypes.push(`english_reading_score`);
+            } else if (englishSubjects[index] === 'speaking2') {
+                // Special case for speaking2 (watchAndSpeak)
+                scorePromises.push(waQuestionResponsesRepository.watchAndSpeakScoreForList(profileId, phoneNumber, lessonIds));
+                scoreTypes.push(`english_speaking2_score`);
+            } else {
+                // Regular MCQ scoring
+                scorePromises.push(
+                    waQuestionResponsesRepository.getTotalQuestionsForList(profileId, phoneNumber, lessonIds),
+                    waQuestionResponsesRepository.getTotalScoreForList(profileId, phoneNumber, lessonIds)
+                );
+                scoreTypes.push(`english_${englishSubjects[index]}_total`, `english_${englishSubjects[index]}_correct`);
+            }
+        }
+    });
+
+    // Execute all score calculations in parallel
+    const scoreResults = await Promise.all(scorePromises);
+
+    // Process results and calculate percentages
+    const scores = {};
+    let resultIndex = 0;
+
+    scoreTypes.forEach(scoreType => {
+        scores[scoreType] = scoreResults[resultIndex++];
+    });
+
+    // Calculate Maths percentages
+    const mathsPercentages = {};
+    mathsSubjects.forEach(subject => {
+        const totalKey = `maths_${subject}_total`;
+        const correctKey = `maths_${subject}_correct`;
+
+        if (scores[totalKey] && scores[totalKey] > 0) {
+            mathsPercentages[subject] = Math.round((scores[correctKey] / scores[totalKey]) * 100);
+        }
+    });
+
+    // Calculate English percentages
+    const englishPercentages = {};
+    englishSubjects.forEach(subject => {
+        if (subject === 'reading') {
+            const scoreKey = `english_reading_score`;
+            if (scores[scoreKey] && scores[scoreKey].total > 0) {
+                englishPercentages.reading = Math.round((scores[scoreKey].score / scores[scoreKey].total) * 100);
+            }
+        } else if (subject === 'speaking2') {
+            const scoreKey = `english_speaking2_score`;
+            if (scores[scoreKey] && scores[scoreKey].total > 0) {
+                englishPercentages.speaking2 = Math.round((scores[scoreKey].score / scores[scoreKey].total) * 100);
+            }
+        } else {
+            const totalKey = `english_${subject}_total`;
+            const correctKey = `english_${subject}_correct`;
+
+            if (scores[totalKey] && scores[totalKey] > 0) {
+                englishPercentages[subject] = Math.round((scores[correctKey] / scores[totalKey]) * 100);
+            }
+        }
+    });
+
+    // Handle combined speaking percentage - check if both have questions (lesson IDs), not just if percentages are truthy
+    const speaking1HasQuestions = englishLessonIds[englishSubjects.indexOf('speaking1')] && englishLessonIds[englishSubjects.indexOf('speaking1')].length > 0;
+    const speaking2HasQuestions = englishSubjects.includes('speaking2') && englishLessonIds[englishSubjects.indexOf('speaking2')] && englishLessonIds[englishSubjects.indexOf('speaking2')].length > 0;
+
+    if (speaking1HasQuestions && speaking2HasQuestions) {
+        englishPercentages.speaking = Math.round((englishPercentages.speaking1 + englishPercentages.speaking2) / 2);
+        delete englishPercentages.speaking1;
+        delete englishPercentages.speaking2;
+    } else if (englishPercentages.speaking1 !== undefined) {
+        englishPercentages.speaking = englishPercentages.speaking1;
+        delete englishPercentages.speaking1;
+    }
+
+    // Create report card object with non-zero percentages only
+    const reportCard = {
+        Maths: {},
+        English: {}
+    };
+
+    // Add non-zero Maths percentages with proper labels
+    const mathsLabels = {
+        placeValue: "Place Value",
+        addition: "Addition",
+        subtraction: "Subtraction",
+        patterns: "Patterns",
+        multiplication: "Multiplication",
+        additionAndSubtraction: "Addition/Subtraction",
+        fractions: "Fractions"
+    };
+
+    Object.entries(mathsPercentages).forEach(([key, percentage]) => {
+        if (percentage > 0) {
+            reportCard.Maths[mathsLabels[key]] = percentage;
+        }
+    });
+
+    // Add non-zero English percentages with proper labels
+    const englishLabels = {
+        comprehension: "Comprehension",
+        vocabulary: "Vocabulary",
+        speaking: "Speaking",
+        reading: "Reading"
+    };
+
+    Object.entries(englishPercentages).forEach(([key, percentage]) => {
+        if (percentage > 0) {
+            reportCard.English[englishLabels[key]] = percentage;
+        }
+    });
+
+    // Calculate totals for each category
+    const mathsScores = Object.values(reportCard.Maths);
+    const englishScores = Object.values(reportCard.English);
+
+    if (mathsScores.length > 0) {
+        reportCard.Maths.Total = Math.round(mathsScores.reduce((sum, score) => sum + score, 0) / mathsScores.length);
+    }
+
+    if (englishScores.length > 0) {
+        reportCard.English.Total = Math.round(englishScores.reduce((sum, score) => sum + score, 0) / englishScores.length);
+    }
+
+    // Remove empty categories
+    if (Object.keys(reportCard.Maths).length === 0) delete reportCard.Maths;
+    if (Object.keys(reportCard.English).length === 0) delete reportCard.English;
+
+    // Process user metadata
+    const userMetadataData = userMetadata.dataValues;
+    let name = userMetadataData.name;
+    let grade = userMetadataData.classLevel ? userMetadataData.classLevel.replace(/\D/g, '') : undefined;
+    let section;
+    if (userMetadataData.cohort && /^Cohort\s+\d+$/.test(userMetadataData.cohort)) {
+        const cohortNumber = parseInt(userMetadataData.cohort.replace(/\D/g, ''), 10);
+        section = String.fromCharCode(64 + cohortNumber); // 65 = 'A'
+    } else {
+        section = userMetadataData.cohort;
+    }
+
+    // Return the raw data instead of generating image
+    return {
+        phoneNumber,
+        profileId,
+        name,
+        grade,
+        section,
+        reportCard
+    };
+};
+
+export { getNextCourse, startCourseForUser, sendCourseLesson, weekEndScoreCalculation, studentReportCardCalculation, extractStudentReportData, talkToBeajRep };
