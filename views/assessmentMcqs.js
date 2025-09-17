@@ -34,9 +34,6 @@ const sendQuestion = async (nextMCQsQuestion, totalQuestions, currentUserState, 
         !questionText.includes("Choose one option")
     ) {
         mcqMessage += "Choose the correct answer:\n";
-        if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
-            mcqMessage += "\nor Type *next* to skip this activity!";
-        }
     }
     if (mcqType == 'Text') {
         for (let i = 0; i < mcqAnswers.length; i++) {
