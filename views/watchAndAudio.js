@@ -39,7 +39,10 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                 await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, mediaType, null, 0, "SpeakActivityQuestion", firstWatchAndSpeakQuestion.dataValues.id, firstWatchAndSpeakQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
                 await createActivityLog(userMobileNumber, mediaType, "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
 
-                const secondMediaType = firstWatchAndSpeakQuestion?.dataValues?.mediaFileSecond?.endsWith('.mp4') ? 'video' : 'audio';
+                let secondMediaType = null;
+                if (firstWatchAndSpeakQuestion?.dataValues?.mediaFileSecond) {
+                    secondMediaType = firstWatchAndSpeakQuestion?.dataValues?.mediaFileSecond?.endsWith('.mp4') ? 'video' : 'audio';
+                }
 
                 if (mediaType == 'video' && (secondMediaType != null && secondMediaType != "null" && secondMediaType != "")) {
                     await sleep(5000);
@@ -140,7 +143,10 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                     await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, mediaType, null, 0, "SpeakActivityQuestion", nextWatchAndSpeakQuestion.dataValues.id, nextWatchAndSpeakQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
                     await createActivityLog(userMobileNumber, mediaType, "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
 
-                    const secondMediaType = nextWatchAndSpeakQuestion?.dataValues?.mediaFileSecond?.endsWith('.mp4') ? 'video' : 'audio';
+                    let secondMediaType = null;
+                    if (nextWatchAndSpeakQuestion?.dataValues?.mediaFileSecond) {
+                        secondMediaType = nextWatchAndSpeakQuestion?.dataValues?.mediaFileSecond?.endsWith('.mp4') ? 'video' : 'audio';
+                    }
                     if (mediaType == 'video' && (secondMediaType != null && secondMediaType != "null" && secondMediaType != "")) {
                         await sleep(5000);
                     } else {
@@ -203,7 +209,10 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                 await sendMediaMessage(userMobileNumber, firstWatchAndSpeakQuestion.dataValues.mediaFile, mediaType, null, 0, "SpeakActivityQuestion", firstWatchAndSpeakQuestion.dataValues.id, firstWatchAndSpeakQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
                 await createActivityLog(userMobileNumber, mediaType, "outbound", firstWatchAndSpeakQuestion.dataValues.mediaFile, null);
 
-                const secondMediaType = firstWatchAndSpeakQuestion?.dataValues?.mediaFileSecond?.endsWith('.mp4') ? 'video' : 'audio';
+                let secondMediaType = null;
+                if (firstWatchAndSpeakQuestion?.dataValues?.mediaFileSecond) {
+                    secondMediaType = firstWatchAndSpeakQuestion?.dataValues?.mediaFileSecond?.endsWith('.mp4') ? 'video' : 'audio';
+                }
                 if (mediaType == 'video' && (secondMediaType != null && secondMediaType != "null" && secondMediaType != "")) {
                     await sleep(5000);
                 } else {
@@ -329,7 +338,10 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                     await sendMediaMessage(userMobileNumber, nextWatchAndSpeakQuestion.dataValues.mediaFile, mediaType, null, 0, "SpeakActivityQuestion", nextWatchAndSpeakQuestion.dataValues.id, nextWatchAndSpeakQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
                     await createActivityLog(userMobileNumber, mediaType, "outbound", nextWatchAndSpeakQuestion.dataValues.mediaFile, null);
 
-                    const secondMediaType = nextWatchAndSpeakQuestion?.dataValues?.mediaFileSecond?.endsWith('.mp4') ? 'video' : 'audio';
+                    let secondMediaType = null;
+                    if (nextWatchAndSpeakQuestion?.dataValues?.mediaFileSecond) {
+                        secondMediaType = nextWatchAndSpeakQuestion?.dataValues?.mediaFileSecond?.endsWith('.mp4') ? 'video' : 'audio';
+                    }
                     if (mediaType == 'video' && (secondMediaType != null && secondMediaType != "null" && secondMediaType != "")) {
                         await sleep(5000);
                     } else {
