@@ -134,51 +134,38 @@ const webhookService = async (body, res) => {
                 let daysPerWeek = await getDaysPerWeek(profileId);
 
                 // SPECIAL COMMANDS
-                console.log("SPECIAL COMMANDS START");
                 if (message.type == "text" && special_commands.includes(messageContent.toLowerCase())) {
                     await specialCommandFlow(profileId, userMobileNumber, messageContent);
                     return;
                 };
-                console.log("SPECIAL COMMANDS END");
                 // MARKETING BOT
-                console.log("MARKETING BOT START");
                 if (profile_type == "marketing") {
                     await marketingBotFlow(profileId, messageContent, messageType, userMobileNumber);
                     return;
                 }
-                console.log("MARKETING BOT END");
                 // CHECKING FOR ACCEPTABLE MESSAGES
-                console.log("CHECKING FOR ACCEPTABLE MESSAGES START");
                 if (currentUserState) {
                     const messageAuth = await checkUserMessageAndAcceptableMessages(profileId, userMobileNumber, currentUserState, messageType, messageContent);
                     if (messageAuth === false) {
                         return;
                     }
                 }
-                console.log("CHECKING FOR ACCEPTABLE MESSAGES END");
                 // CHOOSING PROFILE FLOW
-                console.log("CHOOSING PROFILE FLOW START");
                 if ((chooseProfile) || (text_message_types.includes(message.type) && messageContent.toLowerCase().includes("change user"))) {
                     await chooseProfileFlow(profileId, userMobileNumber, botPhoneNumberId, chooseProfile);
                     return;
                 }
-                console.log("CHOOSING PROFILE FLOW END");
                 // USER SWITCHING FLOW
-                console.log("USER SWITCHING FLOW START");
                 if (currentUserState && currentUserState.dataValues.engagement_type == "Choose User") {
                     await userSwitchingFlow(profileId, userMobileNumber, botPhoneNumberId, messageContent, activeSession);
                     return;
                 }
-                console.log("USER SWITCHING FLOW END");
                 // TALK TO BEAJ REP
-                console.log("TALK TO BEAJ REP START");
                 if (text_message_types.includes(message.type) && talk_to_beaj_rep_messages.includes(messageContent.toLowerCase())) {
                     await talkToBeajRep(profileId, userMobileNumber);
                     return;
                 }
-                console.log("TALK TO BEAJ REP END");
                 // TRIAL FLOW ROUTING
-                console.log("TRIAL FLOW ROUTING START");
                 if (!userExists) {
                     if (profile_type == "student") {
                         await kidsTrialFlow.kidsTrialFlowDriver(profileId, userMobileNumber, "New User", messageContent, messageType, inboundUploadedImage);
@@ -200,16 +187,12 @@ const webhookService = async (body, res) => {
                         return;
                     }
                 }
-                console.log("TRIAL FLOW ROUTING END");
                 // MAIN COURSE START FLOW - SENDING "START"
-                console.log("MAIN COURSE START FLOW - SENDING \"START\" START");
                 if (text_message_types.includes(message.type) && trigger_course_acceptable_messages.includes(messageContent.toLowerCase())) {
                     await startCourseForUser(profileId, userMobileNumber, beaj_team_numbers);
                     return;
                 }
-                console.log("MAIN COURSE START FLOW - SENDING \"START\" END");
                 // MAIN COURSE START FLOW - TRIGGERING ON "START"
-                console.log("MAIN COURSE START FLOW - TRIGGERING ON \"START\" START");
                 if (text_message_types.includes(message.type) && course_start_acceptable_messages.includes(messageContent.toLowerCase())) {
                     if (course_start_states.includes(currentUserState.dataValues.engagement_type)) {
                         let startingLesson = null;
@@ -254,9 +237,7 @@ const webhookService = async (body, res) => {
                         return;
                     }
                 }
-                console.log("MAIN COURSE START FLOW - TRIGGERING ON \"START\" END");
                 // MID ACTIVITY FLOWS - TRIGGERING ON "YES" OR "NO" OR "EASY" OR "HARD"
-                console.log("MID ACTIVITY FLOWS - TRIGGERING ON \"YES\" OR \"NO\" OR \"EASY\" OR \"HARD\" START");
                 if (text_message_types.includes(message.type)) {
                     const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
                     if (
@@ -267,9 +248,7 @@ const webhookService = async (body, res) => {
                         return;
                     }
                 }
-                console.log("MID ACTIVITY FLOWS - TRIGGERING ON \"YES\" OR \"NO\" OR \"EASY\" OR \"HARD\" END");
                 // MOVING NEXT ACTIVITY
-                console.log("MOVING NEXT ACTIVITY");
                 if (text_message_types.includes(message.type) && next_activity_acceptable_messages.includes(messageContent.toLowerCase())) {
                     // FEEDBACK FLOW
                     if (feedback_acceptable_messages.includes(messageContent.toLowerCase())) {
@@ -335,9 +314,7 @@ const webhookService = async (body, res) => {
                     }
                     return;
                 }
-                console.log("MOVING NEXT ACTIVITY");
                 // MOVING TO NEXT QUESTION
-                console.log("MOVING TO NEXT QUESTION START");
                 if (currentUserState.dataValues.activityType && activity_types_to_repeat.includes(currentUserState.dataValues.activityType)) {
                     const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
                     const acceptableMessagesList = await getAcceptableMessagesList(currentLesson.dataValues.activity);
@@ -345,7 +322,6 @@ const webhookService = async (body, res) => {
                     await sendCourseLesson(profileId, userMobileNumber, currentUserState, currentLesson, messageType, messageContent, persona, buttonId);
                     return;
                 }
-                console.log("MOVING TO NEXT QUESTION END");
             });
         }
     } catch (error) {
