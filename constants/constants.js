@@ -26,6 +26,7 @@ const talk_to_beaj_rep_messages = [
 ];
 
 const beaj_team_numbers = [
+    "+923365905444",
     "+923008400080",
     "+923303418882",
     "+923345520552",
