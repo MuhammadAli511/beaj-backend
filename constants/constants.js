@@ -17,7 +17,7 @@ const activity_types_to_repeat = [
 
 const text_message_types = ["text", "interactive", "button"];
 
-const special_commands = ["reset all", "reset course"];
+const special_commands = ["reset all", "reset course", "reset course kid"];
 
 const talk_to_beaj_rep_messages = [
     "talk to beaj rep",
@@ -26,6 +26,7 @@ const talk_to_beaj_rep_messages = [
 ];
 
 const beaj_team_numbers = [
+    "+923365905444",
     "+923008400080",
     "+923303418882",
     "+923345520552",
