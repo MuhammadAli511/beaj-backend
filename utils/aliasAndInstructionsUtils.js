@@ -1,4 +1,4 @@
-import { default_starting_instruction } from "../constants/constants.js";
+import { default_starting_instruction, audio_activities } from "../constants/constants.js";
 import { sendMessage, sendMediaMessage } from "./whatsappUtils.js";
 import { createActivityLog } from "./createActivityLogUtils.js";
 
@@ -17,6 +17,9 @@ const sendAliasAndStartingInstruction = async (userMobileNumber, startingLesson)
     }
     lessonTextInstruction = lessonTextInstruction.replace(/\\n/g, '\n');
     lessonMessage += lessonTextInstruction;
+    if (audio_activities.includes(startingLesson.dataValues.activity) && startingLesson.dataValues.skipOnFirstQuestion == true) {
+        lessonMessage += "\n\nOR\n\n👇 Click on *'Skip'* to start next activity";
+    }
     await sendMessage(userMobileNumber, lessonMessage);
     await createActivityLog(userMobileNumber, "text", "outbound", lessonMessage, null);
 

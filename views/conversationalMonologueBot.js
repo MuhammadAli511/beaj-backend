@@ -36,7 +36,11 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 await createActivityLog(userMobileNumber, "video", "outbound", firstConversationalMonologueBotQuestion.dataValues.mediaFile, null);
 
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                if (startingLesson.dataValues.skipOnFirstQuestion == true && firstConversationalMonologueBotQuestion.dataValues.questionNumber == 1) {
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
+                } else {
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                }
             }
             else if (messageType === 'audio') {
                 // Get the current Conversational Monologue Bot question
@@ -220,7 +224,11 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 await createActivityLog(userMobileNumber, "video", "outbound", firstConversationalMonologueBotQuestion.dataValues.mediaFile, null);
 
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                if (startingLesson.dataValues.skipOnFirstQuestion == true && firstConversationalMonologueBotQuestion.dataValues.questionNumber == 1) {
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
+                } else {
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                }
             }
             else if (messageType === 'audio') {
                 // Get the current Conversational Monologue Bot question

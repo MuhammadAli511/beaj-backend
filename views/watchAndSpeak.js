@@ -45,7 +45,11 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                 }
 
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                if (startingLesson.dataValues.skipOnFirstQuestion == true && firstWatchAndSpeakQuestion.dataValues.questionNumber == 1) {
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
+                } else {
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                }
             }
             else if (messageType === 'audio') {
                 // Get the current Watch And Speak question
@@ -235,7 +239,11 @@ const watchAndSpeakView = async (profileId, userMobileNumber, currentUserState, 
                 }
 
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                if (startingLesson.dataValues.skipOnFirstQuestion == true && firstWatchAndSpeakQuestion.dataValues.questionNumber == 1) {
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
+                } else {
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                }
                 return;
             }
             else if (messageType === 'audio') {

@@ -263,12 +263,11 @@ const webhookService = async (body, res) => {
                     let latestUserState = await waUserProgressRepository.getByProfileId(profileId);
                     let theStartingLesson = await lessonRepository.getByLessonId(currentUserState.dataValues.currentLessonId);
 
-                    if (
-                        (messageContent.toLowerCase().includes("next") || messageContent.toLowerCase().includes("next activity"))
-                        && (latestUserState.dataValues.activityType == "feedbackAudio" || latestUserState.dataValues.activityType == "watchAndAudio")) {
+                    if (messageContent.toLowerCase().includes("next") || messageContent.toLowerCase().includes("next activity") || messageContent.toLowerCase().includes("skip")) {
                         await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
-                        await endingMessage(profileId, userMobileNumber, currentUserState, theStartingLesson);
-                        return;
+                        await waLessonsCompletedRepository.endLessonByPhoneNumberLessonIdAndProfileId(userMobileNumber, theStartingLesson.dataValues.LessonId, profileId);
+                        // await endingMessage(profileId, userMobileNumber, currentUserState, theStartingLesson);
+                        // return;
                     }
 
                     // COURSE ENDING FLOW

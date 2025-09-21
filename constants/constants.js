@@ -178,7 +178,7 @@ const default_starting_instruction = {
     "conversationalAgencyBot": "Listen to the audio and send your answer as a voice message.",
     "conversationalMonologueBot": "Watch the video 👇🏽 and practise speaking by sending a voice message.💬",
     "conversationalQuestionsBot": "Listen to the audio and send your answer as a voice message.",
-    "feedbackAudio": "Listen to the audio instruction and send your response as a voice message.💬\nOR\n Type *next* to skip this activity!",
+    "feedbackAudio": "Listen to the audio instruction and send your response as a voice message.💬",
     "feedbackMcqs": "👇 *Answer the following questions.*",
     "listenAndSpeak": "Listen to the audio question and send your answer as a voice message.💬",
     "mcqs": "👇 *Answer the following questions.*",
@@ -217,6 +217,19 @@ const activity_types = [
     "watchAndImage",
     "conversationalMonologueBot",
     "conversationalAgencyBot"
+];
+
+const audio_activities = [
+  "feedbackAudio",
+  "listenAndSpeak",
+  "watchAndSpeak",
+  "watchAndAudio",
+  "assessmentWatchAndSpeak",
+  "speakingPractice",
+  "conversationalQuestionsBot",
+  "read",
+  "conversationalMonologueBot",
+  "conversationalAgencyBot"
 ];
 
 const columns_order = {
@@ -263,6 +276,7 @@ export {
     kids_trial_flow_engagement_types,
     default_starting_instruction,
     activity_types,
-    columns_order
+    columns_order,
+    audio_activities
 };
 

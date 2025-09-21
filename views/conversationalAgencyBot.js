@@ -51,7 +51,11 @@ const conversationalAgencyBotView = async (profileId, userMobileNumber, currentU
                 await createActivityLog(userMobileNumber, "audio", "outbound", questionAudio, null);
 
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                if (startingLesson.dataValues.skipOnFirstQuestion == true && firstConversationalAgencyBotQuestion.dataValues.questionNumber == 1) {
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
+                } else {
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                }
             }
             else if (messageType === 'audio') {
                 // Get the current Conversational Agency Bot question
