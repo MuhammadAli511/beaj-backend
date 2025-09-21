@@ -76,6 +76,7 @@ const next_activity_acceptable_messages = [
     "next",
     "start practice",
     "next activity",
+    "skip"
 ];
 
 const course_start_acceptable_messages = [

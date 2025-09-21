@@ -23,13 +23,13 @@ const sendQuestion = async (nextMCQsQuestion, totalQuestions, currentUserState, 
     if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
         mcqMessage += "Choose the correct answer:\n";
     }
-    if (startingLesson.dataValues.skipOnFirstQuestion == true && nextMCQsQuestion.dataValues.QuestionNumber == 1) {
-        mcqMessage += "\n\nOR\n\nClick *'Skip'* to start next activity";
-    }
     if (mcqType == 'Text') {
         for (let i = 0; i < mcqAnswers.length; i++) {
             mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
         }
+    }
+    if (startingLesson.dataValues.skipOnFirstQuestion == true && nextMCQsQuestion.dataValues.QuestionNumber == 1) {
+        mcqMessage += "\n\nOR\n\nClick *'Skip'* to start next activity";
     }
 
     // Reply buttons to answer

@@ -6,6 +6,7 @@ import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRe
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import waActiveSessionRepository from "../repositories/waActiveSessionRepository.js";
 import waProfileRepository from "../repositories/waProfileRepository.js";
+import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import { startCourseForUser, sendCourseLesson, talkToBeajRep } from "../utils/chatbotUtils.js";
 import { demoCourseStart } from "../utils/trialflowUtils.js";
 import { sendMessage, sendMediaMessage } from "../utils/whatsappUtils.js";
