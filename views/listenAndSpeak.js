@@ -257,13 +257,15 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                         await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextListenAndSpeakQuestion.dataValues.questionNumber);
                         await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
 
-                        const mediaType = nextListenAndSpeakQuestion.dataValues.mediaFile.endsWith('.mp4') ? 'video' : 'audio';
-                        await sendMediaMessage(userMobileNumber, nextListenAndSpeakQuestion.dataValues.mediaFile, mediaType, null, 0, "SpeakActivityQuestion", nextListenAndSpeakQuestion.dataValues.id, nextListenAndSpeakQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
-                        await createActivityLog(userMobileNumber, mediaType, "outbound", nextListenAndSpeakQuestion.dataValues.mediaFile, null);
-                        if (mediaType == 'video') {
-                            await sleep(5000);
-                        } else {
-                            await sleep(2000);
+                        if (nextListenAndSpeakQuestion.dataValues.mediaFile) {
+                            const mediaType = nextListenAndSpeakQuestion.dataValues.mediaFile.endsWith('.mp4') ? 'video' : 'audio';
+                            await sendMediaMessage(userMobileNumber, nextListenAndSpeakQuestion.dataValues.mediaFile, mediaType, null, 0, "SpeakActivityQuestion", nextListenAndSpeakQuestion.dataValues.id, nextListenAndSpeakQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
+                            await createActivityLog(userMobileNumber, mediaType, "outbound", nextListenAndSpeakQuestion.dataValues.mediaFile, null);
+                            if (mediaType == 'video') {
+                                await sleep(5000);
+                            } else {
+                                await sleep(2000);
+                            }
                         }
                         let secondMediaType = null;
                         if (nextListenAndSpeakQuestion?.dataValues?.mediaFileSecond) {
