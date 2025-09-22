@@ -12,7 +12,6 @@ import { demoCourseStart } from "../utils/trialflowUtils.js";
 import { sendMessage, sendMediaMessage } from "../utils/whatsappUtils.js";
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
 import { createFeedback } from "../utils/createFeedbackUtils.js";
-import { endingMessage } from "../utils/endingMessageUtils.js";
 import {
     checkUserMessageAndAcceptableMessages, getAcceptableMessagesList, sleep, getDaysPerWeek, getLevelFromCourseName,
     extractMessageContent, getProfileTypeFromBotId
@@ -257,14 +256,27 @@ const webhookService = async (body, res) => {
                         return;
                     }
                     // Get next lesson to send user
-                    const nextLesson = await lessonRepository.getNextLesson(
-                        currentUserState.dataValues.currentCourseId, currentUserState.dataValues.currentWeek,
-                        currentUserState.dataValues.currentDay, currentUserState.dataValues.currentLesson_sequence
-                    );
+                    let nextLesson = null;
+                    let lessonSkipped = false;
+                    if (messageContent.toLowerCase().includes("skip activity")) {
+                        let nextSkipableLesson = await lessonRepository.getNextLesson(
+                            currentUserState.dataValues.currentCourseId, currentUserState.dataValues.currentWeek,
+                            currentUserState.dataValues.currentDay, currentUserState.dataValues.currentLesson_sequence
+                        );
+                        nextLesson = await lessonRepository.getByLessonId(nextSkipableLesson.dataValues.skipOnStartToLessonId);
+                        lessonSkipped = true;
+                    }
+                    else {
+                        nextLesson = await lessonRepository.getNextLesson(
+                            currentUserState.dataValues.currentCourseId, currentUserState.dataValues.currentWeek,
+                            currentUserState.dataValues.currentDay, currentUserState.dataValues.currentLesson_sequence
+                        );
+                    }
+
                     let latestUserState = await waUserProgressRepository.getByProfileId(profileId);
                     let theStartingLesson = await lessonRepository.getByLessonId(currentUserState.dataValues.currentLessonId);
 
-                    if (messageContent.toLowerCase().includes("next") || messageContent.toLowerCase().includes("next activity") || messageContent.toLowerCase().includes("skip")) {
+                    if ((messageContent.toLowerCase().includes("next") || messageContent.toLowerCase().includes("next activity") || messageContent.toLowerCase().includes("skip")) && lessonSkipped == false) {
                         await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
                         await waLessonsCompletedRepository.endLessonByPhoneNumberLessonIdAndProfileId(userMobileNumber, theStartingLesson.dataValues.LessonId, profileId);
                         // await endingMessage(profileId, userMobileNumber, currentUserState, theStartingLesson);

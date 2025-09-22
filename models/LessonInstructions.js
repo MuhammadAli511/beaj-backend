@@ -33,6 +33,10 @@ LessonInstructions.init({
     mediaId: {
         type: DataTypes.BIGINT,
         allowNull: true
+    },
+    caption: {
+        type: DataTypes.TEXT,
+        allowNull: true
     }
 }, {
     sequelize,
