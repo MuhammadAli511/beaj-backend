@@ -257,7 +257,7 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                         await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextListenAndSpeakQuestion.dataValues.questionNumber);
                         await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
 
-                        if (nextListenAndSpeakQuestion.dataValues.mediaFile) {
+                        if (nextListenAndSpeakQuestion?.dataValues?.mediaFile) {
                             const mediaType = nextListenAndSpeakQuestion.dataValues.mediaFile.endsWith('.mp4') ? 'video' : 'audio';
                             await sendMediaMessage(userMobileNumber, nextListenAndSpeakQuestion.dataValues.mediaFile, mediaType, null, 0, "SpeakActivityQuestion", nextListenAndSpeakQuestion.dataValues.id, nextListenAndSpeakQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
                             await createActivityLog(userMobileNumber, mediaType, "outbound", nextListenAndSpeakQuestion.dataValues.mediaFile, null);
