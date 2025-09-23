@@ -21,7 +21,11 @@ const sendQuestion = async (nextMCQsQuestion, totalQuestions, currentUserState, 
         mcqMessage = "👉 *Question " + await convertNumberToEmoji(nextMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n";
     }
     if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
-        mcqMessage += "Choose the correct answer:\n";
+        if (currentUserState.currentCourseId == 100) {
+            mcqMessage += "Choisissez la bonne réponse:\n";
+        } else {
+            mcqMessage += "Choose the correct answer:\n";
+        }
         if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
             mcqMessage += "\nor Type *next* to skip this activity!";
         }
