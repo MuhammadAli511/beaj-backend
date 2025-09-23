@@ -14,11 +14,14 @@ const sendQuestion = async (nextMCQsQuestion, totalQuestions, currentUserState, 
     const mcqType = nextMCQsQuestion.dataValues.QuestionType;
     const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(nextMCQsQuestion.dataValues.Id);
     const questionText = nextMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
-    let mcqMessage = "";
-    if (mcqType == 'Text') {
-        mcqMessage = "👉 *Question " + await convertNumberToEmoji(nextMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n" + questionText + "\n\n";
+    let mcqMessage = ""
+    if (currentUserState.currentCourseId == 100) {
+        mcqMessage += "👉🏽 *Q " + nextMCQsQuestion.dataValues.QuestionNumber + " of " + totalQuestions + "*\n\n";
     } else {
-        mcqMessage = "👉 *Question " + await convertNumberToEmoji(nextMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n";
+        mcqMessage += "👉 *Question " + await convertNumberToEmoji(nextMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n";
+    }
+    if (mcqType == 'Text') {
+        mcqMessage += questionText + "\n\n";
     }
     if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
         if (currentUserState.currentCourseId == 100) {
