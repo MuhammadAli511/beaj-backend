@@ -5,6 +5,7 @@ import { salman_number, ali_number, salman_endpoint, ali_endpoint } from '../con
 
 const webhookController = async (req, res, next) => {
     try {
+        console.log("Webhook Controller Start");
         if (
             req.body.entry?.[0]?.changes?.[0]?.value?.messages &&
             req.body.entry?.[0]?.changes?.[0]?.value?.statuses == undefined
