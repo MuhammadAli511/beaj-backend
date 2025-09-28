@@ -873,6 +873,80 @@ const compressImage = async (imageFileObject) => {
     }
 };
 
+
+const parseStartEndInstruction = async (cellValue) => {
+    if (!cellValue || typeof cellValue !== "string") return {};
+
+    const lines = cellValue.split("\n").map(line => line.trim()).filter(Boolean);
+
+    const result = {
+        textInstruction: null,
+        textInstructionCaption: null,
+        imageInstruction: null,
+        imageInstructionCaption: null,
+        audioInstruction: null,
+        audioInstructionCaption: null,
+        videoInstruction: null,
+        videoInstructionCaption: null,
+        pdfInstruction: null,
+        pdfInstructionCaption: null,
+    };
+
+    for (const line of lines) {
+        const match = line.match(/^(\w+):\s*(.*?)(?:\s*\(Caption:\s*(.*?)\))?$/i);
+        if (!match) continue;
+
+        let [, type, value, caption] = match;
+        type = type.toLowerCase().trim();
+        value = value?.trim() || null;
+        caption = caption?.trim() || null;
+
+        switch (type) {
+            case "text":
+                if (value) result.textInstruction = value;
+                if (caption) result.textInstructionCaption = caption;
+                break;
+            case "image":
+                if (value) result.imageInstruction = value;
+                if (caption) result.imageInstructionCaption = caption;
+                break;
+            case "audio":
+                if (value) result.audioInstruction = value;
+                if (caption) result.audioInstructionCaption = caption;
+                break;
+            case "video":
+                if (value) result.videoInstruction = value;
+                if (caption) result.videoInstructionCaption = caption;
+                break;
+            case "pdf":
+                if (value) result.pdfInstruction = value;
+                if (caption) result.pdfInstructionCaption = caption;
+                break;
+        }
+    }
+
+    return result;
+}
+
+const isAnswerBold = (cellText, answerText, textRuns) => {
+    if (!cellText || !answerText || !Array.isArray(textRuns)) return false;
+
+    const startIndex = cellText.indexOf(answerText);
+    if (startIndex === -1) return false;
+    const endIndex = startIndex + answerText.length;
+
+    for (const run of textRuns) {
+        const runStart = run.startIndex ?? 0;
+        const runBold = run.format?.bold === true;
+
+        if (runStart >= startIndex && runStart < endIndex && runBold) {
+            return true;
+        }
+    }
+    return false;
+};
+
+
 export {
     getDriveMediaUrl,
     validateDriveUrl,
@@ -887,5 +961,7 @@ export {
     getAuthSheetClient,
     compressVideo,
     compressAudio,
-    compressImage
+    compressImage,
+    parseStartEndInstruction,
+    isAnswerBold,
 };

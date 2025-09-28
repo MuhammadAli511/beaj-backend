@@ -1,6 +1,7 @@
-import { containsUrl, validateDriveUrl } from "../utils/sheetUtils.js";
+import { containsUrl, validateDriveUrl, parseStartEndInstruction } from "../utils/sheetUtils.js";
 import lessonRepository from "../repositories/lessonRepository.js";
-import { getDriveMediaUrl, compressAudio } from "../utils/sheetUtils.js";
+import lessonInstructionRepository from "../repositories/lessonInstructionsRepository.js";
+import { getDriveMediaUrl, compressAudio, compressVideo, compressImage } from "../utils/sheetUtils.js";
 
 const commonValidation = async (activity) => {
     let errors = [];
@@ -31,17 +32,134 @@ const commonValidation = async (activity) => {
         errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have alias that is not a url`);
     }
 
-    // TEXT INSTRUCTION
-    if (containsUrl(activity.textInstruction)) {
+    // Parse startInstruction
+    if(activity.startInstructions){
+    const parsedStart = await parseStartEndInstruction(activity.startInstructions);
+    // ---- TEXT ----
+    if (parsedStart.textInstruction && containsUrl(parsedStart.textInstruction)) {
         errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have text instruction that is not a url`);
     }
+    if (parsedStart.textInstructionCaption && containsUrl(parsedStart.textInstructionCaption)) {
+        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have text caption that is not a url`);
+    }
 
-    // AUDIO INSTRUCTION
-    if (activity.audioInstruction) {
-        const res = await validateDriveUrl(activity.audioInstruction, "audio");
+    // ---- IMAGE ----
+    if (parsedStart.imageInstructions) {
+        const res = await validateDriveUrl(parsedStart.imageInstruction, "image");
         if (!res.valid) {
-            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have audio instruction that is a valid audio file`);
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have a valid image url`);
         }
+    }
+    if (parsedStart.imageInstructionCaption && containsUrl(parsedStart.imageInstructionCaption)) {
+        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have image text caption that is not a url`);
+    }
+
+    // ---- AUDIO ----
+    if (parsedStart.audioInstruction) {
+        const res = await validateDriveUrl(parsedStart.audioInstruction, "audio");
+        if (!res.valid) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have a valid audio url`);
+        }
+    }
+    if (parsedStart.audioInstructionCaption && containsUrl(parsedStart.audioInstructionCaption)) {
+        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have audio text caption that is not a url`);
+    }
+
+    // ---- VIDEO ----
+    if (parsedStart.videoInstruction) {
+        const res = await validateDriveUrl(parsedStart.videoInstruction, "video");
+        if (!res.valid) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have a valid video url`);
+        }
+    }
+    if (parsedStart.videoInstructionCaption && containsUrl(parsedStart.videoInstructionCaption)) {
+        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have video text caption that is not a url`);
+    }
+
+    // ---- PDF ----
+    if (parsedStart.pdfInstruction) {
+        const res = await validateDriveUrl(parsedStart.pdfInstruction, "pdf");
+        if (!res.valid) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have a valid pdf url`);
+        }
+    }
+    if (parsedStart.pdfInstructionCaption && containsUrl(parsedStart.pdfInstructionCaption)) {
+        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have pdf text caption that is not a url`);
+    }
+}
+    // parse End Instructions
+    if(activity.endInstructions){
+    const parsedEnd = await parseStartEndInstruction(activity.endInstructions);
+
+    // ---- TEXT ----
+    if (parsedEnd.textInstruction && containsUrl(parsedEnd.textInstruction)) {
+        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have text instruction that is not a url`);
+    }
+    if (parsedEnd.textInstructionCaption && containsUrl(parsedEnd.textInstructionCaption)) {
+        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have text caption that is not a url`);
+    }
+
+    // ---- IMAGE ----
+    if (parsedEnd.imageInstruction) {
+        const res = await validateDriveUrl(parsedEnd.imageInstruction, "image");
+        if (!res.valid) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have a valid image url`);
+        }
+    }
+    if (parsedEnd.imageInstructionCaption && containsUrl(parsedEnd.imageInstructionCaption)) {
+        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have image text caption that is not a url`);
+    }
+
+    // ---- AUDIO ----
+    if (parsedEnd.audioInstruction) {
+        const res = await validateDriveUrl(parsedEnd.audioInstruction, "audio");
+        if (!res.valid) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have a valid audio url`);
+        }
+    }
+    if (parsedEnd.audioInstructionCaption && containsUrl(parsedEnd.audioInstructionCaption)) {
+        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have audio text caption that is not a url`);
+    }
+
+    // ---- VIDEO ----
+    if (parsedEnd.videoInstruction) {
+        const res = await validateDriveUrl(parsedEnd.videoInstruction, "video");
+        if (!res.valid) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have a valid video url`);
+        }
+    }
+    if (parsedEnd.videoInstructionCaption && containsUrl(parsedEnd.videoInstructionCaption)) {
+        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have video text caption that is not a url`);
+    }
+
+    // ---- PDF ----
+    if (parsedEnd.pdfInstruction) {
+        const res = await validateDriveUrl(parsedEnd.pdfInstruction, "pdf");
+        if (!res.valid) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have a valid pdf url`);
+        }
+    }
+    if (parsedEnd.pdfInstructionCaption && containsUrl(parsedEnd.pdfInstructionCaption)) {
+        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have pdf text caption that is not a url`);
+    }
+}
+    // Skip on First Question
+    if (activity.skipOnFirstQuestion && activity.skipOnFirstQuestion.toLowerCase() !== "true" && activity.skipOnFirstQuestion.toLowerCase() !== "false") {
+       errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have Skip on First Question that needs to be True/False`);
+    }
+
+    // Skip on Start
+    if (activity.skipOnStart && activity.skipOnStart.toLowerCase() !== "true" && activity.skipOnStart.toLowerCase() !== "false") {
+        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have Skip on Start Activity that needs to be True/False`);
+
+        // Skip on Start to LessonId
+        if(isNaN(activity.skipOnStartToLessonId)  || activity.skipOnStartToLessonId <= 0 ){
+        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have Skip on Start to LessonID that needs to be an integer and greater than 0`);
+        }
+    }
+
+    if(activity.skipOnStart.toLowerCase() == "true" && !activity.skipOnStartToLessonId){
+        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have Skip on Start to LessonID because Skip on Start is True`);
     }
 
     // COMPLETION STICKER
@@ -131,20 +249,113 @@ const commonValidation = async (activity) => {
     };
 };
 
-
 const commonIngestion = async (activity, exists) => {
     let lessonCreation = null;
-    let audioFile, compressedAudioUrl;
+    let audioFile, compressedAudioUrl, lessonId;
+
     if (activity.audioInstruction) {
         audioFile = await getDriveMediaUrl(activity.audioInstruction);
         compressedAudioUrl = await compressAudio(audioFile);
     }
+
     if (exists) {
-        lessonCreation = await lessonRepository.updateByCourseWeekDaySeq(activity.courseId, activity.week, activity.day, activity.seq, activity.activityType, activity.alias, activity.text, activity.textInstruction, compressedAudioUrl);
+        lessonCreation = await lessonRepository.updateByCourseWeekDaySeq(
+            activity.courseId,
+            activity.week,
+            activity.day,
+            activity.seq,
+            activity.activityType,
+            activity.alias,
+            activity.text,
+            activity.textInstruction,
+            compressedAudioUrl,
+            activity.skipOnFirstQuestion,
+            activity.skipOnStart,
+            activity.skipOnStartToLessonId
+        );
+        lessonId = exists;
+        await lessonInstructionRepository.deleteByLessonId(lessonId);
+        
     } else {
-        lessonCreation = await lessonRepository.create("week", activity.day, activity.activityType, activity.alias, activity.week, activity.text, activity.courseId, activity.seq, "Active", activity.textInstruction, compressedAudioUrl);
+        lessonCreation = await lessonRepository.create(
+            "week",
+            activity.day,
+            activity.activityType,
+            activity.alias,
+            activity.week,
+            activity.text,
+            activity.courseId,
+            activity.seq,
+            "Active",
+            activity.textInstruction,
+            compressedAudioUrl,
+            activity.skipOnFirstQuestion,
+            activity.skipOnStart,
+            activity.skipOnStartToLessonId
+        );
+        lessonId = lessonCreation.LessonId || lessonCreation.dataValues?.LessonId;
     }
+
+    if (!lessonId) {
+        throw new Error(`Failed to process activity from "${activity.startRow}" to "${activity.endRow}": LessonId not found`);
+    }
+    // Call the Lesson Instructions Process
+    await processLessonInstructions(lessonId, activity.startInstructions, activity.endInstructions);
+
     return lessonCreation;
-}
+};
+
+const processLessonInstructions = async (lessonId, startInstructions, endInstructions) => {
+    const startParsed = startInstructions ? await parseStartEndInstruction(startInstructions) : {};
+    const endParsed = endInstructions ? await parseStartEndInstruction(endInstructions) : {};
+
+    const insertInstructions = async (parsed, position) => {
+        const entries = [
+            { type: "text", value: parsed.textInstruction, caption: parsed.textInstructionCaption },
+            { type: "image", value: parsed.imageInstruction, caption: parsed.imageInstructionCaption },
+            { type: "audio", value: parsed.audioInstruction, caption: parsed.audioInstructionCaption },
+            { type: "video", value: parsed.videoInstruction, caption: parsed.videoInstructionCaption },
+            { type: "pdf", value: parsed.pdfInstruction, caption: parsed.pdfInstructionCaption },
+        ];
+
+        for (const entry of entries) {
+            if (!entry.value) continue;
+
+            let finalUrl = entry.value;
+            let mediaId = null;
+
+            try {
+                if (entry.type === "image") {
+                    const file = await getDriveMediaUrl(entry.value);
+                    if (file) finalUrl = await compressImage(file);
+                }
+                if (entry.type === "audio") {
+                    const file = await getDriveMediaUrl(entry.value);
+                    if (file) finalUrl = await compressAudio(file);
+                }
+                if (entry.type === "video") {
+                    const file = await getDriveMediaUrl(entry.value);
+                    if (file) finalUrl = await compressVideo(file);
+                }
+            } catch (err) {
+                console.error(`Failed to process ${entry.type} instruction for lesson ${lessonId}:`, err);
+                continue;
+            }
+
+            await lessonInstructionRepository.create(
+                lessonId,
+                entry.type,
+                position,
+                finalUrl,
+                mediaId,
+                entry.caption || null
+            );
+        }
+    };
+
+    // Insert both start & end instructions
+    await insertInstructions(startParsed, "start");
+    await insertInstructions(endParsed, "end");
+};
 
 export { commonValidation, commonIngestion };

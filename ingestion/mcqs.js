@@ -17,24 +17,42 @@ const validation = async (activities) => {
             toCreateCount += toCreate;
             toUpdateCount += toUpdate;
 
-            // For mcqs activity below are possible combinations
-            // - questionText
-            // - questionImage
-            // - questionVideo
-            // - questionText + questionImage
-            // - questionText + questionVideo
-            if (!activity.questions?.some(q => q.questionText || q.questionImage || q.questionVideo || (q.questionText && q.questionImage) || (q.questionText && q.questionVideo))) {
-                allErrors.push(`mcqs activity from "${activity.startRow}" to "${activity.endRow}" should have atleast one of the following combinations: questionText, questionImage, questionVideo, questionText + questionImage, questionText + questionVideo`);
+            // For mcqs activity: validate question combinations
+            if (!activity.questions?.some(q =>
+                q.questionText ||
+                q.questionImage ||
+                q.questionVideo ||
+                (q.questionText && q.questionImage) ||
+                (q.questionText && q.questionVideo)
+            )) {
+                allErrors.push(
+                    `mcqs activity from "${activity.startRow}" to "${activity.endRow}" should have at least one of the following combinations: questionText, questionImage, questionVideo, questionText + questionImage, questionText + questionVideo`
+                );
             }
 
-            // TODO: Atleast one correct answer should be true for each question
-            if (!activity.questions?.some(q => q.answers?.some(a => a.correct === true))) {
-                allErrors.push(`mcqs activity from "${activity.startRow}" to "${activity.endRow}" should have atleast one correct answer for each question`);
-            }
+            // Validation for merged options
+            for (const question of activity.questions || []) {
+                // Must have answers
+                if (!question.answers || question.answers.length === 0) {
+                    allErrors.push(
+                        `mcqs question in activity from "${activity.startRow}" to "${activity.endRow}" has no answers.`
+                    );
+                    continue;
+                }
 
-            // For each question, atmost 3 answers should exist
-            if (!activity.questions?.some(q => q.answers?.length <= 3)) {
-                allErrors.push(`mcqs activity from "${activity.startRow}" to "${activity.endRow}" should have atmost 3 answers for each question`);
+                // 1) Ensure exactly 3 merged options
+                if (question.answers.length !== 3) {
+                    allErrors.push(
+                        `mcqs question in activity from "${activity.startRow}" to "${activity.endRow}" must have exactly 3 options, found ${question.answers.length}.`
+                    );
+                }
+
+                // 2) At least one correct answer (from bold detection)
+                if (!question.answers.some(a => a.correct === true)) {
+                    allErrors.push(
+                        `mcqs question in activity from "${activity.startRow}" to "${activity.endRow}" must have at least one correct (bold) option.`
+                    );
+                }
             }
         }
 
@@ -51,6 +69,7 @@ const validation = async (activities) => {
         };
     }
 };
+
 
 
 const ingestion = async (activities) => {
@@ -133,6 +152,7 @@ const ingestion = async (activities) => {
 
 
                                 let existingMultipleChoiceQuestion = existingMultipleChoiceQuestions.find(existingQ => existingQ.questionNumber == question.questionNumber);
+                                
                                 if (existingMultipleChoiceQuestion) {
                                     // Update existing mcqs activity question with new compressed video/image URL
                                     await multipleChoiceQuestionRepository.update(
@@ -160,6 +180,7 @@ const ingestion = async (activities) => {
                                     );
                                 }
                                 const existingMultipleChoiceQuestionAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(existingMultipleChoiceQuestion.Id);
+                                
                                 for (const answer of question.answers) {
                                     let compressedCustomFeedbackImageUrl = null, compressedCustomFeedbackAudioUrl = null;
                                     if (answer?.customFeedbackImage) {
