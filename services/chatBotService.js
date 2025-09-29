@@ -42,6 +42,7 @@ const verifyWebhookService = async (req, res) => {
         const challenge = req.query["hub.challenge"];
 
         if (mode && token === whatsappVerifyToken) {
+            console.log("Webhook Verified");
             res.status(200).send(challenge);
         } else {
             res.sendStatus(403);

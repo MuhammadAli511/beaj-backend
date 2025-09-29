@@ -37,6 +37,8 @@ const sendQuestion = async (nextMCQsQuestion, totalQuestions, currentUserState, 
     }
     if (startingLesson.dataValues.skipOnFirstQuestion == true && nextMCQsQuestion.dataValues.QuestionNumber == 1) {
         mcqMessage += "\n\nOR\n\nClick *'Skip'* to start next activity";
+    } else if (startingLesson.dataValues.skipOnEveryQuestion == true) {
+        mcqMessage += "\n\nOR\n\nClick *'Skip'* to start next activity";
     }
     if (mcqType == 'Text') {
         for (let i = 0; i < mcqAnswers.length; i++) {
@@ -69,10 +71,17 @@ const sendQuestion = async (nextMCQsQuestion, totalQuestions, currentUserState, 
         await sendButtonMessage(userMobileNumber, "👇 Click here to skip:", [{ id: "skip", title: "Skip" }]);
         await createActivityLog(userMobileNumber, "template", "outbound", "👇 Click here to skip:", null);
     }
+    else if (startingLesson.dataValues.skipOnEveryQuestion == true) {
+        await sendButtonMessage(userMobileNumber, "👇 Click here to skip:", [{ id: "skip", title: "Skip" }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "👇 Click here to skip:", null);
+    }
 
     // Update acceptable messages list for the user
     let acceptableMessages = Array.from({ length: mcqAnswers.length }, (_, i) => String.fromCharCode(97 + i));
     if (startingLesson.dataValues.skipOnFirstQuestion == true && nextMCQsQuestion.dataValues.QuestionNumber == 1) {
+        acceptableMessages.push("skip");
+    }
+    else if (startingLesson.dataValues.skipOnEveryQuestion == true) {
         acceptableMessages.push("skip");
     }
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessages);

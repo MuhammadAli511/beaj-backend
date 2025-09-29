@@ -36,6 +36,8 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstListenAndSpeakQuestion.dataValues.questionNumber);
                 if (startingLesson.dataValues.skipOnFirstQuestion == true && firstListenAndSpeakQuestion.dataValues.questionNumber == 1) {
                     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
+                } else if (startingLesson.dataValues.skipOnEveryQuestion == true){
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
                 } else {
                     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
                 }
@@ -71,6 +73,11 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 const questionText = firstListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
                 await sendMessage(userMobileNumber, questionText);
                 await createActivityLog(userMobileNumber, "text", "outbound", questionText, null);
+
+                if (startingLesson.dataValues.skipOnEveryQuestion == true) {
+                    await sendButtonMessage(userMobileNumber, "👇 Click here to skip:", [{ id: "skip", title: "Skip" }]);
+                    await createActivityLog(userMobileNumber, "template", "outbound", "👇 Click here to skip:", null);
+                }
 
                 return;
             }
@@ -156,7 +163,11 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 try {
                     recognizedText = await speechToText.azureOpenAISpeechToText(audioBuffer, prompt);
                 } catch (error) {
-                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                    if (startingLesson.dataValues.skipOnEveryQuestion == true) {
+                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
+                    } else {
+                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                    }
                     await waQuestionResponsesRepository.deleteRecord(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId, currentListenAndSpeakQuestion.dataValues.id);
                     let errorMessage = "Sorry! We did not understand that.\n\nPlease record a *new* voice message. Do not forward the previously recorded voice message.";
                     await sendMessage(userMobileNumber, errorMessage);
@@ -243,7 +254,11 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                             await createActivityLog(userMobileNumber, "text", "outbound", wrongMessage, null);
 
                             // Update acceptable messages list for the user
-                            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                            if (startingLesson.dataValues.skipOnEveryQuestion == true) {
+                                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
+                            } else {
+                                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                            }
                             return;
                         } else if (retryCounter == 2) {
                             // Reset retry counter
@@ -259,15 +274,15 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                     if (nextListenAndSpeakQuestion) {
                         // Update question number
                         await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextListenAndSpeakQuestion.dataValues.questionNumber);
-                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
-
-                        const mediaType = nextListenAndSpeakQuestion.dataValues.mediaFile.endsWith('.mp4') ? 'video' : 'audio';
-                        await sendMediaMessage(userMobileNumber, nextListenAndSpeakQuestion.dataValues.mediaFile, mediaType, null, 0, "SpeakActivityQuestion", nextListenAndSpeakQuestion.dataValues.id, nextListenAndSpeakQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
-                        await createActivityLog(userMobileNumber, mediaType, "outbound", nextListenAndSpeakQuestion.dataValues.mediaFile, null);
-                        if (mediaType == 'video') {
-                            await sleep(5000);
-                        } else {
-                            await sleep(2000);
+                        if (nextListenAndSpeakQuestion?.dataValues?.mediaFile) {
+                            const mediaType = nextListenAndSpeakQuestion.dataValues.mediaFile.endsWith('.mp4') ? 'video' : 'audio';
+                            await sendMediaMessage(userMobileNumber, nextListenAndSpeakQuestion.dataValues.mediaFile, mediaType, null, 0, "SpeakActivityQuestion", nextListenAndSpeakQuestion.dataValues.id, nextListenAndSpeakQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
+                            await createActivityLog(userMobileNumber, mediaType, "outbound", nextListenAndSpeakQuestion.dataValues.mediaFile, null);
+                            if (mediaType == 'video') {
+                                await sleep(5000);
+                            } else {
+                                await sleep(2000);
+                            }
                         }
                         let secondMediaType = null;
                         if (nextListenAndSpeakQuestion?.dataValues?.mediaFileSecond) {
@@ -288,6 +303,14 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                         const questionText = nextListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
                         await sendMessage(userMobileNumber, questionText);
                         await createActivityLog(userMobileNumber, "text", "outbound", questionText, null);
+
+                        if (startingLesson.dataValues.skipOnEveryQuestion == true) {
+                            await sendButtonMessage(userMobileNumber, "👇 Click here to skip:", [{ id: "skip", title: "Skip" }]);
+                            await createActivityLog(userMobileNumber, "template", "outbound", "👇 Click here to skip:", null);
+                            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
+                        } else {
+                            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                        }
                     } else {
                         // Calculate total score and send message
                         const totalScore = await waQuestionResponsesRepository.getTotalScore(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
@@ -318,7 +341,11 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                         await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
                     }
                 } else {
-                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                    if (startingLesson.dataValues.skipOnEveryQuestion == true) {
+                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
+                    } else {
+                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                    }
                     await waQuestionResponsesRepository.deleteRecord(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId, currentListenAndSpeakQuestion.dataValues.id);
                     let errorMessage = "Sorry! We did not understand that.\n\nPlease record a *new* voice message. Do not forward the previously recorded voice message.";
                     await sendMessage(userMobileNumber, errorMessage);
@@ -332,7 +359,11 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 await createActivityLog(userMobileNumber, "text", "outbound", "Okay record your voice message again.", null);
 
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                if (startingLesson.dataValues.skipOnEveryQuestion == true) {
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
+                } else {
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                }
                 return;
             }
         }
@@ -367,6 +398,8 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
 
                 if (startingLesson.dataValues.skipOnFirstQuestion == true && firstListenAndSpeakQuestion.dataValues.questionNumber == 1) {
                     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
+                } else if (startingLesson.dataValues.skipOnEveryQuestion == true){
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
                 } else {
                     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
                 }
@@ -396,6 +429,11 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 if (mediaType == 'audio') {
                     await sendMessage(userMobileNumber, instructions);
                     await createActivityLog(userMobileNumber, "text", "outbound", instructions, null);
+                }
+
+                if (startingLesson.dataValues.skipOnEveryQuestion == true) {
+                    await sendButtonMessage(userMobileNumber, "👇 Click here to skip:", [{ id: "skip", title: "Skip" }]);
+                    await createActivityLog(userMobileNumber, "template", "outbound", "👇 Click here to skip:", null);
                 }
 
                 return;
@@ -482,7 +520,11 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 try {
                     recognizedText = await speechToText.azureOpenAISpeechToText(audioBuffer, prompt);
                 } catch (error) {
-                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                    if (startingLesson.dataValues.skipOnEveryQuestion == true) {
+                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
+                    } else {
+                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                    }
                     await waQuestionResponsesRepository.deleteRecord(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId, currentListenAndSpeakQuestion.dataValues.id);
                     let errorMessage = "Sorry! We did not understand that.\n\nPlease record a *new* voice message. Do not forward the previously recorded voice message.";
                     await sendMessage(userMobileNumber, errorMessage);
@@ -569,7 +611,13 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                             await createActivityLog(userMobileNumber, "text", "outbound", wrongMessage, null);
 
                             // Update acceptable messages list for the user
-                            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                            if (startingLesson.dataValues.skipOnEveryQuestion == true) {
+                                await sendButtonMessage(userMobileNumber, "👇 Click here to skip:", [{ id: "skip", title: "Skip" }]);
+                                await createActivityLog(userMobileNumber, "template", "outbound", "👇 Click here to skip:", null);
+                                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
+                            } else {
+                                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                            }
                             return;
                         } else if (retryCounter == 1) {
                             // Reset retry counter
@@ -594,7 +642,6 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                         if (currentUserState.dataValues.currentCourseId == 143) {
                             instructions += "\n\n" + nextListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
                         }
-                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
                         await sendMediaMessage(userMobileNumber, nextListenAndSpeakQuestion.dataValues.mediaFile, mediaType, instructions, 0, "SpeakActivityQuestion", nextListenAndSpeakQuestion.dataValues.id, nextListenAndSpeakQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
                         await createActivityLog(userMobileNumber, mediaType, "outbound", nextListenAndSpeakQuestion.dataValues.mediaFile, null, instructions);
                         if (mediaType == 'video') {
@@ -621,6 +668,14 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                             await sendMessage(userMobileNumber, instructions);
                             await createActivityLog(userMobileNumber, "text", "outbound", instructions, null);
                         }
+
+                        if (startingLesson.dataValues.skipOnEveryQuestion == true) {
+                            await sendButtonMessage(userMobileNumber, "👇 Click here to skip:", [{ id: "skip", title: "Skip" }]);
+                            await createActivityLog(userMobileNumber, "template", "outbound", "👇 Click here to skip:", null);
+                            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
+                        } else {
+                            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                        }
                     } else {
                         // Calculate total score and send message
                         const totalScore = await waQuestionResponsesRepository.getTotalScore(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
@@ -642,7 +697,11 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                         await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson, message);
                     }
                 } else {
-                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                    if (startingLesson.dataValues.skipOnEveryQuestion == true) {
+                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
+                    } else {
+                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                    }
                     await waQuestionResponsesRepository.deleteRecord(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId, currentListenAndSpeakQuestion.dataValues.id);
                     let errorMessage = "Sorry! We did not understand that.\n\nPlease record a *new* voice message. Do not forward the previously recorded voice message.";
                     await sendMessage(userMobileNumber, errorMessage);
@@ -656,7 +715,11 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 await createActivityLog(userMobileNumber, "text", "outbound", "Okay record your voice message again.", null);
 
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                if (startingLesson.dataValues.skipOnEveryQuestion == true) {
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
+                } else {
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                }
                 return;
             }
         }

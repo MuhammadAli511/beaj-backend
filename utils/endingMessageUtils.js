@@ -9,40 +9,14 @@ import { weekEndScoreCalculation, studentReportCardCalculation } from "./chatbot
 import { weekEndImage, generateKidsCertificate } from "./imageGenerationUtils.js";
 import { sleep, getDaysPerWeek, getTotalLessonsForCourse, getLevelFromCourseName } from "./utils.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
-import stickerMapping from "../constants/stickerMapping.js";
 import { generateCertificate } from '../google_sheet_utils/certificateUtils.js';
 import { sendEndingInstruction } from "./aliasAndInstructionsUtils.js";
 
 
-const sendingSticker = async (profileId, userMobileNumber, currentUserState, startingLesson, message = null) => {
-    // Check if the lesson is the last lesson of the day
-    const lessonLast = await lessonRepository.isLastLessonOfDay(startingLesson.dataValues.LessonId);
-
-    // Activity Complete Sticker - only send if not last lesson
-    if (
-        !lessonLast &&
-        currentUserState.dataValues.persona == "teacher" &&
-        startingLesson.dataValues.activityAlias !== "*Part A*" &&
-        startingLesson.dataValues.activityAlias !== "*Part C*"
-    ) {
-        const activityCompleteSticker = "https://beajbloblive.blob.core.windows.net/beajdocuments/activity_complete.webp";
-        await sendMediaMessage(userMobileNumber, activityCompleteSticker, 'sticker');
-        await createActivityLog(userMobileNumber, "sticker", "outbound", activityCompleteSticker, null);
-    }
-    if (currentUserState.dataValues.persona == "kid") {
-        if ((startingLesson.dataValues.engagement_type === "Free Trial - Kids - Level 1" || startingLesson.dataValues.engagement_type === "Free Trial - Kids - Level 3") && startingLesson.dataValues.activityType !== 'videoEnd') {
-            const challengeCompleteSticker = "https://beajbloblive.blob.core.windows.net/beajdocuments/challenge_complete_with_text.webp"
-            await sendMediaMessage(userMobileNumber, challengeCompleteSticker, 'sticker');
-            await createActivityLog(userMobileNumber, "sticker", "outbound", challengeCompleteSticker, null);
-        }
-        let lowerCaseActivityAlias = startingLesson.dataValues.activityAlias.toLowerCase();
-        lowerCaseActivityAlias = lowerCaseActivityAlias.replace(/'/g, '').replace(/’/g, '');
-        lowerCaseActivityAlias = lowerCaseActivityAlias.trim();
-        const sticker = stickerMapping[lowerCaseActivityAlias];
-        if (sticker) {
-            await sendMediaMessage(userMobileNumber, sticker, 'sticker');
-            await createActivityLog(userMobileNumber, "sticker", "outbound", sticker, null);
-        }
+const sendingSticker = async (userMobileNumber, startingLesson) => {
+    if (startingLesson?.dataValues?.completionSticker) {
+        await sendMediaMessage(userMobileNumber, startingLesson.dataValues.completionSticker, 'sticker');
+        await createActivityLog(userMobileNumber, "sticker", "outbound", startingLesson.dataValues.completionSticker, null);
     }
 
     await sleep(3000);
@@ -81,7 +55,7 @@ const teacherTrialFlow = async (profileId, userMobileNumber, currentUserState, s
 
         // Reply Buttons
         await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'start_next_activity', title: 'Start Next Activity' }, { id: 'end_now', title: 'End Now' }]);
-            await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity or End Now", null);
+        await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity or End Now", null);
         if (nextLesson && nextLesson.dataValues.skipOnStart == true) {
             await sendButtonMessage(userMobileNumber, 'Skip next activity', [{ id: 'skip_activity', title: 'Skip Activity' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Skip next activity", null);
@@ -683,7 +657,7 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
     }
     await waLessonsCompletedRepository.endLessonByPhoneNumberLessonIdAndProfileId(userMobileNumber, startingLesson.dataValues.LessonId, profileId);
     await sendEndingInstruction(userMobileNumber, startingLesson);
-    await sendingSticker(profileId, userMobileNumber, currentUserState, startingLesson, message);
+    await sendingSticker(userMobileNumber, startingLesson);
 
     if (currentUserState.dataValues.engagement_type == "Free Trial - Teachers") {
         await teacherTrialFlow(profileId, userMobileNumber, currentUserState, startingLesson, message);

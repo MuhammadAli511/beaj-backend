@@ -19,7 +19,7 @@ const sendAliasAndStartingInstruction = async (userMobileNumber, startingLesson)
     let textInstruction = instructions.find(
         inst => inst.instructionType === 'text' && inst.position === 'start'
     );
-    let lessonTextInstruction = textInstruction.url;
+    let lessonTextInstruction = textInstruction?.url;
     if (lessonTextInstruction == null || lessonTextInstruction == "") {
         lessonTextInstruction = default_starting_instruction[startingLesson.dataValues.activity];
     }
@@ -84,13 +84,13 @@ const sendEndingInstruction = async (userMobileNumber, startingLesson) => {
     let textInstruction = instructions.find(
         inst => inst.instructionType === 'text' && inst.position === 'end'
     );
-    let lessonTextInstruction = textInstruction.url;
-    if (lessonTextInstruction == null || lessonTextInstruction == "") {
-        lessonTextInstruction = default_starting_instruction[startingLesson.dataValues.activity];
+    let lessonTextInstruction = textInstruction?.url;
+    if (lessonTextInstruction != null && lessonTextInstruction != "") {
+        lessonTextInstruction = lessonTextInstruction.replace(/\\n/g, '\n');
+        await sendMessage(userMobileNumber, lessonTextInstruction);
+        await createActivityLog(userMobileNumber, "text", "outbound", lessonTextInstruction, null);
     }
-    lessonTextInstruction = lessonTextInstruction.replace(/\\n/g, '\n');
-    await sendMessage(userMobileNumber, lessonTextInstruction);
-    await createActivityLog(userMobileNumber, "text", "outbound", lessonTextInstruction, null);
+
 
     // Starting Video Instruction
     const videoInstruction = instructions.find(
