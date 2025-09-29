@@ -24,12 +24,29 @@ const validation = async (activities) => {
             // - questionText + questionImage
             // - questionText + questionVideo
             if (!activity.questions?.some(q => q.questionText || q.questionImage || q.questionVideo || (q.questionText && q.questionImage) || (q.questionText && q.questionVideo))) {
-                allErrors.push(`mcqs activity from "${activity.startRow}" to "${activity.endRow}" should have atleast one of the following combinations: questionText, questionImage, questionVideo, questionText + questionImage, questionText + questionVideo`);
+                allErrors.push(`assessmentMcqs activity from "${activity.startRow}" to "${activity.endRow}" should have atleast one of the following combinations: questionText, questionImage, questionVideo, questionText + questionImage, questionText + questionVideo`);
             }
 
             // For each question, atmost 3 answers should exist
-            if (!activity.questions?.some(q => q.answers?.length <= 3)) {
-                allErrors.push(`mcqs activity from "${activity.startRow}" to "${activity.endRow}" should have atmost 3 answers for each question`);
+            // if (!activity.questions?.some(q => q.answers?.length <= 3)) {
+            //     allErrors.push(`mcqs activity from "${activity.startRow}" to "${activity.endRow}" should have atmost 3 answers for each question`);
+            // }
+
+            for (const question of activity.questions || []) {
+                // Must have answers
+                if (!question.answers || question.answers.length === 0) {
+                    allErrors.push(
+                        `assessmentMcqs question in activity from "${activity.startRow}" to "${activity.endRow}" has no answers.`
+                    );
+                    continue;
+                }
+                // Ensure exactly 3 options
+                if (question.answers.length !== 3) {
+                    allErrors.push(
+                        `assessmentMcqs question in activity from "${activity.startRow}" to "${activity.endRow}" must have exactly 3 options, found ${question.answers.length}.`
+                    );
+                }
+
             }
         }
 

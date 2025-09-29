@@ -2,13 +2,14 @@ import LessonInstructions from '../models/LessonInstructions.js';
 import Lesson from '../models/Lesson.js';
 import sequelize from '../config/sequelize.js';
 
-const create = async (lessonId, instructionType, position, url, mediaId) => {
+const create = async (lessonId, instructionType, position, url, mediaId, caption) => {
     const instruction = new LessonInstructions({
         lessonId: lessonId,
         instructionType: instructionType,
         position: position,
         url: url,
-        mediaId: mediaId
+        mediaId: mediaId,
+        caption: caption,
     });
     const result = await instruction.save();
     return result;
@@ -31,7 +32,7 @@ const getByLessonIdAndType = async (lessonId, instructionType, position) => {
     });
 };
 
-const update = async (id, lessonId, instructionType, position, url, mediaId) => {
+const update = async (id, lessonId, instructionType, position, url, mediaId, caption) => {
     const instruction = await LessonInstructions.findByPk(id);
     if (instruction) {
         instruction.lessonId = lessonId;
@@ -39,6 +40,7 @@ const update = async (id, lessonId, instructionType, position, url, mediaId) => 
         instruction.position = position;
         instruction.url = url;
         instruction.mediaId = mediaId;
+        instruction.caption = caption;
         await instruction.save();
         return instruction;
     }
