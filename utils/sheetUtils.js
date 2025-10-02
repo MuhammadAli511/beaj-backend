@@ -8,7 +8,7 @@ import { join } from "path";
 import azureBlobStorage from "./azureBlobStorage.js";
 import { createCanvas, loadImage } from "canvas";
 import fs from "fs";
-
+import sharp from "sharp";
 
 // Set ffmpeg path
 ffmpeg.setFfmpegPath(ffmpegStatic);
@@ -946,6 +946,81 @@ const isAnswerBold = (cellText, answerText, textRuns) => {
     return false;
 };
 
+const compressSticker = async (stickerFileObject) => {
+    const MAX_SIZE_KB = 100;
+    const MAX_SIZE_BYTES = MAX_SIZE_KB * 1024;
+
+    if (!stickerFileObject || !stickerFileObject.buffer) {
+        throw new Error("Invalid sticker file object (missing buffer)");
+    }
+
+    const timestamp = Date.now();
+    const randomDigits = Math.floor(100000 + Math.random() * 900000);
+    const fileNameFinal = `${timestamp}_${randomDigits}.webp`;
+
+    const originalSizeKB = (stickerFileObject.buffer.length / 1024).toFixed(2);
+    console.log(`Sticker size: ${originalSizeKB}KB`);
+
+    // Case 1: Already under 100KB
+    if (stickerFileObject.buffer.length <= MAX_SIZE_BYTES) {
+        return await azureBlobStorage.uploadToBlobStorage(
+            stickerFileObject.buffer,
+            fileNameFinal,
+            "image/webp"
+        );
+    }
+
+    // Case 2: Compress with sharp
+    let quality = 90;
+    let compressedBuffer = await sharp(stickerFileObject.buffer)
+        .webp({ quality })
+        .toBuffer();
+
+    let attempts = 0;
+    while (compressedBuffer.length > MAX_SIZE_BYTES && quality > 10 && attempts < 8) {
+        quality -= 10;
+        attempts++;
+        compressedBuffer = await sharp(stickerFileObject.buffer)
+            .webp({ quality })
+            .toBuffer();
+        console.log(
+            `Quality Attempt ${attempts}: Quality=${quality}, Size=${(compressedBuffer.length / 1024).toFixed(2)}KB`
+        );
+    }
+
+    // If still too large → resize
+    let resizeAttempts = 0;
+    let width = 512; // default resize base
+    while (compressedBuffer.length > MAX_SIZE_BYTES && resizeAttempts < 5) {
+        resizeAttempts++;
+        width = Math.floor(width * 0.8);
+
+        compressedBuffer = await sharp(stickerFileObject.buffer)
+            .resize({ width })
+            .webp({ quality })
+            .toBuffer();
+
+        console.log(
+            `Resize Attempt ${resizeAttempts}: Width=${width}, Size=${(compressedBuffer.length / 1024).toFixed(2)}KB`
+        );
+    }
+
+    if (compressedBuffer.length > MAX_SIZE_BYTES) {
+        throw new Error(
+            `Sticker compression failed: could not reduce below ${MAX_SIZE_KB}KB (final ${(compressedBuffer.length / 1024).toFixed(2)}KB)`
+        );
+    }
+
+    // Upload to Azure
+    const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(
+        compressedBuffer,
+        fileNameFinal,
+        "image/webp"
+    );
+
+    console.log(`Final sticker size: ${(compressedBuffer.length / 1024).toFixed(2)}KB`);
+    return uploadedUrl;
+};
 
 export {
     getDriveMediaUrl,
@@ -964,4 +1039,5 @@ export {
     compressImage,
     parseStartEndInstruction,
     isAnswerBold,
+    compressSticker,
 };

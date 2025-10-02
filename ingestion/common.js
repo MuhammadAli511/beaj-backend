@@ -1,7 +1,7 @@
 import { containsUrl, validateDriveUrl, parseStartEndInstruction } from "../utils/sheetUtils.js";
 import lessonRepository from "../repositories/lessonRepository.js";
 import lessonInstructionRepository from "../repositories/lessonInstructionsRepository.js";
-import { getDriveMediaUrl, compressAudio, compressVideo, compressImage } from "../utils/sheetUtils.js";
+import { getDriveMediaUrl, compressAudio, compressVideo, compressImage, compressSticker } from "../utils/sheetUtils.js";
 
 const commonValidation = async (activity) => {
     let errors = [];
@@ -86,7 +86,7 @@ const commonValidation = async (activity) => {
     if (parsedStart.pdfInstructionCaption && containsUrl(parsedStart.pdfInstructionCaption)) {
         errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have pdf text caption that is not a url`);
     }
-}
+    }
     // parse End Instructions
     if(activity.endInstructions){
     const parsedEnd = await parseStartEndInstruction(activity.endInstructions);
@@ -142,7 +142,7 @@ const commonValidation = async (activity) => {
     if (parsedEnd.pdfInstructionCaption && containsUrl(parsedEnd.pdfInstructionCaption)) {
         errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have pdf text caption that is not a url`);
     }
-}
+     }
     // Skip on First Question
     if (activity.skipOnFirstQuestion && activity.skipOnFirstQuestion.toLowerCase() !== "true" && activity.skipOnFirstQuestion.toLowerCase() !== "false") {
        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have Skip on First Question that needs to be True/False`);
@@ -162,9 +162,81 @@ const commonValidation = async (activity) => {
         errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have Skip on Start to LessonID because Skip on Start is True`);
     }
 
-    // COMPLETION STICKER
-    if (containsUrl(activity.completionSticker)) {
-        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have completion sticker that is not a url`);
+    if (
+    activity.skipOnStart &&
+    activity.skipOnStart.toLowerCase() === "true" &&
+    activity.skipOnStartToLessonId > 0
+) {
+    try {
+        const lesson = await lessonRepository.getLessonByLessonId(activity.skipOnStartToLessonId);
+        if (!lesson) {
+            errors.push(
+                `Activity from "${activity.startRow}" to "${activity.endRow}" has SkipOnStartToLessonId ${activity.skipOnStartToLessonId} which does not exist in lessons table`
+            );
+        } else {
+            const current = {
+                week: parseInt(activity.week, 10),
+                day: parseInt(activity.day, 10),
+                seq: parseInt(activity.seq, 10),
+            };
+            const target = {
+                week: parseInt(lesson.weekNumber, 10),
+                day: parseInt(lesson.dayNumber, 10),
+                seq: parseInt(lesson.SequenceNumber, 10),
+            };
+
+            let isValid = false;
+
+            if (target.week > current.week) {
+                isValid = true;
+            } else if (target.week < current.week) {
+                isValid = false;
+            } else {
+                // weeks are equal
+                if (target.day > current.day) {
+                    isValid = true;
+                } else if (target.day < current.day) {
+                    isValid = false;
+                } else {
+                    // days are equal
+                    if (target.seq > current.seq) {
+                        isValid = true;
+                    } else {
+                        isValid = false;
+                    }
+                }
+            }
+
+            if (!isValid) {
+                errors.push(
+                    `Activity from "${activity.startRow}" to "${activity.endRow}" has SkipOnStartToLessonId (${activity.skipOnStartToLessonId}) that must point to a lesson strictly after the current activity (week/day/seq)`
+                );
+            }
+        }
+    } catch (err) {
+        console.error("LessonId validation error:", err);
+        errors.push(
+            `Activity from "${activity.startRow}" to "${activity.endRow}" failed while validating SkipOnStartToLessonId`
+        );
+    }
+}
+
+    
+    if (activity.skipOnEveryQuestion && activity.skipOnEveryQuestion.toLowerCase() !== "true" && activity.skipOnEveryQuestion.toLowerCase() !== "false") {
+       errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have Skip on Every Question that needs to be True/False`);
+    }
+
+    // COMPLETION STICKER (must be webp only)
+    if (activity.completionSticker) {
+        const res = await validateDriveUrl(activity.completionSticker, "image");
+        if (!res.valid) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have a valid sticker image url`);
+        } else {
+            // Check for webp only
+            if (!res.mimeType || res.mimeType !== "image/webp") {
+                errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have a completion sticker in WEBP format only`);
+            }
+        }
     }
 
     // QUESTIONS
@@ -249,13 +321,42 @@ const commonValidation = async (activity) => {
     };
 };
 
+
+const normalizeInt = (val) => {
+  if (val === undefined || val === null || val === "") return null;
+  return parseInt(val, 10);
+};
+
+const normalizeBool = (val) => {
+  if (val === undefined || val === null || val === "") return false;
+  if (typeof val === "boolean") return val;
+  if (typeof val === "string") {
+    if (val.toLowerCase() === "true") return true;
+    if (val.toLowerCase() === "false") return false;
+  }
+  return false;
+};
+
+
 const commonIngestion = async (activity, exists) => {
     let lessonCreation = null;
-    let audioFile, compressedAudioUrl, lessonId;
+    let audioFile, compressedAudioUrl, lessonId, stickerFile, compressStickerUrl = null, skipOnStartToLessonId = null;
+
+    if(activity.skipOnStartToLessonId == '' || !activity.skipOnStartToLessonId ){
+      skipOnStartToLessonId = null;
+    }
+    else{
+       skipOnStartToLessonId = activity.skipOnStartToLessonId;
+    }
 
     if (activity.audioInstruction) {
         audioFile = await getDriveMediaUrl(activity.audioInstruction);
         compressedAudioUrl = await compressAudio(audioFile);
+    }
+
+    if(activity.completionSticker){
+       stickerFile = await getDriveMediaUrl(activity.completionSticker);
+       compressStickerUrl = await compressSticker(stickerFile);
     }
 
     if (exists) {
@@ -269,9 +370,11 @@ const commonIngestion = async (activity, exists) => {
             activity.text,
             activity.textInstruction,
             compressedAudioUrl,
-            activity.skipOnFirstQuestion,
-            activity.skipOnStart,
-            activity.skipOnStartToLessonId
+            normalizeBool(activity.skipOnFirstQuestion),
+            normalizeBool(activity.skipOnStart),
+            normalizeInt(activity.skipOnStartToLessonId),
+            normalizeBool(activity.skipOnEveryQuestion),
+            compressStickerUrl,
         );
         lessonId = exists;
         await lessonInstructionRepository.deleteByLessonId(lessonId);
@@ -289,9 +392,11 @@ const commonIngestion = async (activity, exists) => {
             "Active",
             activity.textInstruction,
             compressedAudioUrl,
-            activity.skipOnFirstQuestion,
-            activity.skipOnStart,
-            activity.skipOnStartToLessonId
+            normalizeBool(activity.skipOnFirstQuestion),
+            normalizeBool(activity.skipOnStart),
+            normalizeInt(activity.skipOnStartToLessonId),
+            normalizeBool(activity.skipOnEveryQuestion),
+            compressStickerUrl,
         );
         lessonId = lessonCreation.LessonId || lessonCreation.dataValues?.LessonId;
     }

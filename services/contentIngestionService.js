@@ -18,6 +18,7 @@ const hasActivityData = (get) => {
         get(columns_order.SKIP_ON_FIRST_QUESTION) ||
         get(columns_order.SKIP_ON_START) || 
         get(columns_order.SKIP_ON_START_TO_LESSONID) ||
+        get(columns_order.SKIP_ON_EVERY_QUESTION) ||
         get(columns_order.COMPLETION_STICKER) ||
         get(columns_order.Q_NO) ||
         get(columns_order.Q_TEXT) ||
@@ -307,13 +308,12 @@ const validateIngestionService = async (courseId, sheetId, sheetTitle) => {
                         alias: get(columns_order.ALIAS),
                         activityType: get(columns_order.ACTIVITY_TYPE),
                         text: get(columns_order.LESSON_TEXT),
-
                         startInstructions: get(columns_order.START_INSTRUCTIONS),
                         endInstructions: get(columns_order.END_INSTRUCTIONS),
                         skipOnFirstQuestion: get(columns_order.SKIP_ON_FIRST_QUESTION),
                         skipOnStart: get(columns_order.SKIP_ON_START),
                         skipOnStartToLessonId: get(columns_order.SKIP_ON_START_TO_LESSONID),
-
+                        skipOnEveryQuestion: get(columns_order.SKIP_ON_EVERY_QUESTION),
                         completionSticker: get(columns_order.COMPLETION_STICKER),
                         questions: []
                     };
@@ -544,6 +544,7 @@ const processIngestionService = async (courseId, sheetId, sheetTitle) => {
                     skipOnFirstQuestion: get(columns_order.SKIP_ON_FIRST_QUESTION),
                     skipOnStart: get(columns_order.SKIP_ON_START),
                     skipOnStartToLessonId: get(columns_order.SKIP_ON_START_TO_LESSONID),
+                    skipOnEveryQuestion: get(columns_order.SKIP_ON_EVERY_QUESTION),
                     completionSticker: get(columns_order.COMPLETION_STICKER),
                     questions: []
                 };
