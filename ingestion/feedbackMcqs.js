@@ -20,12 +20,30 @@ const validation = async (activities) => {
             // For mcqs activity below are possible combinations
             // - questionText
             if (!activity.questions?.some(q => q.questionText)) {
-                allErrors.push(`mcqs activity from "${activity.startRow}" to "${activity.endRow}" should have question text`);
+                allErrors.push(`feedbackMcqs activity from "${activity.startRow}" to "${activity.endRow}" should have question text`);
             }
 
             // For each question, atmost 3 answers should exist
-            if (!activity.questions?.some(q => q.answers?.length <= 3)) {
-                allErrors.push(`mcqs activity from "${activity.startRow}" to "${activity.endRow}" should have atmost 3 answers for each question`);
+            // if (!activity.questions?.some(q => q.answers?.length <= 3)) {
+            //     allErrors.push(`mcqs activity from "${activity.startRow}" to "${activity.endRow}" should have atmost 3 answers for each question`);
+            // }
+
+           for (const question of activity.questions || []) {
+                // Must have answers
+                if (!question.answers || question.answers.length === 0) {
+                    allErrors.push(
+                        `feedbackMcqs question in activity from "${activity.startRow}" to "${activity.endRow}" has no answers.`
+                    );
+                    continue;
+                }
+
+                // Ensure exactly 3 merged options
+                if (question.answers.length !== 3) {
+                    allErrors.push(
+                        `feedbackMcqs question in activity from "${activity.startRow}" to "${activity.endRow}" must have exactly 3 options, found ${question.answers.length}.`
+                    );
+                }
+
             }
         }
 

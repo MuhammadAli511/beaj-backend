@@ -6,6 +6,7 @@ import MultipleChoiceQuestion from '../models/MultipleChoiceQuestion.js'
 import MultipleChoiceQuestionAnswer from '../models/MultipleChoiceQuestionAnswer.js';
 import WA_Constants from '../models/WA_Constants.js';
 import Lesson from "../models/Lesson.js";
+import LessonInstructions from "../models/LessonInstructions.js";
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -15,7 +16,8 @@ const modelToMediaIdField = {
     "MultipleChoiceQuestion": MultipleChoiceQuestion,
     "MultipleChoiceQuestionAnswer": MultipleChoiceQuestionAnswer,
     "WA_Constants": WA_Constants,
-    "Lesson": Lesson
+    "Lesson": Lesson,
+    "LessonInstructions": LessonInstructions
 };
 
 const whatsappToken = process.env.WHATSAPP_TOKEN;

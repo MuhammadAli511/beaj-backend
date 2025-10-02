@@ -76,6 +76,8 @@ const next_activity_acceptable_messages = [
     "next",
     "start practice",
     "next activity",
+    "skip",
+    "skip activity"
 ];
 
 const course_start_acceptable_messages = [
@@ -178,7 +180,7 @@ const default_starting_instruction = {
     "conversationalAgencyBot": "Listen to the audio and send your answer as a voice message.",
     "conversationalMonologueBot": "Watch the video 👇🏽 and practise speaking by sending a voice message.💬",
     "conversationalQuestionsBot": "Listen to the audio and send your answer as a voice message.",
-    "feedbackAudio": "Listen to the audio instruction and send your response as a voice message.💬\nOR\n Type *next* to skip this activity!",
+    "feedbackAudio": "Listen to the audio instruction and send your response as a voice message.💬",
     "feedbackMcqs": "👇 *Answer the following questions.*",
     "listenAndSpeak": "Listen to the audio question and send your answer as a voice message.💬",
     "mcqs": "👇 *Answer the following questions.*",
@@ -219,6 +221,19 @@ const activity_types = [
     "conversationalAgencyBot"
 ];
 
+const audio_activities = [
+  "feedbackAudio",
+  "listenAndSpeak",
+  "watchAndSpeak",
+  "watchAndAudio",
+  "assessmentWatchAndSpeak",
+  "speakingPractice",
+  "conversationalQuestionsBot",
+  "read",
+  "conversationalMonologueBot",
+  "conversationalAgencyBot"
+];
+
 const columns_order = {
     UPLOAD: 0,
     WEEK_NO: 1,
@@ -227,19 +242,23 @@ const columns_order = {
     ALIAS: 4,
     ACTIVITY_TYPE: 5,
     LESSON_TEXT: 6,
-    TEXT_INSTRUCTION: 7,
-    AUDIO_INSTRUCTION: 8,
-    COMPLETION_STICKER: 9,
-    Q_NO: 10,
-    DIFFICULTY_LEVEL: 11,
-    Q_TEXT: 12,
-    Q_VIDEO_LINK: 13,
-    Q_AUDIO_LINK: 14,
-    Q_IMAGE_LINK: 15,
-    ANSWER: 16,
-    CF_TEXT: 17,
-    CF_IMAGE: 18,
-    CF_AUDIO: 19
+    START_INSTRUCTIONS: 7,
+    END_INSTRUCTIONS: 8,
+    SKIP_ON_FIRST_QUESTION: 9,
+    SKIP_ON_START: 10,
+    SKIP_ON_START_TO_LESSONID: 11,
+    SKIP_ON_EVERY_QUESTION: 12,
+    COMPLETION_STICKER: 13,
+    Q_NO: 14,
+    DIFFICULTY_LEVEL: 15,
+    Q_TEXT: 16,
+    Q_VIDEO_LINK: 17,
+    Q_AUDIO_LINK: 18,
+    Q_IMAGE_LINK: 19,
+    ANSWER: 20,
+    CF_TEXT: 21,
+    CF_IMAGE: 22,
+    CF_AUDIO: 23,
 };
 
 export {
@@ -263,6 +282,7 @@ export {
     kids_trial_flow_engagement_types,
     default_starting_instruction,
     activity_types,
-    columns_order
+    columns_order,
+    audio_activities
 };
 

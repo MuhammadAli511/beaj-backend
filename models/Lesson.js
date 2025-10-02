@@ -61,6 +61,29 @@ Lesson.init({
     type: DataTypes.BIGINT,
     allowNull: true
   },
+  completionSticker: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  skipOnFirstQuestion: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  skipOnEveryQuestion: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  skipOnStart: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  skipOnStartToLessonId: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
   createdAt: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW,

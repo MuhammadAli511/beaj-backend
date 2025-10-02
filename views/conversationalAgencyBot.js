@@ -50,8 +50,19 @@ const conversationalAgencyBotView = async (profileId, userMobileNumber, currentU
                 await sendMediaMessage(userMobileNumber, questionAudio, 'audio');
                 await createActivityLog(userMobileNumber, "audio", "outbound", questionAudio, null);
 
+                if (startingLesson.dataValues.skipOnEveryQuestion == true) {
+                    await sendButtonMessage(userMobileNumber, "👇 Click here to skip:", [{ id: "skip", title: "Skip" }]);
+                    await createActivityLog(userMobileNumber, "template", "outbound", "👇 Click here to skip:", null);
+                }
+
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                if (startingLesson.dataValues.skipOnFirstQuestion == true && firstConversationalAgencyBotQuestion.dataValues.questionNumber == 1) {
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
+                } else if (startingLesson.dataValues.skipOnEveryQuestion == true){
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
+                } else {
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                }
             }
             else if (messageType === 'audio') {
                 // Get the current Conversational Agency Bot question
@@ -192,7 +203,13 @@ const conversationalAgencyBotView = async (profileId, userMobileNumber, currentU
                             await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextConversationalAgencyBotQuestion.dataValues.questionNumber);
 
                             // Update acceptable messages list for the user
-                            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                            if (startingLesson.dataValues.skipOnEveryQuestion == true) {
+                                await sendButtonMessage(userMobileNumber, "👇 Click here to skip:", [{ id: "skip", title: "Skip" }]);
+                                await createActivityLog(userMobileNumber, "template", "outbound", "👇 Click here to skip:", null);
+                                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
+                            } else {
+                                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                            }
                             return;
                         } else {
                             // Reset Question Number, Retry Counter, and Activity Type
@@ -265,7 +282,13 @@ const conversationalAgencyBotView = async (profileId, userMobileNumber, currentU
                             await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextConversationalAgencyBotQuestion.dataValues.questionNumber);
 
                             // Update acceptable messages list for the user
-                            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                            if (startingLesson.dataValues.skipOnEveryQuestion == true) {
+                                await sendButtonMessage(userMobileNumber, "👇 Click here to skip:", [{ id: "skip", title: "Skip" }]);
+                                await createActivityLog(userMobileNumber, "template", "outbound", "👇 Click here to skip:", null);
+                                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
+                            } else {
+                                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                            }
                             return;
                         } else {
                             // Reset Question Number, Retry Counter, and Activity Type
@@ -284,7 +307,11 @@ const conversationalAgencyBotView = async (profileId, userMobileNumber, currentU
                 await createActivityLog(userMobileNumber, "text", "outbound", "Okay record your voice message again.", null);
 
                 // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                if (startingLesson.dataValues.skipOnEveryQuestion == true) {
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
+                } else {
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
+                }
                 return;
             }
         }

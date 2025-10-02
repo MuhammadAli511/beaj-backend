@@ -9,40 +9,14 @@ import { weekEndScoreCalculation, studentReportCardCalculation } from "./chatbot
 import { weekEndImage, generateKidsCertificate } from "./imageGenerationUtils.js";
 import { sleep, getDaysPerWeek, getTotalLessonsForCourse, getLevelFromCourseName } from "./utils.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
-import stickerMapping from "../constants/stickerMapping.js";
 import { generateCertificate } from '../google_sheet_utils/certificateUtils.js';
+import { sendEndingInstruction } from "./aliasAndInstructionsUtils.js";
 
 
-
-const sendingSticker = async (profileId, userMobileNumber, currentUserState, startingLesson, message = null) => {
-    // Check if the lesson is the last lesson of the day
-    const lessonLast = await lessonRepository.isLastLessonOfDay(startingLesson.dataValues.LessonId);
-
-    // Activity Complete Sticker - only send if not last lesson
-    if (
-        !lessonLast &&
-        currentUserState.dataValues.persona == "teacher" &&
-        startingLesson.dataValues.activityAlias !== "*Part A*" &&
-        startingLesson.dataValues.activityAlias !== "*Part C*"
-    ) {
-        const activityCompleteSticker = "https://beajbloblive.blob.core.windows.net/beajdocuments/activity_complete.webp";
-        await sendMediaMessage(userMobileNumber, activityCompleteSticker, 'sticker');
-        await createActivityLog(userMobileNumber, "sticker", "outbound", activityCompleteSticker, null);
-    }
-    if (currentUserState.dataValues.persona == "kid") {
-        if ((startingLesson.dataValues.engagement_type === "Free Trial - Kids - Level 1" || startingLesson.dataValues.engagement_type === "Free Trial - Kids - Level 3") && startingLesson.dataValues.activityType !== 'videoEnd') {
-            const challengeCompleteSticker = "https://beajbloblive.blob.core.windows.net/beajdocuments/challenge_complete_with_text.webp"
-            await sendMediaMessage(userMobileNumber, challengeCompleteSticker, 'sticker');
-            await createActivityLog(userMobileNumber, "sticker", "outbound", challengeCompleteSticker, null);
-        }
-        let lowerCaseActivityAlias = startingLesson.dataValues.activityAlias.toLowerCase();
-        lowerCaseActivityAlias = lowerCaseActivityAlias.replace(/'/g, '').replace(/’/g, '');
-        lowerCaseActivityAlias = lowerCaseActivityAlias.trim();
-        const sticker = stickerMapping[lowerCaseActivityAlias];
-        if (sticker) {
-            await sendMediaMessage(userMobileNumber, sticker, 'sticker');
-            await createActivityLog(userMobileNumber, "sticker", "outbound", sticker, null);
-        }
+const sendingSticker = async (userMobileNumber, startingLesson) => {
+    if (startingLesson?.dataValues?.completionSticker) {
+        await sendMediaMessage(userMobileNumber, startingLesson.dataValues.completionSticker, 'sticker');
+        await createActivityLog(userMobileNumber, "sticker", "outbound", startingLesson.dataValues.completionSticker, null);
     }
 
     await sleep(3000);
@@ -50,6 +24,10 @@ const sendingSticker = async (profileId, userMobileNumber, currentUserState, sta
 
 const teacherTrialFlow = async (profileId, userMobileNumber, currentUserState, startingLesson, message = null) => {
     const lessonLast = await lessonRepository.isLastLessonOfDay(startingLesson.dataValues.LessonId);
+    const nextLesson = await lessonRepository.getNextLesson(
+        currentUserState.dataValues.currentCourseId, currentUserState.dataValues.currentWeek,
+        currentUserState.dataValues.currentDay, currentUserState.dataValues.currentLesson_sequence
+    );
     let user = await waUsersMetadataRepository.getByProfileId(profileId);
     let checkRegistrationComplete = user.dataValues.userRegistrationComplete !== null;
     if (!checkRegistrationComplete && lessonLast) {
@@ -78,7 +56,10 @@ const teacherTrialFlow = async (profileId, userMobileNumber, currentUserState, s
         // Reply Buttons
         await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'start_next_activity', title: 'Start Next Activity' }, { id: 'end_now', title: 'End Now' }]);
         await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity or End Now", null);
-
+        if (nextLesson && nextLesson.dataValues.skipOnStart == true) {
+            await sendButtonMessage(userMobileNumber, 'Skip next activity', [{ id: 'skip_activity', title: 'Skip Activity' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Skip next activity", null);
+        }
         return;
     } else if (checkRegistrationComplete && !lessonLast) {
         // Update acceptable messages list for the user
@@ -87,7 +68,10 @@ const teacherTrialFlow = async (profileId, userMobileNumber, currentUserState, s
         // Reply Buttons
         await sendButtonMessage(userMobileNumber, '👏🏽Activity Complete! 🤓', [{ id: 'start_next_activity', title: 'Start Next Activity' }, { id: 'end_now', title: 'End Now' }]);
         await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity or End Now", null);
-
+        if (nextLesson && nextLesson.dataValues.skipOnStart == true) {
+            await sendButtonMessage(userMobileNumber, 'Skip next activity', [{ id: 'skip_activity', title: 'Skip Activity' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Skip next activity", null);
+        }
         return;
     }
 };
@@ -96,6 +80,10 @@ const kidsTrialFlow = async (profileId, userMobileNumber, currentUserState, star
     const shellImageObject = await waConstantsRepository.getByKey("SHELL_IMAGE");
     const gemImageObject = await waConstantsRepository.getByKey("GEM_IMAGE");
     const lessonLast = await lessonRepository.isLastLessonOfDay(startingLesson.dataValues.LessonId);
+    const nextLesson = await lessonRepository.getNextLesson(
+        currentUserState.dataValues.currentCourseId, currentUserState.dataValues.currentWeek,
+        currentUserState.dataValues.currentDay, currentUserState.dataValues.currentLesson_sequence
+    );
     let trialCompleteobject = null;
     if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
         trialCompleteobject = gemImageObject;
@@ -104,6 +92,7 @@ const kidsTrialFlow = async (profileId, userMobileNumber, currentUserState, star
     }
     let user = await waUsersMetadataRepository.getByProfileId(profileId);
     let checkRegistrationComplete = user.dataValues.userRegistrationComplete !== null;
+    let acceptableMessagesList = [];
     if (startingLesson.dataValues.activityAlias == "📕 *Story Time!*") {
         let final_map_image = "";
         const level1Map = await waConstantsRepository.getByKey("LEVEL_1_MAP");
@@ -121,20 +110,26 @@ const kidsTrialFlow = async (profileId, userMobileNumber, currentUserState, star
         await sleep(2000);
         let buttonsArray = [];
         if (checkRegistrationComplete) {
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start questions", "chat with beaj rep"]);
+            acceptableMessagesList = ["start questions", "chat with beaj rep"];
             buttonsArray = [{ id: 'start_questions', title: 'Start Questions' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
         } else {
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start questions", "chat with beaj rep"]);
+            acceptableMessagesList = ["start questions", "chat with beaj rep"];
             buttonsArray = [{ id: 'start_questions', title: 'Start Questions' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
         }
         // Reply Buttons
         if (message == null) {
-            await sendButtonMessage(userMobileNumber, 'Start Questions!', buttonsArray);
-            await createActivityLog(userMobileNumber, "template", "outbound", "Start Questions or Chat with Beaj Rep", null);
-        } else {
-            await sendButtonMessage(userMobileNumber, message, buttonsArray);
-            await createActivityLog(userMobileNumber, "template", "outbound", message, null);
+            message = 'Start Questions!';
         }
+
+        await sendButtonMessage(userMobileNumber, message, buttonsArray);
+        await createActivityLog(userMobileNumber, "template", "outbound", message, null);
+
+        if (nextLesson && nextLesson.dataValues.skipOnStart == true) {
+            acceptableMessagesList.push("skip activity");
+            await sendButtonMessage(userMobileNumber, "Skip next activity", [{ id: 'skip_activity', title: 'Skip Activity' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Skip next activity", null);
+        }
+        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
         return;
     }
 
@@ -149,20 +144,26 @@ const kidsTrialFlow = async (profileId, userMobileNumber, currentUserState, star
         }
         let buttonsArray = [];
         if (checkRegistrationComplete) {
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "chat with beaj rep"]);
+            acceptableMessagesList = ["next activity", "chat with beaj rep"];
             buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
         } else {
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "chat with beaj rep"]);
+            acceptableMessagesList = ["next activity", "chat with beaj rep"];
             buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
         }
         // Reply Buttons
         if (message == null) {
-            await sendButtonMessage(userMobileNumber, finalTextMessage, buttonsArray);
-            await createActivityLog(userMobileNumber, "template", "outbound", "Next Activity or Chat with Beaj Rep", null);
-        } else {
-            await sendButtonMessage(userMobileNumber, message, buttonsArray);
-            await createActivityLog(userMobileNumber, "template", "outbound", message, null);
+            message = finalTextMessage;
         }
+
+        await sendButtonMessage(userMobileNumber, message, buttonsArray);
+        await createActivityLog(userMobileNumber, "template", "outbound", message, null);
+
+        if (nextLesson && nextLesson.dataValues.skipOnStart == true) {
+            acceptableMessagesList.push("skip activity");
+            await sendButtonMessage(userMobileNumber, "Skip next activity", [{ id: 'skip_activity', title: 'Skip Activity' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Skip next activity", null);
+        }
+        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
         return;
     }
 
@@ -200,40 +201,51 @@ const kidsTrialFlow = async (profileId, userMobileNumber, currentUserState, star
         return;
     } else if (!checkRegistrationComplete && !lessonLast) {
         // Update acceptable messages list for the user
-        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "chat with beaj rep"]);
+        acceptableMessagesList = ["next activity", "chat with beaj rep"];
         let buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
 
 
         // Reply Buttons
         if (message == null) {
-            await sendButtonMessage(userMobileNumber, 'Challenge Complete! 💪🏽', buttonsArray);
-            await createActivityLog(userMobileNumber, "template", "outbound", "Next Activity or Chat with Beaj Rep", null);
-        } else {
-            await sendButtonMessage(userMobileNumber, message, buttonsArray);
-            await createActivityLog(userMobileNumber, "template", "outbound", message, null);
+            message = 'Challenge Complete! 💪🏽';
         }
-
+        await sendButtonMessage(userMobileNumber, message, buttonsArray);
+        await createActivityLog(userMobileNumber, "template", "outbound", message, null);
+        if (nextLesson && nextLesson.dataValues.skipOnStart == true) {
+            acceptableMessagesList.push("skip activity");
+            await sendButtonMessage(userMobileNumber, "Skip next activity", [{ id: 'skip_activity', title: 'Skip Activity' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Skip next activity", null);
+        }
+        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
         return;
     } else if (checkRegistrationComplete && !lessonLast) {
         // Update acceptable messages list for the user
-        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["next activity", "chat with beaj rep"]);
+        acceptableMessagesList = ["next activity", "chat with beaj rep"];
         let buttonsArray = [{ id: 'next_activity', title: 'Next Activity' }, { id: 'chat_with_beaj_rep', title: 'Chat with Beaj Rep' }];
 
         // Reply Buttons
         if (message == null) {
-            await sendButtonMessage(userMobileNumber, 'Challenge Complete! 💪🏽', buttonsArray);
-            await createActivityLog(userMobileNumber, "template", "outbound", "Next Activity or Chat with Beaj Rep", null);
-        } else {
-            await sendButtonMessage(userMobileNumber, message, buttonsArray);
-            await createActivityLog(userMobileNumber, "template", "outbound", message, null);
+            message = 'Challenge Complete! 💪🏽';
         }
-
+        await sendButtonMessage(userMobileNumber, message, buttonsArray);
+        await createActivityLog(userMobileNumber, "template", "outbound", message, null);
+        if (nextLesson && nextLesson.dataValues.skipOnStart == true) {
+            acceptableMessagesList.push("skip activity");
+            await sendButtonMessage(userMobileNumber, "Skip next activity", [{ id: 'skip_activity', title: 'Skip Activity' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Skip next activity", null);
+        }
+        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
         return;
     }
 };
 
 const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, startingLesson, message = null) => {
     const lessonLast = await lessonRepository.isLastLessonOfDay(startingLesson.dataValues.LessonId);
+    const nextLesson = await lessonRepository.getNextLesson(
+        currentUserState.dataValues.currentCourseId, currentUserState.dataValues.currentWeek,
+        currentUserState.dataValues.currentDay, currentUserState.dataValues.currentLesson_sequence
+    );
+    let acceptableMessagesList = [];
     if (lessonLast) {
         const courseName = await courseRepository.getCourseNameById(currentUserState.currentCourseId);
         const strippedCourseName = courseName.split("-")[0].trim();
@@ -376,12 +388,18 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
             let message = "Are you ready to start questions?"
             await sendButtonMessage(userMobileNumber, message, [{ id: 'start_questions', title: 'Start Questions' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", message, null);
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start questions"]);
+            acceptableMessagesList = ["start questions"];
         } else {
             await sendButtonMessage(userMobileNumber, 'Are you ready to start the next activity?', [{ id: 'start_next_activity', title: 'Start Next Activity' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity", null);
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next activity"]);
+            acceptableMessagesList = ["start next activity"];
         }
+        if (nextLesson && nextLesson.dataValues.skipOnStart == true) {
+            acceptableMessagesList.push("skip activity");
+            await sendButtonMessage(userMobileNumber, "Skip next activity", [{ id: 'skip_activity', title: 'Skip Activity' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Skip next activity", null);
+        }
+        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
     }
 };
 
@@ -450,6 +468,11 @@ const assessmentPuzzleImages = async (userMobileNumber, activityAlias, courseNam
 const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, startingLesson, message = null) => {
     const activityAlias = startingLesson.dataValues.activityAlias;
     const lessonLast = await lessonRepository.isLastLessonOfDay(startingLesson.dataValues.LessonId);
+    const nextLesson = await lessonRepository.getNextLesson(
+        currentUserState.dataValues.currentCourseId, currentUserState.dataValues.currentWeek,
+        currentUserState.dataValues.currentDay, currentUserState.dataValues.currentLesson_sequence
+    );
+    let acceptableMessagesList = [];
     const courseName = await courseRepository.getCourseNameById(currentUserState.currentCourseId);
     if (courseName.toLowerCase().includes("pre")) {
         await assessmentPuzzleImages(userMobileNumber, activityAlias, courseName);
@@ -466,7 +489,13 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
             await sleep(2000);
             await sendButtonMessage(userMobileNumber, 'Come back tomorrow for your next game!', [{ id: 'start_next_game', title: 'Start Next Game' }, { id: 'change_user', title: 'Change User' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Game", null);
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next game", "change user"]);
+            acceptableMessagesList = ["start next game", "change user"];
+            if (nextLesson && nextLesson.dataValues.skipOnStart == true) {
+                acceptableMessagesList.push("skip activity");
+                await sendButtonMessage(userMobileNumber, "Skip next activity", [{ id: 'skip_activity', title: 'Skip Activity' }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Skip next activity", null);
+            }
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
         }
         else {
             const imageUrl = "https://beajbloblive.blob.core.windows.net/beajdocuments/kids_updated_badges_level" + level + "_day_" + dayNumber + "_end.jpg";
@@ -487,7 +516,13 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
             }
             await sendButtonMessage(userMobileNumber, 'Are you ready to start your next lesson?', [{ id: 'start_next_lesson', title: 'Start Next Lesson' }, { id: 'change_user', title: 'Change User' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Lesson", null);
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next lesson", "change user"]);
+            acceptableMessagesList = ["start next lesson", "change user"];
+            if (nextLesson && nextLesson.dataValues.skipOnStart == true) {
+                acceptableMessagesList.push("skip activity");
+                await sendButtonMessage(userMobileNumber, "Skip next activity", [{ id: 'skip_activity', title: 'Skip Activity' }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Skip next activity", null);
+            }
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
         }
     }
     else {
@@ -504,7 +539,13 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
             let message = "👇 Click on the button below to start questions!"
             await sendButtonMessage(userMobileNumber, message, [{ id: 'start_questions', title: 'Start Questions' }, { id: 'change_user', title: 'Change User' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", message, null);
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start questions", "change user"]);
+            acceptableMessagesList = ["start questions", "change user"];
+            if (nextLesson && nextLesson.dataValues.skipOnStart == true) {
+                acceptableMessagesList.push("skip activity");
+                await sendButtonMessage(userMobileNumber, "Skip next activity", [{ id: 'skip_activity', title: 'Skip Activity' }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Skip next activity", null);
+            }
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
         } else if (
             activityAlias == "💪 *Game 1: English Champions Part A*" ||
             activityAlias == "🗣 *Game 1: English Champions Part B*" ||
@@ -513,7 +554,13 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
         ) {
             await sendButtonMessage(userMobileNumber, 'Are you ready?', [{ id: 'let_s_start', title: 'Let\'s Start' }, { id: 'change_user', title: 'Change User' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Let's Start", null);
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["let's start", "change user"]);
+            acceptableMessagesList = ["let's start", "change user"];
+            if (nextLesson && nextLesson.dataValues.skipOnStart == true) {
+                acceptableMessagesList.push("skip activity");
+                await sendButtonMessage(userMobileNumber, "Skip next activity", [{ id: 'skip_activity', title: 'Skip Activity' }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Skip next activity", null);
+            }
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
         } else if (
             activityAlias == "💪 *Game 1: English Champions Activity A*"
         ) {
@@ -523,7 +570,13 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
             await sleep(2000);
             await sendButtonMessage(userMobileNumber, 'Are you ready?', [{ id: 'start_part_b', title: 'Start Part B' }, { id: 'change_user', title: 'Change User' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start Part B", null);
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start part b", "change user"]);
+            acceptableMessagesList = ["start part b", "change user"];
+            if (nextLesson && nextLesson.dataValues.skipOnStart == true) {
+                acceptableMessagesList.push("skip activity");
+                await sendButtonMessage(userMobileNumber, "Skip next activity", [{ id: 'skip_activity', title: 'Skip Activity' }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Skip next activity", null);
+            }
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
         } else if (
             activityAlias == "🌍 *Let's Explore Part 1!*" ||
             activityAlias == "🌍 *Do You Remember? Part 1*" ||
@@ -533,13 +586,25 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
         ) {
             await sendButtonMessage(userMobileNumber, '👇 Click on the button below to watch Part 2 of the video!', [{ id: 'start_part_2', title: 'Start Part 2' }, { id: 'change_user', title: 'Change User' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start Part 2", null);
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start part 2", "change user"]);
+            acceptableMessagesList = ["start part 2", "change user"];
+            if (nextLesson && nextLesson.dataValues.skipOnStart == true) {
+                acceptableMessagesList.push("skip activity");
+                await sendButtonMessage(userMobileNumber, "Skip next activity", [{ id: 'skip_activity', title: 'Skip Activity' }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Skip next activity", null);
+            }
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
         } else if (
             activityAlias == "🔤 *Phonics Fun!*"
         ) {
             await sendButtonMessage(userMobileNumber, 'Are you ready to start practice?', [{ id: 'start_practice', title: 'Start Practice' }, { id: 'change_user', title: 'Change User' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start practice?", null);
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start practice", "change user"]);
+            acceptableMessagesList = ["start practice", "change user"];
+            if (nextLesson && nextLesson.dataValues.skipOnStart == true) {
+                acceptableMessagesList.push("skip activity");
+                await sendButtonMessage(userMobileNumber, "Skip next activity", [{ id: 'skip_activity', title: 'Skip Activity' }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Skip next activity", null);
+            }
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
         } else if (
             activityAlias.toLowerCase().includes("speaking activities complete") && dayNumber == 20
         ) {
@@ -564,11 +629,23 @@ const kidsCourseFlow = async (profileId, userMobileNumber, currentUserState, sta
             await sleep(3000);
             await sendButtonMessage(userMobileNumber, 'Are you ready to start the next activity? 👊', [{ id: 'start_next_activity', title: 'Start Next Activity' }, { id: 'change_user', title: 'Change User' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity", null);
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next activity", "change user"]);
+            acceptableMessagesList = ["start next activity", "change user"];
+            if (nextLesson && nextLesson.dataValues.skipOnStart == true) {
+                acceptableMessagesList.push("skip activity");
+                await sendButtonMessage(userMobileNumber, "Skip next activity", [{ id: 'skip_activity', title: 'Skip Activity' }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Skip next activity", null);
+            }
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
         } else {
             await sendButtonMessage(userMobileNumber, 'Are you ready to start the next activity? 👊', [{ id: 'start_next_activity', title: 'Start Next Activity' }, { id: 'change_user', title: 'Change User' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity", null);
-            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start next activity", "change user"]);
+            acceptableMessagesList = ["start next activity", "change user"];
+            if (nextLesson && nextLesson.dataValues.skipOnStart == true) {
+                acceptableMessagesList.push("skip activity");
+                await sendButtonMessage(userMobileNumber, "Skip next activity", [{ id: 'skip_activity', title: 'Skip Activity' }]);
+                await createActivityLog(userMobileNumber, "template", "outbound", "Skip next activity", null);
+            }
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
         }
     }
 };
@@ -579,7 +656,8 @@ const endingMessage = async (profileId, userMobileNumber, currentUserState, star
         return;
     }
     await waLessonsCompletedRepository.endLessonByPhoneNumberLessonIdAndProfileId(userMobileNumber, startingLesson.dataValues.LessonId, profileId);
-    await sendingSticker(profileId, userMobileNumber, currentUserState, startingLesson, message);
+    await sendEndingInstruction(userMobileNumber, startingLesson);
+    await sendingSticker(userMobileNumber, startingLesson);
 
     if (currentUserState.dataValues.engagement_type == "Free Trial - Teachers") {
         await teacherTrialFlow(profileId, userMobileNumber, currentUserState, startingLesson, message);

@@ -9,7 +9,7 @@ import multipleChoiceQuestionRepository from "../repositories/multipleChoiceQues
 import multipleChoiceQuestionAnswerRepository from "../repositories/multipleChoiceQuestionAnswerRepository.js";
 import { sendAliasAndStartingInstruction } from "../utils/aliasAndInstructionsUtils.js";
 
-const sendQuestion = async (nextMCQsQuestion, totalQuestions, currentUserState, userMobileNumber, profileId) => {
+const sendQuestion = async (nextMCQsQuestion, totalQuestions, currentUserState, userMobileNumber, profileId, startingLesson) => {
     // Send question
     const mcqType = nextMCQsQuestion.dataValues.QuestionType;
     const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(nextMCQsQuestion.dataValues.Id);
@@ -29,14 +29,17 @@ const sendQuestion = async (nextMCQsQuestion, totalQuestions, currentUserState, 
         } else {
             mcqMessage += "Choose the correct answer:\n";
         }
-        if (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3") {
-            mcqMessage += "\nor Type *next* to skip this activity!";
-        }
     }
     if (mcqType == 'Text') {
         for (let i = 0; i < mcqAnswers.length; i++) {
             mcqMessage += `${String.fromCharCode(65 + i)}) ${mcqAnswers[i].dataValues.AnswerText}\n`;
         }
+    }
+    if (startingLesson.dataValues.skipOnFirstQuestion == true && nextMCQsQuestion.dataValues.QuestionNumber == 1) {
+        mcqMessage += "\n\nOR\n\nClick *'Skip'* to start next activity";
+    }
+    else if (startingLesson.dataValues.skipOnEveryQuestion == true){
+        mcqMessage += "\n\nOR\n\nClick *'Skip'* to start next activity";
     }
 
     // Reply buttons to answer
@@ -60,9 +63,23 @@ const sendQuestion = async (nextMCQsQuestion, totalQuestions, currentUserState, 
         await sendButtonMessage(userMobileNumber, "", mcqAnswers.map((answer, index) => ({ id: `${nextMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })), 0, mcqImage, null, "MultipleChoiceQuestion", nextMCQsQuestion.dataValues.Id, nextMCQsQuestion.dataValues.QuestionImageMediaId, null, "QuestionImageMediaId");
         await createActivityLog(userMobileNumber, "template", "outbound", "", null);
     }
+    if (startingLesson.dataValues.skipOnFirstQuestion == true && nextMCQsQuestion.dataValues.QuestionNumber == 1) {
+        await sendButtonMessage(userMobileNumber, "👇 Click here to skip:", [{ id: "skip", title: "Skip" }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "👇 Click here to skip:", null);
+    }
+    else if (startingLesson.dataValues.skipOnEveryQuestion == true){
+        await sendButtonMessage(userMobileNumber, "👇 Click here to skip:", [{ id: "skip", title: "Skip" }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "👇 Click here to skip:", null);
+    }
 
     // Update acceptable messages list for the user
-    const acceptableMessages = Array.from({ length: mcqAnswers.length }, (_, i) => String.fromCharCode(97 + i));
+    let acceptableMessages = Array.from({ length: mcqAnswers.length }, (_, i) => String.fromCharCode(97 + i));
+    if (startingLesson.dataValues.skipOnFirstQuestion == true && nextMCQsQuestion.dataValues.QuestionNumber == 1) {
+        acceptableMessages.push("skip");
+    }
+    else if (startingLesson.dataValues.skipOnEveryQuestion == true){
+        acceptableMessages.push("skip");
+    }
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessages);
 };
 
@@ -71,7 +88,7 @@ const getNextMcqQuestion = async (currentUserState, profileId, userMobileNumber,
     if (nextMCQsQuestion) {
         const totalQuestions = await multipleChoiceQuestionRepository.getTotalQuestions(currentUserState.dataValues.currentLessonId);
         await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, nextMCQsQuestion.dataValues.QuestionNumber);
-        await sendQuestion(nextMCQsQuestion, totalQuestions, currentUserState, userMobileNumber, profileId);
+        await sendQuestion(nextMCQsQuestion, totalQuestions, currentUserState, userMobileNumber, profileId, startingLesson);
     } else {
         // Calculate total score and send message
         const totalQuestions = await waQuestionResponsesRepository.getTotalQuestions(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
@@ -118,7 +135,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                 await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstMCQsQuestion.dataValues.QuestionNumber);
 
                 // Send question
-                await sendQuestion(firstMCQsQuestion, totalQuestions, currentUserState, userMobileNumber, profileId);
+                await sendQuestion(firstMCQsQuestion, totalQuestions, currentUserState, userMobileNumber, profileId, startingLesson);
             }
             else {
                 // Parse question ID from button response
@@ -252,7 +269,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                 const totalQuestions = await multipleChoiceQuestionRepository.getTotalQuestions(currentUserState.dataValues.currentLessonId);
 
                 // Send question
-                await sendQuestion(firstMCQsQuestion, totalQuestions, currentUserState, userMobileNumber, profileId);
+                await sendQuestion(firstMCQsQuestion, totalQuestions, currentUserState, userMobileNumber, profileId, startingLesson);
             }
             else {
                 // Parse question ID from button response

@@ -8,7 +8,7 @@ import { join } from "path";
 import azureBlobStorage from "./azureBlobStorage.js";
 import { createCanvas, loadImage } from "canvas";
 import fs from "fs";
-
+import sharp from "sharp";
 
 // Set ffmpeg path
 ffmpeg.setFfmpegPath(ffmpegStatic);
@@ -873,6 +873,155 @@ const compressImage = async (imageFileObject) => {
     }
 };
 
+
+const parseStartEndInstruction = async (cellValue) => {
+    if (!cellValue || typeof cellValue !== "string") return {};
+
+    const lines = cellValue.split("\n").map(line => line.trim()).filter(Boolean);
+
+    const result = {
+        textInstruction: null,
+        textInstructionCaption: null,
+        imageInstruction: null,
+        imageInstructionCaption: null,
+        audioInstruction: null,
+        audioInstructionCaption: null,
+        videoInstruction: null,
+        videoInstructionCaption: null,
+        pdfInstruction: null,
+        pdfInstructionCaption: null,
+    };
+
+    for (const line of lines) {
+        const match = line.match(/^(\w+):\s*(.*?)(?:\s*\(Caption:\s*(.*?)\))?$/i);
+        if (!match) continue;
+
+        let [, type, value, caption] = match;
+        type = type.toLowerCase().trim();
+        value = value?.trim() || null;
+        caption = caption?.trim() || null;
+
+        switch (type) {
+            case "text":
+                if (value) result.textInstruction = value;
+                if (caption) result.textInstructionCaption = caption;
+                break;
+            case "image":
+                if (value) result.imageInstruction = value;
+                if (caption) result.imageInstructionCaption = caption;
+                break;
+            case "audio":
+                if (value) result.audioInstruction = value;
+                if (caption) result.audioInstructionCaption = caption;
+                break;
+            case "video":
+                if (value) result.videoInstruction = value;
+                if (caption) result.videoInstructionCaption = caption;
+                break;
+            case "pdf":
+                if (value) result.pdfInstruction = value;
+                if (caption) result.pdfInstructionCaption = caption;
+                break;
+        }
+    }
+
+    return result;
+}
+
+const isAnswerBold = (cellText, answerText, textRuns) => {
+    if (!cellText || !answerText || !Array.isArray(textRuns)) return false;
+
+    const startIndex = cellText.indexOf(answerText);
+    if (startIndex === -1) return false;
+    const endIndex = startIndex + answerText.length;
+
+    for (const run of textRuns) {
+        const runStart = run.startIndex ?? 0;
+        const runBold = run.format?.bold === true;
+
+        if (runStart >= startIndex && runStart < endIndex && runBold) {
+            return true;
+        }
+    }
+    return false;
+};
+
+const compressSticker = async (stickerFileObject) => {
+    const MAX_SIZE_KB = 100;
+    const MAX_SIZE_BYTES = MAX_SIZE_KB * 1024;
+
+    if (!stickerFileObject || !stickerFileObject.buffer) {
+        throw new Error("Invalid sticker file object (missing buffer)");
+    }
+
+    const timestamp = Date.now();
+    const randomDigits = Math.floor(100000 + Math.random() * 900000);
+    const fileNameFinal = `${timestamp}_${randomDigits}.webp`;
+
+    const originalSizeKB = (stickerFileObject.buffer.length / 1024).toFixed(2);
+    console.log(`Sticker size: ${originalSizeKB}KB`);
+
+    // Case 1: Already under 100KB
+    if (stickerFileObject.buffer.length <= MAX_SIZE_BYTES) {
+        return await azureBlobStorage.uploadToBlobStorage(
+            stickerFileObject.buffer,
+            fileNameFinal,
+            "image/webp"
+        );
+    }
+
+    // Case 2: Compress with sharp
+    let quality = 90;
+    let compressedBuffer = await sharp(stickerFileObject.buffer)
+        .webp({ quality })
+        .toBuffer();
+
+    let attempts = 0;
+    while (compressedBuffer.length > MAX_SIZE_BYTES && quality > 10 && attempts < 8) {
+        quality -= 10;
+        attempts++;
+        compressedBuffer = await sharp(stickerFileObject.buffer)
+            .webp({ quality })
+            .toBuffer();
+        console.log(
+            `Quality Attempt ${attempts}: Quality=${quality}, Size=${(compressedBuffer.length / 1024).toFixed(2)}KB`
+        );
+    }
+
+    // If still too large → resize
+    let resizeAttempts = 0;
+    let width = 512; // default resize base
+    while (compressedBuffer.length > MAX_SIZE_BYTES && resizeAttempts < 5) {
+        resizeAttempts++;
+        width = Math.floor(width * 0.8);
+
+        compressedBuffer = await sharp(stickerFileObject.buffer)
+            .resize({ width })
+            .webp({ quality })
+            .toBuffer();
+
+        console.log(
+            `Resize Attempt ${resizeAttempts}: Width=${width}, Size=${(compressedBuffer.length / 1024).toFixed(2)}KB`
+        );
+    }
+
+    if (compressedBuffer.length > MAX_SIZE_BYTES) {
+        throw new Error(
+            `Sticker compression failed: could not reduce below ${MAX_SIZE_KB}KB (final ${(compressedBuffer.length / 1024).toFixed(2)}KB)`
+        );
+    }
+
+    // Upload to Azure
+    const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(
+        compressedBuffer,
+        fileNameFinal,
+        "image/webp"
+    );
+
+    console.log(`Final sticker size: ${(compressedBuffer.length / 1024).toFixed(2)}KB`);
+    return uploadedUrl;
+};
+
 export {
     getDriveMediaUrl,
     validateDriveUrl,
@@ -887,5 +1036,8 @@ export {
     getAuthSheetClient,
     compressVideo,
     compressAudio,
-    compressImage
+    compressImage,
+    parseStartEndInstruction,
+    isAnswerBold,
+    compressSticker,
 };

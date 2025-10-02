@@ -1,4 +1,4 @@
-import { getSheetsObj, getAuthSheetClient, isCellHighlighted } from "../utils/sheetUtils.js";
+import { getSheetsObj, getAuthSheetClient, isAnswerBold } from "../utils/sheetUtils.js";
 import { toCamelCase } from "../utils/utils.js";
 import { activity_types, columns_order } from "../constants/constants.js";
 import ingestion from '../ingestion/index.js';
@@ -13,8 +13,12 @@ const hasActivityData = (get) => {
         get(columns_order.ALIAS) ||
         get(columns_order.ACTIVITY_TYPE) ||
         get(columns_order.LESSON_TEXT) ||
-        get(columns_order.TEXT_INSTRUCTION) ||
-        get(columns_order.AUDIO_INSTRUCTION) ||
+        get(columns_order.START_INSTRUCTIONS) ||
+        get(columns_order.END_INSTRUCTIONS) ||
+        get(columns_order.SKIP_ON_FIRST_QUESTION) ||
+        get(columns_order.SKIP_ON_START) || 
+        get(columns_order.SKIP_ON_START_TO_LESSONID) ||
+        get(columns_order.SKIP_ON_EVERY_QUESTION) ||
         get(columns_order.COMPLETION_STICKER) ||
         get(columns_order.Q_NO) ||
         get(columns_order.Q_TEXT) ||
@@ -27,7 +31,6 @@ const hasActivityData = (get) => {
         get(columns_order.CF_IMAGE) ||
         get(columns_order.CF_AUDIO);
 };
-
 
 const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) => {
     const questionsMap = new Map();
@@ -161,19 +164,37 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
 
             // If we have answer data, add it
             if (answerText || cfText || cfImage || cfAudio) {
+                const splitAnswers = answerText.split("\n").map(a => a.trim()).filter(Boolean);
                 // Check if the answer cell is highlighted (correct answer)
                 const answerCell = cells[columns_order.ANSWER];
                 const bg = answerCell?.effectiveFormat?.backgroundColor;
-                const isCorrect = isCellHighlighted(bg);
+                // const isCorrect = isCellHighlighted(bg);
+                const textRuns = answerCell?.textFormatRuns || [];
 
-                difficultyData.answers.push({
-                    answerNumber: answerCounters[counterKey]++,
-                    answerText: answerText,
-                    correct: isCorrect,
-                    customFeedbackText: cfText,
-                    customFeedbackImage: cfImage,
-                    customFeedbackAudio: cfAudio
-                });
+
+                for (let i = 0; i < splitAnswers.length; i++) {
+                    const ans = splitAnswers[i];
+
+                    const isCorrect = isAnswerBold(answerText, ans, textRuns);
+
+                    difficultyData.answers.push({
+                        answerNumber: answerCounters[counterKey]++,
+                        answerText: ans,
+                        correct: isCorrect,
+                        customFeedbackText: cfText,
+                        customFeedbackImage: cfImage,
+                        customFeedbackAudio: cfAudio
+                    });
+                }
+
+                // difficultyData.answers.push({
+                //     answerNumber: answerCounters[counterKey]++,
+                //     answerText: answerText,
+                //     correct: isCorrect,
+                //     customFeedbackText: cfText,
+                //     customFeedbackImage: cfImage,
+                //     customFeedbackAudio: cfAudio
+                // });
             }
         }
     }
@@ -287,8 +308,12 @@ const validateIngestionService = async (courseId, sheetId, sheetTitle) => {
                         alias: get(columns_order.ALIAS),
                         activityType: get(columns_order.ACTIVITY_TYPE),
                         text: get(columns_order.LESSON_TEXT),
-                        textInstruction: get(columns_order.TEXT_INSTRUCTION),
-                        audioInstruction: get(columns_order.AUDIO_INSTRUCTION),
+                        startInstructions: get(columns_order.START_INSTRUCTIONS),
+                        endInstructions: get(columns_order.END_INSTRUCTIONS),
+                        skipOnFirstQuestion: get(columns_order.SKIP_ON_FIRST_QUESTION),
+                        skipOnStart: get(columns_order.SKIP_ON_START),
+                        skipOnStartToLessonId: get(columns_order.SKIP_ON_START_TO_LESSONID),
+                        skipOnEveryQuestion: get(columns_order.SKIP_ON_EVERY_QUESTION),
                         completionSticker: get(columns_order.COMPLETION_STICKER),
                         questions: []
                     };
@@ -514,8 +539,12 @@ const processIngestionService = async (courseId, sheetId, sheetTitle) => {
                     alias: get(columns_order.ALIAS),
                     activityType: get(columns_order.ACTIVITY_TYPE),
                     text: get(columns_order.LESSON_TEXT),
-                    textInstruction: get(columns_order.TEXT_INSTRUCTION),
-                    audioInstruction: get(columns_order.AUDIO_INSTRUCTION),
+                    startInstructions: get(columns_order.START_INSTRUCTIONS),
+                    endInstructions: get(columns_order.END_INSTRUCTIONS),
+                    skipOnFirstQuestion: get(columns_order.SKIP_ON_FIRST_QUESTION),
+                    skipOnStart: get(columns_order.SKIP_ON_START),
+                    skipOnStartToLessonId: get(columns_order.SKIP_ON_START_TO_LESSONID),
+                    skipOnEveryQuestion: get(columns_order.SKIP_ON_EVERY_QUESTION),
                     completionSticker: get(columns_order.COMPLETION_STICKER),
                     questions: []
                 };

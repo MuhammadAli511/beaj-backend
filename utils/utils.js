@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import { BlobServiceClient } from "@azure/storage-blob";
 import { retrieveMediaURL } from "./whatsappUtils.js";
+import { text_message_types } from "../constants/constants.js";
 import { PassThrough } from "stream";
 import ffmpeg from "fluent-ffmpeg";
 import dotenv from 'dotenv';
@@ -289,18 +290,14 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
     ) {
         if (acceptableMessagesList.includes("audio") && messageType === "audio") {
             return true;
-        } else if (messageType == "text" && messageContent.toLowerCase() == "next" && activityType === "feedbackAudio") {
-            return true;
-        } else if (messageType == "text" && messageContent.toLowerCase() == "next" && (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")) {
-            return true;
-        } else if ((messageType == "text" || messageType == "button" || messageType == "interactive") && messageContent.toLowerCase() == "next activity" && activityType === "watchAndAudio" && persona == "kid") {
+        } else if (text_message_types.includes(messageType) && (messageContent.toLowerCase() == "next" || messageContent.toLowerCase() == "skip" || messageContent.toLowerCase() == "next activity")) {
             return true;
         }
     }
     if (messageType === "text" && acceptableMessagesList.includes("text")) {
         return true;
     }
-    if ((messageType == "text" || messageType == "button" || messageType == "interactive") && acceptableMessagesList.includes(messageContent.toLowerCase())) {
+    if ((text_message_types.includes(messageType)) && acceptableMessagesList.includes(messageContent.toLowerCase())) {
         return true;
     }
     // If list has "option a", "option b", "option c" then "option a", "option b", "option c" type kerain.
@@ -311,7 +308,7 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
     }
     // If list has "a", "b", "c" then "a", "b", "c" type kerain.
     if (acceptableMessagesList.includes("a") && acceptableMessagesList.includes("b") && acceptableMessagesList.includes("c")) {
-        if ((messageType == "text" || messageType == "button" || messageType == "interactive") && messageContent.toLowerCase() == "next" && (currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 1" || currentUserState.dataValues.engagement_type == "Free Trial - Kids - Level 3")) {
+        if ((text_message_types.includes(messageType)) && (messageContent.toLowerCase() == "next" || messageContent.toLowerCase() == "skip" || messageContent.toLowerCase() == "next activity")) {
             return true;
         }
         await sendButtonMessage(userMobileNumber, "Please select an option:", [{ id: "a", title: "A" }, { id: "b", title: "B" }, { id: "c", title: "C" }]);
