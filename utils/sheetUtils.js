@@ -284,9 +284,6 @@ const compressVideo = async (videoFileObject) => {
                         console.log('Balanced compression failed, trying moderate compression...');
                         reject(err);
                     })
-                    .on('progress', (progress) => {
-                        console.log(`Balanced compression progress: ${progress.percent?.toFixed(1)}%`);
-                    })
                     .run();
             });
 
@@ -346,9 +343,6 @@ const compressVideo = async (videoFileObject) => {
                             console.log('Moderate compression failed, trying emergency compression...');
                             reject(err);
                         })
-                        .on('progress', (progress) => {
-                            console.log(`Moderate compression progress: ${progress.percent?.toFixed(1)}%`);
-                        })
                         .run();
                 });
 
@@ -407,9 +401,6 @@ const compressVideo = async (videoFileObject) => {
                         .on('error', (err) => {
                             console.error('All video compression strategies failed');
                             reject(err);
-                        })
-                        .on('progress', (progress) => {
-                            console.log(`Emergency compression progress: ${progress.percent?.toFixed(1)}%`);
                         })
                         .run();
                 });
@@ -568,9 +559,6 @@ const compressAudio = async (audioFileObject) => {
                         console.log('Ultra-aggressive MP3 failed, trying extreme compression...');
                         reject(err);
                     })
-                    .on('progress', (progress) => {
-                        console.log(`Ultra-aggressive MP3 compression progress: ${progress.percent?.toFixed(1)}%`);
-                    })
                     .run();
             });
 
@@ -617,9 +605,6 @@ const compressAudio = async (audioFileObject) => {
                         .on('error', (err) => {
                             console.log('AAC failed, trying emergency MP3 codec...');
                             reject(err);
-                        })
-                        .on('progress', (progress) => {
-                            console.log(`Extreme AAC compression progress: ${progress.percent?.toFixed(1)}%`);
                         })
                         .run();
                 });
@@ -668,9 +653,6 @@ const compressAudio = async (audioFileObject) => {
                         .on('error', (err) => {
                             console.log('All MP3 strategies failed - only MP3 output supported');
                             reject(err);
-                        })
-                        .on('progress', (progress) => {
-                            console.log(`Emergency MP3 compression progress: ${progress.percent?.toFixed(1)}%`);
                         })
                         .run();
                 });
