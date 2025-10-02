@@ -8,7 +8,11 @@ const sendAliasAndStartingInstruction = async (userMobileNumber, startingLesson)
     let alias = startingLesson.dataValues.activityAlias;
     let lessonMessage = "";
     if (alias != null && alias != "") {
-        lessonMessage = "Activity: " + alias.replace(/\\n/g, '\n') + "\n\n";
+        if (startingLesson.dataValues.courseId == 100) {
+            lessonMessage = "Activité: " + alias.replace(/\\n/g, '\n') + "\n\n";
+        } else {
+            lessonMessage = "Activity: " + alias.replace(/\\n/g, '\n') + "\n\n";
+        }
     }
 
     let lessonTextInstruction = startingLesson.dataValues.textInstruction;

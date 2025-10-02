@@ -16,9 +16,9 @@ const sendQuestion = async (nextMCQsQuestion, totalQuestions, currentUserState, 
     const questionText = nextMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
     let mcqMessage = ""
     if (currentUserState.currentCourseId == 100) {
-        mcqMessage += "👉🏽 *Q " + nextMCQsQuestion.dataValues.QuestionNumber + " of " + totalQuestions + "*\n\n";
+        mcqMessage += "👉🏽 *Q" + nextMCQsQuestion.dataValues.QuestionNumber + " sur " + totalQuestions + "*\n\n";
     } else {
-        mcqMessage += "👉 *Question " + await convertNumberToEmoji(nextMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n";
+        mcqMessage += "👉 *Q" + await convertNumberToEmoji(nextMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n";
     }
     if (mcqType == 'Text') {
         mcqMessage += questionText + "\n\n";
