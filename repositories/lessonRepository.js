@@ -5,7 +5,7 @@ const totalLessonsRepository = async () => {
     return await Lesson.count();
 };
 
-const create = async (lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status, textInstruction, audioInstructionUrl) => {
+const create = async (lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status, textInstruction, audioInstructionUrl, skipOnFirstQuestion, skipOnStart, skipOnStartToLessonId, skipOnEveryQuestion, completionSticker ) => {
     const lesson = new Lesson({
         lessonType: lessonType,
         dayNumber: dayNumber,
@@ -17,7 +17,12 @@ const create = async (lessonType, dayNumber, activity, activityAlias, weekNumber
         SequenceNumber: sequenceNumber,
         status: status,
         textInstruction: textInstruction,
-        audioInstructionUrl: audioInstructionUrl
+        audioInstructionUrl: audioInstructionUrl,
+        skipOnFirstQuestion: skipOnFirstQuestion, 
+        skipOnStart: skipOnStart, 
+        skipOnStartToLessonId: skipOnStartToLessonId, 
+        skipOnEveryQuestion: skipOnEveryQuestion,
+        completionSticker: completionSticker,
     });
     const result = await lesson.save();
     return result;
@@ -75,7 +80,7 @@ const getByCourse = async (course) => {
 };
 
 
-const update = async (id, lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status, textInstruction, audioInstructionUrl) => {
+const update = async (id, lessonType, dayNumber, activity, activityAlias, weekNumber, text, courseId, sequenceNumber, status, textInstruction, audioInstructionUrl, skipOnFirstQuestion, skipOnStart, skipOnStartToLessonId, skipOnEveryQuestion, completionSticker) => {
     const lesson = await Lesson.findByPk(id);
     lesson.lessonType = lessonType;
     lesson.dayNumber = dayNumber;
@@ -88,12 +93,17 @@ const update = async (id, lessonType, dayNumber, activity, activityAlias, weekNu
     lesson.status = status;
     lesson.textInstruction = textInstruction;
     lesson.audioInstructionUrl = audioInstructionUrl;
+    lesson.skipOnFirstQuestion = skipOnFirstQuestion, 
+    lesson.skipOnStart = skipOnStart, 
+    lesson.skipOnStartToLessonId = skipOnStartToLessonId, 
+    lesson.skipOnEveryQuestion = skipOnEveryQuestion,
+    lesson.completionSticker = completionSticker,
     await lesson.save();
     return lesson;
 };
 
 
-const updateByCourseWeekDaySeq = async (courseId, weekNumber, dayNumber, sequenceNumber, activity, activityAlias, text, textInstruction, audioInstructionUrl) => {
+const updateByCourseWeekDaySeq = async (courseId, weekNumber, dayNumber, sequenceNumber, activity, activityAlias, text, textInstruction, audioInstructionUrl, skipOnFirstQuestion, skipOnStart, skipOnStartToLessonId, skipOnEveryQuestion, completionSticker) => {
     const lesson = await Lesson.findOne({
         where: {
             courseId: courseId,
@@ -112,6 +122,11 @@ const updateByCourseWeekDaySeq = async (courseId, weekNumber, dayNumber, sequenc
     lesson.text = text;
     lesson.textInstruction = textInstruction;
     lesson.audioInstructionUrl = audioInstructionUrl;
+    lesson.skipOnFirstQuestion = skipOnFirstQuestion, 
+    lesson.skipOnStart = skipOnStart, 
+    lesson.skipOnStartToLessonId = skipOnStartToLessonId, 
+    lesson.skipOnEveryQuestion = skipOnEveryQuestion,
+    lesson.completionSticker = completionSticker,
     await lesson.save();
     return lesson;
 };
@@ -366,6 +381,15 @@ const getActivityByLessonId = async (lessonId) => {
     return lesson.activity;
 };
 
+const getLessonByLessonId = async (lessonId) => {
+     const lesson = await Lesson.findOne({
+        where: {
+            LessonId : lessonId
+        }
+       });
+    return lesson;
+};
+
 const getByLessonIds = async (lessonIds) => {
     return await Lesson.findAll({
         where: {
@@ -414,5 +438,6 @@ export default {
     getLessonIdsByCourseWeekDaySeq,
     getLessonWithActivityTypeByCourseWeekDaySeq,
     getByCourse,
-    updateByCourseWeekDaySeq
+    updateByCourseWeekDaySeq,
+    getLessonByLessonId,
 };
