@@ -42,7 +42,36 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
     for (let r = activityStartRow - 1; r < activityEndRow && r < rows.length; r++) {
         const row = rows[r];
         const cells = row.values || [];
-        const get = (col) => cells[col]?.formattedValue?.trim() || "";
+        // const get = (col) => cells[col]?.formattedValue?.trim() || "";
+        const get = (col) => {
+    const cell = cells[col];
+    if (!cell) return "";
+    
+    // For smart chips (Drive files, etc.) - the URL is in chipRuns
+    if (cell.chipRuns && cell.chipRuns.length > 0) {
+        for (const chipRun of cell.chipRuns) {
+            const chip = chipRun.chip;
+            if (chip) {
+                // For Drive file chips
+                if (chip.richLinkProperties?.uri) {
+                    return chip.richLinkProperties.uri.trim();
+                }
+                // For person chips (email)
+                if (chip.personProperties?.email) {
+                    return chip.personProperties.email.trim();
+                }
+            }
+        }
+    }
+    
+    // For regular hyperlinks
+    if (cell.hyperlink) {
+        return cell.hyperlink.trim();
+    }
+    
+    // For regular text
+    return cell.formattedValue?.trim() || "";
+};
 
         // Check if this row starts a new question (has Q No)
         const questionNumber = get(columns_order.Q_NO);
@@ -257,6 +286,7 @@ const validateIngestionService = async (courseId, sheetId, sheetTitle) => {
                     spreadsheetId: sheetId,
                     ranges: [sheetTitle],
                     includeGridData: true,
+                    fields: 'sheets(data(rowData(values(formattedValue,hyperlink,userEnteredValue,chipRuns,textFormatRuns))))'
                 });
             } catch (error) {
                 errors.push(`Cannot access Google Sheet: ${error.message}`)
@@ -286,7 +316,36 @@ const validateIngestionService = async (courseId, sheetId, sheetTitle) => {
             for (let r = 1; r < rows.length; r++) {
                 const row = rows[r];
                 const cells = row.values || [];
-                const get = (col) => cells[col]?.formattedValue?.trim() || "";
+                // const get = (col) => cells[col]?.formattedValue?.trim() || "";
+                const get = (col) => {
+    const cell = cells[col];
+    if (!cell) return "";
+    
+    // For smart chips (Drive files, etc.) - the URL is in chipRuns
+    if (cell.chipRuns && cell.chipRuns.length > 0) {
+        for (const chipRun of cell.chipRuns) {
+            const chip = chipRun.chip;
+            if (chip) {
+                // For Drive file chips
+                if (chip.richLinkProperties?.uri) {
+                    return chip.richLinkProperties.uri.trim();
+                }
+                // For person chips (email)
+                if (chip.personProperties?.email) {
+                    return chip.personProperties.email.trim();
+                }
+            }
+        }
+    }
+    
+    // For regular hyperlinks
+    if (cell.hyperlink) {
+        return cell.hyperlink.trim();
+    }
+    
+    // For regular text
+    return cell.formattedValue?.trim() || "";
+};
                 const rowNum = r + 1;
 
                 // Check if this row starts a new activity (has UPLOAD checkbox)
@@ -498,6 +557,7 @@ const processIngestionService = async (courseId, sheetId, sheetTitle) => {
             spreadsheetId: sheetId,
             ranges: [sheetTitle],
             includeGridData: true,
+            fields: 'sheets(data(rowData(values(formattedValue,hyperlink,userEnteredValue,chipRuns,textFormatRuns))))'
         });
 
         const sheet = res.data.sheets?.[0];
@@ -515,7 +575,36 @@ const processIngestionService = async (courseId, sheetId, sheetTitle) => {
         for (let r = 1; r < rows.length; r++) {
             const row = rows[r];
             const cells = row.values || [];
-            const get = (col) => cells[col]?.formattedValue?.trim() || "";
+            // const get = (col) => cells[col]?.formattedValue?.trim() || "";
+            const get = (col) => {
+    const cell = cells[col];
+    if (!cell) return "";
+    
+    // For smart chips (Drive files, etc.) - the URL is in chipRuns
+    if (cell.chipRuns && cell.chipRuns.length > 0) {
+        for (const chipRun of cell.chipRuns) {
+            const chip = chipRun.chip;
+            if (chip) {
+                // For Drive file chips
+                if (chip.richLinkProperties?.uri) {
+                    return chip.richLinkProperties.uri.trim();
+                }
+                // For person chips (email)
+                if (chip.personProperties?.email) {
+                    return chip.personProperties.email.trim();
+                }
+            }
+        }
+    }
+    
+    // For regular hyperlinks
+    if (cell.hyperlink) {
+        return cell.hyperlink.trim();
+    }
+    
+    // For regular text
+    return cell.formattedValue?.trim() || "";
+};
             const rowNum = r + 1;
 
             // Check if this row starts a new activity (has UPLOAD checkbox)
@@ -721,6 +810,7 @@ const deleteActivitiesService = async (courseId, sheetId, sheetTitle, processDel
                     spreadsheetId: sheetId,
                     ranges: [sheetTitle],
                     includeGridData: true,
+                    fields: 'sheets(data(rowData(values(formattedValue,hyperlink,userEnteredValue,chipRuns,textFormatRuns))))'
                 });
 
                 const sheet = res.data.sheets?.[0];
@@ -743,7 +833,36 @@ const deleteActivitiesService = async (courseId, sheetId, sheetTitle, processDel
         for (let r = 1; r < rows.length; r++) {
             const row = rows[r];
             const cells = row.values || [];
-            const get = (col) => cells[col]?.formattedValue?.trim() || "";
+            // const get = (col) => cells[col]?.formattedValue?.trim() || "";
+           const get = (col) => {
+    const cell = cells[col];
+    if (!cell) return "";
+    
+    // For smart chips (Drive files, etc.) - the URL is in chipRuns
+    if (cell.chipRuns && cell.chipRuns.length > 0) {
+        for (const chipRun of cell.chipRuns) {
+            const chip = chipRun.chip;
+            if (chip) {
+                // For Drive file chips
+                if (chip.richLinkProperties?.uri) {
+                    return chip.richLinkProperties.uri.trim();
+                }
+                // For person chips (email)
+                if (chip.personProperties?.email) {
+                    return chip.personProperties.email.trim();
+                }
+            }
+        }
+    }
+    
+    // For regular hyperlinks
+    if (cell.hyperlink) {
+        return cell.hyperlink.trim();
+    }
+    
+    // For regular text
+    return cell.formattedValue?.trim() || "";
+};
             const rowNum = r + 1;
 
             // Check if this row starts a new activity (has UPLOAD checkbox)

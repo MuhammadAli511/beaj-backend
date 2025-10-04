@@ -1,4 +1,4 @@
-import { containsUrl, validateDriveUrl, parseStartEndInstruction } from "../utils/sheetUtils.js";
+import { containsUrl, validateDriveUrl, parseStartEndInstruction, getServiceAccountEmail, normalizeBool, normalizeInt } from "../utils/sheetUtils.js";
 import lessonRepository from "../repositories/lessonRepository.js";
 import lessonInstructionRepository from "../repositories/lessonInstructionsRepository.js";
 import { getDriveMediaUrl, compressAudio, compressVideo, compressImage, compressSticker } from "../utils/sheetUtils.js";
@@ -14,7 +14,19 @@ const commonValidation = async (activity) => {
     } else if (activity.status === "UPDATE") {
         toUpdate = 1;
     }
-    // For "SKIP" status, both remain 0
+    
+    const serviceAccountEmail = await getServiceAccountEmail();
+
+    // Helper function to add permission error with instructions
+    const addPermissionError = (res, mediaType) => {
+        if (res.needsPermission) {
+            errors.push(`Activity from ${activity.startRow} to ${activity.endRow}: No view access to ${mediaType}. Grant view access to: "${serviceAccountEmail || 'service account'}"`);
+        } else if (!res.valid || !res.accessible) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have a valid ${mediaType} url: ${res.error}`);
+        } else if (res.typeError) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}": ${res.typeError}`);
+        }
+    };
 
     // WEEK, DAY, SEQ
     if (isNaN(activity.week) || activity.week <= 0) {
@@ -34,115 +46,102 @@ const commonValidation = async (activity) => {
 
     // Parse startInstruction
     if(activity.startInstructions){
-    const parsedStart = await parseStartEndInstruction(activity.startInstructions);
-    // ---- TEXT ----
-    if (parsedStart.textInstruction && containsUrl(parsedStart.textInstruction)) {
-        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have text instruction that is not a url`);
-    }
-    if (parsedStart.textInstructionCaption && containsUrl(parsedStart.textInstructionCaption)) {
-        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have text caption that is not a url`);
-    }
+        const parsedStart = await parseStartEndInstruction(activity.startInstructions);
+        
+        // ---- TEXT ----
+        if (parsedStart.textInstruction && containsUrl(parsedStart.textInstruction)) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have text instruction that is not a url`);
+        }
+        if (parsedStart.textInstructionCaption && containsUrl(parsedStart.textInstructionCaption)) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have text caption that is not a url`);
+        }
 
-    // ---- IMAGE ----
-    if (parsedStart.imageInstructions) {
-        const res = await validateDriveUrl(parsedStart.imageInstruction, "image");
-        if (!res.valid) {
-            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have a valid image url`);
+        // ---- IMAGE ----
+        if (parsedStart.imageInstruction) {
+            const res = await validateDriveUrl(parsedStart.imageInstruction, "image");
+            addPermissionError(res, "image");
+        }
+        if (parsedStart.imageInstructionCaption && containsUrl(parsedStart.imageInstructionCaption)) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have image text caption that is not a url`);
+        }
+
+        // ---- AUDIO ----
+        if (parsedStart.audioInstruction) {
+            const res = await validateDriveUrl(parsedStart.audioInstruction, "audio");
+            addPermissionError(res, "audio");
+        }
+        if (parsedStart.audioInstructionCaption && containsUrl(parsedStart.audioInstructionCaption)) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have audio text caption that is not a url`);
+        }
+
+        // ---- VIDEO ----
+        if (parsedStart.videoInstruction) {
+            const res = await validateDriveUrl(parsedStart.videoInstruction, "video");
+            addPermissionError(res, "video");
+        }
+        if (parsedStart.videoInstructionCaption && containsUrl(parsedStart.videoInstructionCaption)) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have video text caption that is not a url`);
+        }
+
+        // ---- PDF ----
+        if (parsedStart.pdfInstruction) {
+            const res = await validateDriveUrl(parsedStart.pdfInstruction, "pdf");
+            addPermissionError(res, "pdf");
+        }
+        if (parsedStart.pdfInstructionCaption && containsUrl(parsedStart.pdfInstructionCaption)) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have pdf text caption that is not a url`);
         }
     }
-    if (parsedStart.imageInstructionCaption && containsUrl(parsedStart.imageInstructionCaption)) {
-        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have image text caption that is not a url`);
-    }
-
-    // ---- AUDIO ----
-    if (parsedStart.audioInstruction) {
-        const res = await validateDriveUrl(parsedStart.audioInstruction, "audio");
-        if (!res.valid) {
-            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have a valid audio url`);
-        }
-    }
-    if (parsedStart.audioInstructionCaption && containsUrl(parsedStart.audioInstructionCaption)) {
-        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have audio text caption that is not a url`);
-    }
-
-    // ---- VIDEO ----
-    if (parsedStart.videoInstruction) {
-        const res = await validateDriveUrl(parsedStart.videoInstruction, "video");
-        if (!res.valid) {
-            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have a valid video url`);
-        }
-    }
-    if (parsedStart.videoInstructionCaption && containsUrl(parsedStart.videoInstructionCaption)) {
-        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have video text caption that is not a url`);
-    }
-
-    // ---- PDF ----
-    if (parsedStart.pdfInstruction) {
-        const res = await validateDriveUrl(parsedStart.pdfInstruction, "pdf");
-        if (!res.valid) {
-            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have a valid pdf url`);
-        }
-    }
-    if (parsedStart.pdfInstructionCaption && containsUrl(parsedStart.pdfInstructionCaption)) {
-        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have pdf text caption that is not a url`);
-    }
-    }
+    
     // parse End Instructions
     if(activity.endInstructions){
-    const parsedEnd = await parseStartEndInstruction(activity.endInstructions);
+        const parsedEnd = await parseStartEndInstruction(activity.endInstructions);
 
-    // ---- TEXT ----
-    if (parsedEnd.textInstruction && containsUrl(parsedEnd.textInstruction)) {
-        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have text instruction that is not a url`);
-    }
-    if (parsedEnd.textInstructionCaption && containsUrl(parsedEnd.textInstructionCaption)) {
-        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have text caption that is not a url`);
-    }
+        // ---- TEXT ----
+        if (parsedEnd.textInstruction && containsUrl(parsedEnd.textInstruction)) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have text instruction that is not a url`);
+        }
+        if (parsedEnd.textInstructionCaption && containsUrl(parsedEnd.textInstructionCaption)) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have text caption that is not a url`);
+        }
 
-    // ---- IMAGE ----
-    if (parsedEnd.imageInstruction) {
-        const res = await validateDriveUrl(parsedEnd.imageInstruction, "image");
-        if (!res.valid) {
-            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have a valid image url`);
+        // ---- IMAGE ----
+        if (parsedEnd.imageInstruction) {
+            const res = await validateDriveUrl(parsedEnd.imageInstruction, "image");
+            addPermissionError(res, "image");
+        }
+        if (parsedEnd.imageInstructionCaption && containsUrl(parsedEnd.imageInstructionCaption)) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have image text caption that is not a url`);
+        }
+
+        // ---- AUDIO ----
+        if (parsedEnd.audioInstruction) {
+            const res = await validateDriveUrl(parsedEnd.audioInstruction, "audio");
+            addPermissionError(res, "audio");
+        }
+        if (parsedEnd.audioInstructionCaption && containsUrl(parsedEnd.audioInstructionCaption)) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have audio text caption that is not a url`);
+        }
+
+        // ---- VIDEO ----
+        if (parsedEnd.videoInstruction) {
+            const res = await validateDriveUrl(parsedEnd.videoInstruction, "video");
+            addPermissionError(res, "video");
+        }
+        if (parsedEnd.videoInstructionCaption && containsUrl(parsedEnd.videoInstructionCaption)) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have video text caption that is not a url`);
+        }
+
+        // ---- PDF ----
+        if (parsedEnd.pdfInstruction) {
+            const res = await validateDriveUrl(parsedEnd.pdfInstruction, "pdf");
+            addPermissionError(res, "pdf");
+        }
+        if (parsedEnd.pdfInstructionCaption && containsUrl(parsedEnd.pdfInstructionCaption)) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have pdf text caption that is not a url`);
         }
     }
-    if (parsedEnd.imageInstructionCaption && containsUrl(parsedEnd.imageInstructionCaption)) {
-        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have image text caption that is not a url`);
-    }
-
-    // ---- AUDIO ----
-    if (parsedEnd.audioInstruction) {
-        const res = await validateDriveUrl(parsedEnd.audioInstruction, "audio");
-        if (!res.valid) {
-            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have a valid audio url`);
-        }
-    }
-    if (parsedEnd.audioInstructionCaption && containsUrl(parsedEnd.audioInstructionCaption)) {
-        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have audio text caption that is not a url`);
-    }
-
-    // ---- VIDEO ----
-    if (parsedEnd.videoInstruction) {
-        const res = await validateDriveUrl(parsedEnd.videoInstruction, "video");
-        if (!res.valid) {
-            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have a valid video url`);
-        }
-    }
-    if (parsedEnd.videoInstructionCaption && containsUrl(parsedEnd.videoInstructionCaption)) {
-        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have video text caption that is not a url`);
-    }
-
-    // ---- PDF ----
-    if (parsedEnd.pdfInstruction) {
-        const res = await validateDriveUrl(parsedEnd.pdfInstruction, "pdf");
-        if (!res.valid) {
-            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have a valid pdf url`);
-        }
-    }
-    if (parsedEnd.pdfInstructionCaption && containsUrl(parsedEnd.pdfInstructionCaption)) {
-        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have pdf text caption that is not a url`);
-    }
-     }
+    
     // Skip on First Question
     if (activity.skipOnFirstQuestion && activity.skipOnFirstQuestion.toLowerCase() !== "true" && activity.skipOnFirstQuestion.toLowerCase() !== "false") {
        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have Skip on First Question that needs to be True/False`);
@@ -154,73 +153,62 @@ const commonValidation = async (activity) => {
 
         // Skip on Start to LessonId
         if(isNaN(activity.skipOnStartToLessonId)  || activity.skipOnStartToLessonId <= 0 ){
-        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have Skip on Start to LessonID that needs to be an integer and greater than 0`);
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have Skip on Start to LessonID that needs to be an integer and greater than 0`);
         }
     }
 
-    if(activity.skipOnStart.toLowerCase() == "true" && !activity.skipOnStartToLessonId){
+    if(activity.skipOnStart && activity.skipOnStart.toLowerCase() == "true" && !activity.skipOnStartToLessonId){
         errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have Skip on Start to LessonID because Skip on Start is True`);
     }
 
-    if (
-    activity.skipOnStart &&
-    activity.skipOnStart.toLowerCase() === "true" &&
-    activity.skipOnStartToLessonId > 0
-) {
-    try {
-        const lesson = await lessonRepository.getLessonByLessonId(activity.skipOnStartToLessonId);
-        if (!lesson) {
-            errors.push(
-                `Activity from "${activity.startRow}" to "${activity.endRow}" has SkipOnStartToLessonId ${activity.skipOnStartToLessonId} which does not exist in lessons table`
-            );
-        } else {
-            const current = {
-                week: parseInt(activity.week, 10),
-                day: parseInt(activity.day, 10),
-                seq: parseInt(activity.seq, 10),
-            };
-            const target = {
-                week: parseInt(lesson.weekNumber, 10),
-                day: parseInt(lesson.dayNumber, 10),
-                seq: parseInt(lesson.SequenceNumber, 10),
-            };
-
-            let isValid = false;
-
-            if (target.week > current.week) {
-                isValid = true;
-            } else if (target.week < current.week) {
-                isValid = false;
+    if (activity.skipOnStart && activity.skipOnStart.toLowerCase() === "true" && activity.skipOnStartToLessonId > 0) {
+        try {
+            const lesson = await lessonRepository.getLessonByLessonId(activity.skipOnStartToLessonId);
+            if (!lesson) {
+                errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" has SkipOnStartToLessonId ${activity.skipOnStartToLessonId} which does not exist in lessons table`);
             } else {
-                // weeks are equal
-                if (target.day > current.day) {
+                const current = {
+                    week: parseInt(activity.week, 10),
+                    day: parseInt(activity.day, 10),
+                    seq: parseInt(activity.seq, 10),
+                };
+                const target = {
+                    week: parseInt(lesson.weekNumber, 10),
+                    day: parseInt(lesson.dayNumber, 10),
+                    seq: parseInt(lesson.SequenceNumber, 10),
+                };
+
+                let isValid = false;
+
+                if (target.week > current.week) {
                     isValid = true;
-                } else if (target.day < current.day) {
+                } else if (target.week < current.week) {
                     isValid = false;
                 } else {
-                    // days are equal
-                    if (target.seq > current.seq) {
+                    // weeks are equal
+                    if (target.day > current.day) {
                         isValid = true;
-                    } else {
+                    } else if (target.day < current.day) {
                         isValid = false;
+                    } else {
+                        // days are equal
+                        if (target.seq > current.seq) {
+                            isValid = true;
+                        } else {
+                            isValid = false;
+                        }
                     }
                 }
-            }
 
-            if (!isValid) {
-                errors.push(
-                    `Activity from "${activity.startRow}" to "${activity.endRow}" has SkipOnStartToLessonId (${activity.skipOnStartToLessonId}) that must point to a lesson strictly after the current activity (week/day/seq)`
-                );
+                if (!isValid) {
+                    errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" has SkipOnStartToLessonId (${activity.skipOnStartToLessonId}) that must point to a lesson strictly after the current activity (week/day/seq)`);
+                }
             }
+        } catch (err) {
+            console.error("LessonId validation error:", err);
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" failed while validating SkipOnStartToLessonId`);
         }
-    } catch (err) {
-        console.error("LessonId validation error:", err);
-        errors.push(
-            `Activity from "${activity.startRow}" to "${activity.endRow}" failed while validating SkipOnStartToLessonId`
-        );
     }
-}
-
     
     if (activity.skipOnEveryQuestion && activity.skipOnEveryQuestion.toLowerCase() !== "true" && activity.skipOnEveryQuestion.toLowerCase() !== "false") {
        errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have Skip on Every Question that needs to be True/False`);
@@ -229,13 +217,12 @@ const commonValidation = async (activity) => {
     // COMPLETION STICKER (must be webp only)
     if (activity.completionSticker) {
         const res = await validateDriveUrl(activity.completionSticker, "image");
-        if (!res.valid) {
-            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have a valid sticker image url`);
-        } else {
-            // Check for webp only
-            if (!res.mimeType || res.mimeType !== "image/webp") {
-                errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have a completion sticker in WEBP format only`);
-            }
+        if (res.needsPermission) {
+            errors.push(`Row ${activity.startRow}-${activity.endRow}: No view access to completion sticker. Grant view access to: ${serviceAccountEmail || 'service account'}`);
+        } else if (!res.valid || !res.accessible) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have a valid sticker image url: ${res.error}`);
+        } else if (res.mimeType && res.mimeType !== "image/webp") {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have a completion sticker in WEBP format only`);
         }
     }
 
@@ -259,25 +246,19 @@ const commonValidation = async (activity) => {
         // If questionVideo exists should be a valid video url
         if (question.questionVideo) {
             const res = await validateDriveUrl(question.questionVideo, "video");
-            if (!res.valid) {
-                errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have question video that is a valid video file`);
-            }
+            addPermissionError(res, "question video");
         }
 
         // If questionAudio exists should be a valid audio url
         if (question.questionAudio) {
             const res = await validateDriveUrl(question.questionAudio, "audio");
-            if (!res.valid) {
-                errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have question audio that is a valid audio file`);
-            }
+            addPermissionError(res, "question audio");
         }
 
         // If questionImage exists should be a valid image url
         if (question.questionImage) {
             const res = await validateDriveUrl(question.questionImage, "image");
-            if (!res.valid) {
-                errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have question image that is a valid image file`);
-            }
+            addPermissionError(res, "question image");
         }
 
         for (const answer of question.answers) {
@@ -299,17 +280,13 @@ const commonValidation = async (activity) => {
             // If customFeedbackImage exists should be a valid image url
             if (answer.customFeedbackImage) {
                 const res = await validateDriveUrl(answer.customFeedbackImage, "image");
-                if (!res.valid) {
-                    errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have custom feedback image that is a valid image file`);
-                }
+                addPermissionError(res, "custom feedback image");
             }
 
             // If customFeedbackAudio exists should be a valid audio url
             if (answer.customFeedbackAudio) {
                 const res = await validateDriveUrl(answer.customFeedbackAudio, "audio");
-                if (!res.valid) {
-                    errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have custom feedback audio that is a valid audio file`);
-                }
+                addPermissionError(res, "custom feedback audio");
             }
         }
     }
@@ -320,23 +297,6 @@ const commonValidation = async (activity) => {
         toUpdate
     };
 };
-
-
-const normalizeInt = (val) => {
-  if (val === undefined || val === null || val === "") return null;
-  return parseInt(val, 10);
-};
-
-const normalizeBool = (val) => {
-  if (val === undefined || val === null || val === "") return false;
-  if (typeof val === "boolean") return val;
-  if (typeof val === "string") {
-    if (val.toLowerCase() === "true") return true;
-    if (val.toLowerCase() === "false") return false;
-  }
-  return false;
-};
-
 
 const commonIngestion = async (activity, exists) => {
     let lessonCreation = null;

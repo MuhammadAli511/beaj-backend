@@ -45,6 +45,16 @@ const getAuthSheetClient = async () => {
     return auth.getClient();
 };
 
+// Helper to get service account email
+const getServiceAccountEmail = async () => {
+    try {
+        const creds = JSON.parse(await readFile(new URL("../my_cred.json", import.meta.url), "utf-8"));
+        return creds.client_email || null;
+    } catch (error) {
+        return null;
+    }
+};
+
 // Function to get the media URL from the Google Drive URL
 const getDriveMediaUrl = async (driveUrl) => {
     // Return null if no URL provided
@@ -136,9 +146,22 @@ const validateDriveUrl = async (driveUrl, expectedType = null) => {
             mimeType: meta.data.mimeType,
         }
     } catch (error) {
+        // Check specifically for permission errors (403 or 404)
+        if (error.code === 403 || error.code === 404) {
+            return {
+                valid: true,
+                accessible: false,
+                needsPermission: true,
+                error: `No view access to file. Please grant view access to the service account.`,
+                fileUrl: driveUrl
+            }
+        }
+        
+        // Other errors (network issues, etc.)
         return {
             valid: true,
             accessible: false,
+            needsPermission: false,
             error: `Cannot access file: ${error.message}`,
         }
     }
@@ -1004,6 +1027,21 @@ const compressSticker = async (stickerFileObject) => {
     return uploadedUrl;
 };
 
+const normalizeInt = (val) => {
+  if (val === undefined || val === null || val === "") return null;
+  return parseInt(val, 10);
+};
+
+const normalizeBool = (val) => {
+  if (val === undefined || val === null || val === "") return false;
+  if (typeof val === "boolean") return val;
+  if (typeof val === "string") {
+    if (val.toLowerCase() === "true") return true;
+    if (val.toLowerCase() === "false") return false;
+  }
+  return false;
+};
+
 export {
     getDriveMediaUrl,
     validateDriveUrl,
@@ -1022,4 +1060,7 @@ export {
     parseStartEndInstruction,
     isAnswerBold,
     compressSticker,
+    getServiceAccountEmail,
+    normalizeInt,
+    normalizeBool,
 };

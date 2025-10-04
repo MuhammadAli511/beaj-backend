@@ -144,7 +144,7 @@ const ingestion = async (activities) => {
                                 }
 
 
-                                let existingMultipleChoiceQuestion = existingMultipleChoiceQuestions.find(existingQ => existingQ.questionNumber == question.questionNumber);
+                                let existingMultipleChoiceQuestion = existingMultipleChoiceQuestions.find(existingQ => existingQ.QuestionNumber == question.questionNumber);
                                 if (existingMultipleChoiceQuestion) {
                                     // Update existing mcqs activity question with new compressed video/image URL
                                     await multipleChoiceQuestionRepository.update(
