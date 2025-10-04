@@ -46,7 +46,6 @@ const validation = async (activities) => {
                         `mcqs question in activity from "${activity.startRow}" to "${activity.endRow}" must have exactly 3 options, found ${question.answers.length}.`
                     );
                 }
-
                 // 2) At least one correct answer (from bold detection)
                 if (!question.answers.some(a => a.correct === true)) {
                     allErrors.push(
@@ -151,7 +150,7 @@ const ingestion = async (activities) => {
                                 }
 
 
-                                let existingMultipleChoiceQuestion = existingMultipleChoiceQuestions.find(existingQ => existingQ.questionNumber == question.questionNumber);
+                                let existingMultipleChoiceQuestion = existingMultipleChoiceQuestions.find(existingQ => existingQ.QuestionNumber === question.questionNumber);
                                 
                                 if (existingMultipleChoiceQuestion) {
                                     // Update existing mcqs activity question with new compressed video/image URL
