@@ -17,6 +17,9 @@ import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import { sendAliasAndStartingInstruction } from "../utils/aliasAndInstructionsUtils.js";
 import course_languages from "../constants/language.js";
 import submitResponseFlow from "../flows/submitResponseFlow.js";
+import skipActivityFlow from "../flows/skipActivityFlow.js";
+import skipButtonFlow from "../flows/skipButtonFlow.js";
+
 
 const conversationalQuestionsBotView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
@@ -105,18 +108,14 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                 await submitResponseFlow(profileId, userMobileNumber, startingLesson);
                 return;
             }
-            else if (messageContent == 'yes') {
+            else if (messageContent == 'yes' || messageContent == 'oui') {
                 // Get the current Conversation Bot question
                 const currentConversationBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                 const audioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(profileId, currentConversationBotQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
 
                 if (!audioUrl) {
                     await sendMessage(userMobileNumber, "Audio not found. Please try recording again.");
-                    if (startingLesson.dataValues.skipOnEveryQuestion == true) {
-                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
-                    } else {
-                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
-                    }
+                    await skipButtonFlow(userMobileNumber, startingLesson, currentConversationBotQuestion);
                     return;
                 }
 
@@ -226,18 +225,14 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                 }
                 return;
             }
-            else if (messageContent == 'no, try again' || messageContent == 'no') {
+            else if (messageContent == 'no, try again' || messageContent == 'no' || messageContent == 'enregistrez encore') {
                 // Send message to try again
                 let recordAgainMessage = course_languages[startingLesson.dataValues.courseLanguage]["record_again_message"];
                 await sendMessage(userMobileNumber, recordAgainMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", recordAgainMessage, null);
 
                 // Update acceptable messages list for the user
-                if (startingLesson.dataValues.skipOnEveryQuestion == true) {
-                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
-                } else {
-                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
-                }
+                await skipButtonFlow(userMobileNumber, startingLesson);
                 return;
             }
         }
@@ -324,18 +319,14 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                 await submitResponseFlow(profileId, userMobileNumber, startingLesson);
                 return;
             }
-            else if (messageContent == 'yes') {
+            else if (messageContent == 'yes' || messageContent == 'oui') {
                 // Get the current Conversation Bot question
                 const currentConversationBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                 const audioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(profileId, currentConversationBotQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
 
                 if (!audioUrl) {
                     await sendMessage(userMobileNumber, "Audio not found. Please try recording again.");
-                    if (startingLesson.dataValues.skipOnEveryQuestion == true) {
-                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
-                    } else {
-                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
-                    }
+                    await skipButtonFlow(userMobileNumber, startingLesson, currentConversationBotQuestion);
                     return;
                 }
 
@@ -445,18 +436,14 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                 }
                 return;
             }
-            else if (messageContent == 'no, try again' || messageContent == 'no') {
+            else if (messageContent == 'no, try again' || messageContent == 'no' || messageContent == 'enregistrez encore') {
                 // Send message to try again
                 let recordAgainMessage = course_languages[startingLesson.dataValues.courseLanguage]["record_again_message"];
                 await sendMessage(userMobileNumber, recordAgainMessage);
                 await createActivityLog(userMobileNumber, "text", "outbound", recordAgainMessage, null);
 
                 // Update acceptable messages list for the user
-                if (startingLesson.dataValues.skipOnEveryQuestion == true) {
-                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
-                } else {
-                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
-                }
+                await skipButtonFlow(userMobileNumber, startingLesson);
                 return;
             }
         }

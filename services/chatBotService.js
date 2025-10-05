@@ -20,7 +20,8 @@ import { runWithContext } from "../utils/requestContext.js";
 import {
     activity_types_to_repeat, text_message_types, beaj_team_numbers, feedback_acceptable_messages, course_start_states,
     next_activity_acceptable_messages, special_commands, talk_to_beaj_rep_messages, course_start_acceptable_messages,
-    trigger_course_acceptable_messages, teacher_trial_flow_engagement_types, kids_trial_flow_engagement_types
+    trigger_course_acceptable_messages, teacher_trial_flow_engagement_types, kids_trial_flow_engagement_types,
+    next_question_acceptable_messages
 } from "../constants/constants.js";
 import { specialCommandFlow } from "../flows/specialCommandFlows.js";
 import { marketingBotFlow } from "../flows/marketingBotFlows.js";
@@ -147,15 +148,14 @@ const webhookService = async (body, res) => {
                 }
                 // CHECKING FOR ACCEPTABLE MESSAGES AND SETTING COURSE LANGUAGE
                 if (currentUserState) {
-                    const messageAuth = await checkUserMessageAndAcceptableMessages(profileId, userMobileNumber, currentUserState, messageType, messageContent);
-                    if (messageAuth === false) {
-                        return;
-                    }
-
                     if (currentUserState?.dataValues?.currentCourseId) {
                         const course = await courseRepository.getById(currentUserState.dataValues.currentCourseId);
                         courseLanguage = course?.dataValues?.courseLanguage;
                     }
+                    const messageAuth = await checkUserMessageAndAcceptableMessages(profileId, userMobileNumber, currentUserState, messageType, messageContent, courseLanguage);
+                    if (messageAuth === false) {
+                        return;
+                    }                    
                 }
                 // CHOOSING PROFILE FLOW
                 if ((chooseProfile) || (text_message_types.includes(message.type) && messageContent.toLowerCase().includes("change user"))) {
@@ -181,7 +181,7 @@ const webhookService = async (body, res) => {
                     }
                     return;
                 } else if (currentUserState.dataValues.engagement_type != "Course Start") {
-                    const messageAuth = await checkUserMessageAndAcceptableMessages(profileId, userMobileNumber, currentUserState, messageType, messageContent);
+                    const messageAuth = await checkUserMessageAndAcceptableMessages(profileId, userMobileNumber, currentUserState, messageType, messageContent, courseLanguage);
                     if (messageAuth === false) {
                         return;
                     }
@@ -248,8 +248,12 @@ const webhookService = async (body, res) => {
                 // MID ACTIVITY FLOWS - TRIGGERING ON "YES" OR "NO" OR "EASY" OR "HARD"
                 if (text_message_types.includes(message.type)) {
                     const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
+                    console.log(next_question_acceptable_messages.includes(messageContent.toLowerCase()));
+                    console.log(messageContent.toLowerCase());
+                    console.log(currentUserState.dataValues.activityType);
+                    console.log(currentUserState.dataValues.questionNumber);
                     if (
-                        ((messageContent.toLowerCase().includes("yes") || messageContent.toLowerCase().includes("no")) && (currentUserState.dataValues.activityType && currentUserState.dataValues.questionNumber)) ||
+                        (next_question_acceptable_messages.includes(messageContent.toLowerCase()) && (currentUserState.dataValues.activityType && currentUserState.dataValues.questionNumber)) ||
                         ((messageContent.toLowerCase().includes("easy") || messageContent.toLowerCase().includes("hard")) && (currentUserState.dataValues.activityType))
                     ) {
                         currentLesson.dataValues.courseLanguage = courseLanguage;

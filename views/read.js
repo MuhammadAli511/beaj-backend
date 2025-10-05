@@ -100,7 +100,7 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
                 await submitResponseFlow(profileId, userMobileNumber, startingLesson);
                 return;
             }
-            else if (messageContent == 'yes') {
+            else if (messageContent == 'yes' || messageContent == 'oui') {
                 // Get the uploaded audio
                 const audioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(profileId, null, startingLesson.dataValues.LessonId);
 
@@ -154,7 +154,7 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
                 await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
                 return;
             }
-            else if (messageContent == 'no, try again' || messageContent == 'no') {
+            else if (messageContent == 'no, try again' || messageContent == 'no' || messageContent == 'enregistrez encore') {
                 // Send message to try again
                 let recordAgainMessage = course_languages[startingLesson.dataValues.courseLanguage]["record_again_message"];
                 await sendMessage(userMobileNumber, recordAgainMessage);
@@ -244,7 +244,7 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
                 await submitResponseFlow(profileId, userMobileNumber, startingLesson);
                 return;
             }
-            else if (messageContent == 'yes') {
+            else if (messageContent == 'yes' || messageContent == 'oui') {
                 // Get the uploaded audio
                 const audioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(profileId, null, startingLesson.dataValues.LessonId);
 
@@ -303,7 +303,7 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
                 await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
                 return;
             }
-            else if (messageContent == 'no, try again' || messageContent == 'no') {
+            else if (messageContent == 'no, try again' || messageContent == 'no' || messageContent == 'enregistrez encore') {
                 // Send message to try again
                 let recordAgainMessage = course_languages[startingLesson.dataValues.courseLanguage]["record_again_message"];
                 await sendMessage(userMobileNumber, recordAgainMessage);

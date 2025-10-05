@@ -231,7 +231,7 @@ const convertNumberToEmoji = async (number) => {
 };
 
 
-const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber, currentUserState, messageType, messageContent) => {
+const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber, currentUserState, messageType, messageContent, courseLanguage) => {
     const acceptableMessagesList = currentUserState.dataValues.acceptableMessages;
     const activityType = currentUserState.dataValues.activityType;
     const persona = currentUserState.dataValues.persona;
@@ -290,7 +290,13 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
     ) {
         if (acceptableMessagesList.includes("audio") && messageType === "audio") {
             return true;
-        } else if (text_message_types.includes(messageType) && (messageContent.toLowerCase() == "next" || messageContent.toLowerCase() == "skip" || messageContent.toLowerCase() == "next activity")) {
+        } else if (text_message_types.includes(messageType) &&
+            (
+                messageContent.toLowerCase() == "next" ||
+                messageContent.toLowerCase() == "skip" ||
+                messageContent.toLowerCase() == "next activity" ||
+                messageContent.toLowerCase() == "passer"
+            )) {
             return true;
         }
     }
@@ -317,14 +323,26 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
     }
     // If list has "audio"
     if (acceptableMessagesList.includes("audio")) {
-        await sendMessage(userMobileNumber, "Voice message record karke bhejain.");
-        await createActivityLog(userMobileNumber, "text", "outbound", "Voice message record karke bhejain.", null);
+        let message = "";
+        if (courseLanguage == "eng") {
+            message = "Record and send a voice message.";
+        } else {
+            message = "Enregistrez et envoyez un message vocal.";
+        }
+        await sendMessage(userMobileNumber, message);
+        await createActivityLog(userMobileNumber, "text", "outbound", message, null);
         return false;
     }
     // If list has "text"
     if (acceptableMessagesList.includes("text")) {
-        await sendMessage(userMobileNumber, "Text message type kerain.");
-        await createActivityLog(userMobileNumber, "text", "outbound", "Text message type kerain.", null);
+        let message = "";
+        if (courseLanguage == "eng") {
+            message = "Text message type kerain.";
+        } else {
+            message = "Type un message texte.";
+        }
+        await sendMessage(userMobileNumber, message);
+        await createActivityLog(userMobileNumber, "text", "outbound", message, null);
         return false;
     }
     if (acceptableMessagesList.includes("start")) {

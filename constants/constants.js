@@ -61,6 +61,14 @@ const feedback_acceptable_messages = [
     "it can be improved 🤔",
 ];
 
+const next_question_acceptable_messages = [
+    "yes",
+    "no",
+    "no, try again",
+    "oui",
+    "enregistrez encore",
+];
+
 const next_activity_acceptable_messages = [
     "start next activity",
     "start part 2",
@@ -264,6 +272,7 @@ export {
     kids_trial_flow_engagement_types,
     activity_types,
     columns_order,
-    audio_activities
+    audio_activities,
+    next_question_acceptable_messages
 };
 
