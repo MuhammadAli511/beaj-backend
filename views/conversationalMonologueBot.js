@@ -13,6 +13,9 @@ import textToSpeech from "../utils/textToSpeech.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import { createAndUploadMonologueScoreImage } from "../utils/imageGenerationUtils.js";
 import { sendAliasAndStartingInstruction } from "../utils/aliasAndInstructionsUtils.js";
+import course_languages from "../constants/language.js";
+import submitResponseFlow from "../flows/submitResponseFlow.js";
+import skipActivityFlow from "../flows/skipActivityFlow.js";
 
 const conversationalMonologueBotView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
@@ -35,19 +38,8 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 await sendMediaMessage(userMobileNumber, firstConversationalMonologueBotQuestion.dataValues.mediaFile, 'video', null, 0, "SpeakActivityQuestion", firstConversationalMonologueBotQuestion.dataValues.id, firstConversationalMonologueBotQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
                 await createActivityLog(userMobileNumber, "video", "outbound", firstConversationalMonologueBotQuestion.dataValues.mediaFile, null);
 
-                if (startingLesson.dataValues.skipOnEveryQuestion == true) {
-                    await sendButtonMessage(userMobileNumber, "👇 Click here to skip:", [{ id: "skip", title: "Skip" }]);
-                    await createActivityLog(userMobileNumber, "template", "outbound", "👇 Click here to skip:", null);
-                }
-
-                // Update acceptable messages list for the user
-                if (startingLesson.dataValues.skipOnFirstQuestion == true && firstConversationalMonologueBotQuestion.dataValues.questionNumber == 1) {
-                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
-                } else if (startingLesson.dataValues.skipOnEveryQuestion == true){
-                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
-                } else {
-                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
-                }
+                let acceptableMessagesList = await skipActivityFlow(userMobileNumber, startingLesson, ["audio"], firstConversationalMonologueBotQuestion);
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
             }
             else if (messageType === 'audio') {
                 // Get the current Conversational Monologue Bot question
@@ -107,12 +99,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                     }
                 }
 
-                await sendButtonMessage(userMobileNumber, "Submit response? 🧐", [{ id: "yes", title: "Yes" }, { id: "no", title: "No, try again" }]);
-                await createActivityLog(userMobileNumber, "template", "outbound", "Submit response? 🧐", null);
-
-                // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no", "no, try again"]);
-                await sleep(2000);
+                await submitResponseFlow(profileId, userMobileNumber, startingLesson);
                 return;
             }
             else if (messageContent == 'yes') {
@@ -191,13 +178,8 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                     await sendMediaMessage(userMobileNumber, nextConversationalMonologueBotQuestion.dataValues.mediaFile, 'video', null, 0, "SpeakActivityQuestion", nextConversationalMonologueBotQuestion.dataValues.id, nextConversationalMonologueBotQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
                     await createActivityLog(userMobileNumber, "video", "outbound", nextConversationalMonologueBotQuestion.dataValues.mediaFile, null);
 
-                    if (startingLesson.dataValues.skipOnEveryQuestion == true) {
-                        await sendButtonMessage(userMobileNumber, "👇 Click here to skip:", [{ id: "skip", title: "Skip" }]);
-                        await createActivityLog(userMobileNumber, "template", "outbound", "👇 Click here to skip:", null);
-                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
-                    } else {
-                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
-                    }
+                    let acceptableMessagesList = await skipActivityFlow(userMobileNumber, startingLesson, ["audio"], nextConversationalMonologueBotQuestion);
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
                 } else {
                     // Reset Question Number, Retry Counter, and Activity Type
                     await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
@@ -209,8 +191,9 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
             }
             else if (messageContent == 'no, try again' || messageContent == 'no') {
                 // Send message to try again
-                await sendMessage(userMobileNumber, "Okay record your voice message again.");
-                await createActivityLog(userMobileNumber, "text", "outbound", "Okay record your voice message again.", null);
+                let recordAgainMessage = course_languages[startingLesson.dataValues.courseLanguage]["record_again_message"];
+                await sendMessage(userMobileNumber, recordAgainMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", recordAgainMessage, null);
 
                 // Update acceptable messages list for the user
                 if (startingLesson.dataValues.skipOnEveryQuestion == true) {
@@ -239,19 +222,8 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                 await sendMediaMessage(userMobileNumber, firstConversationalMonologueBotQuestion.dataValues.mediaFile, 'video', null, 0, "SpeakActivityQuestion", firstConversationalMonologueBotQuestion.dataValues.id, firstConversationalMonologueBotQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
                 await createActivityLog(userMobileNumber, "video", "outbound", firstConversationalMonologueBotQuestion.dataValues.mediaFile, null);
 
-                if (startingLesson.dataValues.skipOnEveryQuestion == true) {
-                    await sendButtonMessage(userMobileNumber, "👇 Click here to skip:", [{ id: "skip", title: "Skip" }]);
-                    await createActivityLog(userMobileNumber, "template", "outbound", "👇 Click here to skip:", null);
-                }
-
-                // Update acceptable messages list for the user
-                if (startingLesson.dataValues.skipOnFirstQuestion == true && firstConversationalMonologueBotQuestion.dataValues.questionNumber == 1) {
-                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
-                } else if (startingLesson.dataValues.skipOnEveryQuestion == true){
-                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
-                } else {
-                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
-                }
+                let acceptableMessagesList = await skipActivityFlow(userMobileNumber, startingLesson, ["audio"], firstConversationalMonologueBotQuestion);
+                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
             }
             else if (messageType === 'audio') {
                 // Get the current Conversational Monologue Bot question
@@ -311,12 +283,7 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                     }
                 }
 
-                await sendButtonMessage(userMobileNumber, "Submit response? 🧐", [{ id: "yes", title: "Yes" }, { id: "no", title: "No, try again" }]);
-                await createActivityLog(userMobileNumber, "template", "outbound", "Submit response? 🧐", null);
-
-                // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no", "no, try again"]);
-                await sleep(2000);
+                await submitResponseFlow(profileId, userMobileNumber, startingLesson);
                 return;
             }
             else if (messageContent == 'yes') {
@@ -396,13 +363,8 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
                     await createActivityLog(userMobileNumber, "video", "outbound", nextConversationalMonologueBotQuestion.dataValues.mediaFile, null);
 
                     // Update acceptable messages list for the user
-                    if (startingLesson.dataValues.skipOnEveryQuestion == true) {
-                        await sendButtonMessage(userMobileNumber, "👇 Click here to skip:", [{ id: "skip", title: "Skip" }]);
-                        await createActivityLog(userMobileNumber, "template", "outbound", "👇 Click here to skip:", null);
-                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio", "skip"]);
-                    } else {
-                        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
-                    }
+                    let acceptableMessagesList = await skipActivityFlow(userMobileNumber, startingLesson, ["audio"], nextConversationalMonologueBotQuestion);
+                    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
                 } else {
                     // Reset Question Number, Retry Counter, and Activity Type
                     await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
@@ -414,8 +376,9 @@ const conversationalMonologueBotView = async (profileId, userMobileNumber, curre
             }
             else if (messageContent == 'no, try again' || messageContent == 'no') {
                 // Send message to try again
-                await sendMessage(userMobileNumber, "Okay record your voice message again.");
-                await createActivityLog(userMobileNumber, "text", "outbound", "Okay record your voice message again.", null);
+                let recordAgainMessage = course_languages[startingLesson.dataValues.courseLanguage]["record_again_message"];
+                await sendMessage(userMobileNumber, recordAgainMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", recordAgainMessage, null);
 
                 // Update acceptable messages list for the user
                 if (startingLesson.dataValues.skipOnEveryQuestion == true) {

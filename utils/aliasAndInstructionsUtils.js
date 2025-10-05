@@ -1,4 +1,5 @@
-import { default_starting_instruction, audio_activities } from "../constants/constants.js";
+import { audio_activities } from "../constants/constants.js";
+import course_languages from "../constants/language.js";
 import { sendMessage, sendMediaMessage, sendButtonMessage } from "./whatsappUtils.js";
 import { createActivityLog } from "./createActivityLogUtils.js";
 import lessonInstructionsService from "../services/lessonInstructionsService.js";
@@ -8,7 +9,7 @@ const sendAliasAndStartingInstruction = async (userMobileNumber, startingLesson)
     let alias = startingLesson.dataValues.activityAlias;
     let lessonMessage = "";
     if (alias != null && alias != "") {
-        if (startingLesson.dataValues.courseId == 100) {
+        if (startingLesson.dataValues.courseLanguage == "fra") {
             lessonMessage = "Activité: " + alias.replace(/\\n/g, '\n') + "\n\n";
         } else {
             lessonMessage = "Activity: " + alias.replace(/\\n/g, '\n') + "\n\n";
@@ -25,7 +26,7 @@ const sendAliasAndStartingInstruction = async (userMobileNumber, startingLesson)
     );
     let lessonTextInstruction = textInstruction?.url;
     if (lessonTextInstruction == null || lessonTextInstruction == "") {
-        lessonTextInstruction = default_starting_instruction[startingLesson.dataValues.activity];
+        lessonTextInstruction = course_languages[startingLesson.dataValues.courseLanguage]["default_starting_instruction"][startingLesson.dataValues.activity];
     }
     lessonTextInstruction = lessonTextInstruction.replace(/\\n/g, '\n');
     lessonMessage += lessonTextInstruction;

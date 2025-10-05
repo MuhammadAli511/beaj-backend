@@ -77,7 +77,11 @@ const next_activity_acceptable_messages = [
     "start practice",
     "next activity",
     "skip",
-    "skip activity"
+    "skip activity",
+    "passez",
+    "commencez",
+    "continuez",
+    "activité suivante"
 ];
 
 const course_start_acceptable_messages = [
@@ -86,6 +90,7 @@ const course_start_acceptable_messages = [
     "start free trial",
     "class 1 or 2",
     "class 3 to 6",
+    "commencer"
 ];
 
 const course_start_states = [
@@ -102,6 +107,7 @@ const trigger_course_acceptable_messages = [
     "complete final task",
     "start level 1",
     "start now!",
+    "commencer!"
 ];
 
 const grades_and_class_names = [
@@ -172,30 +178,6 @@ const kids_trial_flow_engagement_types = [
     "Thankyou Message - Parent",
     "Thankyou Message - School Owner"
 ];
-
-
-const default_starting_instruction = {
-    "assessmentMcqs": "👇 *Answer the following questions.*",
-    "assessmentWatchAndSpeak": "Watch the videos. Then practise speaking by sending voice messages. 💬",
-    "conversationalAgencyBot": "Listen to the audio and send your answer as a voice message.",
-    "conversationalMonologueBot": "Watch the video 👇🏽 and practise speaking by sending a voice message.💬",
-    "conversationalQuestionsBot": "Listen to the audio and send your answer as a voice message.",
-    "feedbackAudio": "Listen to the audio instruction and send your response as a voice message.💬",
-    "feedbackMcqs": "👇 *Answer the following questions.*",
-    "listenAndSpeak": "Listen to the audio question and send your answer as a voice message.💬",
-    "mcqs": "👇 *Answer the following questions.*",
-    "read": "Listen to the passage carefully.",
-    "speakingPractice": "Listen to the audio and respond to the question by sending a voice message.💬\n*Speak for at least 30 seconds*",
-    "video": "👀 *Watch the video.*",
-    "videoEnd": "👀 *Watch the video.*",
-    "audio": "👂 *Listen to the audio.*",
-    "audioEnd": "👂 *Listen to the audio.*",
-    "image": "👀 *Observe the image.*",
-    "imageEnd": "👀 *Observe the image.*",
-    "watchAndAudio": "Watch the video 👇🏽 and send your response as a voice message.",
-    "watchAndImage": "Watch the videos. Then send an image response.",
-    "watchAndSpeak": "Watch the videos. Then practise speaking by sending voice messages. 💬"
-};
 
 
 const activity_types = [
@@ -280,7 +262,6 @@ export {
     course_start_states,
     teacher_trial_flow_engagement_types,
     kids_trial_flow_engagement_types,
-    default_starting_instruction,
     activity_types,
     columns_order,
     audio_activities

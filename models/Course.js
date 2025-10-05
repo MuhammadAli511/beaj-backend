@@ -48,6 +48,10 @@ Course.init({
     type: DataTypes.DATE,
     allowNull: true
   },
+  courseLanguage: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  }
 }, {
   sequelize,
   modelName: 'Course',

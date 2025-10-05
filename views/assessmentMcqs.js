@@ -8,6 +8,8 @@ import { convertNumberToEmoji } from "../utils/utils.js";
 import { sendAliasAndStartingInstruction } from "../utils/aliasAndInstructionsUtils.js";
 import multipleChoiceQuestionRepository from "../repositories/multipleChoiceQuestionRepository.js";
 import multipleChoiceQuestionAnswerRepository from "../repositories/multipleChoiceQuestionAnswerRepository.js";
+import course_languages from "../constants/language.js";
+import skipActivityFlow from "../flows/skipActivityFlow.js";
 
 
 const sendQuestion = async (nextMCQsQuestion, totalQuestions, currentUserState, userMobileNumber, profileId, startingLesson) => {
@@ -33,12 +35,12 @@ const sendQuestion = async (nextMCQsQuestion, totalQuestions, currentUserState, 
         !questionText.includes("Which sentence is correct?") &&
         !questionText.includes("Choose one option")
     ) {
-        mcqMessage += "Choose the correct answer:\n";
+        mcqMessage += course_languages[startingLesson.dataValues.courseLanguage]["mcqs_choose_correct_answer_message"];
     }
     if (startingLesson.dataValues.skipOnFirstQuestion == true && nextMCQsQuestion.dataValues.QuestionNumber == 1) {
-        mcqMessage += "\n\nOR\n\nClick *'Skip'* to start next activity";
+        mcqMessage += course_languages[startingLesson.dataValues.courseLanguage]["mcq_skip_message"];
     } else if (startingLesson.dataValues.skipOnEveryQuestion == true) {
-        mcqMessage += "\n\nOR\n\nClick *'Skip'* to start next activity";
+        mcqMessage += course_languages[startingLesson.dataValues.courseLanguage]["mcq_skip_message"];
     }
     if (mcqType == 'Text') {
         for (let i = 0; i < mcqAnswers.length; i++) {
@@ -67,24 +69,12 @@ const sendQuestion = async (nextMCQsQuestion, totalQuestions, currentUserState, 
         await sendButtonMessage(userMobileNumber, "", mcqAnswers.map((answer, index) => ({ id: `${nextMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })), 0, mcqImage, null, "MultipleChoiceQuestion", nextMCQsQuestion.dataValues.Id, nextMCQsQuestion.dataValues.QuestionImageMediaId, null, "QuestionImageMediaId");
         await createActivityLog(userMobileNumber, "template", "outbound", "", null);
     }
-    if (startingLesson.dataValues.skipOnFirstQuestion == true && nextMCQsQuestion.dataValues.QuestionNumber == 1) {
-        await sendButtonMessage(userMobileNumber, "👇 Click here to skip:", [{ id: "skip", title: "Skip" }]);
-        await createActivityLog(userMobileNumber, "template", "outbound", "👇 Click here to skip:", null);
-    }
-    else if (startingLesson.dataValues.skipOnEveryQuestion == true) {
-        await sendButtonMessage(userMobileNumber, "👇 Click here to skip:", [{ id: "skip", title: "Skip" }]);
-        await createActivityLog(userMobileNumber, "template", "outbound", "👇 Click here to skip:", null);
-    }
+    
 
     // Update acceptable messages list for the user
     let acceptableMessages = Array.from({ length: mcqAnswers.length }, (_, i) => String.fromCharCode(97 + i));
-    if (startingLesson.dataValues.skipOnFirstQuestion == true && nextMCQsQuestion.dataValues.QuestionNumber == 1) {
-        acceptableMessages.push("skip");
-    }
-    else if (startingLesson.dataValues.skipOnEveryQuestion == true) {
-        acceptableMessages.push("skip");
-    }
-    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessages);
+    let acceptableMessagesList = await skipActivityFlow(userMobileNumber, startingLesson, acceptableMessages, nextMCQsQuestion);
+    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
 };
 
 const getNextMcqQuestion = async (currentUserState, profileId, userMobileNumber, startingLesson) => {

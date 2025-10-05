@@ -419,12 +419,19 @@ const startCourseForUser = async (profileId, userMobileNumber, numbers_to_ignore
         } else if (level == "Level 4") {
             await sendButtonMessage(userMobileNumber, 'Are you ready to start your final task?', [{ id: 'lets_start', title: "Start" }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start your final task?", null);
+        } else if (nextCourse?.dataValues?.courseName?.toLowerCase().includes("french")) {
+            await sendButtonMessage(userMobileNumber, "Êtes-vous prêt à commencer le niveau 1?", [{ id: 'lets_start', title: "Commencer" }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", "Êtes-vous prêt à commencer le niveau 1?", null);
         } else {
             await sendButtonMessage(userMobileNumber, "Are you ready to start " + level + "?", [{ id: "lets_start", title: "Start" }]);
             await createActivityLog(userMobileNumber, "template", "outbound", "Are you ready to start " + level + "?", null);
         }
 
-        await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start"]);
+        if (nextCourse?.dataValues?.courseName?.toLowerCase().includes("french")) {
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["commencer"]);
+        } else {
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["start"]);
+        }
     } else {
         const courseName = nextCourse.dataValues.courseName;
         const level = getLevelFromCourseName(courseName);

@@ -5,13 +5,15 @@ import { getAcceptableMessagesList } from "../utils/utils.js";
 import { sendCourseLesson } from "../utils/chatbotUtils.js";
 
 
-const handleVideoAudioImageFlow = async (profileId, userMobileNumber, latestUserState, messageType, messageContent, persona, buttonId) => {
-    const nextLesson = await lessonRepository.getNextLesson(
+const handleVideoAudioImageFlow = async (profileId, userMobileNumber, latestUserState, messageType, messageContent, persona, buttonId, courseLanguage) => {
+    let nextLesson = await lessonRepository.getNextLesson(
         latestUserState.dataValues.currentCourseId,
         latestUserState.dataValues.currentWeek,
         latestUserState.dataValues.currentDay,
         latestUserState.dataValues.currentLesson_sequence
     );
+
+    nextLesson.dataValues.courseLanguage = courseLanguage;
 
     // Mark previous lesson as completed
     const currentLesson = await lessonRepository.getCurrentLesson(latestUserState.dataValues.currentLessonId);

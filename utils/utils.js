@@ -342,6 +342,11 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
         await createActivityLog(userMobileNumber, "template", "outbound", "Click on Start Now! 👇", null);
         return false;
     }
+    if (acceptableMessagesList.includes("commencer!")) {
+        await sendButtonMessage(userMobileNumber, "Cliquez sur Commencer! 👇", [{ id: "commencer", title: "Commencer!" }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "Cliquez sur Commencer! 👇", null);
+        return false;
+    }
     // Kids flow
     if (acceptableMessagesList.includes("start part b") && acceptableMessagesList.includes("change user")) {
         await sendButtonMessage(userMobileNumber, "Are you ready?", [{ id: "start_part_b", title: "Start Part B" }, { id: "change_user", title: "Change User" }]);
