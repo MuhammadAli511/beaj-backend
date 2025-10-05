@@ -198,7 +198,7 @@ const assessmentWatchAndSpeakView = async (profileId, userMobileNumber, currentU
                 await createActivityLog(userMobileNumber, "text", "outbound", recordAgainMessage, null);
 
                 // Update acceptable messages list for the user
-                await skipButtonFlow(userMobileNumber, startingLesson);
+                await skipButtonFlow(profileId, userMobileNumber, startingLesson);
             }
         }
         else if (persona == 'kid') {
@@ -381,7 +381,7 @@ const assessmentWatchAndSpeakView = async (profileId, userMobileNumber, currentU
                 await createActivityLog(userMobileNumber, "text", "outbound", recordAgainMessage, null);
 
                 // Update acceptable messages list for the user
-                await skipButtonFlow(userMobileNumber, startingLesson);
+                await skipButtonFlow(profileId, userMobileNumber, startingLesson);
             }
         }
         return;

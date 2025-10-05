@@ -87,6 +87,7 @@ const next_activity_acceptable_messages = [
     "skip",
     "skip activity",
     "passez",
+    "passer",
     "commencez",
     "continuez",
     "activité suivante"

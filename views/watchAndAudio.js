@@ -176,7 +176,7 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                 await createActivityLog(userMobileNumber, "text", "outbound", recordAgainMessage, null);
 
                 // Update acceptable messages list for the user
-                await skipButtonFlow(userMobileNumber, startingLesson);
+                await skipButtonFlow(profileId, userMobileNumber, startingLesson);
                 return;
             }
         }
@@ -394,7 +394,7 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                 await createActivityLog(userMobileNumber, "text", "outbound", recordAgainMessage, null);
 
                 // Update acceptable messages list for the user
-                await skipButtonFlow(userMobileNumber, startingLesson);
+                await skipButtonFlow(profileId, userMobileNumber, startingLesson);
                 return;
             }
         }

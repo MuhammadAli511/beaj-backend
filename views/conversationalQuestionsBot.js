@@ -115,7 +115,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
 
                 if (!audioUrl) {
                     await sendMessage(userMobileNumber, "Audio not found. Please try recording again.");
-                    await skipButtonFlow(userMobileNumber, startingLesson, currentConversationBotQuestion);
+                    await skipButtonFlow(profileId, userMobileNumber, startingLesson, currentConversationBotQuestion);
                     return;
                 }
 
@@ -232,7 +232,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                 await createActivityLog(userMobileNumber, "text", "outbound", recordAgainMessage, null);
 
                 // Update acceptable messages list for the user
-                await skipButtonFlow(userMobileNumber, startingLesson);
+                await skipButtonFlow(profileId, userMobileNumber, startingLesson);
                 return;
             }
         }
@@ -326,7 +326,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
 
                 if (!audioUrl) {
                     await sendMessage(userMobileNumber, "Audio not found. Please try recording again.");
-                    await skipButtonFlow(userMobileNumber, startingLesson, currentConversationBotQuestion);
+                    await skipButtonFlow(profileId, userMobileNumber, startingLesson, currentConversationBotQuestion);
                     return;
                 }
 
@@ -443,7 +443,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                 await createActivityLog(userMobileNumber, "text", "outbound", recordAgainMessage, null);
 
                 // Update acceptable messages list for the user
-                await skipButtonFlow(userMobileNumber, startingLesson);
+                await skipButtonFlow(profileId, userMobileNumber, startingLesson);
                 return;
             }
         }

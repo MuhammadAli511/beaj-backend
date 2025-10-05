@@ -9,6 +9,7 @@ import multipleChoiceQuestionRepository from "../repositories/multipleChoiceQues
 import multipleChoiceQuestionAnswerRepository from "../repositories/multipleChoiceQuestionAnswerRepository.js";
 import { sendAliasAndStartingInstruction } from "../utils/aliasAndInstructionsUtils.js";
 import course_languages from "../constants/language.js";
+import skipActivityFlow from "../flows/skipActivityFlow.js";
 
 const sendQuestion = async (nextMCQsQuestion, totalQuestions, currentUserState, userMobileNumber, profileId, startingLesson) => {
     // Send question

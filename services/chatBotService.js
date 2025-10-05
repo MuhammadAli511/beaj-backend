@@ -248,10 +248,6 @@ const webhookService = async (body, res) => {
                 // MID ACTIVITY FLOWS - TRIGGERING ON "YES" OR "NO" OR "EASY" OR "HARD"
                 if (text_message_types.includes(message.type)) {
                     const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
-                    console.log(next_question_acceptable_messages.includes(messageContent.toLowerCase()));
-                    console.log(messageContent.toLowerCase());
-                    console.log(currentUserState.dataValues.activityType);
-                    console.log(currentUserState.dataValues.questionNumber);
                     if (
                         (next_question_acceptable_messages.includes(messageContent.toLowerCase()) && (currentUserState.dataValues.activityType && currentUserState.dataValues.questionNumber)) ||
                         ((messageContent.toLowerCase().includes("easy") || messageContent.toLowerCase().includes("hard")) && (currentUserState.dataValues.activityType))

@@ -205,7 +205,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                 await createActivityLog(userMobileNumber, "text", "outbound", recordAgainMessage, null);
 
                 // Update acceptable messages list for the user
-                await skipButtonFlow(userMobileNumber, startingLesson);
+                await skipButtonFlow(profileId, userMobileNumber, startingLesson);
                 return;
             }
         }
@@ -392,7 +392,7 @@ const speakingPracticeView = async (profileId, userMobileNumber, currentUserStat
                 await createActivityLog(userMobileNumber, "text", "outbound", recordAgainMessage, null);
 
                 // Update acceptable messages list for the user
-                await skipButtonFlow(userMobileNumber, startingLesson);
+                await skipButtonFlow(profileId, userMobileNumber, startingLesson);
                 return;
             }
         }
