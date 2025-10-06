@@ -573,6 +573,17 @@ const checkRecordExistsForProfileIdAndLessonId = async (profileId, lessonId) => 
     return response;
 };
 
+const checkRecordExistsForProfileIdAndQuestionId = async (profileId, questionId) => {
+    const response = await WA_QuestionResponses.findAll({
+        where: {
+            profile_id: profileId,
+            questionId: questionId
+        }
+    });
+
+    return response;
+};
+
 const getAllJsonFeedbacksForProfileIdAndLessonId = async (profileId, lessonId) => {
     const response = await WA_QuestionResponses.findAll({
         where: {
@@ -643,5 +654,6 @@ export default {
     getAllJsonFeedbacksForProfileIdAndLessonId,
     getAudioUrlForProfileIdAndQuestionIdAndLessonId,
     getPreviousMessagesForAgencyBot,
-    getByQuestionIdAndAnswer
+    getByQuestionIdAndAnswer,
+    checkRecordExistsForProfileIdAndQuestionId
 };

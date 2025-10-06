@@ -44,6 +44,10 @@ WA_UserProgress.init({
         type: DataTypes.TEXT,
         allowNull: true,
     },
+    currentTopic: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
     activityType: {
         type: DataTypes.TEXT,
         allowNull: true,
