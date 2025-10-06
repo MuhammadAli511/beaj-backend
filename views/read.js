@@ -148,7 +148,7 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
                 );
 
                 // Reset Question Number, Retry Counter, and Activity Type
-                await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
+                await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null, null);
 
                 // Ending Message
                 await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
@@ -297,7 +297,7 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
                 );
 
                 // Reset Question Number, Retry Counter, and Activity Type
-                await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
+                await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null, null);
 
                 // Ending Message
                 await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);

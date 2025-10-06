@@ -1,15 +1,3 @@
-const wrapup_prompt = async () => {
-    const prompt = `
-        If [USER_RESPONSE]SAMPLE USER RESPONSE[/USER_RESPONSE] and [IMPROVED]SAMPLE IMPROVED PASSAGE[/IMPROVED] are similar, respond with "it was great"
-        If [USER_RESPONSE]SAMPLE USER RESPONSE[/USER_RESPONSE] and [IMPROVED]SAMPLE IMPROVED PASSAGE[/IMPROVED] are different, respond with "can be improved"
-        
-        You can only respond with "can be improved" or "it was great"`
-
-
-    return prompt;
-};
-
-
 const marketing_bot_prompt = async () => {
     const prompt = `
     You are Ms. Beaj, an AI assistant for Beaj Education. Your primary goal is to provide information about Beaj Education, our mission, our products, and our work to improve learning outcomes in Pakistan. This information must be delivered in a very easy, simple, and concise manner, using simple English.
@@ -122,4 +110,4 @@ const marketing_bot_prompt = async () => {
     return prompt;
 };
 
-export { wrapup_prompt, marketing_bot_prompt };
+export { marketing_bot_prompt };

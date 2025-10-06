@@ -28,7 +28,7 @@ const imageEndView = async (profileId, userMobileNumber, currentUserState, start
             await sleep(5000);
 
             // Reset Question Number, Retry Counter, and Activity Type
-            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
+            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null, null);
 
             // Ending Message
             await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
@@ -49,7 +49,7 @@ const imageEndView = async (profileId, userMobileNumber, currentUserState, start
             await createActivityLog(userMobileNumber, "image", "outbound", imageURL, null);
 
             // Reset Question Number, Retry Counter, and Activity Type
-            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
+            await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null, null);
 
             // Sleep
             await sleep(5000);

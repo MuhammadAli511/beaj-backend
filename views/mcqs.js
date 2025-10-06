@@ -94,7 +94,7 @@ const getNextMcqQuestion = async (currentUserState, profileId, userMobileNumber,
         }
 
         // Reset Question Number, Retry Counter, and Activity Type
-        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
+        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null, null);
 
         // ENDING MESSAGE
         await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);

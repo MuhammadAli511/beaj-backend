@@ -12,7 +12,6 @@ import textToSpeech from "../utils/textToSpeech.js";
 import speechToText from "../utils/speechToText.js";
 import llmFeedback from "../utils/llmFeedback.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
-import { wrapup_prompt } from "../utils/prompts.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import { sendAliasAndStartingInstruction } from "../utils/aliasAndInstructionsUtils.js";
 import course_languages from "../constants/language.js";
@@ -20,6 +19,36 @@ import submitResponseFlow from "../flows/submitResponseFlow.js";
 import skipActivityFlow from "../flows/skipActivityFlow.js";
 import skipButtonFlow from "../flows/skipButtonFlow.js";
 
+const calculateStringSimilarity = (str1, str2) => {
+    const s1 = str1.toLowerCase();
+    const s2 = str2.toLowerCase();
+    
+    const len1 = s1.length;
+    const len2 = s2.length;
+    
+    if (len1 === 0 && len2 === 0) return 1;
+    if (len1 === 0 || len2 === 0) return 0;
+    
+    const matrix = Array(len2 + 1).fill(null).map(() => Array(len1 + 1).fill(0));
+    
+    for (let i = 0; i <= len1; i++) matrix[0][i] = i;
+    for (let j = 0; j <= len2; j++) matrix[j][0] = j;
+    
+    for (let j = 1; j <= len2; j++) {
+        for (let i = 1; i <= len1; i++) {
+            const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
+            matrix[j][i] = Math.min(
+                matrix[j][i - 1] + 1,
+                matrix[j - 1][i] + 1,
+                matrix[j - 1][i - 1] + cost
+            );
+        }
+    }
+    
+    const distance = matrix[len2][len1];
+    const maxLength = Math.max(len1, len2);
+    return 1 - (distance / maxLength);
+};
 
 const conversationalQuestionsBotView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
@@ -30,7 +59,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
 
                 await sendAliasAndStartingInstruction(userMobileNumber, startingLesson);
 
-                const firstConversationBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null, currentUserState.dataValues.currentDifficultyLevel);
+                const firstConversationBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null, currentUserState.dataValues.currentDifficultyLevel, currentUserState.dataValues.currentTopic);
 
                 await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstConversationBotQuestion.dataValues.questionNumber);
 
@@ -155,26 +184,30 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         }
                     } else {
                         let latestBotResponse = await waQuestionResponsesRepository.getLatestBotResponse(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
-                        let improvedVersion = latestBotResponse.match(/\[IMPROVED\](.*?)\[\/IMPROVED\]/);
-                        let userResponse = "[USER_RESPONSE]" + recognizedText + "[/USER_RESPONSE]\n\n\n" + improvedVersion + "[/IMPROVED]";
-
-                        // OpenAI Feedback
-                        openaiFeedbackTranscript = await llmFeedback.azureOpenaiCustomFeedback(await wrapup_prompt(), userResponse);
-                        initialFeedbackResponse = openaiFeedbackTranscript;
-
-                        if (openaiFeedbackTranscript.toLowerCase().includes("can be improved")) {
-                            const betterAudio = await waConstantsRepository.getByKey("BETTER_AUDIO");
-                            hardcodedFeedbackAudio = betterAudio.dataValues.constantValue;
-                        } else if (openaiFeedbackTranscript.toLowerCase().includes("it was great")) {
-                            const okAudio = await waConstantsRepository.getByKey("OK_AUDIO");
-                            hardcodedFeedbackAudio = okAudio.dataValues.constantValue;
-                        }
-
-                        // Media message
-                        if (hardcodedFeedbackAudio) {
-                            await sendMediaMessage(userMobileNumber, hardcodedFeedbackAudio, 'audio');
-                            await createActivityLog(userMobileNumber, "audio", "outbound", hardcodedFeedbackAudio, null);
-                            await sleep(2000);
+                        let improvedVersionMatch = latestBotResponse.match(/\[IMPROVED\](.*?)\[\/IMPROVED\]/);
+                        
+                        if (improvedVersionMatch && improvedVersionMatch[1]) {
+                            const improvedText = improvedVersionMatch[1].trim();
+                            const userText = recognizedText.trim();
+                            
+                            const similarity = calculateStringSimilarity(userText, improvedText);
+                            const mismatchPercentage = (1 - similarity) * 100;
+                            
+                            initialFeedbackResponse = `Similarity: ${(similarity * 100).toFixed(2)}%, Mismatch: ${mismatchPercentage.toFixed(2)}%`;
+                            
+                            if (mismatchPercentage < 15) {
+                                const okAudio = await waConstantsRepository.getByKey("OK_AUDIO");
+                                hardcodedFeedbackAudio = okAudio.dataValues.constantValue;
+                            } else {
+                                const betterAudio = await waConstantsRepository.getByKey("BETTER_AUDIO");
+                                hardcodedFeedbackAudio = betterAudio.dataValues.constantValue;
+                            }
+                            
+                            if (hardcodedFeedbackAudio) {
+                                await sendMediaMessage(userMobileNumber, hardcodedFeedbackAudio, 'audio');
+                                await createActivityLog(userMobileNumber, "audio", "outbound", hardcodedFeedbackAudio, null);
+                                await sleep(2000);
+                            }
                         }
                     }
 
@@ -204,7 +237,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         return;
                     } else {
                         // Reset Question Number, Retry Counter, and Activity Type
-                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
+                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null, null);
 
                         // ENDING MESSAGE
                         await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
