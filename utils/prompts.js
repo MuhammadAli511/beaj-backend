@@ -30,18 +30,18 @@ const question_bot_prompt = async () => {
 
         Be as succinct as possible. Only exceed feedback of 100 words if the user's response is long also. Do not add bullet points or any other formatting.
 
-        NOTE: At the end, say "Now try speaking the improved version by sending a voice message" and then produce an entire corrected or improved passage between the tags <IMPROVED> and </IMPROVED>, always include both opening and closing tags.
+        NOTE: At the end, say "Now try speaking the improved version by sending a voice message" and then produce an entire corrected or improved passage between the tags [IMPROVED] and [/IMPROVED], always include both opening and closing tags.
         Don't say anything else like here is the improved passage just put the improved passage between the tags.
         EXAMPLE:
-        <IMPROVED>This is the improved passage.</IMPROVED>`
+        [IMPROVED]This is the improved passage.[/IMPROVED]`
     return prompt;
 };
 
 
 const wrapup_prompt = async () => {
     const prompt = `
-        If <USER_RESPONSE>SAMPLE USER RESPONSE</USER_RESPONSE> and <IMPROVED>SAMPLE IMPROVED PASSAGE</IMPROVED> are similar, respond with "it was great"
-        If <USER_RESPONSE>SAMPLE USER RESPONSE</USER_RESPONSE> and <IMPROVED>SAMPLE IMPROVED PASSAGE</IMPROVED> are different, respond with "can be improved"
+        If [USER_RESPONSE]SAMPLE USER RESPONSE[/USER_RESPONSE] and [IMPROVED]SAMPLE IMPROVED PASSAGE[/IMPROVED] are similar, respond with "it was great"
+        If [USER_RESPONSE]SAMPLE USER RESPONSE[/USER_RESPONSE] and [IMPROVED]SAMPLE IMPROVED PASSAGE[/IMPROVED] are different, respond with "can be improved"
         
         You can only respond with "can be improved" or "it was great"`
 

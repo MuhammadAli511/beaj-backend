@@ -65,6 +65,38 @@ SpeakActivityQuestion.init({
   difficultyLevel: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  topic: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  prompt: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  correctAudioFeedback: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  correctAudioFeedbackMediaId: {
+    type: DataTypes.BIGINT,
+    allowNull: true
+  },
+  correctTextFeedback: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  wrongAudioFeedback: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  wrongAudioFeedbackMediaId: {
+    type: DataTypes.BIGINT,
+    allowNull: true
+  },
+  wrongTextFeedback: {
+    type: DataTypes.TEXT,
+    allowNull: true
   }
 }, {
   sequelize,
