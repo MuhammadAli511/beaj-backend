@@ -1,7 +1,6 @@
 import WA_QuestionResponses from '../models/WA_QuestionResponses.js';
 import sequelize from '../config/sequelize.js';
 import Sequelize from 'sequelize';
-import { question_bot_prompt } from "../utils/prompts.js";
 
 const create = async (profileId, phoneNumber, lessonId, questionId, activityType, alias, submittedAnswerText, submittedUserAudio, submittedFeedbackText, submittedFeedbackAudio, submittedFeedbackJson, correct, numberOfTries, submissionDate) => {
     try {
@@ -473,7 +472,7 @@ const getByActivityType = async (activityType, courseId = null) => {
     });
 };
 
-const getPreviousMessages = async (profileId, phoneNumber, lessonId) => {
+const getPreviousMessages = async (profileId, phoneNumber, lessonId, system_prompt) => {
     const responses = await WA_QuestionResponses.findAll({
         where: {
             profile_id: profileId,
@@ -493,7 +492,7 @@ const getPreviousMessages = async (profileId, phoneNumber, lessonId) => {
                 if (index === 0) {
                     finalMessages.push({
                         role: "user",
-                        content: await question_bot_prompt() + "\n\nUser Response: " + response.dataValues.submittedAnswerText[0]
+                        content: system_prompt + "\n\nUser Response: " + response.dataValues.submittedAnswerText[0]
                     });
                 } else {
                     finalMessages.push({

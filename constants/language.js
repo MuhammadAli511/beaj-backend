@@ -44,6 +44,10 @@ const course_languages = {
         "start_now": "Click on Start Now! 👇",
         "skip_activity_message": "👇 Click here to skip:",
         "skip_activity_button": "Skip",
+        "question_bot_you_said": "Please wait for an answer. \n\nYou said:",
+        "question_bot_audio_not_found": "Audio not found. Please try recording again.",
+        "question_bot_correct_message_part_one": "A corrected version of your answer is: ",
+        "question_bot_correct_message_part_two": "\n\n\n*👉 Now try speaking the improved version by sending a voice message* 💬",
     },
 
 
@@ -92,6 +96,10 @@ const course_languages = {
         "start_now": "Cliquez sur Commencer maintenant! 👇",
         "skip_activity_message": "👇 Cliquez ici pour passer:",
         "skip_activity_button": "Passer",
+        "question_bot_you_said": "Veuillez attendre la réponse. \n\nVous avez dit:",
+        "question_bot_audio_not_found": "Audio non trouvé. Veuillez enregistrer à nouveau.",
+        "question_bot_correct_message_part_one": "Une version corrigée de votre réponse est: ",
+        "question_bot_correct_message_part_two": "\n\n\n*👉 Maintenant, essayez de parler la version améliorée en envoyant un message vocal* 💬",
     }
 };
 

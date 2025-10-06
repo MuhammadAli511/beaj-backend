@@ -14,7 +14,6 @@ const submitResponseFlow = async (profileId, userMobileNumber, startingLesson) =
     await sendButtonMessage(userMobileNumber, submitResponseMessage, [{ id: "yes", title: yes }, { id: "no", title: no }]);
     await createActivityLog(userMobileNumber, "template", "outbound", submitResponseMessage, null);
 
-    // Update acceptable messages list for the user
     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, [yes.toLowerCase(), no.toLowerCase()]);
     await sleep(2000);
 };

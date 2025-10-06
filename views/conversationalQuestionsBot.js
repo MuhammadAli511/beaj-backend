@@ -1,6 +1,6 @@
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
 import waUserProgressRepository from "../repositories/waUserProgressRepository.js";
-import { sendMessage, sendButtonMessage, sendMediaMessage } from "../utils/whatsappUtils.js";
+import { sendMessage, sendMediaMessage } from "../utils/whatsappUtils.js";
 import { createActivityLog } from "../utils/createActivityLogUtils.js";
 import { endingMessage } from "../utils/endingMessageUtils.js";
 import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRepository.js";
@@ -12,7 +12,7 @@ import textToSpeech from "../utils/textToSpeech.js";
 import speechToText from "../utils/speechToText.js";
 import llmFeedback from "../utils/llmFeedback.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
-import { question_bot_prompt, wrapup_prompt } from "../utils/prompts.js";
+import { wrapup_prompt } from "../utils/prompts.js";
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import { sendAliasAndStartingInstruction } from "../utils/aliasAndInstructionsUtils.js";
 import course_languages from "../constants/language.js";
@@ -26,32 +26,24 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
         const activity = startingLesson.dataValues.activity;
         if (persona == 'teacher') {
             if (currentUserState.dataValues.questionNumber === null) {
-                // Lesson Started Record
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
-                // Send alias and starting instruction
                 await sendAliasAndStartingInstruction(userMobileNumber, startingLesson);
 
-                // Send Conversation Bot Question
                 const firstConversationBotQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, null, currentUserState.dataValues.currentDifficultyLevel);
 
-                // Update question number
                 await waUserProgressRepository.updateQuestionNumber(profileId, userMobileNumber, firstConversationBotQuestion.dataValues.questionNumber);
 
-                // Send question media file
                 await sendMediaMessage(userMobileNumber, firstConversationBotQuestion.dataValues.mediaFile, 'audio', null, 0, "SpeakActivityQuestion", firstConversationBotQuestion.dataValues.id, firstConversationBotQuestion.dataValues.mediaFileMediaId, "mediaFileMediaId");
                 await createActivityLog(userMobileNumber, "audio", "outbound", firstConversationBotQuestion.dataValues.mediaFile, null);
-
 
                 let acceptableMessagesList = await skipActivityFlow(userMobileNumber, startingLesson, ["audio"], firstConversationBotQuestion);
                 await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
                 return;
             }
             else if (messageType === 'audio') {
-                // Get the current Conversation Bot question
                 const currentConversationBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
 
-                // Upload audio
                 const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
                 const uniqueID = uuidv4();
                 const userAudio = `${timestamp}-${uniqueID}-` + "audioFile.opus";
@@ -65,7 +57,6 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                 );
 
                 if (existingAudioUrl) {
-                    // Update existing record with new audio
                     await waQuestionResponsesRepository.updateReplace(
                         profileId,
                         userMobileNumber,
@@ -83,8 +74,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         submissionDate
                     );
                 } else {
-                    // Create new record if none exists
-                    const response = await waQuestionResponsesRepository.create(
+                    await waQuestionResponsesRepository.create(
                         profileId,
                         userMobileNumber,
                         currentUserState.dataValues.currentLessonId,
@@ -100,21 +90,18 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                         1,
                         submissionDate
                     );
-                    if (!response) {
-                        return;
-                    }
                 }
 
                 await submitResponseFlow(profileId, userMobileNumber, startingLesson);
                 return;
             }
             else if (messageContent == 'yes' || messageContent == 'oui') {
-                // Get the current Conversation Bot question
                 const currentConversationBotQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
                 const audioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(profileId, currentConversationBotQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
 
                 if (!audioUrl) {
-                    await sendMessage(userMobileNumber, "Audio not found. Please try recording again.");
+                    let question_bot_audio_not_found = course_languages[startingLesson.dataValues.courseLanguage]["question_bot_audio_not_found"];
+                    await sendMessage(userMobileNumber, question_bot_audio_not_found);
                     await skipButtonFlow(profileId, userMobileNumber, startingLesson, currentConversationBotQuestion);
                     return;
                 }
@@ -123,7 +110,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                 const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
 
                 // OpenAI Speech to Text
-                const recognizedText = await speechToText.elevenLabsSpeechToText(audioBuffer);
+                const recognizedText = await speechToText.azureOpenAISpeechToText(audioBuffer, "Transcribe the audio exactly as it is, if it is empty return nothing, don't add anything extra or fix any errors");
                 if (recognizedText) {
                     const recordExists = await waQuestionResponsesRepository.checkRecordExistsForProfileIdAndLessonId(profileId, currentUserState.dataValues.currentLessonId);
                     let openaiFeedbackTranscript = null;
@@ -131,15 +118,16 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                     let initialFeedbackResponse = null;
                     let hardcodedFeedbackAudio = null;
                     if (recordExists && recordExists[0]?.dataValues?.submittedAnswerText == null) {
-                        const message = `Please wait for an answer. \n\nYou said: ${recognizedText}`;
+                        let question_bot_you_said = course_languages[startingLesson.dataValues.courseLanguage]["question_bot_you_said"];
+                        const message = `${question_bot_you_said} ${recognizedText}`;
                         await sendMessage(userMobileNumber, message);
                         await createActivityLog(userMobileNumber, "text", "outbound", message, null);
 
                         // Get all previous messages
-                        let previousMessages = await waQuestionResponsesRepository.getPreviousMessages(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
+                        let previousMessages = await waQuestionResponsesRepository.getPreviousMessages(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId, currentConversationBotQuestion.dataValues.prompt);
 
                         // Append transcript
-                        let currentMessage = { role: "user", content: await question_bot_prompt() + "\n\nQuestion: " + currentConversationBotQuestion.dataValues.question + "\n\nUser Response: " + recognizedText };
+                        let currentMessage = { role: "user", content: currentConversationBotQuestion.dataValues.prompt + "\n\nQuestion: " + currentConversationBotQuestion.dataValues.question + "\n\nUser Response: " + recognizedText };
                         previousMessages.push(currentMessage);
 
                         // OpenAI Feedback
@@ -152,7 +140,6 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                             openaiFeedbackTranscript = openaiFeedbackTranscript.replace(/\[IMPROVED\](.*?)\[\/IMPROVED\]/, '');
                         }
 
-                        // ElevenLabs Text to Speech
                         openaiFeedbackAudio = await textToSpeech.azureOpenAITextToSpeech(openaiFeedbackTranscript);
 
                         // Media message
@@ -162,7 +149,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
 
                         // Send corrected version of the answer
                         if (correctedVersion) {
-                            let correctMessage = "A corrected version of your answer is: " + correctedVersion[1] + "\n\n\n*👉 Now try speaking the improved version by sending a voice message* 💬";
+                            let correctMessage = course_languages[startingLesson.dataValues.courseLanguage]["question_bot_correct_message_part_one"] + correctedVersion[1] + course_languages[startingLesson.dataValues.courseLanguage]["question_bot_correct_message_part_two"];
                             await sendMessage(userMobileNumber, correctMessage);
                             await createActivityLog(userMobileNumber, "text", "outbound", correctMessage, null);
                         }
@@ -325,7 +312,8 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                 const audioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(profileId, currentConversationBotQuestion.dataValues.id, currentUserState.dataValues.currentLessonId);
 
                 if (!audioUrl) {
-                    await sendMessage(userMobileNumber, "Audio not found. Please try recording again.");
+                    let question_bot_audio_not_found = course_languages[startingLesson.dataValues.courseLanguage]["question_bot_audio_not_found"];
+                    await sendMessage(userMobileNumber, question_bot_audio_not_found);
                     await skipButtonFlow(profileId, userMobileNumber, startingLesson, currentConversationBotQuestion);
                     return;
                 }
@@ -334,7 +322,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                 const audioBuffer = await getAudioBufferFromAudioFileUrl(audioUrl);
 
                 // OpenAI Speech to Text
-                const recognizedText = await speechToText.elevenLabsSpeechToText(audioBuffer);
+                const recognizedText = await speechToText.azureOpenAISpeechToText(audioBuffer, "Transcribe the audio exactly as it is, if it is empty return nothing, don't add anything extra or fix any errors");
                 if (recognizedText) {
                     const recordExists = await waQuestionResponsesRepository.checkRecordExistsForProfileIdAndLessonId(profileId, currentUserState.dataValues.currentLessonId);
                     let openaiFeedbackTranscript = null;
@@ -342,15 +330,16 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                     let initialFeedbackResponse = null;
                     let hardcodedFeedbackAudio = null;
                     if (recordExists && recordExists[0]?.dataValues?.submittedAnswerText == null) {
-                        const message = `Please wait for an answer. \n\nYou said: ${recognizedText}`;
+                        let question_bot_you_said = course_languages[startingLesson.dataValues.courseLanguage]["question_bot_you_said"];
+                        const message = `${question_bot_you_said} ${recognizedText}`;
                         await sendMessage(userMobileNumber, message);
                         await createActivityLog(userMobileNumber, "text", "outbound", message, null);
 
                         // Get all previous messages
-                        let previousMessages = await waQuestionResponsesRepository.getPreviousMessages(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
+                        let previousMessages = await waQuestionResponsesRepository.getPreviousMessages(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId, currentConversationBotQuestion.dataValues.prompt);
 
                         // Append transcript
-                        let currentMessage = { role: "user", content: await question_bot_prompt() + "\n\nQuestion: " + currentConversationBotQuestion.dataValues.question + "\n\nUser Response: " + recognizedText };
+                        let currentMessage = { role: "user", content: currentConversationBotQuestion.dataValues.prompt + "\n\nQuestion: " + currentConversationBotQuestion.dataValues.question + "\n\nUser Response: " + recognizedText };
                         previousMessages.push(currentMessage);
 
                         // OpenAI Feedback
@@ -363,7 +352,6 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
                             openaiFeedbackTranscript = openaiFeedbackTranscript.replace(/\[IMPROVED\](.*?)\[\/IMPROVED\]/, '');
                         }
 
-                        // ElevenLabs Text to Speech
                         openaiFeedbackAudio = await textToSpeech.azureOpenAITextToSpeech(openaiFeedbackTranscript);
 
                         // Media message
@@ -373,7 +361,7 @@ const conversationalQuestionsBotView = async (profileId, userMobileNumber, curre
 
                         // Send corrected version of the answer
                         if (correctedVersion) {
-                            let correctMessage = "A corrected version of your answer is: " + correctedVersion[1] + "\n\n\n*👉 Now try speaking the improved version by sending a voice message* 💬";
+                            let correctMessage = course_languages[startingLesson.dataValues.courseLanguage]["question_bot_correct_message_part_one"] + correctedVersion[1] + course_languages[startingLesson.dataValues.courseLanguage]["question_bot_correct_message_part_two"];
                             await sendMessage(userMobileNumber, correctMessage);
                             await createActivityLog(userMobileNumber, "text", "outbound", correctMessage, null);
                         }
