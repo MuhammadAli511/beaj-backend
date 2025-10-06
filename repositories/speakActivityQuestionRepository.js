@@ -52,11 +52,16 @@ const deleteSpeakActivityQuestion = async (id) => {
     });
 };
 
-const getCurrentSpeakActivityQuestion = async (lessonId, questionNumber) => {
+const getCurrentSpeakActivityQuestion = async (lessonId, questionNumber, difficultyLevel = null, topic = null) => {
     return await SpeakActivityQuestion.findOne({
         where: {
             lessonId: lessonId,
-            questionNumber: questionNumber
+            questionNumber: questionNumber,
+            difficultyLevel: difficultyLevel,
+            topic: Sequelize.where(
+                Sequelize.fn('LOWER', Sequelize.col('topic')),
+                Sequelize.fn('LOWER', topic)
+            )
         }
     });
 };
@@ -92,13 +97,34 @@ const checkIfTopicExists = async (lessonId) => {
 };
 
 const getNextSpeakActivityQuestion = async (lessonId, questionNumber, difficultyLevel = null, topic = null) => {
+    // Helper function to build where clause with case-insensitive topic matching
+    const buildWhereClause = (includeQuestionNumber = false) => {
+        let whereClause = {
+            lessonId: lessonId,
+            difficultyLevel: difficultyLevel
+        };
+
+        // Add case-insensitive topic filter if topic is provided
+        if (topic) {
+            whereClause.topic = Sequelize.where(
+                Sequelize.fn('LOWER', Sequelize.col('topic')),
+                Sequelize.fn('LOWER', topic)
+            );
+        }
+
+        // Add question number condition if needed
+        if (includeQuestionNumber && questionNumber) {
+            whereClause.questionNumber = {
+                [Sequelize.Op.gt]: questionNumber
+            };
+        }
+
+        return whereClause;
+    };
+
     if (!questionNumber) {
         return await SpeakActivityQuestion.findOne({
-            where: {
-                lessonId: lessonId,
-                difficultyLevel: difficultyLevel,
-                topic: topic
-            },
+            where: buildWhereClause(),
             order: [
                 ['questionNumber', 'ASC']
             ]
@@ -106,14 +132,7 @@ const getNextSpeakActivityQuestion = async (lessonId, questionNumber, difficulty
     }
     if (lessonId && questionNumber) {
         let nextSpeakActivityQuestion = await SpeakActivityQuestion.findOne({
-            where: {
-                lessonId: lessonId,
-                questionNumber: {
-                    [Sequelize.Op.gt]: questionNumber
-                },
-                difficultyLevel: difficultyLevel,
-                topic: topic
-            },
+            where: buildWhereClause(true),
             order: [
                 ['questionNumber', 'ASC']
             ]

@@ -64,7 +64,7 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
             }
             else if (messageType === 'audio') {
                 // Get the current Watch And Speak question
-                const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber, currentUserState.dataValues.currentDifficultyLevel, currentUserState.dataValues.currentTopic);
 
                 // Save user response to the database
                 const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
@@ -124,7 +124,7 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                 return;
             }
             else if (messageContent == 'yes' || messageContent == 'oui') {
-                const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber, currentUserState.dataValues.currentDifficultyLevel, currentUserState.dataValues.currentTopic);
                 const customFeedbackAudio = currentWatchAndSpeakQuestion.dataValues.customFeedbackAudio;
                 if (customFeedbackAudio) {
                     await sendMediaMessage(userMobileNumber, customFeedbackAudio, 'audio', null, 0, "SpeakActivityQuestion", currentWatchAndSpeakQuestion.dataValues.id, currentWatchAndSpeakQuestion.dataValues.customFeedbackAudioMediaId, "customFeedbackAudioMediaId");
@@ -230,7 +230,7 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
             }
             else if (messageType === 'audio') {
                 // Get the current Watch And Speak question
-                const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber, currentUserState.dataValues.currentDifficultyLevel, currentUserState.dataValues.currentTopic);
 
                 // Save user response to the database
                 const timestamp = format(new Date(), 'yyyyMMddHHmmssSSS');
@@ -290,7 +290,7 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                 return;
             }
             else if (messageContent == 'yes' || messageContent == 'oui') {
-                const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber);
+                const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber, currentUserState.dataValues.currentDifficultyLevel, currentUserState.dataValues.currentTopic);
                 const customFeedbackAudio = currentWatchAndSpeakQuestion.dataValues.customFeedbackAudio;
                 if (customFeedbackAudio) {
                     await sendMediaMessage(userMobileNumber, customFeedbackAudio, 'audio', null, 0, "SpeakActivityQuestion", currentWatchAndSpeakQuestion.dataValues.id, currentWatchAndSpeakQuestion.dataValues.customFeedbackAudioMediaId, "customFeedbackAudioMediaId");
