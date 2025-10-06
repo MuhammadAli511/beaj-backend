@@ -8,7 +8,7 @@ import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRe
 import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
-import { sleep, difficultyLevelCalculation } from "../utils/utils.js";
+import { sleep, difficultyLevelSelection } from "../utils/utils.js";
 import { sendAliasAndStartingInstruction } from "../utils/aliasAndInstructionsUtils.js";
 import course_languages from "../constants/language.js";
 import submitResponseFlow from "../flows/submitResponseFlow.js";
@@ -24,8 +24,8 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
                 // Difficulty Level Calculation
-                const difficultyLevelCalculationResult = await difficultyLevelCalculation(profileId, userMobileNumber, currentUserState, messageContent);
-                if (!difficultyLevelCalculationResult) {
+                const difficultyLevelSelectionResult = await difficultyLevelSelection(profileId, userMobileNumber, currentUserState, messageContent);
+                if (!difficultyLevelSelectionResult) {
                     return;
                 }
 
@@ -192,8 +192,8 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
                 }
 
                 // Difficulty Level Calculation
-                const difficultyLevelCalculationResult = await difficultyLevelCalculation(profileId, userMobileNumber, currentUserState, messageContent);
-                if (!difficultyLevelCalculationResult) {
+                const difficultyLevelSelectionResult = await difficultyLevelSelection(profileId, userMobileNumber, currentUserState, messageContent);
+                if (!difficultyLevelSelectionResult) {
                     return;
                 }
 

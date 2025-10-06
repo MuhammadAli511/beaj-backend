@@ -434,7 +434,7 @@ const getTotalLessonsForCourse = async (profileId) => {
 };
 
 
-const difficultyLevelCalculation = async (profileId, userMobileNumber, currentUserState, messageContent) => {
+const difficultyLevelSelection = async (profileId, userMobileNumber, currentUserState, messageContent) => {
     if (messageContent != 'easy' && messageContent != 'hard') {
         const difficultyLevelExists = await speakActivityQuestionRepository.checkIfDifficultyLevelExists(currentUserState.dataValues.currentLessonId);
         if (difficultyLevelExists) {
@@ -453,6 +453,30 @@ const difficultyLevelCalculation = async (profileId, userMobileNumber, currentUs
     return true;
 };
 
+const topicSelection = async (profileId, userMobileNumber, currentUserState, messageContent, topicsList) => {
+    if (!topicsList.includes(messageContent)) {
+        const topicExists = await speakActivityQuestionRepository.checkIfTopicExists(currentUserState.dataValues.currentLessonId);
+        if (topicExists) {
+            await sendButtonMessage(
+                userMobileNumber,
+                "Select a Topic",
+                topicsList.map(topic => ({
+                    id: topic.toLowerCase(),
+                    title: topic.charAt(0).toUpperCase() + topic.slice(1)
+                }))
+            );
+            await createActivityLog(userMobileNumber, "template", "outbound", "Select a Topic", null);
+            await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, topicsList.map(topic => topic.toLowerCase()));
+            return false;
+        } else {
+            await waUserProgressRepository.updateTopic(profileId, userMobileNumber, null);
+        }
+    } else {
+        await waUserProgressRepository.updateTopic(profileId, userMobileNumber, messageContent);
+    }
+    return true;
+};
+
 
 export {
     sleep,
@@ -464,7 +488,8 @@ export {
     getAcceptableMessagesList,
     getDaysPerWeek,
     getTotalLessonsForCourse,
-    difficultyLevelCalculation,
+    difficultyLevelSelection,
+    topicSelection,
     getLevelFromCourseName,
     extractMessageContent,
     getProfileTypeFromBotId,

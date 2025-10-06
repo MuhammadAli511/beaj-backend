@@ -7,6 +7,7 @@ import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import waActiveSessionRepository from "../repositories/waActiveSessionRepository.js";
 import waProfileRepository from "../repositories/waProfileRepository.js";
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
+import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import { startCourseForUser, sendCourseLesson, talkToBeajRep } from "../utils/chatbotUtils.js";
 import { demoCourseStart } from "../utils/trialflowUtils.js";
 import { sendMessage, sendMediaMessage } from "../utils/whatsappUtils.js";
@@ -248,9 +249,11 @@ const webhookService = async (body, res) => {
                 // MID ACTIVITY FLOWS - TRIGGERING ON "YES" OR "NO" OR "EASY" OR "HARD"
                 if (text_message_types.includes(message.type)) {
                     const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
+                    const topicsList = await speakActivityQuestionRepository.getTopicsByLessonId(currentUserState.dataValues.currentLessonId);
                     if (
                         (next_question_acceptable_messages.includes(messageContent.toLowerCase()) && (currentUserState.dataValues.activityType && currentUserState.dataValues.questionNumber)) ||
-                        ((messageContent.toLowerCase().includes("easy") || messageContent.toLowerCase().includes("hard")) && (currentUserState.dataValues.activityType))
+                        ((messageContent.toLowerCase().includes("easy") || messageContent.toLowerCase().includes("hard")) && (currentUserState.dataValues.activityType)) ||
+                        (topicsList.includes(messageContent.toLowerCase()) && (currentUserState.dataValues.activityType))
                     ) {
                         currentLesson.dataValues.courseLanguage = courseLanguage;
                         await sendCourseLesson(profileId, userMobileNumber, currentUserState, currentLesson, messageType, messageContent, persona, buttonId);

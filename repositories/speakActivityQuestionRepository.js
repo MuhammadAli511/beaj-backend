@@ -76,6 +76,21 @@ const checkIfDifficultyLevelExists = async (lessonId) => {
     return speakActivityQuestion;
 };
 
+const checkIfTopicExists = async (lessonId) => {
+    const speakActivityQuestion = await SpeakActivityQuestion.findOne({
+        where: {
+            lessonId: lessonId,
+            topic: {
+                [Sequelize.Op.and]: [
+                    { [Sequelize.Op.ne]: null },
+                    { [Sequelize.Op.ne]: "" }
+                ]
+            }
+        }
+    });
+    return speakActivityQuestion;
+};
+
 const getNextSpeakActivityQuestion = async (lessonId, questionNumber, difficultyLevel = null, topic = null) => {
     if (!questionNumber) {
         return await SpeakActivityQuestion.findOne({
@@ -108,7 +123,7 @@ const getNextSpeakActivityQuestion = async (lessonId, questionNumber, difficulty
         }
         return nextSpeakActivityQuestion;
     }
-}
+};
 
 const getByLessonIds = async (lessonIds) => {
     return await SpeakActivityQuestion.findAll({
@@ -144,6 +159,16 @@ const getTotalQuestionsByLessonId = async (lessonId) => {
     });
 };
 
+const getTopicsByLessonId = async (lessonId) => {
+    const questions = await SpeakActivityQuestion.findAll({
+        where: {
+            lessonId: lessonId
+        }
+    });
+
+    return questions.map(question => question.dataValues.topic);
+};
+
 
 export default {
     create,
@@ -157,5 +182,7 @@ export default {
     getByLessonId,
     deleteByLessonId,
     getTotalQuestionsByLessonId,
-    checkIfDifficultyLevelExists
+    checkIfDifficultyLevelExists,
+    checkIfTopicExists,
+    getTopicsByLessonId
 };

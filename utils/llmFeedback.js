@@ -13,7 +13,7 @@ const azureOpenaiFeedback = async (previousMessages) => {
         const endpoint = process.env.AZURE_OPENAI_ENDPOINT_2;
         const apiKey = process.env.AZURE_OPENAI_API_KEY_2;
         const apiVersion = "2025-01-01-preview";
-        const deployment = "gpt-4.1-nano";
+        const deployment = "gpt-5-nano";
 
         const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
         const result = await client.chat.completions.create({
@@ -74,7 +74,7 @@ const azureOpenaiCustomFeedback = async (userTranscript, modelPrompt) => {
         const endpoint = process.env.AZURE_OPENAI_ENDPOINT_2;
         const apiKey = process.env.AZURE_OPENAI_API_KEY_2;
         const apiVersion = "2025-01-01-preview";
-        const deployment = "gpt-4.1-nano";
+        const deployment = "gpt-5-nano";
 
         const client = new AzureOpenAI({ endpoint, apiKey, apiVersion, deployment });
         const result = await client.chat.completions.create({

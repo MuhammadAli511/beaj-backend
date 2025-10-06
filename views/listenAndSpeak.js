@@ -7,7 +7,7 @@ import waQuestionResponsesRepository from "../repositories/waQuestionResponsesRe
 import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import azureBlobStorage from "../utils/azureBlobStorage.js";
-import { sleep, convertNumberToEmoji, difficultyLevelCalculation, getAudioBufferFromAudioFileUrl } from "../utils/utils.js";
+import { sleep, convertNumberToEmoji, difficultyLevelSelection, getAudioBufferFromAudioFileUrl } from "../utils/utils.js";
 import speechToText from "../utils/speechToText.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import { sendAliasAndStartingInstruction } from "../utils/aliasAndInstructionsUtils.js";
@@ -25,8 +25,8 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
                 // Difficulty Level Calculation
-                const difficultyLevelCalculationResult = await difficultyLevelCalculation(profileId, userMobileNumber, currentUserState, messageContent);
-                if (!difficultyLevelCalculationResult) {
+                const difficultyLevelSelectionResult = await difficultyLevelSelection(profileId, userMobileNumber, currentUserState, messageContent);
+                if (!difficultyLevelSelectionResult) {
                     return;
                 }
 
@@ -57,7 +57,6 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 }
 
                 if (secondMediaType != null && secondMediaType != "null" && secondMediaType != "") {
-                    console.log("HERE")
                     await sendMediaMessage(userMobileNumber, firstListenAndSpeakQuestion.dataValues.mediaFileSecond, secondMediaType, null, 0, "SpeakActivityQuestion", firstListenAndSpeakQuestion.dataValues.id, firstListenAndSpeakQuestion.dataValues.mediaFileSecondMediaId, "mediaFileSecondMediaId");
                     await createActivityLog(userMobileNumber, secondMediaType, "outbound", firstListenAndSpeakQuestion.dataValues.mediaFileSecond, null);
                     if (secondMediaType == 'video') {
@@ -344,8 +343,8 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 await waLessonsCompletedRepository.create(userMobileNumber, currentUserState.dataValues.currentLessonId, currentUserState.currentCourseId, 'Started', new Date(), profileId);
 
                 // Difficulty Level Calculation
-                const difficultyLevelCalculationResult = await difficultyLevelCalculation(profileId, userMobileNumber, currentUserState, messageContent);
-                if (!difficultyLevelCalculationResult) {
+                const difficultyLevelSelectionResult = await difficultyLevelSelection(profileId, userMobileNumber, currentUserState, messageContent);
+                if (!difficultyLevelSelectionResult) {
                     return;
                 }
 
