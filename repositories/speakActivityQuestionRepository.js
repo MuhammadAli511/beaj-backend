@@ -53,16 +53,23 @@ const deleteSpeakActivityQuestion = async (id) => {
 };
 
 const getCurrentSpeakActivityQuestion = async (lessonId, questionNumber, difficultyLevel = null, topic = null) => {
+    let whereClause = {
+        lessonId: lessonId,
+        questionNumber: questionNumber,
+        difficultyLevel: difficultyLevel,
+        topic: null
+
+    };
+
+    if (topic) {
+        whereClause.topic = Sequelize.where(
+            Sequelize.fn('LOWER', Sequelize.col('topic')),
+            Sequelize.fn('LOWER', topic)
+        );
+    }
+
     return await SpeakActivityQuestion.findOne({
-        where: {
-            lessonId: lessonId,
-            questionNumber: questionNumber,
-            difficultyLevel: difficultyLevel,
-            topic: Sequelize.where(
-                Sequelize.fn('LOWER', Sequelize.col('topic')),
-                Sequelize.fn('LOWER', topic)
-            )
-        }
+        where: whereClause
     });
 };
 

@@ -212,6 +212,25 @@ const getTotalDaysInCourse = async (courseId) => {
 
 const getNextLesson = async (courseId, weekNumber, dayNumber, sequenceNumber) => {
     // If weekNumber, dayNumber, and sequenceNumber are all null, return the first lesson in the course
+    if (!weekNumber && !dayNumber && !sequenceNumber) {
+        // Find the minimum weekNumber for the given courseId
+        const minWeek = await Lesson.min('weekNumber', { where: { courseId: courseId } });
+        const minDay = await Lesson.min('dayNumber', { where: { courseId: courseId, weekNumber: minWeek } });
+
+        // Find the minimum sequenceNumber for the given courseId, weekNumber, and minDay
+        return await Lesson.findOne({
+            where: {
+                courseId: courseId,
+                weekNumber: minWeek,
+                dayNumber: minDay,
+                status: 'Active'
+            },
+            order: [
+                ['SequenceNumber', 'ASC']
+            ]
+        });
+    }
+    // If weekNumber, dayNumber, and sequenceNumber are all null, return the first lesson in the course
     if (!dayNumber && !sequenceNumber) {
         // Find the minimum dayNumber for the given courseId and weekNumber
         const minDay = await Lesson.min('dayNumber', { where: { courseId: courseId, weekNumber: weekNumber } });

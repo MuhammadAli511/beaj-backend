@@ -69,6 +69,17 @@ const next_question_acceptable_messages = [
     "enregistrez encore",
 ];
 
+const skip_activity_acceptable_messages = [
+    "skip activity",
+    "passez au suivant",
+    "passer",
+    "passez",
+    "passez au suivant",
+    "next",
+    "next activity",
+    "skip"
+];
+
 const next_activity_acceptable_messages = [
     "start next activity",
     "start part 2",
@@ -88,9 +99,15 @@ const next_activity_acceptable_messages = [
     "skip activity",
     "passez",
     "passer",
+    "passez au suivant",
+    "entraînement rapide",
     "commencez",
+    "commencez!",
     "continuez",
-    "activité suivante"
+    "activité suivante",
+    "lancez-vous!",
+    "lancez-vous",
+    "leçon suivante",
 ];
 
 const course_start_acceptable_messages = [
@@ -274,6 +291,7 @@ export {
     activity_types,
     columns_order,
     audio_activities,
-    next_question_acceptable_messages
+    next_question_acceptable_messages,
+    skip_activity_acceptable_messages
 };
 

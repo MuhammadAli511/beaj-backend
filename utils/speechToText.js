@@ -41,7 +41,7 @@ const elevenLabsSpeechToText = async (audioBuffer) => {
     }
 };
 
-const azureOpenAISpeechToText = async (audioBuffer, prompt = null) => {
+const azureOpenAISpeechToText = async (audioBuffer, prompt = null, language = "en") => {
     try {
         const endpoint = process.env.AZURE_OPENAI_ENDPOINT_2;
         const apiKey = process.env.AZURE_OPENAI_API_KEY_2;
@@ -51,7 +51,7 @@ const azureOpenAISpeechToText = async (audioBuffer, prompt = null) => {
         const postObject = {
             file: fs.createReadStream(tempFilePath),
             model: deployment,
-            language: 'en',
+            language: language,
         };
         if (prompt) {
             postObject.prompt = prompt;
@@ -62,11 +62,11 @@ const azureOpenAISpeechToText = async (audioBuffer, prompt = null) => {
 
         return result.text;
     } catch {
-        return await openaiSpeechToText(audioBuffer, prompt);
+        return await openaiSpeechToText(audioBuffer, prompt, language);
     }
 };
 
-const openaiSpeechToText = async (audioBuffer, prompt = null) => {
+const openaiSpeechToText = async (audioBuffer, prompt = null, language = "en") => {
     const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
     const uniqueFileName = `audio-${uuidv4()}.ogg`;
@@ -78,7 +78,7 @@ const openaiSpeechToText = async (audioBuffer, prompt = null) => {
         const postObject = {
             file: fs.createReadStream(tempFilePath),
             model: "gpt-4o-transcribe",
-            language: 'en',
+            language: language,
         };
         if (prompt) {
             postObject.prompt = prompt;
