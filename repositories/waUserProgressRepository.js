@@ -109,12 +109,13 @@ const updateRetryCounter = async (profileId, phoneNumber, retryCounter) => {
     });
 };
 
-const updateQuestionNumberRetryCounterActivityType = async (profileId, phoneNumber, questionNumber, retryCounter, activityType, currentDifficultyLevel) => {
+const updateQuestionNumberRetryCounterActivityType = async (profileId, phoneNumber, questionNumber, retryCounter, activityType, currentDifficultyLevel, currentTopic) => {
     return await WA_UserProgress.update({
         questionNumber: questionNumber,
         retryCounter: retryCounter,
         activityType: activityType,
         currentDifficultyLevel: currentDifficultyLevel,
+        currentTopic: currentTopic,
         lastUpdated: new Date()
     }, {
         where: {
@@ -154,6 +155,17 @@ const updateDifficultyLevel = async (profileId, phoneNumber, difficultyLevel) =>
     });
 };
 
+const updateTopic = async (profileId, phoneNumber, topic) => {
+    return await WA_UserProgress.update({
+        currentTopic: topic
+    }, {
+        where: {
+            phoneNumber: phoneNumber,
+            profile_id: profileId
+        }
+    });
+};
+
 export default {
     create,
     getAll,
@@ -169,5 +181,6 @@ export default {
     updateEngagementType,
     updatePersona,
     updateTestUserProgress,
-    updateDifficultyLevel
+    updateDifficultyLevel,
+    updateTopic
 };

@@ -50,7 +50,7 @@ Course.init({
   },
   courseLanguage: {
     type: DataTypes.TEXT,
-    allowNull: false
+    allowNull: true
   }
 }, {
   sequelize,

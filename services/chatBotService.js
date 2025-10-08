@@ -7,6 +7,7 @@ import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import waActiveSessionRepository from "../repositories/waActiveSessionRepository.js";
 import waProfileRepository from "../repositories/waProfileRepository.js";
 import waLessonsCompletedRepository from "../repositories/waLessonsCompletedRepository.js";
+import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
 import { startCourseForUser, sendCourseLesson, talkToBeajRep } from "../utils/chatbotUtils.js";
 import { demoCourseStart } from "../utils/trialflowUtils.js";
 import { sendMessage, sendMediaMessage } from "../utils/whatsappUtils.js";
@@ -20,7 +21,8 @@ import { runWithContext } from "../utils/requestContext.js";
 import {
     activity_types_to_repeat, text_message_types, beaj_team_numbers, feedback_acceptable_messages, course_start_states,
     next_activity_acceptable_messages, special_commands, talk_to_beaj_rep_messages, course_start_acceptable_messages,
-    trigger_course_acceptable_messages, teacher_trial_flow_engagement_types, kids_trial_flow_engagement_types
+    trigger_course_acceptable_messages, teacher_trial_flow_engagement_types, kids_trial_flow_engagement_types,
+    next_question_acceptable_messages
 } from "../constants/constants.js";
 import { specialCommandFlow } from "../flows/specialCommandFlows.js";
 import { marketingBotFlow } from "../flows/marketingBotFlows.js";
@@ -121,6 +123,7 @@ const webhookService = async (body, res) => {
                 let currentUserMetadata = await waUsersMetadataRepository.getByProfileId(profileId);
                 let persona;
                 let trialFlowHit = false;
+                let courseLanguage = "eng";
                 if (!currentUserState) {
                     persona = null;
                 } else if (
@@ -144,12 +147,16 @@ const webhookService = async (body, res) => {
                     await marketingBotFlow(profileId, messageContent, messageType, userMobileNumber);
                     return;
                 }
-                // CHECKING FOR ACCEPTABLE MESSAGES
+                // CHECKING FOR ACCEPTABLE MESSAGES AND SETTING COURSE LANGUAGE
                 if (currentUserState) {
-                    const messageAuth = await checkUserMessageAndAcceptableMessages(profileId, userMobileNumber, currentUserState, messageType, messageContent);
+                    if (currentUserState?.dataValues?.currentCourseId) {
+                        const course = await courseRepository.getById(currentUserState.dataValues.currentCourseId);
+                        courseLanguage = course?.dataValues?.courseLanguage;
+                    }
+                    const messageAuth = await checkUserMessageAndAcceptableMessages(profileId, userMobileNumber, currentUserState, messageType, messageContent, courseLanguage);
                     if (messageAuth === false) {
                         return;
-                    }
+                    }                    
                 }
                 // CHOOSING PROFILE FLOW
                 if ((chooseProfile) || (text_message_types.includes(message.type) && messageContent.toLowerCase().includes("change user"))) {
@@ -175,7 +182,7 @@ const webhookService = async (body, res) => {
                     }
                     return;
                 } else if (currentUserState.dataValues.engagement_type != "Course Start") {
-                    const messageAuth = await checkUserMessageAndAcceptableMessages(profileId, userMobileNumber, currentUserState, messageType, messageContent);
+                    const messageAuth = await checkUserMessageAndAcceptableMessages(profileId, userMobileNumber, currentUserState, messageType, messageContent, courseLanguage);
                     if (messageAuth === false) {
                         return;
                     }
@@ -231,9 +238,10 @@ const webhookService = async (body, res) => {
                         startingLesson = await lessonRepository.getNextLesson(currentUserState.dataValues.currentCourseId, 1, null, null);
                         await waUserProgressRepository.update(profileId, userMobileNumber, currentUserState.dataValues.currentCourseId, startingLesson.dataValues.weekNumber, startingLesson.dataValues.dayNumber, startingLesson.dataValues.LessonId, startingLesson.dataValues.SequenceNumber, startingLesson.dataValues.activity, null, null, null);
                         currentUserState = await waUserProgressRepository.getByProfileId(profileId);
+                        startingLesson.dataValues.courseLanguage = courseLanguage;
                         await sendCourseLesson(profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona, buttonId);
                         if (startingLesson.dataValues.activity == "video" || startingLesson.dataValues.activity == "audio" || startingLesson.dataValues.activity == "image") {
-                            await handleVideoAudioImageFlow(profileId, userMobileNumber, currentUserState, messageType, messageContent, persona, buttonId);
+                            await handleVideoAudioImageFlow(profileId, userMobileNumber, currentUserState, messageType, messageContent, persona, buttonId, courseLanguage);
                         }
                         return;
                     }
@@ -241,10 +249,13 @@ const webhookService = async (body, res) => {
                 // MID ACTIVITY FLOWS - TRIGGERING ON "YES" OR "NO" OR "EASY" OR "HARD"
                 if (text_message_types.includes(message.type)) {
                     const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
+                    const topicsList = await speakActivityQuestionRepository.getTopicsByLessonId(currentUserState.dataValues.currentLessonId);
                     if (
-                        ((messageContent.toLowerCase().includes("yes") || messageContent.toLowerCase().includes("no")) && (currentUserState.dataValues.activityType && currentUserState.dataValues.questionNumber)) ||
-                        ((messageContent.toLowerCase().includes("easy") || messageContent.toLowerCase().includes("hard")) && (currentUserState.dataValues.activityType))
+                        (next_question_acceptable_messages.includes(messageContent.toLowerCase()) && (currentUserState.dataValues.activityType && currentUserState.dataValues.questionNumber)) ||
+                        ((messageContent.toLowerCase().includes("easy") || messageContent.toLowerCase().includes("hard")) && (currentUserState.dataValues.activityType)) ||
+                        (topicsList.includes(messageContent.toLowerCase()) && (currentUserState.dataValues.activityType))
                     ) {
+                        currentLesson.dataValues.courseLanguage = courseLanguage;
                         await sendCourseLesson(profileId, userMobileNumber, currentUserState, currentLesson, messageType, messageContent, persona, buttonId);
                         return;
                     }
@@ -278,7 +289,7 @@ const webhookService = async (body, res) => {
                     let theStartingLesson = await lessonRepository.getByLessonId(currentUserState.dataValues.currentLessonId);
 
                     if ((messageContent.toLowerCase().includes("next") || messageContent.toLowerCase().includes("next activity") || messageContent.toLowerCase().includes("skip")) && lessonSkipped == false) {
-                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
+                        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null, null);
                         await waLessonsCompletedRepository.endLessonByPhoneNumberLessonIdAndProfileId(userMobileNumber, theStartingLesson.dataValues.LessonId, profileId);
                         // await endingMessage(profileId, userMobileNumber, currentUserState, theStartingLesson);
                         // return;
@@ -319,11 +330,12 @@ const webhookService = async (body, res) => {
                     latestUserState = await waUserProgressRepository.getByProfileId(profileId);
 
                     // Send next lesson to user
+                    nextLesson.dataValues.courseLanguage = courseLanguage;
                     await sendCourseLesson(profileId, userMobileNumber, latestUserState, nextLesson, messageType, messageContent, persona, buttonId);
 
                     // VIDEO ACTIVITY FLOW
                     if (nextLesson.dataValues.activity == "video" || nextLesson.dataValues.activity == "audio" || nextLesson.dataValues.activity == "image") {
-                        await handleVideoAudioImageFlow(profileId, userMobileNumber, latestUserState, messageType, messageContent, persona, buttonId);
+                        await handleVideoAudioImageFlow(profileId, userMobileNumber, latestUserState, messageType, messageContent, persona, buttonId, courseLanguage);
                     }
                     return;
                 }
@@ -332,6 +344,7 @@ const webhookService = async (body, res) => {
                     const currentLesson = await lessonRepository.getCurrentLesson(currentUserState.dataValues.currentLessonId);
                     const acceptableMessagesList = await getAcceptableMessagesList(currentLesson.dataValues.activity);
                     await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
+                    currentLesson.dataValues.courseLanguage = courseLanguage;
                     await sendCourseLesson(profileId, userMobileNumber, currentUserState, currentLesson, messageType, messageContent, persona, buttonId);
                     return;
                 }

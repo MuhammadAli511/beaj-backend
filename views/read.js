@@ -13,6 +13,8 @@ import speechToText from "../utils/speechToText.js";
 import { createAndUploadScoreImage, createAndUploadKidsScoreImage } from "../utils/imageGenerationUtils.js";
 import courseRepository from "../repositories/courseRepository.js";
 import { sendAliasAndStartingInstruction } from "../utils/aliasAndInstructionsUtils.js";
+import course_languages from "../constants/language.js";
+import submitResponseFlow from "../flows/submitResponseFlow.js";
 
 const readView = async (profileId, userMobileNumber, currentUserState, startingLesson, messageType, messageContent, persona = null) => {
     try {
@@ -95,15 +97,10 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
                     }
                 }
 
-                await sendButtonMessage(userMobileNumber, "Submit response? 🧐", [{ id: "yes", title: "Yes" }, { id: "no", title: "No, try again" }]);
-                await createActivityLog(userMobileNumber, "template", "outbound", "Submit response? 🧐", null);
-
-                // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no", "no, try again"]);
-                await sleep(2000);
+                await submitResponseFlow(profileId, userMobileNumber, startingLesson);
                 return;
             }
-            else if (messageContent == 'yes') {
+            else if (messageContent == 'yes' || messageContent == 'oui') {
                 // Get the uploaded audio
                 const audioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(profileId, null, startingLesson.dataValues.LessonId);
 
@@ -151,16 +148,17 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
                 );
 
                 // Reset Question Number, Retry Counter, and Activity Type
-                await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
+                await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null, null);
 
                 // Ending Message
                 await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
                 return;
             }
-            else if (messageContent == 'no, try again' || messageContent == 'no') {
+            else if (messageContent == 'no, try again' || messageContent == 'no' || messageContent == 'enregistrez encore') {
                 // Send message to try again
-                await sendMessage(userMobileNumber, "Okay record your voice message again.");
-                await createActivityLog(userMobileNumber, "text", "outbound", "Okay record your voice message again.", null);
+                let recordAgainMessage = course_languages[startingLesson.dataValues.courseLanguage]["record_again_message"];
+                await sendMessage(userMobileNumber, recordAgainMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", recordAgainMessage, null);
 
                 // Update acceptable messages list for the user
                 await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);
@@ -243,15 +241,10 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
                     }
                 }
 
-                await sendButtonMessage(userMobileNumber, "Submit response? 🧐", [{ id: "yes", title: "Yes" }, { id: "no", title: "No, try again" }]);
-                await createActivityLog(userMobileNumber, "template", "outbound", "Submit response? 🧐", null);
-
-                // Update acceptable messages list for the user
-                await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["yes", "no", "no, try again"]);
-                await sleep(2000);
+                await submitResponseFlow(profileId, userMobileNumber, startingLesson);
                 return;
             }
-            else if (messageContent == 'yes') {
+            else if (messageContent == 'yes' || messageContent == 'oui') {
                 // Get the uploaded audio
                 const audioUrl = await waQuestionResponsesRepository.getAudioUrlForProfileIdAndQuestionIdAndLessonId(profileId, null, startingLesson.dataValues.LessonId);
 
@@ -304,16 +297,17 @@ const readView = async (profileId, userMobileNumber, currentUserState, startingL
                 );
 
                 // Reset Question Number, Retry Counter, and Activity Type
-                await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
+                await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null, null);
 
                 // Ending Message
                 await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
                 return;
             }
-            else if (messageContent == 'no, try again' || messageContent == 'no') {
+            else if (messageContent == 'no, try again' || messageContent == 'no' || messageContent == 'enregistrez encore') {
                 // Send message to try again
-                await sendMessage(userMobileNumber, "Okay record your voice message again.");
-                await createActivityLog(userMobileNumber, "text", "outbound", "Okay record your voice message again.", null);
+                let recordAgainMessage = course_languages[startingLesson.dataValues.courseLanguage]["record_again_message"];
+                await sendMessage(userMobileNumber, recordAgainMessage);
+                await createActivityLog(userMobileNumber, "text", "outbound", recordAgainMessage, null);
 
                 // Update acceptable messages list for the user
                 await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, ["audio"]);

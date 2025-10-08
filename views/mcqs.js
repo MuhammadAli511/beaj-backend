@@ -8,6 +8,8 @@ import { sleep, convertNumberToEmoji } from "../utils/utils.js";
 import multipleChoiceQuestionRepository from "../repositories/multipleChoiceQuestionRepository.js";
 import multipleChoiceQuestionAnswerRepository from "../repositories/multipleChoiceQuestionAnswerRepository.js";
 import { sendAliasAndStartingInstruction } from "../utils/aliasAndInstructionsUtils.js";
+import course_languages from "../constants/language.js";
+import skipActivityFlow from "../flows/skipActivityFlow.js";
 
 const sendQuestion = async (nextMCQsQuestion, totalQuestions, currentUserState, userMobileNumber, profileId, startingLesson) => {
     // Send question
@@ -15,7 +17,7 @@ const sendQuestion = async (nextMCQsQuestion, totalQuestions, currentUserState, 
     const mcqAnswers = await multipleChoiceQuestionAnswerRepository.getByQuestionId(nextMCQsQuestion.dataValues.Id);
     const questionText = nextMCQsQuestion.dataValues.QuestionText.replace(/\\n/g, '\n');
     let mcqMessage = ""
-    if (currentUserState.currentCourseId == 100) {
+    if (startingLesson.dataValues.courseLanguage == "fra") {
         mcqMessage += "👉🏽 *Q" + nextMCQsQuestion.dataValues.QuestionNumber + " sur " + totalQuestions + "*\n\n";
     } else {
         mcqMessage += "👉 *Q" + await convertNumberToEmoji(nextMCQsQuestion.dataValues.QuestionNumber) + " of " + totalQuestions + "*\n\n";
@@ -24,11 +26,7 @@ const sendQuestion = async (nextMCQsQuestion, totalQuestions, currentUserState, 
         mcqMessage += questionText + "\n\n";
     }
     if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
-        if (currentUserState.currentCourseId == 100) {
-            mcqMessage += "Choisissez la bonne réponse:\n";
-        } else {
-            mcqMessage += "Choose the correct answer:\n";
-        }
+        mcqMessage += course_languages[startingLesson.dataValues.courseLanguage]["mcqs_choose_correct_answer_message"];
     }
     if (mcqType == 'Text') {
         for (let i = 0; i < mcqAnswers.length; i++) {
@@ -36,10 +34,10 @@ const sendQuestion = async (nextMCQsQuestion, totalQuestions, currentUserState, 
         }
     }
     if (startingLesson.dataValues.skipOnFirstQuestion == true && nextMCQsQuestion.dataValues.QuestionNumber == 1) {
-        mcqMessage += "\n\nOR\n\nClick *'Skip'* to start next activity";
+        mcqMessage += course_languages[startingLesson.dataValues.courseLanguage]["mcq_skip_message"];
     }
     else if (startingLesson.dataValues.skipOnEveryQuestion == true){
-        mcqMessage += "\n\nOR\n\nClick *'Skip'* to start next activity";
+        mcqMessage += course_languages[startingLesson.dataValues.courseLanguage]["mcq_skip_message"];
     }
 
     // Reply buttons to answer
@@ -63,24 +61,10 @@ const sendQuestion = async (nextMCQsQuestion, totalQuestions, currentUserState, 
         await sendButtonMessage(userMobileNumber, "", mcqAnswers.map((answer, index) => ({ id: `${nextMCQsQuestion.dataValues.Id}_${String.fromCharCode(65 + index)}`, title: String.fromCharCode(65 + index) })), 0, mcqImage, null, "MultipleChoiceQuestion", nextMCQsQuestion.dataValues.Id, nextMCQsQuestion.dataValues.QuestionImageMediaId, null, "QuestionImageMediaId");
         await createActivityLog(userMobileNumber, "template", "outbound", "", null);
     }
-    if (startingLesson.dataValues.skipOnFirstQuestion == true && nextMCQsQuestion.dataValues.QuestionNumber == 1) {
-        await sendButtonMessage(userMobileNumber, "👇 Click here to skip:", [{ id: "skip", title: "Skip" }]);
-        await createActivityLog(userMobileNumber, "template", "outbound", "👇 Click here to skip:", null);
-    }
-    else if (startingLesson.dataValues.skipOnEveryQuestion == true){
-        await sendButtonMessage(userMobileNumber, "👇 Click here to skip:", [{ id: "skip", title: "Skip" }]);
-        await createActivityLog(userMobileNumber, "template", "outbound", "👇 Click here to skip:", null);
-    }
 
-    // Update acceptable messages list for the user
     let acceptableMessages = Array.from({ length: mcqAnswers.length }, (_, i) => String.fromCharCode(97 + i));
-    if (startingLesson.dataValues.skipOnFirstQuestion == true && nextMCQsQuestion.dataValues.QuestionNumber == 1) {
-        acceptableMessages.push("skip");
-    }
-    else if (startingLesson.dataValues.skipOnEveryQuestion == true){
-        acceptableMessages.push("skip");
-    }
-    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessages);
+    let acceptableMessagesList = await skipActivityFlow(userMobileNumber, startingLesson, acceptableMessages, nextMCQsQuestion);
+    await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
 };
 
 const getNextMcqQuestion = async (currentUserState, profileId, userMobileNumber, startingLesson) => {
@@ -94,13 +78,13 @@ const getNextMcqQuestion = async (currentUserState, profileId, userMobileNumber,
         const totalQuestions = await waQuestionResponsesRepository.getTotalQuestions(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
         const totalScore = await waQuestionResponsesRepository.getTotalScore(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
         const scorePercentage = (totalScore / totalQuestions) * 100;
-        let message = "*Your score: " + totalScore + "/" + totalQuestions + ".*";
+        let message = course_languages[startingLesson.dataValues.courseLanguage]["your_score"] + totalScore + "/" + totalQuestions + ".*";
         if (scorePercentage >= 0 && scorePercentage <= 60) {
-            message += "\n\nGood Effort! 👍🏽";
+            message += course_languages[startingLesson.dataValues.courseLanguage]["good_effort"];
         } else if (scorePercentage >= 61 && scorePercentage <= 79) {
-            message += "\n\nWell done! 🌟";
+            message += course_languages[startingLesson.dataValues.courseLanguage]["well_done"];
         } else if (scorePercentage >= 80) {
-            message += "\n\nExcellent! 🎉";
+            message += course_languages[startingLesson.dataValues.courseLanguage]["excellent"];
         }
 
         // if not free trial, send message
@@ -110,7 +94,7 @@ const getNextMcqQuestion = async (currentUserState, profileId, userMobileNumber,
         }
 
         // Reset Question Number, Retry Counter, and Activity Type
-        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null);
+        await waUserProgressRepository.updateQuestionNumberRetryCounterActivityType(profileId, userMobileNumber, null, 0, null, null, null);
 
         // ENDING MESSAGE
         await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
@@ -227,12 +211,13 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                         // Correct Answer Feedback
                         if (isCorrectAnswer) {
                             // Text message
-                            await sendMessage(userMobileNumber, "✅ Great!");
-                            await createActivityLog(userMobileNumber, "text", "outbound", "✅ Great!", null);
+                            let correctAnswerMessage = course_languages[startingLesson.dataValues.courseLanguage]["mcq_correct_response_message"];
+                            await sendMessage(userMobileNumber, correctAnswerMessage);
+                            await createActivityLog(userMobileNumber, "text", "outbound", correctAnswerMessage, null);
                         }
                         // Incorrect Answer Feedback
                         else {
-                            let correctAnswer = "❌ The correct answer is ";
+                            let correctAnswer = course_languages[startingLesson.dataValues.courseLanguage]["mcq_incorrect_response_message"];
                             for (let i = 0; i < mcqAnswers.length; i++) {
                                 if (mcqAnswers[i].dataValues.IsCorrect === true) {
                                     correctAnswer += String.fromCharCode(65 + i) + ": " + mcqAnswers[i].dataValues.AnswerText;
@@ -390,7 +375,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
 
                     if (!customFeedbackText && !customFeedbackImage && !customFeedbackAudio) {
                         if (isCorrectAnswer) {
-                            let correctAnswerMessage = "✅ That's right!\n\n";
+                            let correctAnswerMessage = course_languages[startingLesson.dataValues.courseLanguage]["mcq_correct_response_message"];
                             if (remainingQuestions >= 1) {
                                 if (remainingQuestions == 1) {
                                     correctAnswerMessage += remainingQuestions + " more question to go!";
@@ -403,7 +388,7 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                         }
                         // Incorrect Answer Feedback
                         else {
-                            let correctAnswer = "❌ The correct answer is ";
+                            let correctAnswer = course_languages[startingLesson.dataValues.courseLanguage]["mcq_incorrect_response_message"];
                             for (let i = 0; i < mcqAnswers.length; i++) {
                                 if (mcqAnswers[i].dataValues.IsCorrect === true) {
                                     correctAnswer += String.fromCharCode(65 + i) + ": " + mcqAnswers[i].dataValues.AnswerText;

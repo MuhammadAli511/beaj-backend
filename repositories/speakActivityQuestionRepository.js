@@ -52,11 +52,16 @@ const deleteSpeakActivityQuestion = async (id) => {
     });
 };
 
-const getCurrentSpeakActivityQuestion = async (lessonId, questionNumber) => {
+const getCurrentSpeakActivityQuestion = async (lessonId, questionNumber, difficultyLevel = null, topic = null) => {
     return await SpeakActivityQuestion.findOne({
         where: {
             lessonId: lessonId,
-            questionNumber: questionNumber
+            questionNumber: questionNumber,
+            difficultyLevel: difficultyLevel,
+            topic: Sequelize.where(
+                Sequelize.fn('LOWER', Sequelize.col('topic')),
+                Sequelize.fn('LOWER', topic)
+            )
         }
     });
 };
@@ -76,13 +81,50 @@ const checkIfDifficultyLevelExists = async (lessonId) => {
     return speakActivityQuestion;
 };
 
-const getNextSpeakActivityQuestion = async (lessonId, questionNumber, difficultyLevel = null) => {
+const checkIfTopicExists = async (lessonId) => {
+    const speakActivityQuestion = await SpeakActivityQuestion.findOne({
+        where: {
+            lessonId: lessonId,
+            topic: {
+                [Sequelize.Op.and]: [
+                    { [Sequelize.Op.ne]: null },
+                    { [Sequelize.Op.ne]: "" }
+                ]
+            }
+        }
+    });
+    return speakActivityQuestion;
+};
+
+const getNextSpeakActivityQuestion = async (lessonId, questionNumber, difficultyLevel = null, topic = null) => {
+    // Helper function to build where clause with case-insensitive topic matching
+    const buildWhereClause = (includeQuestionNumber = false) => {
+        let whereClause = {
+            lessonId: lessonId,
+            difficultyLevel: difficultyLevel
+        };
+
+        // Add case-insensitive topic filter if topic is provided
+        if (topic) {
+            whereClause.topic = Sequelize.where(
+                Sequelize.fn('LOWER', Sequelize.col('topic')),
+                Sequelize.fn('LOWER', topic)
+            );
+        }
+
+        // Add question number condition if needed
+        if (includeQuestionNumber && questionNumber) {
+            whereClause.questionNumber = {
+                [Sequelize.Op.gt]: questionNumber
+            };
+        }
+
+        return whereClause;
+    };
+
     if (!questionNumber) {
         return await SpeakActivityQuestion.findOne({
-            where: {
-                lessonId: lessonId,
-                difficultyLevel: difficultyLevel
-            },
+            where: buildWhereClause(),
             order: [
                 ['questionNumber', 'ASC']
             ]
@@ -90,13 +132,7 @@ const getNextSpeakActivityQuestion = async (lessonId, questionNumber, difficulty
     }
     if (lessonId && questionNumber) {
         let nextSpeakActivityQuestion = await SpeakActivityQuestion.findOne({
-            where: {
-                lessonId: lessonId,
-                questionNumber: {
-                    [Sequelize.Op.gt]: questionNumber
-                },
-                difficultyLevel: difficultyLevel
-            },
+            where: buildWhereClause(true),
             order: [
                 ['questionNumber', 'ASC']
             ]
@@ -106,7 +142,7 @@ const getNextSpeakActivityQuestion = async (lessonId, questionNumber, difficulty
         }
         return nextSpeakActivityQuestion;
     }
-}
+};
 
 const getByLessonIds = async (lessonIds) => {
     return await SpeakActivityQuestion.findAll({
@@ -142,6 +178,16 @@ const getTotalQuestionsByLessonId = async (lessonId) => {
     });
 };
 
+const getTopicsByLessonId = async (lessonId) => {
+    const questions = await SpeakActivityQuestion.findAll({
+        where: {
+            lessonId: lessonId
+        }
+    });
+
+    return questions.map(question => question.dataValues.topic);
+};
+
 
 export default {
     create,
@@ -155,5 +201,7 @@ export default {
     getByLessonId,
     deleteByLessonId,
     getTotalQuestionsByLessonId,
-    checkIfDifficultyLevelExists
+    checkIfDifficultyLevelExists,
+    checkIfTopicExists,
+    getTopicsByLessonId
 };

@@ -11,7 +11,7 @@ import { sleep, getDaysPerWeek, getTotalLessonsForCourse, getLevelFromCourseName
 import waConstantsRepository from "../repositories/waConstantsRepository.js";
 import { generateCertificate } from '../google_sheet_utils/certificateUtils.js';
 import { sendEndingInstruction } from "./aliasAndInstructionsUtils.js";
-
+import course_languages from "../constants/language.js";
 
 const sendingSticker = async (userMobileNumber, startingLesson) => {
     if (startingLesson?.dataValues?.completionSticker) {
@@ -360,6 +360,8 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
         const lessonNumber = (startingLesson.dataValues.weekNumber - 1) * daysPerWeek + startingLesson.dataValues.dayNumber;
         const courseName = await courseRepository.getCourseNameById(currentUserState.currentCourseId);
         const strippedCourseName = courseName.split("-")[0].trim();
+
+        // User Feedback
         if (
             (strippedCourseName == "Level 1" && lessonNumber > 10) ||
             (strippedCourseName == "Level 2" && lessonNumber > 0) ||
@@ -389,10 +391,27 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
             await sendButtonMessage(userMobileNumber, message, [{ id: 'start_questions', title: 'Start Questions' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", message, null);
             acceptableMessagesList = ["start questions"];
+        } else if (startingLesson.dataValues.activityAlias == "*Bienvenue*") {
+            let message = "👇🏽 Cliquez pour commencer la leçon"
+            await sendButtonMessage(userMobileNumber, message, [{ id: 'commencez', title: 'Commencez' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", message, null);
+            acceptableMessagesList = ["commencez"];
+        } else if (startingLesson.dataValues.activityAlias == "*Essayez d'abord!*") {
+            let message = "🤩 Continuons!"
+            await sendButtonMessage(userMobileNumber, message, [{ id: 'continuez', title: 'Continuons!' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", message, null);
+            acceptableMessagesList = ["continuez"];
+        } else if (startingLesson.dataValues.activityAlias == "*Regardons la video!*") {
+            let message = "👇🏽 Prêt(e) à commencer les questions?"
+            await sendButtonMessage(userMobileNumber, message, [{ id: 'continuez', title: 'Commencez' }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", message, null);
+            acceptableMessagesList = ["commencez"];
         } else {
-            await sendButtonMessage(userMobileNumber, 'Are you ready to start the next activity?', [{ id: 'start_next_activity', title: 'Start Next Activity' }]);
-            await createActivityLog(userMobileNumber, "template", "outbound", "Start Next Activity", null);
-            acceptableMessagesList = ["start next activity"];
+            let message = course_languages[startingLesson.dataValues.courseLanguage]["activity_complete_message"];
+            let button = course_languages[startingLesson.dataValues.courseLanguage]["activity_complete_button"];
+            await sendButtonMessage(userMobileNumber, message, [{ id: 'start_next_activity', title: button }]);
+            await createActivityLog(userMobileNumber, "template", "outbound", button, null);
+            acceptableMessagesList = [button.toLowerCase()];
         }
         if (nextLesson && nextLesson.dataValues.skipOnStart == true) {
             acceptableMessagesList.push("skip activity");
