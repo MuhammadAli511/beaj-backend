@@ -48,6 +48,7 @@ const course_languages = {
         "question_bot_audio_not_found": "Audio not found. Please try recording again.",
         "question_bot_correct_message_part_one": "A corrected version of your answer is: ",
         "question_bot_correct_message_part_two": "\n\n\n*👉 Now try speaking the improved version by sending a voice message* 💬",
+        "audio_error_message": "Sorry! We did not understand that.\n\nPlease record a *new* voice message. Do not forward the previously recorded voice message.",
     },
 
 
@@ -100,6 +101,7 @@ const course_languages = {
         "question_bot_audio_not_found": "Audio non trouvé. Veuillez enregistrer à nouveau.",
         "question_bot_correct_message_part_one": "Une version corrigée de votre réponse est: ",
         "question_bot_correct_message_part_two": "\n\n\n*👉 Maintenant, essayez de parler la version améliorée en envoyant un message vocal* 💬",
+        "audio_error_message": "Désolé! Nous n'avons pas compris. \n\nVeuillez enregistrer un *nouveau* message vocal. Ne pas transmettre le message vocal précédent.",
     }
 };
 

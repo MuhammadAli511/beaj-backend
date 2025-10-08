@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
 import { BlobServiceClient } from "@azure/storage-blob";
 import { retrieveMediaURL } from "./whatsappUtils.js";
-import { text_message_types } from "../constants/constants.js";
+import { text_message_types, skip_activity_acceptable_messages } from "../constants/constants.js";
 import { PassThrough } from "stream";
 import ffmpeg from "fluent-ffmpeg";
 import dotenv from 'dotenv';
@@ -234,7 +234,6 @@ const convertNumberToEmoji = async (number) => {
 const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber, currentUserState, messageType, messageContent, courseLanguage) => {
     const acceptableMessagesList = currentUserState.dataValues.acceptableMessages;
     const activityType = currentUserState.dataValues.activityType;
-    const persona = currentUserState.dataValues.persona;
     if (!acceptableMessagesList) {
         return true;
     }
@@ -290,13 +289,7 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
     ) {
         if (acceptableMessagesList.includes("audio") && messageType === "audio") {
             return true;
-        } else if (text_message_types.includes(messageType) &&
-            (
-                messageContent.toLowerCase() == "next" ||
-                messageContent.toLowerCase() == "skip" ||
-                messageContent.toLowerCase() == "next activity" ||
-                messageContent.toLowerCase() == "passer"
-            )) {
+        } else if (text_message_types.includes(messageType) && skip_activity_acceptable_messages.includes(messageContent.toLowerCase())) {
             return true;
         }
     }
@@ -314,7 +307,7 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
     }
     // If list has "a", "b", "c" then "a", "b", "c" type kerain.
     if (acceptableMessagesList.includes("a") && acceptableMessagesList.includes("b") && acceptableMessagesList.includes("c")) {
-        if ((text_message_types.includes(messageType)) && (messageContent.toLowerCase() == "next" || messageContent.toLowerCase() == "skip" || messageContent.toLowerCase() == "next activity")) {
+        if ((text_message_types.includes(messageType)) && skip_activity_acceptable_messages.includes(messageContent.toLowerCase())) {
             return true;
         }
         await sendButtonMessage(userMobileNumber, "Please select an option:", [{ id: "a", title: "A" }, { id: "b", title: "B" }, { id: "c", title: "C" }]);

@@ -151,11 +151,16 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 let prompt = "Transcribe the audio, if it is empty return nothing";
                 let recognizedText = null;
                 try {
-                    recognizedText = await speechToText.azureOpenAISpeechToText(audioBuffer, prompt);
+                    if (startingLesson.dataValues.courseLanguage == "fra") {
+                        recognizedText = await speechToText.azureOpenAISpeechToText(audioBuffer, prompt, "fr");
+                    } else {
+                        recognizedText = await speechToText.azureOpenAISpeechToText(audioBuffer, prompt);
+                    }
                 } catch (error) {
+                    console.error('Error transcribing audio:', error);
                     await skipButtonFlow(profileId, userMobileNumber, startingLesson, currentListenAndSpeakQuestion);
                     await waQuestionResponsesRepository.deleteRecord(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId, currentListenAndSpeakQuestion.dataValues.id);
-                    let errorMessage = "Sorry! We did not understand that.\n\nPlease record a *new* voice message. Do not forward the previously recorded voice message.";
+                    let errorMessage = course_languages[startingLesson.dataValues.courseLanguage]["audio_error_message"];
                     await sendMessage(userMobileNumber, errorMessage);
                     await createActivityLog(userMobileNumber, "text", "outbound", errorMessage, null);
                     return;
@@ -240,7 +245,7 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                             await createActivityLog(userMobileNumber, "text", "outbound", wrongMessage, null);
 
                             // Update acceptable messages list for the user
-                            await skipButtonFlow(profileId, userMobileNumber, startingLesson, nextListenAndSpeakQuestion);
+                            await skipButtonFlow(profileId, userMobileNumber, startingLesson, currentListenAndSpeakQuestion);
                             return;
                         } else if (retryCounter == 2) {
                             // Reset retry counter
@@ -318,9 +323,10 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                         await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson);
                     }
                 } else {
+                    console.error('Error transcribing audio:');
                     await skipButtonFlow(profileId, userMobileNumber, startingLesson);
                     await waQuestionResponsesRepository.deleteRecord(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId, currentListenAndSpeakQuestion.dataValues.id);
-                    let errorMessage = "Sorry! We did not understand that.\n\nPlease record a *new* voice message. Do not forward the previously recorded voice message.";
+                    let errorMessage = course_languages[startingLesson.dataValues.courseLanguage]["audio_error_message"];
                     await sendMessage(userMobileNumber, errorMessage);
                     await createActivityLog(userMobileNumber, "text", "outbound", errorMessage, null);
                 }
@@ -475,11 +481,16 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                 let prompt = "Transcribe the audio, if it is empty return nothing";
                 let recognizedText = null;
                 try {
-                    recognizedText = await speechToText.azureOpenAISpeechToText(audioBuffer, prompt);
+                    if (startingLesson.dataValues.courseLanguage == "fra") {
+                        recognizedText = await speechToText.azureOpenAISpeechToText(audioBuffer, prompt, "fr");
+                    } else {
+                        recognizedText = await speechToText.azureOpenAISpeechToText(audioBuffer, prompt);
+                    }
                 } catch (error) {
+                    console.error('Error transcribing audio:', error);
                     await skipButtonFlow(profileId, userMobileNumber, startingLesson, currentListenAndSpeakQuestion);
                     await waQuestionResponsesRepository.deleteRecord(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId, currentListenAndSpeakQuestion.dataValues.id);
-                    let errorMessage = "Sorry! We did not understand that.\n\nPlease record a *new* voice message. Do not forward the previously recorded voice message.";
+                    let errorMessage = course_languages[startingLesson.dataValues.courseLanguage]["audio_error_message"];
                     await sendMessage(userMobileNumber, errorMessage);
                     await createActivityLog(userMobileNumber, "text", "outbound", errorMessage, null);
                     return;
@@ -640,9 +651,10 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                         await endingMessage(profileId, userMobileNumber, currentUserState, startingLesson, message);
                     }
                 } else {
+                    console.error('Error transcribing audio:');
                     await skipButtonFlow(profileId, userMobileNumber, startingLesson, currentListenAndSpeakQuestion);
                     await waQuestionResponsesRepository.deleteRecord(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId, currentListenAndSpeakQuestion.dataValues.id);
-                    let errorMessage = "Sorry! We did not understand that.\n\nPlease record a *new* voice message. Do not forward the previously recorded voice message.";
+                    let errorMessage = course_languages[startingLesson.dataValues.courseLanguage]["audio_error_message"];
                     await sendMessage(userMobileNumber, errorMessage);
                     await createActivityLog(userMobileNumber, "text", "outbound", errorMessage, null);
                 }
