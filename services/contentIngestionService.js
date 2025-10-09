@@ -21,11 +21,11 @@ const hasActivityData = (get) => {
         get(columns_order.SKIP_ON_EVERY_QUESTION) ||
         get(columns_order.COMPLETION_STICKER) ||
         get(columns_order.Q_NO) ||
-        get(columns_order.Q_TEXT) ||
         get(columns_order.Q_VIDEO_LINK) ||
         get(columns_order.Q_AUDIO_LINK) ||
         get(columns_order.Q_IMAGE_LINK) ||
         get(columns_order.DIFFICULTY_LEVEL) ||
+        get(columns_order.Q_TEXT) ||
         get(columns_order.ANSWER) ||
         get(columns_order.CF_TEXT) ||
         get(columns_order.CF_IMAGE) ||
@@ -192,39 +192,57 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
             }
 
             // If we have answer data, add it
+
             if (answerText || cfText || cfImage || cfAudio) {
-                const splitAnswers = answerText.split("\n").map(a => a.trim()).filter(Boolean);
-                // Check if the answer cell is highlighted (correct answer)
                 const answerCell = cells[columns_order.ANSWER];
-                const bg = answerCell?.effectiveFormat?.backgroundColor;
-                // const isCorrect = isCellHighlighted(bg);
-                const textRuns = answerCell?.textFormatRuns || [];
 
+                // Check if any part of the cell is bold
+                const isCorrect = isAnswerBold(answerCell);
 
-                for (let i = 0; i < splitAnswers.length; i++) {
-                    const ans = splitAnswers[i];
-
-                    const isCorrect = isAnswerBold(answerText, ans, textRuns);
-
-                    difficultyData.answers.push({
-                        answerNumber: answerCounters[counterKey]++,
-                        answerText: ans,
-                        correct: isCorrect,
-                        customFeedbackText: cfText,
-                        customFeedbackImage: cfImage,
-                        customFeedbackAudio: cfAudio
-                    });
-                }
-
-                // difficultyData.answers.push({
-                //     answerNumber: answerCounters[counterKey]++,
-                //     answerText: answerText,
-                //     correct: isCorrect,
-                //     customFeedbackText: cfText,
-                //     customFeedbackImage: cfImage,
-                //     customFeedbackAudio: cfAudio
-                // });
+                difficultyData.answers.push({
+                    answerNumber: answerCounters[counterKey]++,
+                    answerText: answerText || "",
+                    correct: isCorrect,
+                    customFeedbackText: cfText || "",
+                    customFeedbackImage: cfImage || "",
+                    customFeedbackAudio: cfAudio || ""
+                });
             }
+
+
+            // if (answerText || cfText || cfImage || cfAudio) {
+            //     const splitAnswers = answerText.split("\n").map(a => a.trim()).filter(Boolean);
+            //     // Check if the answer cell is highlighted (correct answer)
+            //     const answerCell = cells[columns_order.ANSWER];
+            //     const bg = answerCell?.effectiveFormat?.backgroundColor;
+            //     // const isCorrect = isCellHighlighted(bg);
+            //     const textRuns = answerCell?.textFormatRuns || [];
+
+
+            //     for (let i = 0; i < splitAnswers.length; i++) {
+            //         const ans = splitAnswers[i];
+
+            //         const isCorrect = isAnswerBold(answerText, ans, textRuns);
+
+            //         difficultyData.answers.push({
+            //             answerNumber: answerCounters[counterKey]++,
+            //             answerText: ans,
+            //             correct: isCorrect,
+            //             customFeedbackText: cfText,
+            //             customFeedbackImage: cfImage,
+            //             customFeedbackAudio: cfAudio
+            //         });
+            //     }
+
+            //     // difficultyData.answers.push({
+            //     //     answerNumber: answerCounters[counterKey]++,
+            //     //     answerText: answerText,
+            //     //     correct: isCorrect,
+            //     //     customFeedbackText: cfText,
+            //     //     customFeedbackImage: cfImage,
+            //     //     customFeedbackAudio: cfAudio
+            //     // });
+            // }
         }
     }
 
@@ -286,7 +304,7 @@ const validateIngestionService = async (courseId, sheetId, sheetTitle) => {
                     spreadsheetId: sheetId,
                     ranges: [sheetTitle],
                     includeGridData: true,
-                    fields: 'sheets(data(rowData(values(formattedValue,hyperlink,userEnteredValue,chipRuns,textFormatRuns))))'
+                    fields: 'sheets(data(rowData(values(formattedValue,hyperlink,userEnteredValue,chipRuns,textFormatRuns,effectiveFormat(textFormat),userEnteredFormat(textFormat)))))'
                 });
             } catch (error) {
                 errors.push(`Cannot access Google Sheet: ${error.message}`)
@@ -557,7 +575,7 @@ const processIngestionService = async (courseId, sheetId, sheetTitle) => {
             spreadsheetId: sheetId,
             ranges: [sheetTitle],
             includeGridData: true,
-            fields: 'sheets(data(rowData(values(formattedValue,hyperlink,userEnteredValue,chipRuns,textFormatRuns))))'
+            fields: 'sheets(data(rowData(values(formattedValue,hyperlink,userEnteredValue,chipRuns,textFormatRuns,effectiveFormat(textFormat),userEnteredFormat(textFormat)))))'
         });
 
         const sheet = res.data.sheets?.[0];
@@ -810,7 +828,7 @@ const deleteActivitiesService = async (courseId, sheetId, sheetTitle, processDel
                     spreadsheetId: sheetId,
                     ranges: [sheetTitle],
                     includeGridData: true,
-                    fields: 'sheets(data(rowData(values(formattedValue,hyperlink,userEnteredValue,chipRuns,textFormatRuns))))'
+                    fields: 'sheets(data(rowData(values(formattedValue,hyperlink,userEnteredValue,chipRuns,textFormatRuns,effectiveFormat(textFormat),userEnteredFormat(textFormat)))))'
                 });
 
                 const sheet = res.data.sheets?.[0];

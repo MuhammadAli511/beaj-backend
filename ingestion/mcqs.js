@@ -52,6 +52,12 @@ const validation = async (activities) => {
                         `mcqs question in activity from "${activity.startRow}" to "${activity.endRow}" must have at least one correct (bold) option.`
                     );
                 }
+                // 3) Answer is not empty
+                if (question.answers.some(a => a.answerText == '')) {
+                    allErrors.push(
+                        `mcqs question in activity from "${activity.startRow}" to "${activity.endRow}" must have non-empty option.`
+                    );
+                }
             }
         }
 
