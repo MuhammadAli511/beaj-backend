@@ -10,7 +10,7 @@ const sendAliasAndStartingInstruction = async (userMobileNumber, startingLesson)
     let lessonMessage = "";
     if (alias != null && alias != "") {
         if (startingLesson.dataValues.courseLanguage == "fra") {
-            lessonMessage = "Activité: " + alias.replace(/\\n/g, '\n') + "\n\n";
+            lessonMessage = alias.replace(/\\n/g, '\n') + "\n\n";
         } else {
             lessonMessage = "Activity: " + alias.replace(/\\n/g, '\n') + "\n\n";
         }

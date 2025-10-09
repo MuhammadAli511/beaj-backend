@@ -353,8 +353,8 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
         await createActivityLog(userMobileNumber, "template", "outbound", "Click on Start Now! 👇", null);
         return false;
     }
-    if (acceptableMessagesList.includes("commencer!")) {
-        await sendButtonMessage(userMobileNumber, "Cliquez sur Commencer! 👇", [{ id: "commencer", title: "Commencer!" }]);
+    if (acceptableMessagesList.includes("commencez!")) {
+        await sendButtonMessage(userMobileNumber, "Cliquez sur Commencer! 👇", [{ id: "commencez", title: "Commencez!" }]);
         await createActivityLog(userMobileNumber, "template", "outbound", "Cliquez sur Commencer! 👇", null);
         return false;
     }

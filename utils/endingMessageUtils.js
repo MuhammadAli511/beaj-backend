@@ -393,12 +393,12 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
             await createActivityLog(userMobileNumber, "template", "outbound", message, null);
             acceptableMessagesList = ["start questions"];
         } else if (startingLesson.dataValues.activityAlias == "*Introduction au Module 1*") {
-            let message = "👇🏽 Cliquez pour commencer la leçon"
+            let message = "👇🏽 Cliquez pour commencer la leçon!"
             await sendButtonMessage(userMobileNumber, message, [{ id: 'commencez', title: 'Commencez!' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", message, null);
             acceptableMessagesList = ["commencez!"];
         } else if (startingLesson.dataValues.activityAlias == "*Développez votre boîte à outils linguistiques*") {
-            let message = "👇🏽 Cliquez pour commencer:"
+            let message = "👇🏽 Cliquez pour commencer!"
             await sendButtonMessage(userMobileNumber, message, [{ id: 'commencez', title: 'Commencez' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", message, null);
             acceptableMessagesList = ["commencez"];
@@ -428,7 +428,7 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
             acceptableMessagesList = ["commencez"];
         } else if (startingLesson.dataValues.activityAlias == "*Essayez d'abord!*") {
             let message = "🤩 Continuons!"
-            await sendButtonMessage(userMobileNumber, message, [{ id: 'continuez', title: 'Continuons!' }]);
+            await sendButtonMessage(userMobileNumber, message, [{ id: 'continuez', title: 'continuez!' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", message, null);
             acceptableMessagesList = ["continuez"];
         } else if (startingLesson.dataValues.activityAlias == "*Récapitulatif de la Leçon 1*") {

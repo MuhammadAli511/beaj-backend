@@ -43,6 +43,7 @@ const course_languages = {
         "activity_complete_button": "Start Next Activity",
         "start_now": "Click on Start Now! 👇",
         "skip_activity_message": "👇 Click here to skip:",
+        "skip_activity_message_audio": "🎙Respond by voice message\n\nOR\n\nClick Skip to continue.",
         "skip_activity_button": "Skip",
         "question_bot_you_said": "Please wait for an answer. \n\nYou said:",
         "question_bot_audio_not_found": "Audio not found. Please try recording again.",
@@ -72,12 +73,12 @@ const course_languages = {
             "audioEnd": "👂 *Listen to the audio.*",
             "image": "👀 *Observe the image.*",
             "imageEnd": "👀 *Observe the image.*",
-            "watchAndAudio": "*Regardez la question vidéo  👇🏽*",
+            "watchAndAudio": "▶️ *Regardez la question vidéo.*",
             "watchAndImage": "Watch the videos. Then send an image response.",
             "watchAndSpeak": "Watch the videos. Then practise speaking by sending voice messages. 💬"
         },
         "record_again_message": "Ok, enregistrez à nouveau votre message vocal.",
-        "submit_response_message": "Soumettre la réponse? 🧐",
+        "submit_response_message": "👍🏽 Soumettre la réponse?",
         "yes": "Oui",
         "no": "Enregistrez encore",
 
@@ -89,19 +90,20 @@ const course_languages = {
 
         // General
         "your_score": "*Votre Score: ",
-        "good_effort": "\n\nBon Effort! 👍🏽",
-        "well_done": "\n\nBien Joué! 🌟",
-        "excellent": "\n\nExcellent! 🎉",
+        "good_effort": "\n\n👍🏽 Bon Effort!",
+        "well_done": "\n\n🌟 Bien Joué!",
+        "excellent": "\n\n🎉 Excellent!",
         "activity_complete_message": "🤩 Activité achevée!",
         "activity_complete_button": "Activité suivante",
         "start_now": "Cliquez sur Commencer maintenant! 👇",
         "skip_activity_message": "👇 Cliquez ici pour passer:",
-        "skip_activity_button": "Passer",
+        "skip_activity_message_audio": "🎙Répondez par message vocal\n\nOU\n\nCliquer sur le bouton Passez pour continuer.",
+        "skip_activity_button": "Passez",
         "question_bot_you_said": "Veuillez attendre la réponse. \n\nVous avez dit:",
         "question_bot_audio_not_found": "Audio non trouvé. Veuillez enregistrer à nouveau.",
         "question_bot_correct_message_part_one": "Une version corrigée de votre réponse est: ",
         "question_bot_correct_message_part_two": "\n\n\n*👉 Maintenant, essayez de parler la version améliorée en envoyant un message vocal* 💬",
-        "audio_error_message": "Désolé! Nous n'avons pas compris. \n\nVeuillez enregistrer un *nouveau* message vocal. Ne pas transmettre le message vocal précédent.",
+        "audio_error_message": "😞 Désolé! Nous n'avons rien entendu.\n\n🎙Veuillez réenregistrer votre réponse. Ne pas transmettre la même réponse.",
     }
 };
 
