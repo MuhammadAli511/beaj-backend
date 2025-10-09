@@ -933,23 +933,52 @@ const parseStartEndInstruction = async (cellValue) => {
     return result;
 }
 
-const isAnswerBold = (cellText, answerText, textRuns) => {
-    if (!cellText || !answerText || !Array.isArray(textRuns)) return false;
+const isAnswerBold = (answerCell) => {
+    if (!answerCell) return false;
 
-    const startIndex = cellText.indexOf(answerText);
-    if (startIndex === -1) return false;
-    const endIndex = startIndex + answerText.length;
+    // Method 1: Check if entire cell is bold (when there are no textFormatRuns)
+    // This is the most common case for uniformly formatted cells
+    if (!answerCell.textFormatRuns || answerCell.textFormatRuns.length === 0) {
+        // Check effectiveFormat first (this includes inherited formatting)
+        if (answerCell.effectiveFormat?.textFormat?.bold === true) {
+            return true;
+        }
+        // Check userEnteredFormat as fallback
+        if (answerCell.userEnteredFormat?.textFormat?.bold === true) {
+            return true;
+        }
+        return false;
+    }
 
-    for (const run of textRuns) {
-        const runStart = run.startIndex ?? 0;
-        const runBold = run.format?.bold === true;
-
-        if (runStart >= startIndex && runStart < endIndex && runBold) {
+    // Method 2: Check textFormatRuns for partially formatted cells
+    // If textFormatRuns exist, check if any run has bold formatting
+    for (const run of answerCell.textFormatRuns) {
+        if (run.format?.bold === true) {
             return true;
         }
     }
+
     return false;
 };
+
+
+// const isAnswerBold = (cellText, answerText, textRuns) => {
+//     if (!cellText || !answerText || !Array.isArray(textRuns)) return false;
+
+//     const startIndex = cellText.indexOf(answerText);
+//     if (startIndex === -1) return false;
+//     const endIndex = startIndex + answerText.length;
+
+//     for (const run of textRuns) {
+//         const runStart = run.startIndex ?? 0;
+//         const runBold = run.format?.bold === true;
+
+//         if (runStart >= startIndex && runStart < endIndex && runBold) {
+//             return true;
+//         }
+//     }
+//     return false;
+// };
 
 const compressSticker = async (stickerFileObject) => {
     const MAX_SIZE_KB = 100;
