@@ -33,6 +33,9 @@ const course_languages = {
         "mcq_correct_response_message": "✅ That's right!\n\n",
         "mcq_incorrect_response_message": "❌ The correct answer is ",
 
+        // Listen and Speak
+        "listen_and_speak_instructions": "Listen to the audio question and send your answer as a voice message.💬",
+
 
         // General
         "your_score": "*Your score: ",
@@ -87,6 +90,9 @@ const course_languages = {
         "mcqs_choose_correct_answer_message": "Choisissez la bonne réponse:\n",
         "mcq_correct_response_message": "👏🏽 C'est exact!\n\n",
         "mcq_incorrect_response_message": "❌ La bonne réponse est ",
+
+        // Listen and Speak
+        "listen_and_speak_instructions": "🎙 Répondez par message vocal",
 
         // General
         "your_score": "*Votre Score: ",

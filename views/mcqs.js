@@ -25,7 +25,12 @@ const sendQuestion = async (nextMCQsQuestion, totalQuestions, currentUserState, 
     if (mcqType == 'Text') {
         mcqMessage += questionText + "\n\n";
     }
-    if (!questionText.includes("Choose the correct sentence:") && !questionText.includes("What is the correct question") && !questionText.includes("Which is a correct question") && !questionText.includes("Which sentence is correct?")) {
+    if (!questionText.includes("Choose the correct sentence:") &&
+        !questionText.includes("What is the correct question") &&
+        !questionText.includes("Which is a correct question") &&
+        !questionText.includes("Which sentence is correct?") &&
+        !questionText.includes("Choisissez la bonne forme du participe passé")
+    ) {
         mcqMessage += course_languages[startingLesson.dataValues.courseLanguage]["mcqs_choose_correct_answer_message"];
     }
     if (mcqType == 'Text') {
@@ -36,7 +41,7 @@ const sendQuestion = async (nextMCQsQuestion, totalQuestions, currentUserState, 
     if (startingLesson.dataValues.skipOnFirstQuestion == true && nextMCQsQuestion.dataValues.QuestionNumber == 1) {
         mcqMessage += course_languages[startingLesson.dataValues.courseLanguage]["mcq_skip_message"];
     }
-    else if (startingLesson.dataValues.skipOnEveryQuestion == true){
+    else if (startingLesson.dataValues.skipOnEveryQuestion == true) {
         mcqMessage += course_languages[startingLesson.dataValues.courseLanguage]["mcq_skip_message"];
     }
 

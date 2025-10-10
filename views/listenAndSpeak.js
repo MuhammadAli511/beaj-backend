@@ -66,11 +66,24 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                     }
                 }
 
-                // Send question text
-                const questionText = firstListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
-                await sendMessage(userMobileNumber, questionText);
-                await createActivityLog(userMobileNumber, "text", "outbound", questionText, null);
+                if (startingLesson.dataValues.courseLanguage == "fra") {
+                    const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
+                    let instructionMessage = "*Q" + firstListenAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
+                    instructionMessage += firstListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
+                    await sendMessage(userMobileNumber, instructionMessage);
+                    await createActivityLog(userMobileNumber, "text", "outbound", instructionMessage, null);
+                } else {
+                    const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
+                    let instructionMessage = "*Q" + firstListenAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
+                    instructionMessage += course_languages[startingLesson.dataValues.courseLanguage]["listen_and_speak_instructions"];
+                    await sendMessage(userMobileNumber, instructionMessage);
+                    await createActivityLog(userMobileNumber, "text", "outbound", instructionMessage, null);
 
+                    // Text message
+                    const questionText = firstListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
+                    await sendMessage(userMobileNumber, questionText);
+                    await createActivityLog(userMobileNumber, "text", "outbound", questionText, null);
+                }
                 let acceptableMessagesList = await skipActivityFlow(userMobileNumber, startingLesson, ["audio"], firstListenAndSpeakQuestion);
                 await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
 
@@ -285,14 +298,27 @@ const listenAndSpeakView = async (profileId, userMobileNumber, currentUserState,
                             }
                         }
 
+                        if (startingLesson.dataValues.courseLanguage == "fra") {
+                            const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
+                            let instructionMessage = "*Q" + nextListenAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
+                            instructionMessage += nextListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
+                            await sendMessage(userMobileNumber, instructionMessage);
+                            await createActivityLog(userMobileNumber, "text", "outbound", instructionMessage, null);
+                        } else {
+                            const totalQuestions = await speakActivityQuestionRepository.getTotalQuestionsByLessonId(currentUserState.dataValues.currentLessonId);
+                            let instructionMessage = "*Q" + nextListenAndSpeakQuestion.dataValues.questionNumber + " of " + totalQuestions + "*\n\n";
+                            instructionMessage += course_languages[startingLesson.dataValues.courseLanguage]["listen_and_speak_instructions"];
+                            await sendMessage(userMobileNumber, instructionMessage);
+                            await createActivityLog(userMobileNumber, "text", "outbound", instructionMessage, null);
 
-                        // Text message
-                        const questionText = nextListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
-                        await sendMessage(userMobileNumber, questionText);
-                        await createActivityLog(userMobileNumber, "text", "outbound", questionText, null);
-
+                            // Text message
+                            const questionText = nextListenAndSpeakQuestion.dataValues.question.replace(/\\n/g, '\n');
+                            await sendMessage(userMobileNumber, questionText);
+                            await createActivityLog(userMobileNumber, "text", "outbound", questionText, null);
+                        }
                         let acceptableMessagesList = await skipActivityFlow(userMobileNumber, startingLesson, ["audio"], nextListenAndSpeakQuestion);
                         await waUserProgressRepository.updateAcceptableMessagesList(profileId, userMobileNumber, acceptableMessagesList);
+
                     } else {
                         // Calculate total score and send message
                         const totalScore = await waQuestionResponsesRepository.getTotalScore(profileId, userMobileNumber, currentUserState.dataValues.currentLessonId);
