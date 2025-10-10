@@ -200,6 +200,8 @@ const webhookService = async (body, res) => {
                     const courseStarted = await startCourseForUser(profileId, userMobileNumber, beaj_team_numbers);
                     if (courseStarted != "french") {
                         return;
+                    } else {
+                        courseLanguage = "fra";
                     }
                 }
                 // MAIN COURSE START FLOW - TRIGGERING ON "START"

@@ -71,8 +71,8 @@ const course_languages = {
             "videoEnd": "👀 *Regardez la vidéo.*",
             "audio": "👂 *Listen to the audio.*",
             "audioEnd": "👂 *Listen to the audio.*",
-            "image": "👀 *Observe the image.*",
-            "imageEnd": "👀 *Observe the image.*",
+            "image": "",
+            "imageEnd": "",
             "watchAndAudio": "▶️ *Regardez la question vidéo.*",
             "watchAndImage": "Watch the videos. Then send an image response.",
             "watchAndSpeak": "Watch the videos. Then practise speaking by sending voice messages. 💬"

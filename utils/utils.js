@@ -353,8 +353,9 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
         await createActivityLog(userMobileNumber, "template", "outbound", "Click on Start Now! 👇", null);
         return false;
     }
-    if (acceptableMessagesList.includes("commencez!")) {
-        await sendButtonMessage(userMobileNumber, "Cliquez sur Commencer! 👇", [{ id: "commencez", title: "Commencez!" }]);
+    if (acceptableMessagesList.includes("commencez") && currentUserState.dataValues.currentCourseId == null) {
+        let imageUrl = "https://beajbloblive.blob.core.windows.net/beajdocuments/french_intro.jpg";
+        await sendButtonMessage(userMobileNumber, "Cliquez sur Commencer! 👇", [{ id: "commencez", title: "Commencez" }], 0, imageUrl);
         await createActivityLog(userMobileNumber, "template", "outbound", "Cliquez sur Commencer! 👇", null);
         return false;
     }
