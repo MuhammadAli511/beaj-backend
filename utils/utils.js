@@ -1,4 +1,4 @@
-import { sendButtonMessage, sendMessage } from "./whatsappUtils.js";
+import { sendButtonMessage, sendMediaMessage, sendMessage } from "./whatsappUtils.js";
 import { createActivityLog } from "./createActivityLogUtils.js";
 import waProfileRepository from "../repositories/waProfileRepository.js";
 import speakActivityQuestionRepository from "../repositories/speakActivityQuestionRepository.js";
@@ -355,8 +355,12 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
     }
     if (acceptableMessagesList.includes("commencez") && currentUserState.dataValues.currentCourseId == null) {
         let imageUrl = "https://beajbloblive.blob.core.windows.net/beajdocuments/french_intro.jpg";
-        await sendButtonMessage(userMobileNumber, "Cliquez sur Commencer! 👇", [{ id: "commencez", title: "Commencez" }], 0, imageUrl);
-        await createActivityLog(userMobileNumber, "template", "outbound", "Cliquez sur Commencer! 👇", null);
+        let message = "Bonjour!\nBienvenue au cours de français de Beaj Education!\nJe suis Annie et je suis ravie de vous accueillir ici!\nCommençons!";
+        await sendMediaMessage(userMobileNumber, imageUrl, 'image', message);
+        await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
+        await sleep(2000);
+        await sendButtonMessage(userMobileNumber, "👇🏽 Cliquez pour commencer le cours", [{ id: "commencez", title: "Commencez" }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "👇🏽 Cliquez pour commencer le cours", null);
         return false;
     }
     // Kids flow
