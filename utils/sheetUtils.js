@@ -231,297 +231,172 @@ const streamToBuffer = (stream) => {
 };
 
 // Function to compress video if it's larger than 10MB
-const compressVideo = async (videoFileObject) => {
-    const MAX_SIZE_MB = 10;
-    const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+const compressVideo = async (videoFileObject, compress_size = "10MB") => {
 
-    try {
-        const timestamp = Date.now();
-        const randomDigits = Math.floor(100000 + Math.random() * 900000);
-        const fileNameFinal = `${timestamp}_${randomDigits}.mp4`;
+    // Convert compress_size (string like "10MB", "100KB") → numeric MB value
+  let compressSizeStr = String(compress_size).toLowerCase().trim();
+  let MAX_SIZE_MB = 10; // default
 
-        // Check if compression is needed
-        if (videoFileObject.size <= MAX_SIZE_BYTES) {
-            console.log('Video is already under 10MB, uploading without compression');
-            return await azureBlobStorage.uploadToBlobStorage(videoFileObject.buffer, fileNameFinal, "video/mp4");
-        }
+  const sizeMatch = compressSizeStr.match(/^([\d.]+)\s*(mb|kb)$/i);
+  if (sizeMatch) {
+    const value = parseFloat(sizeMatch[1]);
+    const unit = sizeMatch[2];
+    MAX_SIZE_MB = unit === "kb" ? value / 1024 : value; // KB → MB conversion
+  }
 
-        console.log(`Video size: ${(videoFileObject.size / (1024 * 1024)).toFixed(2)}MB - compression needed`);
+  const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
-        // Calculate compression ratio for proportional reduction
-        // If 100MB needs to become 10MB, that's a reduction to 10% of original
-        // We'll use this same percentage for all videos
-        const targetSizeRatio = MAX_SIZE_MB / (videoFileObject.size / (1024 * 1024));
-        console.log(`Target compression ratio: ${(targetSizeRatio * 100).toFixed(1)}%`);
+  try {
+    const timestamp = Date.now();
+    const randomDigits = Math.floor(100000 + Math.random() * 900000);
+    const fileNameFinal = `${timestamp}_${randomDigits}.mp4`;
 
-        // Create temporary files
-        const tempInputPath = join(tmpdir(), `input_${timestamp}_${randomDigits}.mp4`);
-        const tempOutputPath = join(tmpdir(), `output_${timestamp}_${randomDigits}.mp4`);
+    const videoSizeMB = (videoFileObject.size / (1024 * 1024)).toFixed(2);
+    console.log(`Video size: ${videoSizeMB}MB`);
 
-        // Write input buffer to temporary file
-        const inputStream = createWriteStream(tempInputPath);
-        inputStream.write(videoFileObject.buffer);
-        inputStream.end();
-
-        await new Promise((resolve, reject) => {
-            inputStream.on('finish', resolve);
-            inputStream.on('error', reject);
-        });
-
-        // Try multiple compression strategies to achieve target size
-        const VIDEO_TARGET_MB = 10;
-        const VIDEO_TARGET_BYTES = VIDEO_TARGET_MB * 1024 * 1024;
-        let compressionSuccessful = false;
-        let finalOutputPath = tempOutputPath;
-
-        // Strategy 1: Balanced compression for quality-size balance
-        try {
-            console.log('Attempting balanced video compression (6-10MB target)...');
-            await new Promise((resolve, reject) => {
-                ffmpeg(tempInputPath)
-                    .output(tempOutputPath)
-                    .videoCodec('libx264')
-                    .audioCodec('aac')
-                    .outputOptions([
-                        '-preset', 'slow', // Good compression quality balance
-                        '-crf', '32', // Balanced CRF for quality-size ratio
-                        '-movflags', '+faststart',
-                        '-maxrate', '800k', // Moderate bitrate for quality
-                        '-bufsize', '1.6M', // Moderate buffer size
-                        '-vf', 'scale=-2:480', // Scale to 480p for decent quality
-                        '-r', '20', // Moderate frame rate
-                        '-g', '40', // Keyframe interval
-                        '-keyint_min', '20', // Minimum keyframe interval
-                        '-sc_threshold', '0', // Disable scene change detection
-                        '-pix_fmt', 'yuv420p' // Standard pixel format
-                    ])
-                    .audioBitrate('80k') // Decent audio quality
-                    .audioChannels(2) // Stereo audio
-                    .audioFrequency(44100) // Standard sample rate
-                    .on('end', () => {
-                        console.log('Balanced video compression completed');
-                        compressionSuccessful = true;
-                        resolve();
-                    })
-                    .on('error', (err) => {
-                        console.log('Balanced compression failed, trying moderate compression...');
-                        reject(err);
-                    })
-                    .run();
-            });
-
-            // Check if Strategy 1 result meets target
-            const strategy1Buffer = await new Promise((resolve, reject) => {
-                const chunks = [];
-                const readStream = createReadStream(tempOutputPath);
-                readStream.on('data', (chunk) => chunks.push(chunk));
-                readStream.on('end', () => resolve(Buffer.concat(chunks)));
-                readStream.on('error', reject);
-            });
-
-            console.log(`Strategy 1 result: ${(strategy1Buffer.length / (1024 * 1024)).toFixed(2)}MB`);
-            if (strategy1Buffer.length <= VIDEO_TARGET_BYTES) {
-                console.log('Strategy 1 achieved target size!');
-                finalOutputPath = tempOutputPath;
-            } else {
-                console.log('Strategy 1 result still over target, trying Strategy 2...');
-                compressionSuccessful = false; // Reset to try next strategy
-            }
-        } catch (strategy1Error) {
-            console.log('Strategy 1 failed, trying Strategy 2...');
-            compressionSuccessful = false;
-        }
-
-        // Strategy 2: Moderate compression (if Strategy 1 didn't meet target)
-        if (!compressionSuccessful) {
-            try {
-                const moderateOutputPath = join(tmpdir(), `output_moderate_${timestamp}_${randomDigits}.mp4`);
-                console.log('Attempting moderate video compression...');
-                await new Promise((resolve, reject) => {
-                    ffmpeg(tempInputPath)
-                        .output(moderateOutputPath)
-                        .videoCodec('libx264')
-                        .audioCodec('aac')
-                        .outputOptions([
-                            '-preset', 'medium', // Balanced preset
-                            '-crf', '35', // Higher CRF for better quality
-                            '-movflags', '+faststart',
-                            '-maxrate', '600k', // Higher bitrate for quality
-                            '-bufsize', '1.2M',
-                            '-vf', 'scale=-2:360', // Scale to 360p for decent quality
-                            '-r', '18', // Moderate frame rate
-                            '-g', '36',
-                            '-keyint_min', '18',
-                            '-pix_fmt', 'yuv420p'
-                        ])
-                        .audioBitrate('64k') // Better audio quality
-                        .audioChannels(1) // Mono for size
-                        .audioFrequency(22050) // Decent sample rate
-                        .on('end', () => {
-                            console.log('Moderate compression video completed');
-                            compressionSuccessful = true;
-                            resolve();
-                        })
-                        .on('error', (err) => {
-                            console.log('Moderate compression failed, trying emergency compression...');
-                            reject(err);
-                        })
-                        .run();
-                });
-
-                // Check if Strategy 2 result meets target
-                const strategy2Buffer = await new Promise((resolve, reject) => {
-                    const chunks = [];
-                    const readStream = createReadStream(moderateOutputPath);
-                    readStream.on('data', (chunk) => chunks.push(chunk));
-                    readStream.on('end', () => resolve(Buffer.concat(chunks)));
-                    readStream.on('error', reject);
-                });
-
-                console.log(`Strategy 2 result: ${(strategy2Buffer.length / (1024 * 1024)).toFixed(2)}MB`);
-                if (strategy2Buffer.length <= VIDEO_TARGET_BYTES) {
-                    console.log('Strategy 2 achieved target size!');
-                    finalOutputPath = moderateOutputPath;
-                } else {
-                    console.log('Strategy 2 result still over target, trying Strategy 3...');
-                    compressionSuccessful = false; // Reset to try next strategy
-                }
-            } catch (strategy2Error) {
-                console.log('Strategy 2 failed, trying Strategy 3...');
-                compressionSuccessful = false;
-            }
-        }
-
-        // Strategy 3: Emergency compression (last resort)
-        if (!compressionSuccessful) {
-            try {
-                const basicOutputPath = join(tmpdir(), `output_basic_${timestamp}_${randomDigits}.mp4`);
-                console.log('Attempting emergency video compression...');
-                await new Promise((resolve, reject) => {
-                    ffmpeg(tempInputPath)
-                        .output(basicOutputPath)
-                        .videoCodec('libx264')
-                        .audioCodec('aac')
-                        .outputOptions([
-                            '-preset', 'fast',
-                            '-crf', '38', // Moderate CRF for emergency
-                            '-movflags', '+faststart',
-                            '-maxrate', '500k', // Still reasonable bitrate
-                            '-bufsize', '1M',
-                            '-vf', 'scale=-2:480', // Keep 480p even in emergency
-                            '-r', '15', // Reasonable frame rate
-                            '-g', '30',
-                            '-keyint_min', '15'
-                        ])
-                        .audioBitrate('48k') // Reasonable audio quality
-                        .audioChannels(1) // Mono
-                        .audioFrequency(22050)
-                        .on('end', () => {
-                            console.log('Emergency video compression completed');
-                            compressionSuccessful = true;
-                            resolve();
-                        })
-                        .on('error', (err) => {
-                            console.error('All video compression strategies failed');
-                            reject(err);
-                        })
-                        .run();
-                });
-
-                // Check if Strategy 3 result meets target
-                const strategy3Buffer = await new Promise((resolve, reject) => {
-                    const chunks = [];
-                    const readStream = createReadStream(basicOutputPath);
-                    readStream.on('data', (chunk) => chunks.push(chunk));
-                    readStream.on('end', () => resolve(Buffer.concat(chunks)));
-                    readStream.on('error', reject);
-                });
-
-                console.log(`Strategy 3 result: ${(strategy3Buffer.length / (1024 * 1024)).toFixed(2)}MB`);
-                if (strategy3Buffer.length <= VIDEO_TARGET_BYTES) {
-                    console.log('Strategy 3 achieved target size!');
-                    finalOutputPath = basicOutputPath;
-                } else {
-                    console.log('Strategy 3 result still over target - all strategies failed');
-                    compressionSuccessful = false;
-                }
-            } catch (strategy3Error) {
-                console.log('Strategy 3 failed - all strategies failed');
-                compressionSuccessful = false;
-            }
-        }
-
-        if (!compressionSuccessful) {
-            throw new Error('Video compression failed with all strategies');
-        }
-
-        // Read the final compressed video
-        const compressedBuffer = await new Promise((resolve, reject) => {
-            const chunks = [];
-            const readStream = createReadStream(finalOutputPath);
-
-            readStream.on('data', (chunk) => chunks.push(chunk));
-            readStream.on('end', () => resolve(Buffer.concat(chunks)));
-            readStream.on('error', reject);
-        });
-
-        console.log(`Final compressed video size: ${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB`);
-
-        // Final safety check - if compression made file larger, use original
-        if (compressedBuffer.length >= videoFileObject.size) {
-            console.log(`Warning: Compressed video (${(compressedBuffer.length / (1024 * 1024)).toFixed(2)}MB) is larger than original (${(videoFileObject.size / (1024 * 1024)).toFixed(2)}MB). Using original file.`);
-            const originalFileObject = {
-                buffer: videoFileObject.buffer,
-                size: videoFileObject.size,
-                originalname: videoFileObject.originalname,
-                mimetype: videoFileObject.mimetype
-            };
-            return await azureBlobStorage.uploadToBlobStorage(originalFileObject.buffer, fileNameFinal, "video/mp4");
-        }
-
-        // Create file object for upload with custom filename
-        const compressedFileObject = {
-            buffer: compressedBuffer,
-            size: compressedBuffer.length,
-            originalname: `${timestamp}_${randomDigits}.mp4`,
-            mimetype: 'video/mp4'
-        };
-
-        // Upload to Azure blob storage
-        const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(compressedFileObject.buffer, fileNameFinal, "video/mp4");
-
-        // Cleanup temporary files
-        try {
-            unlinkSync(tempInputPath);
-            unlinkSync(tempOutputPath);
-            // Also cleanup any alternative output files that might exist
-            const moderatePath = join(tmpdir(), `output_moderate_${timestamp}_${randomDigits}.mp4`);
-            const basicPath = join(tmpdir(), `output_basic_${timestamp}_${randomDigits}.mp4`);
-            if (existsSync(moderatePath)) unlinkSync(moderatePath);
-            if (existsSync(basicPath)) unlinkSync(basicPath);
-        } catch (cleanupError) {
-            console.warn('Failed to cleanup temporary files:', cleanupError.message);
-        }
-
-        return uploadedUrl;
-
-    } catch (error) {
-        console.error('Video compression error:', error);
-
-        // Cleanup temporary files in case of error
-        try {
-            const timestamp = Date.now();
-            const randomDigits = Math.floor(100000 + Math.random() * 900000);
-            const tempInputPath = join(tmpdir(), `input_${timestamp}_${randomDigits}.mp4`);
-            const tempOutputPath = join(tmpdir(), `output_${timestamp}_${randomDigits}.mp4`);
-            unlinkSync(tempInputPath);
-            unlinkSync(tempOutputPath);
-        } catch (cleanupError) {
-            // Ignore cleanup errors during error handling
-        }
-
-        throw new Error(`Failed to compress video: ${error.message}`);
+    // If already below target size → upload directly
+    if (videoFileObject.size <= MAX_SIZE_BYTES) {
+      console.log(`Video under ${MAX_SIZE_MB}MB, uploading without compression`);
+      return await azureBlobStorage.uploadToBlobStorage(
+        videoFileObject.buffer,
+        fileNameFinal,
+        "video/mp4"
+      );
     }
+
+    // Create temp paths
+    const tempInputPath = join(tmpdir(), `input_${timestamp}_${randomDigits}.mp4`);
+    const tempOutputPath = join(tmpdir(), `output_${timestamp}_${randomDigits}.mp4`);
+
+    // Write buffer to temp file
+    await new Promise((resolve, reject) => {
+      const stream = createWriteStream(tempInputPath);
+      stream.write(videoFileObject.buffer);
+      stream.end();
+      stream.on("finish", resolve);
+      stream.on("error", reject);
+    });
+
+    console.log(`Compression target: ${MAX_SIZE_MB}MB`);
+
+    // Calculate proportional compression ratio
+    const targetSizeRatio = MAX_SIZE_MB / (videoFileObject.size / (1024 * 1024));
+    const estimatedCRF = Math.min(40, Math.max(25, 32 / targetSizeRatio)); // adaptive CRF
+    const targetResolution = targetSizeRatio < 0.3 ? 360 : 480; // lower resolution if big reduction needed
+
+    console.log(`Target CRF: ${estimatedCRF.toFixed(1)}, scale=${targetResolution}p`);
+
+    await new Promise((resolve, reject) => {
+      ffmpeg(tempInputPath)
+        .output(tempOutputPath)
+        .videoCodec("libx264")
+        .audioCodec("aac")
+        .outputOptions([
+          "-preset", "medium",
+          "-crf", `${estimatedCRF}`,
+          "-movflags", "+faststart",
+          "-maxrate", `${Math.floor(800 * targetSizeRatio)}k`,
+          "-bufsize", `${Math.floor(1600 * targetSizeRatio)}k`,
+          "-vf", `scale=-2:${targetResolution}`,
+          "-r", "24",
+          "-g", "48",
+          "-pix_fmt", "yuv420p"
+        ])
+        .audioBitrate(`${Math.floor(96 * targetSizeRatio)}k`)
+        .audioChannels(1)
+        .audioFrequency(44100)
+        .on("end", () => {
+          console.log("Video compression completed successfully");
+          resolve();
+        })
+        .on("error", (err) => {
+          console.error("Video compression failed:", err.message);
+          reject(err);
+        })
+        .run();
+    });
+
+    // Read compressed buffer
+    const compressedBuffer = await new Promise((resolve, reject) => {
+      const chunks = [];
+      const readStream = createReadStream(tempOutputPath);
+      readStream.on("data", (chunk) => chunks.push(chunk));
+      readStream.on("end", () => resolve(Buffer.concat(chunks)));
+      readStream.on("error", reject);
+    });
+
+    const finalSizeMB = (compressedBuffer.length / (1024 * 1024)).toFixed(2);
+    console.log(`Final video size: ${finalSizeMB}MB`);
+
+    // If final size still larger than limit, optionally retry smaller res
+    if (compressedBuffer.length > MAX_SIZE_BYTES) {
+      console.warn(
+        `Video still above ${MAX_SIZE_MB}MB (${finalSizeMB}MB), reattempting with stronger compression...`
+      );
+
+      // Retry once more with lower scale and higher CRF
+      const retryOutputPath = join(tmpdir(), `retry_${timestamp}_${randomDigits}.mp4`);
+      await new Promise((resolve, reject) => {
+        ffmpeg(tempInputPath)
+          .output(retryOutputPath)
+          .videoCodec("libx264")
+          .audioCodec("aac")
+          .outputOptions([
+            "-preset", "medium",
+            "-crf", "38",
+            "-movflags", "+faststart",
+            "-maxrate", "600k",
+            "-bufsize", "1.2M",
+            "-vf", "scale=-2:360",
+            "-r", "20",
+            "-pix_fmt", "yuv420p"
+          ])
+          .audioBitrate("64k")
+          .audioChannels(1)
+          .audioFrequency(22050)
+          .on("end", resolve)
+          .on("error", reject)
+          .run();
+      });
+
+      const retryBuffer = await new Promise((resolve, reject) => {
+        const chunks = [];
+        const readStream = createReadStream(retryOutputPath);
+        readStream.on("data", (chunk) => chunks.push(chunk));
+        readStream.on("end", () => resolve(Buffer.concat(chunks)));
+        readStream.on("error", reject);
+      });
+
+      console.log(`Retry result size: ${(retryBuffer.length / (1024 * 1024)).toFixed(2)}MB`);
+      if (retryBuffer.length < compressedBuffer.length) {
+        console.log("Retry succeeded in reducing size further");
+        compressedBuffer.set(retryBuffer);
+      }
+
+      if (existsSync(retryOutputPath)) unlinkSync(retryOutputPath);
+    }
+
+    // Upload to Azure
+    const uploadedUrl = await azureBlobStorage.uploadToBlobStorage(
+      compressedBuffer,
+      fileNameFinal,
+      "video/mp4"
+    );
+
+    // Cleanup
+    try {
+      if (existsSync(tempInputPath)) unlinkSync(tempInputPath);
+      if (existsSync(tempOutputPath)) unlinkSync(tempOutputPath);
+    } catch (cleanupErr) {
+      console.warn("🧹 Cleanup warning:", cleanupErr.message);
+    }
+
+    return uploadedUrl;
+
+  } catch (err) {
+    console.error("Video compression error:", err.message);
+    throw new Error(`Failed to compress video: ${err.message}`);
+  }
 };
 
 // Function to compress audio if it's larger than 10MB
@@ -778,6 +653,9 @@ const compressAudio = async (audioFileObject) => {
 
 // Function to compress image if it's larger than 1MB
 const compressImage = async (imageFileObject) => {
+    if(imageFileObject.mimetype === 'image/webp') {
+        return compressSticker(imageFileObject);
+    }
     const MAX_SIZE_MB = 1;
     const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
@@ -882,7 +760,10 @@ const compressImage = async (imageFileObject) => {
 const parseStartEndInstruction = async (cellValue) => {
     if (!cellValue || typeof cellValue !== "string") return {};
 
-    const lines = cellValue.split("\n").map(line => line.trim()).filter(Boolean);
+    const lines = cellValue
+        .split("\n")
+        .map(line => line.trim())
+        .filter(Boolean);
 
     const result = {
         textInstruction: null,
@@ -893,36 +774,47 @@ const parseStartEndInstruction = async (cellValue) => {
         audioInstructionCaption: null,
         videoInstruction: null,
         videoInstructionCaption: null,
+        videoSize: null,
         pdfInstruction: null,
         pdfInstructionCaption: null,
     };
 
     for (const line of lines) {
-        const match = line.match(/^(\w+):\s*(.*?)(?:\s*\(Caption:\s*(.*?)\))?$/i);
+        // Match pattern with optional Caption and Size (in any order)
+        const match = line.match(
+            /^(\w+):\s*(https?:\/\/[^\s]+)(?:\s*\(Caption:\s*([^)]+)\))?(?:\s*\(Size:\s*([^)]+)\))?/i
+        );
+
         if (!match) continue;
 
-        let [, type, value, caption] = match;
+        let [, type, value, caption, size] = match;
         type = type.toLowerCase().trim();
         value = value?.trim() || null;
         caption = caption?.trim() || null;
+        size = size?.trim() || null;
 
         switch (type) {
             case "text":
                 if (value) result.textInstruction = value;
                 if (caption) result.textInstructionCaption = caption;
                 break;
+
             case "image":
                 if (value) result.imageInstruction = value;
                 if (caption) result.imageInstructionCaption = caption;
                 break;
+
             case "audio":
                 if (value) result.audioInstruction = value;
                 if (caption) result.audioInstructionCaption = caption;
                 break;
+
             case "video":
                 if (value) result.videoInstruction = value;
                 if (caption) result.videoInstructionCaption = caption;
+                if (size) result.videoSize = size;
                 break;
+
             case "pdf":
                 if (value) result.pdfInstruction = value;
                 if (caption) result.pdfInstructionCaption = caption;
@@ -931,7 +823,7 @@ const parseStartEndInstruction = async (cellValue) => {
     }
 
     return result;
-}
+};
 
 const isAnswerBold = (answerCell) => {
     if (!answerCell) return false;
@@ -1071,6 +963,51 @@ const normalizeBool = (val) => {
   return false;
 };
 
+const getVideoUrlAndSize = (cell) => {
+    if (!cell) return { url: "", size: "" };
+    
+    let url = "";
+    let size = "";
+    
+    // STEP 1: Extract the URL from smart chip or hyperlink
+    if (cell.chipRuns && cell.chipRuns.length > 0) {
+        for (const chipRun of cell.chipRuns) {
+            const chip = chipRun.chip;
+            if (chip?.richLinkProperties?.uri) {
+                url = chip.richLinkProperties.uri.trim();
+                break;
+            }
+        }
+    } else if (cell.hyperlink) {
+        url = cell.hyperlink.trim();
+    } else {
+        // Try to extract URL from formattedValue as fallback
+        const formattedValue = cell.formattedValue?.trim() || "";
+        const urlMatch = formattedValue.match(/https?:\/\/[^\s]+/);
+        if (urlMatch) {
+            url = urlMatch[0].trim();
+        }
+    }
+    
+    // STEP 2: Extract size from formattedValue (works for both chips and regular links)
+    const formattedValue = cell.formattedValue?.trim() || "";
+    
+    // Pattern 1: (size: 9MB) or (size:9MB)
+    let sizeMatch = formattedValue.match(/\(\s*size:\s*([^)]+)\)/i);
+    if (sizeMatch) {
+        size = sizeMatch[1].trim();
+    } else {
+        // Pattern 2: size: 9MB or size:9MB without parentheses
+        sizeMatch = formattedValue.match(/size:\s*(\S+)/i);
+        if (sizeMatch) {
+            size = sizeMatch[1].trim();
+        }
+    }
+    
+    return { url, size };
+};
+
+
 export {
     getDriveMediaUrl,
     validateDriveUrl,
@@ -1092,4 +1029,5 @@ export {
     getServiceAccountEmail,
     normalizeInt,
     normalizeBool,
+    getVideoUrlAndSize,
 };

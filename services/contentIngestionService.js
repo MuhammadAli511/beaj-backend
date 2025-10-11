@@ -1,4 +1,4 @@
-import { getSheetsObj, getAuthSheetClient, isAnswerBold } from "../utils/sheetUtils.js";
+import { getSheetsObj, getAuthSheetClient, isAnswerBold, getVideoUrlAndSize } from "../utils/sheetUtils.js";
 import { toCamelCase } from "../utils/utils.js";
 import { activity_types, columns_order } from "../constants/constants.js";
 import ingestion from '../ingestion/index.js';
@@ -73,6 +73,16 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
     return cell.formattedValue?.trim() || "";
 };
 
+
+const getVideoData = (col) => {
+    const cell = cells[col];
+    if (!cell) return "";
+    
+    // Always return the formattedValue for video columns
+    // This preserves both the URL/chip and the size information
+    return cell.formattedValue?.trim() || "";
+};
+
         // Check if this row starts a new question (has Q No)
         const questionNumber = get(columns_order.Q_NO);
         if (questionNumber) {
@@ -84,6 +94,7 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
                     questionNumber: parseInt(questionNumber),
                     questionText: "",
                     questionVideo: "",
+                    questionVideoSize: "",
                     questionAudio: "",
                     questionImage: "",
                     difficultiesMap: new Map()
@@ -96,9 +107,17 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
             if (get(columns_order.Q_TEXT)) {
                 currentQuestionData.questionText = get(columns_order.Q_TEXT);
             }
-            if (get(columns_order.Q_VIDEO_LINK)) {
-                currentQuestionData.questionVideo = get(columns_order.Q_VIDEO_LINK);
-            }
+            // if (get(columns_order.Q_VIDEO_LINK)) {
+            //     currentQuestionData.questionVideo = get(columns_order.Q_VIDEO_LINK);
+            // }
+           const videoCell = cells[columns_order.Q_VIDEO_LINK];
+    if (videoCell) {
+        const { url, size } = getVideoUrlAndSize(videoCell);
+        if (url) {
+            currentQuestionData.questionVideo = url;
+            currentQuestionData.questionVideoSize = size;
+        }
+    }
             if (get(columns_order.Q_AUDIO_LINK)) {
                 currentQuestionData.questionAudio = get(columns_order.Q_AUDIO_LINK);
             }
@@ -110,7 +129,8 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
         // Handle difficulty level and answers
         const difficultyLevel = get(columns_order.DIFFICULTY_LEVEL);
         const questionText = get(columns_order.Q_TEXT);
-        const questionVideo = get(columns_order.Q_VIDEO_LINK);
+       const videoCell = cells[columns_order.Q_VIDEO_LINK];
+const { url: questionVideo, size: questionVideoSize } = videoCell ? getVideoUrlAndSize(videoCell) : { url: "", size: "" };
         const questionAudio = get(columns_order.Q_AUDIO_LINK);
         const questionImage = get(columns_order.Q_IMAGE_LINK);
         const answerText = get(columns_order.ANSWER);
@@ -134,6 +154,7 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
                     questionNumber: 1,
                     questionText: "",
                     questionVideo: "",
+                    questionVideoSize: "", 
                     questionAudio: "",
                     questionImage: "",
                     difficultiesMap: new Map()
@@ -153,6 +174,7 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
                     difficultyLevel: diffKey === "default" ? null : diffKey,
                     questionText: "",
                     questionVideo: "",
+                    questionVideoSize: "",
                     questionAudio: "",
                     questionImage: "",
                     answers: []
@@ -167,9 +189,10 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
             if (questionText && !difficultyData.questionText) {
                 difficultyData.questionText = questionText;
             }
-            if (questionVideo && !difficultyData.questionVideo) {
-                difficultyData.questionVideo = questionVideo;
-            }
+           if (questionVideo && !difficultyData.questionVideo) {
+    difficultyData.questionVideo = questionVideo;
+    difficultyData.questionVideoSize = questionVideoSize;
+}
             if (questionAudio && !difficultyData.questionAudio) {
                 difficultyData.questionAudio = questionAudio;
             }
@@ -182,8 +205,9 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
                 currentQuestionData.questionText = questionText;
             }
             if (questionVideo && !currentQuestionData.questionVideo) {
-                currentQuestionData.questionVideo = questionVideo;
-            }
+    currentQuestionData.questionVideo = questionVideo;
+    currentQuestionData.questionVideoSize = questionVideoSize;
+}
             if (questionAudio && !currentQuestionData.questionAudio) {
                 currentQuestionData.questionAudio = questionAudio;
             }
@@ -256,6 +280,7 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
                 difficultyLevel: null,
                 questionText: questionData.questionText,
                 questionVideo: questionData.questionVideo,
+                questionVideoSize: questionData.questionVideoSize || "",
                 questionAudio: questionData.questionAudio,
                 questionImage: questionData.questionImage,
                 answers: []
@@ -269,6 +294,7 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
                     // Use difficulty-specific question text if available, otherwise fallback to general
                     questionText: diffData.questionText || questionData.questionText,
                     questionVideo: diffData.questionVideo || questionData.questionVideo,
+                    questionVideoSize: diffData.questionVideoSize || questionData.questionVideoSize || "",
                     questionAudio: diffData.questionAudio || questionData.questionAudio,
                     questionImage: diffData.questionImage || questionData.questionImage,
                     answers: diffData.answers
