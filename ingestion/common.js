@@ -78,11 +78,18 @@ const commonValidation = async (activity) => {
         if (parsedStart.videoInstruction) {
             const res = await validateDriveUrl(parsedStart.videoInstruction, "video");
             addPermissionError(res, "video");
+
+            if (!parsedStart.videoSize) {
+                errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" must have a custom video size for start instruction video.`);
+            }
         }
         if (parsedStart.videoInstructionCaption && containsUrl(parsedStart.videoInstructionCaption)) {
             errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have video text caption that is not a url`);
         }
 
+        if (parsedStart.videoSize && containsUrl(parsedStart.videoSize)) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have video custom size (e.g. (Size: 8.5MB)) that is not a url`);
+        }
         // ---- PDF ----
         if (parsedStart.pdfInstruction) {
             const res = await validateDriveUrl(parsedStart.pdfInstruction, "pdf");
@@ -127,9 +134,17 @@ const commonValidation = async (activity) => {
         if (parsedEnd.videoInstruction) {
             const res = await validateDriveUrl(parsedEnd.videoInstruction, "video");
             addPermissionError(res, "video");
+
+            if (!parsedEnd.videoSize) {
+                errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" must have a custom video size for end instruction video.`);
+            }
         }
         if (parsedEnd.videoInstructionCaption && containsUrl(parsedEnd.videoInstructionCaption)) {
             errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have video text caption that is not a url`);
+        }
+
+        if (parsedEnd.videoSize && containsUrl(parsedEnd.videoSize)) {
+            errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have video custom size (e.g. (Size: 8.5MB)) that is not a url`);
         }
 
         // ---- PDF ----
@@ -247,6 +262,14 @@ const commonValidation = async (activity) => {
         if (question.questionVideo) {
             const res = await validateDriveUrl(question.questionVideo, "video");
             addPermissionError(res, "question video");
+
+            if(!question.questionVideoSize){
+                errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" must have a custom video size for question video.`);
+            }
+
+            if (question.questionVideoSize && containsUrl(question.questionVideoSize)) {
+                errors.push(`Activity from "${activity.startRow}" to "${activity.endRow}" should have video custom size (e.g. (Size: 8.5MB)) that is not a url`);
+            }
         }
 
         // If questionAudio exists should be a valid audio url
@@ -379,7 +402,7 @@ const processLessonInstructions = async (lessonId, startInstructions, endInstruc
             { type: "text", value: parsed.textInstruction, caption: parsed.textInstructionCaption },
             { type: "image", value: parsed.imageInstruction, caption: parsed.imageInstructionCaption },
             { type: "audio", value: parsed.audioInstruction, caption: parsed.audioInstructionCaption },
-            { type: "video", value: parsed.videoInstruction, caption: parsed.videoInstructionCaption },
+            { type: "video", value: parsed.videoInstruction, caption: parsed.videoInstructionCaption, size: parsed.videoSize },
             { type: "pdf", value: parsed.pdfInstruction, caption: parsed.pdfInstructionCaption },
         ];
 
@@ -400,7 +423,7 @@ const processLessonInstructions = async (lessonId, startInstructions, endInstruc
                 }
                 if (entry.type === "video") {
                     const file = await getDriveMediaUrl(entry.value);
-                    if (file) finalUrl = await compressVideo(file);
+                    if (file) finalUrl = await compressVideo(file, entry.size);
                 }
             } catch (err) {
                 console.error(`Failed to process ${entry.type} instruction for lesson ${lessonId}:`, err);

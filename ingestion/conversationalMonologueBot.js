@@ -87,7 +87,7 @@ const ingestion = async (activities) => {
 
                                 // Compress video and upload to Azure
                                 console.log(`Video downloaded successfully for activity from "${activity.startRow}" to "${activity.endRow}"`);
-                                const compressedVideoUrl = await compressVideo(videoFile);
+                                const compressedVideoUrl = await compressVideo(videoFile, question.questionVideoSize);
 
 
                                 const existingSpeakActivityQuestion = existingSpeakActivityQuestions.find(existingQ => existingQ.questionNumber == question.questionNumber && existingQ.difficultyLevel == question.difficultyLevel);
