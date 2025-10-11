@@ -116,10 +116,7 @@ const course_start_acceptable_messages = [
     "start free trial",
     "class 1 or 2",
     "class 3 to 6",
-    "commencer",
-    "commencez",
-    "commencer!",
-    "commencez!"
+    "commencez le cours"
 ];
 
 const course_start_states = [
@@ -136,10 +133,7 @@ const trigger_course_acceptable_messages = [
     "complete final task",
     "start level 1",
     "start now!",
-    "commencer!",
-    "commencer",
-    "commencez!",
-    "commencez"
+    "commencez le cours"
 ];
 
 const grades_and_class_names = [

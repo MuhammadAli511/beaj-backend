@@ -392,20 +392,24 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
             await sendButtonMessage(userMobileNumber, message, [{ id: 'start_questions', title: 'Start Questions' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", message, null);
             acceptableMessagesList = ["start questions"];
-        } else if (startingLesson.dataValues.activityAlias == "*Introduction au Module 1*") {
+        } else if (startingLesson.dataValues.activityAlias.toLowerCase() == "*Introduction au Module 1*".toLowerCase()) {
             let message = "👇🏽 Cliquez pour commencer la leçon!"
             await sendButtonMessage(userMobileNumber, message, [{ id: 'commencez', title: 'Commencez' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", message, null);
             acceptableMessagesList = ["commencez"];
-        } else if (startingLesson.dataValues.activityAlias == "*Développez votre boîte à outils linguistiques*") {
+        } else if (startingLesson.dataValues.activityAlias.toLowerCase() == "*Développez votre boîte à outils linguistiques*".toLowerCase()) {
             let message = "👇🏽 Cliquez pour commencer!"
             await sendButtonMessage(userMobileNumber, message, [{ id: 'commencez', title: 'Commencez' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", message, null);
             acceptableMessagesList = ["commencez"];
         } else if (
-            startingLesson.dataValues.activityAlias == "*Outils - Grammaire: Passé Composé (1 sur 3)*" ||
-            startingLesson.dataValues.activityAlias == "*Outils - Grammaire: Passé Composé (2 sur 3)*" ||
-            startingLesson.dataValues.activityAlias == "*Outils - Grammaire: Passé Composé (3 sur 3)*"
+            startingLesson.dataValues.activityAlias.toLowerCase() == "*Outils - Grammaire: Passé Composé (1 sur 3)*".toLowerCase() ||
+            startingLesson.dataValues.activityAlias.toLowerCase() == "*Outils - Grammaire: Passé Composé (2 sur 3)*".toLowerCase() ||
+            startingLesson.dataValues.activityAlias.toLowerCase() == "*Outils - Grammaire: Passé Composé (3 sur 3)*".toLowerCase() ||
+            startingLesson.dataValues.activityAlias.toLowerCase() == "*Outils - vocabulaire: marqueurs temporels (1 sur 4)*".toLowerCase() ||
+            startingLesson.dataValues.activityAlias.toLowerCase() == "*Outils - vocabulaire: marqueurs temporels (2 sur 4)*".toLowerCase() ||
+            startingLesson.dataValues.activityAlias.toLowerCase() == "*Outils - vocabulaire: marqueurs temporels (3 sur 4)*".toLowerCase() ||
+            startingLesson.dataValues.activityAlias.toLowerCase() == "*Outils - vocabulaire: marqueurs temporels (4 sur 4)*".toLowerCase()
         ) {
             let message = "👇🏽 Cliquez pour choisir:"
             await sendButtonMessage(userMobileNumber, message, [{ id: 'entrainement_rapide', title: 'Entraînement Rapide' }, { id: 'passez_au_suivant', title: 'Passez au suivant' }]);
@@ -413,25 +417,26 @@ const teacherCourseFlow = async (profileId, userMobileNumber, currentUserState, 
             acceptableMessagesList = ["entraînement rapide", "passez au suivant"];
             customSkipOnStart = true;
         } else if (
-            startingLesson.dataValues.activityAlias == "*Compréhension Orale*" ||
-            startingLesson.dataValues.activityAlias == "*Pratique - Passé Composé*"
+            startingLesson.dataValues.activityAlias.toLowerCase() == "*Compréhension orale*".toLowerCase() ||
+            startingLesson.dataValues.activityAlias.toLowerCase() == "*Pratique - passé composé*".toLowerCase() ||
+            startingLesson.dataValues.activityAlias.toLowerCase() == "*Pratique - marqueurs temporels*".toLowerCase()
         ) {
             let message = "👇🏽 Cliquez pour choisir:"
             await sendButtonMessage(userMobileNumber, message, [{ id: 'lancez_vous', title: 'Lancez-vous!' }, { id: 'passez', title: 'Passez' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", message, null);
             acceptableMessagesList = ["lancez-vous!", "passez"];
             customSkipOnStart = true;
-        } else if (startingLesson.dataValues.activityAlias == "*Présentation Modèle*") {
+        } else if (startingLesson.dataValues.activityAlias.toLowerCase() == "*Présentation modèle*".toLowerCase()) {
             let message = "👇🏽 Prêt(e) à commencer les questions?"
             await sendButtonMessage(userMobileNumber, message, [{ id: 'continuez', title: 'Commencez' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", message, null);
             acceptableMessagesList = ["commencez"];
-        } else if (startingLesson.dataValues.activityAlias == "*Essayez d'abord!*") {
+        } else if (startingLesson.dataValues.activityAlias.toLowerCase() == "*Essayez d'abord!*".toLowerCase()) {
             let message = "🤩 Continuons!"
-            await sendButtonMessage(userMobileNumber, message, [{ id: 'continuez', title: 'continuez!' }]);
+            await sendButtonMessage(userMobileNumber, message, [{ id: 'continuez', title: 'continuez' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", message, null);
             acceptableMessagesList = ["continuez"];
-        } else if (startingLesson.dataValues.activityAlias == "*Récapitulatif de la Leçon 1*") {
+        } else if (startingLesson.dataValues.activityAlias.toLowerCase() == "*Récapitulatif de la Leçon 1*".toLowerCase()) {
             let message = "Nous vous recommandons de vous arrêter ici et de revenir plus tard pour la leçon suivante."
             await sendButtonMessage(userMobileNumber, message, [{ id: 'leçon_suivante', title: 'Leçon suivante' }]);
             await createActivityLog(userMobileNumber, "template", "outbound", message, null);

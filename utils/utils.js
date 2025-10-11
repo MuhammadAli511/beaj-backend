@@ -353,14 +353,14 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
         await createActivityLog(userMobileNumber, "template", "outbound", "Click on Start Now! 👇", null);
         return false;
     }
-    if (acceptableMessagesList.includes("commencez") && currentUserState.dataValues.currentCourseId == null) {
+    if (acceptableMessagesList.includes("commencez_le_cours") && currentUserState.dataValues.currentCourseId == null) {
         let imageUrl = "https://beajbloblive.blob.core.windows.net/beajdocuments/french_intro.jpg";
-        let message = "Bonjour!\nBienvenue au cours de français de Beaj Education!\nJe suis Annie et je suis ravie de vous accueillir ici!\nCommençons!";
+        let message = "👋🏽 Bonjour!\n\nBienvenue au cours de français de Beaj Education!\n\nJe suis Annie et je suis ravie de vous accueillir ici!\n\nCommençons!";
         await sendMediaMessage(userMobileNumber, imageUrl, 'image', message);
         await createActivityLog(userMobileNumber, "image", "outbound", imageUrl, null);
         await sleep(2000);
-        await sendButtonMessage(userMobileNumber, "👇🏽 Cliquez pour commencer le cours", [{ id: "commencez", title: "Commencez" }]);
-        await createActivityLog(userMobileNumber, "template", "outbound", "👇🏽 Cliquez pour commencer le cours", null);
+        await sendButtonMessage(userMobileNumber, "👇🏽 Cliquez pour commencer maintenant le cours", [{ id: "commencez_le_cours", title: "commencez le cours" }]);
+        await createActivityLog(userMobileNumber, "template", "outbound", "👇🏽 Cliquez pour commencez le cours", null);
         return false;
     }
     // Kids flow

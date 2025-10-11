@@ -201,10 +201,17 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                         await sendMessage(userMobileNumber, customFeedbackText);
                         await createActivityLog(userMobileNumber, "text", "outbound", customFeedbackText, null);
                     }
-                    if (customFeedbackImage) {
+                    if (customFeedbackImage && (
+                        customFeedbackImage.includes('.png') ||
+                        customFeedbackImage.includes('.jpg') ||
+                        customFeedbackImage.includes('.jpeg')
+                    )) {
                         await sendMediaMessage(userMobileNumber, customFeedbackImage, 'image', null, 0, "MultipleChoiceQuestionAnswer", selectedAnswer.dataValues.Id, selectedAnswer.dataValues.CustomAnswerFeedbackImageMediaId, "CustomAnswerFeedbackImageMediaId");
                         await createActivityLog(userMobileNumber, "image", "outbound", customFeedbackImage, null);
                         await sleep(2000);
+                    } else if (customFeedbackImage && customFeedbackImage.includes('.webp')) {
+                        await sendMediaMessage(userMobileNumber, customFeedbackImage, 'sticker');
+                        await createActivityLog(userMobileNumber, "sticker", "outbound", customFeedbackImage, null);
                     }
                     if (customFeedbackAudio) {
                         await sendMediaMessage(userMobileNumber, customFeedbackAudio, 'audio', null, 0, "MultipleChoiceQuestionAnswer", selectedAnswer.dataValues.Id, selectedAnswer.dataValues.CustomAnswerFeedbackAudioMediaId, "CustomAnswerFeedbackAudioMediaId");
@@ -345,9 +352,20 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                                 }
                             }
                         }
-                        await sendMediaMessage(userMobileNumber, customFeedbackImage, 'image', customFeedbackText, 0, "MultipleChoiceQuestionAnswer", selectedAnswer.dataValues.Id, selectedAnswer.dataValues.CustomAnswerFeedbackImageMediaId, "CustomAnswerFeedbackImageMediaId");
-                        await createActivityLog(userMobileNumber, "image", "outbound", customFeedbackImage, customFeedbackText);
-                        await sleep(2000);
+                        if (customFeedbackImage && (
+                            customFeedbackImage.includes('.png') ||
+                            customFeedbackImage.includes('.jpg') ||
+                            customFeedbackImage.includes('.jpeg')
+                        )) {
+                            await sendMediaMessage(userMobileNumber, customFeedbackImage, 'image', customFeedbackText, 0, "MultipleChoiceQuestionAnswer", selectedAnswer.dataValues.Id, selectedAnswer.dataValues.CustomAnswerFeedbackImageMediaId, "CustomAnswerFeedbackImageMediaId");
+                            await createActivityLog(userMobileNumber, "image", "outbound", customFeedbackImage, customFeedbackText);
+                            await sleep(2000);
+                        } else if (customFeedbackImage && customFeedbackImage.includes('.webp')) {
+                            await sendMessage(userMobileNumber, customFeedbackText);
+                            await createActivityLog(userMobileNumber, "text", "outbound", customFeedbackText, null);
+                            await sendMediaMessage(userMobileNumber, customFeedbackImage, 'sticker');
+                            await createActivityLog(userMobileNumber, "sticker", "outbound", customFeedbackImage);
+                        }
                     } else {
                         // Otherwise send them separately if they exist
                         if (customFeedbackText) {
@@ -364,10 +382,17 @@ const mcqsView = async (profileId, userMobileNumber, currentUserState, startingL
                             await sendMessage(userMobileNumber, customFeedbackText);
                             await createActivityLog(userMobileNumber, "text", "outbound", customFeedbackText, null);
                         }
-                        if (customFeedbackImage) {
+                        if (customFeedbackImage && (
+                            customFeedbackImage.includes('.png') ||
+                            customFeedbackImage.includes('.jpg') ||
+                            customFeedbackImage.includes('.jpeg')
+                        )) {
                             await sendMediaMessage(userMobileNumber, customFeedbackImage, 'image', null, 0, "MultipleChoiceQuestionAnswer", selectedAnswer.dataValues.Id, selectedAnswer.dataValues.CustomAnswerFeedbackImageMediaId, "CustomAnswerFeedbackImageMediaId");
                             await createActivityLog(userMobileNumber, "image", "outbound", customFeedbackImage, null);
                             await sleep(2000);
+                        } else if (customFeedbackImage && customFeedbackImage.includes('.webp')) {
+                            await sendMediaMessage(userMobileNumber, customFeedbackImage, 'sticker');
+                            await createActivityLog(userMobileNumber, "sticker", "outbound", customFeedbackImage);
                         }
                     }
 

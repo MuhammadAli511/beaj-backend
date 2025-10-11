@@ -125,11 +125,31 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
             }
             else if (messageContent == 'yes' || messageContent == 'oui') {
                 const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber, currentUserState.dataValues.currentDifficultyLevel, currentUserState.dataValues.currentTopic);
-                const customFeedbackAudio = currentWatchAndSpeakQuestion.dataValues.customFeedbackAudio;
+                const customFeedbackAudio = currentWatchAndSpeakQuestion?.dataValues?.customFeedbackAudio;
+                const customFeedbackText = currentWatchAndSpeakQuestion?.dataValues?.customFeedbackText;
+                const customFeedbackImage = currentWatchAndSpeakQuestion?.dataValues?.customFeedbackImage;
                 if (customFeedbackAudio) {
                     await sendMediaMessage(userMobileNumber, customFeedbackAudio, 'audio', null, 0, "SpeakActivityQuestion", currentWatchAndSpeakQuestion.dataValues.id, currentWatchAndSpeakQuestion.dataValues.customFeedbackAudioMediaId, "customFeedbackAudioMediaId");
                     await createActivityLog(userMobileNumber, "audio", "outbound", customFeedbackAudio, null);
                     await sleep(2000);
+                }
+                if (customFeedbackText) {
+                    await sendMessage(userMobileNumber, customFeedbackText);
+                    await createActivityLog(userMobileNumber, "text", "outbound", customFeedbackText, null);
+                    await sleep(1000);
+                }
+                if (customFeedbackImage && (
+                    customFeedbackImage.includes('.png') ||
+                    customFeedbackImage.includes('.jpg') ||
+                    customFeedbackImage.includes('.jpeg')
+                )) {
+                    await sendMediaMessage(userMobileNumber, customFeedbackImage, 'image', null, 0, "SpeakActivityQuestion", currentWatchAndSpeakQuestion.dataValues.id, currentWatchAndSpeakQuestion.dataValues.customFeedbackImageMediaId, "customFeedbackImageMediaId");
+                    await createActivityLog(userMobileNumber, "image", "outbound", customFeedbackImage, null);
+                    await sleep(2000);
+                } else if (customFeedbackImage && customFeedbackImage.includes('.webp')) {
+                    await sendMediaMessage(userMobileNumber, customFeedbackImage, 'sticker');
+                    await createActivityLog(userMobileNumber, "sticker", "outbound", customFeedbackImage);
+                    await sleep(1000);
                 }
 
                 const nextWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber, currentUserState.dataValues.currentDifficultyLevel);
@@ -291,11 +311,31 @@ const watchAndAudioView = async (profileId, userMobileNumber, currentUserState, 
             }
             else if (messageContent == 'yes' || messageContent == 'oui') {
                 const currentWatchAndSpeakQuestion = await speakActivityQuestionRepository.getCurrentSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber, currentUserState.dataValues.currentDifficultyLevel, currentUserState.dataValues.currentTopic);
-                const customFeedbackAudio = currentWatchAndSpeakQuestion.dataValues.customFeedbackAudio;
+                const customFeedbackAudio = currentWatchAndSpeakQuestion?.dataValues?.customFeedbackAudio;
+                const customFeedbackText = currentWatchAndSpeakQuestion?.dataValues?.customFeedbackText;
+                const customFeedbackImage = currentWatchAndSpeakQuestion?.dataValues?.customFeedbackImage;
                 if (customFeedbackAudio) {
                     await sendMediaMessage(userMobileNumber, customFeedbackAudio, 'audio', null, 0, "SpeakActivityQuestion", currentWatchAndSpeakQuestion.dataValues.id, currentWatchAndSpeakQuestion.dataValues.customFeedbackAudioMediaId, "customFeedbackAudioMediaId");
                     await createActivityLog(userMobileNumber, "audio", "outbound", customFeedbackAudio, null);
                     await sleep(2000);
+                }
+                if (customFeedbackImage && (
+                    customFeedbackImage.includes('.png') ||
+                    customFeedbackImage.includes('.jpg') ||
+                    customFeedbackImage.includes('.jpeg')
+                )) {
+                    await sendMediaMessage(userMobileNumber, customFeedbackImage, 'image', null, 0, "SpeakActivityQuestion", currentWatchAndSpeakQuestion.dataValues.id, currentWatchAndSpeakQuestion.dataValues.customFeedbackImageMediaId, "customFeedbackImageMediaId");
+                    await createActivityLog(userMobileNumber, "image", "outbound", customFeedbackImage, null);
+                    await sleep(2000);
+                } else if (customFeedbackImage && customFeedbackImage.includes('.webp')) {
+                    await sendMediaMessage(userMobileNumber, customFeedbackImage, 'sticker');
+                    await createActivityLog(userMobileNumber, "sticker", "outbound", customFeedbackImage);
+                    await sleep(1000);
+                }
+                if (customFeedbackText) {
+                    await sendMessage(userMobileNumber, customFeedbackText);
+                    await createActivityLog(userMobileNumber, "text", "outbound", customFeedbackText, null);
+                    await sleep(1000);
                 }
 
                 const nextWatchAndSpeakQuestion = await speakActivityQuestionRepository.getNextSpeakActivityQuestion(currentUserState.dataValues.currentLessonId, currentUserState.dataValues.questionNumber, currentUserState.dataValues.currentDifficultyLevel);
