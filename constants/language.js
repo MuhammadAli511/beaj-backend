@@ -103,7 +103,7 @@ const course_languages = {
         "activity_complete_button": "Activité suivante",
         "start_now": "Cliquez sur Commencer maintenant! 👇",
         "skip_activity_message": "👇 Cliquez ici pour passer:",
-        "skip_activity_message_audio": "🎙Répondez par message vocal\n\nOU\n\nCliquer sur le bouton Passez pour continuer.",
+        "skip_activity_message_audio": "🎙Répondez par *message vocal*\n\n*OU*\n\nCliquer sur le bouton *Passez* pour continuer",
         "skip_activity_button": "Passez",
         "question_bot_you_said": "Veuillez attendre la réponse. \n\nVous avez dit:",
         "question_bot_audio_not_found": "Audio non trouvé. Veuillez enregistrer à nouveau.",

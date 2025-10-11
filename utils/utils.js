@@ -353,7 +353,7 @@ const checkUserMessageAndAcceptableMessages = async (profileId, userMobileNumber
         await createActivityLog(userMobileNumber, "template", "outbound", "Click on Start Now! 👇", null);
         return false;
     }
-    if (acceptableMessagesList.includes("commencez_le_cours") && currentUserState.dataValues.currentCourseId == null) {
+    if (acceptableMessagesList.includes("commencez le cours") && currentUserState.dataValues.currentCourseId == null) {
         let imageUrl = "https://beajbloblive.blob.core.windows.net/beajdocuments/french_intro.jpg";
         let message = "👋🏽 Bonjour!\n\nBienvenue au cours de français de Beaj Education!\n\nJe suis Annie et je suis ravie de vous accueillir ici!\n\nCommençons!";
         await sendMediaMessage(userMobileNumber, imageUrl, 'image', message);

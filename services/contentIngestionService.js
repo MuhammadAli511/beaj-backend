@@ -1,4 +1,4 @@
-import { getSheetsObj, getAuthSheetClient, isAnswerBold, getVideoUrlAndSize } from "../utils/sheetUtils.js";
+import { getSheetsObj, getAuthSheetClient, isAnswerBold } from "../utils/sheetUtils.js";
 import { toCamelCase } from "../utils/utils.js";
 import { activity_types, columns_order } from "../constants/constants.js";
 import ingestion from '../ingestion/index.js';
@@ -16,7 +16,7 @@ const hasActivityData = (get) => {
         get(columns_order.START_INSTRUCTIONS) ||
         get(columns_order.END_INSTRUCTIONS) ||
         get(columns_order.SKIP_ON_FIRST_QUESTION) ||
-        get(columns_order.SKIP_ON_START) || 
+        get(columns_order.SKIP_ON_START) ||
         get(columns_order.SKIP_ON_START_TO_LESSONID) ||
         get(columns_order.SKIP_ON_EVERY_QUESTION) ||
         get(columns_order.COMPLETION_STICKER) ||
@@ -44,34 +44,34 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
         const cells = row.values || [];
         // const get = (col) => cells[col]?.formattedValue?.trim() || "";
         const get = (col) => {
-    const cell = cells[col];
-    if (!cell) return "";
-    
-    // For smart chips (Drive files, etc.) - the URL is in chipRuns
-    if (cell.chipRuns && cell.chipRuns.length > 0) {
-        for (const chipRun of cell.chipRuns) {
-            const chip = chipRun.chip;
-            if (chip) {
-                // For Drive file chips
-                if (chip.richLinkProperties?.uri) {
-                    return chip.richLinkProperties.uri.trim();
-                }
-                // For person chips (email)
-                if (chip.personProperties?.email) {
-                    return chip.personProperties.email.trim();
+            const cell = cells[col];
+            if (!cell) return "";
+
+            // For smart chips (Drive files, etc.) - the URL is in chipRuns
+            if (cell.chipRuns && cell.chipRuns.length > 0) {
+                for (const chipRun of cell.chipRuns) {
+                    const chip = chipRun.chip;
+                    if (chip) {
+                        // For Drive file chips
+                        if (chip.richLinkProperties?.uri) {
+                            return chip.richLinkProperties.uri.trim();
+                        }
+                        // For person chips (email)
+                        if (chip.personProperties?.email) {
+                            return chip.personProperties.email.trim();
+                        }
+                    }
                 }
             }
-        }
-    }
-    
-    // For regular hyperlinks
-    if (cell.hyperlink) {
-        return cell.hyperlink.trim();
-    }
-    
-    // For regular text
-    return cell.formattedValue?.trim() || "";
-};
+
+            // For regular hyperlinks
+            if (cell.hyperlink) {
+                return cell.hyperlink.trim();
+            }
+
+            // For regular text
+            return cell.formattedValue?.trim() || "";
+        };
         // Check if this row starts a new question (has Q No)
         const questionNumber = get(columns_order.Q_NO);
         if (questionNumber) {
@@ -83,7 +83,6 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
                     questionNumber: parseInt(questionNumber),
                     questionText: "",
                     questionVideo: "",
-                    questionVideoSize: "",
                     questionAudio: "",
                     questionImage: "",
                     difficultiesMap: new Map()
@@ -96,17 +95,9 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
             if (get(columns_order.Q_TEXT)) {
                 currentQuestionData.questionText = get(columns_order.Q_TEXT);
             }
-            // if (get(columns_order.Q_VIDEO_LINK)) {
-            //     currentQuestionData.questionVideo = get(columns_order.Q_VIDEO_LINK);
-            // }
-           const videoCell = cells[columns_order.Q_VIDEO_LINK];
-    if (videoCell) {
-        const { url, size } = getVideoUrlAndSize(videoCell);
-        if (url) {
-            currentQuestionData.questionVideo = url;
-            currentQuestionData.questionVideoSize = size;
-        }
-    }
+            if (get(columns_order.Q_VIDEO_LINK)) {
+                currentQuestionData.questionVideo = get(columns_order.Q_VIDEO_LINK);
+            }
             if (get(columns_order.Q_AUDIO_LINK)) {
                 currentQuestionData.questionAudio = get(columns_order.Q_AUDIO_LINK);
             }
@@ -118,8 +109,7 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
         // Handle difficulty level and answers
         const difficultyLevel = get(columns_order.DIFFICULTY_LEVEL);
         const questionText = get(columns_order.Q_TEXT);
-       const videoCell = cells[columns_order.Q_VIDEO_LINK];
-const { url: questionVideo, size: questionVideoSize } = videoCell ? getVideoUrlAndSize(videoCell) : { url: "", size: "" };
+        const questionVideo = get(columns_order.Q_VIDEO_LINK);
         const questionAudio = get(columns_order.Q_AUDIO_LINK);
         const questionImage = get(columns_order.Q_IMAGE_LINK);
         const answerText = get(columns_order.ANSWER);
@@ -143,7 +133,6 @@ const { url: questionVideo, size: questionVideoSize } = videoCell ? getVideoUrlA
                     questionNumber: 1,
                     questionText: "",
                     questionVideo: "",
-                    questionVideoSize: "", 
                     questionAudio: "",
                     questionImage: "",
                     difficultiesMap: new Map()
@@ -163,7 +152,6 @@ const { url: questionVideo, size: questionVideoSize } = videoCell ? getVideoUrlA
                     difficultyLevel: diffKey === "default" ? null : diffKey,
                     questionText: "",
                     questionVideo: "",
-                    questionVideoSize: "",
                     questionAudio: "",
                     questionImage: "",
                     answers: []
@@ -178,10 +166,9 @@ const { url: questionVideo, size: questionVideoSize } = videoCell ? getVideoUrlA
             if (questionText && !difficultyData.questionText) {
                 difficultyData.questionText = questionText;
             }
-           if (questionVideo && !difficultyData.questionVideo) {
-    difficultyData.questionVideo = questionVideo;
-    difficultyData.questionVideoSize = questionVideoSize;
-}
+            if (questionVideo && !difficultyData.questionVideo) {
+                difficultyData.questionVideo = questionVideo;
+            }
             if (questionAudio && !difficultyData.questionAudio) {
                 difficultyData.questionAudio = questionAudio;
             }
@@ -194,9 +181,8 @@ const { url: questionVideo, size: questionVideoSize } = videoCell ? getVideoUrlA
                 currentQuestionData.questionText = questionText;
             }
             if (questionVideo && !currentQuestionData.questionVideo) {
-    currentQuestionData.questionVideo = questionVideo;
-    currentQuestionData.questionVideoSize = questionVideoSize;
-}
+                currentQuestionData.questionVideo = questionVideo;
+            }
             if (questionAudio && !currentQuestionData.questionAudio) {
                 currentQuestionData.questionAudio = questionAudio;
             }
@@ -269,7 +255,6 @@ const { url: questionVideo, size: questionVideoSize } = videoCell ? getVideoUrlA
                 difficultyLevel: null,
                 questionText: questionData.questionText,
                 questionVideo: questionData.questionVideo,
-                questionVideoSize: questionData.questionVideoSize || "",
                 questionAudio: questionData.questionAudio,
                 questionImage: questionData.questionImage,
                 answers: []
@@ -283,7 +268,6 @@ const { url: questionVideo, size: questionVideoSize } = videoCell ? getVideoUrlA
                     // Use difficulty-specific question text if available, otherwise fallback to general
                     questionText: diffData.questionText || questionData.questionText,
                     questionVideo: diffData.questionVideo || questionData.questionVideo,
-                    questionVideoSize: diffData.questionVideoSize || questionData.questionVideoSize || "",
                     questionAudio: diffData.questionAudio || questionData.questionAudio,
                     questionImage: diffData.questionImage || questionData.questionImage,
                     answers: diffData.answers
@@ -351,34 +335,34 @@ const validateIngestionService = async (courseId, sheetId, sheetTitle) => {
                 const cells = row.values || [];
                 // const get = (col) => cells[col]?.formattedValue?.trim() || "";
                 const get = (col) => {
-    const cell = cells[col];
-    if (!cell) return "";
-    
-    // For smart chips (Drive files, etc.) - the URL is in chipRuns
-    if (cell.chipRuns && cell.chipRuns.length > 0) {
-        for (const chipRun of cell.chipRuns) {
-            const chip = chipRun.chip;
-            if (chip) {
-                // For Drive file chips
-                if (chip.richLinkProperties?.uri) {
-                    return chip.richLinkProperties.uri.trim();
-                }
-                // For person chips (email)
-                if (chip.personProperties?.email) {
-                    return chip.personProperties.email.trim();
-                }
-            }
-        }
-    }
-    
-    // For regular hyperlinks
-    if (cell.hyperlink) {
-        return cell.hyperlink.trim();
-    }
-    
-    // For regular text
-    return cell.formattedValue?.trim() || "";
-};
+                    const cell = cells[col];
+                    if (!cell) return "";
+
+                    // For smart chips (Drive files, etc.) - the URL is in chipRuns
+                    if (cell.chipRuns && cell.chipRuns.length > 0) {
+                        for (const chipRun of cell.chipRuns) {
+                            const chip = chipRun.chip;
+                            if (chip) {
+                                // For Drive file chips
+                                if (chip.richLinkProperties?.uri) {
+                                    return chip.richLinkProperties.uri.trim();
+                                }
+                                // For person chips (email)
+                                if (chip.personProperties?.email) {
+                                    return chip.personProperties.email.trim();
+                                }
+                            }
+                        }
+                    }
+
+                    // For regular hyperlinks
+                    if (cell.hyperlink) {
+                        return cell.hyperlink.trim();
+                    }
+
+                    // For regular text
+                    return cell.formattedValue?.trim() || "";
+                };
                 const rowNum = r + 1;
 
                 // Check if this row starts a new activity (has UPLOAD checkbox)
@@ -610,34 +594,34 @@ const processIngestionService = async (courseId, sheetId, sheetTitle) => {
             const cells = row.values || [];
             // const get = (col) => cells[col]?.formattedValue?.trim() || "";
             const get = (col) => {
-    const cell = cells[col];
-    if (!cell) return "";
-    
-    // For smart chips (Drive files, etc.) - the URL is in chipRuns
-    if (cell.chipRuns && cell.chipRuns.length > 0) {
-        for (const chipRun of cell.chipRuns) {
-            const chip = chipRun.chip;
-            if (chip) {
-                // For Drive file chips
-                if (chip.richLinkProperties?.uri) {
-                    return chip.richLinkProperties.uri.trim();
+                const cell = cells[col];
+                if (!cell) return "";
+
+                // For smart chips (Drive files, etc.) - the URL is in chipRuns
+                if (cell.chipRuns && cell.chipRuns.length > 0) {
+                    for (const chipRun of cell.chipRuns) {
+                        const chip = chipRun.chip;
+                        if (chip) {
+                            // For Drive file chips
+                            if (chip.richLinkProperties?.uri) {
+                                return chip.richLinkProperties.uri.trim();
+                            }
+                            // For person chips (email)
+                            if (chip.personProperties?.email) {
+                                return chip.personProperties.email.trim();
+                            }
+                        }
+                    }
                 }
-                // For person chips (email)
-                if (chip.personProperties?.email) {
-                    return chip.personProperties.email.trim();
+
+                // For regular hyperlinks
+                if (cell.hyperlink) {
+                    return cell.hyperlink.trim();
                 }
-            }
-        }
-    }
-    
-    // For regular hyperlinks
-    if (cell.hyperlink) {
-        return cell.hyperlink.trim();
-    }
-    
-    // For regular text
-    return cell.formattedValue?.trim() || "";
-};
+
+                // For regular text
+                return cell.formattedValue?.trim() || "";
+            };
             const rowNum = r + 1;
 
             // Check if this row starts a new activity (has UPLOAD checkbox)
@@ -867,35 +851,35 @@ const deleteActivitiesService = async (courseId, sheetId, sheetTitle, processDel
             const row = rows[r];
             const cells = row.values || [];
             // const get = (col) => cells[col]?.formattedValue?.trim() || "";
-           const get = (col) => {
-    const cell = cells[col];
-    if (!cell) return "";
-    
-    // For smart chips (Drive files, etc.) - the URL is in chipRuns
-    if (cell.chipRuns && cell.chipRuns.length > 0) {
-        for (const chipRun of cell.chipRuns) {
-            const chip = chipRun.chip;
-            if (chip) {
-                // For Drive file chips
-                if (chip.richLinkProperties?.uri) {
-                    return chip.richLinkProperties.uri.trim();
+            const get = (col) => {
+                const cell = cells[col];
+                if (!cell) return "";
+
+                // For smart chips (Drive files, etc.) - the URL is in chipRuns
+                if (cell.chipRuns && cell.chipRuns.length > 0) {
+                    for (const chipRun of cell.chipRuns) {
+                        const chip = chipRun.chip;
+                        if (chip) {
+                            // For Drive file chips
+                            if (chip.richLinkProperties?.uri) {
+                                return chip.richLinkProperties.uri.trim();
+                            }
+                            // For person chips (email)
+                            if (chip.personProperties?.email) {
+                                return chip.personProperties.email.trim();
+                            }
+                        }
+                    }
                 }
-                // For person chips (email)
-                if (chip.personProperties?.email) {
-                    return chip.personProperties.email.trim();
+
+                // For regular hyperlinks
+                if (cell.hyperlink) {
+                    return cell.hyperlink.trim();
                 }
-            }
-        }
-    }
-    
-    // For regular hyperlinks
-    if (cell.hyperlink) {
-        return cell.hyperlink.trim();
-    }
-    
-    // For regular text
-    return cell.formattedValue?.trim() || "";
-};
+
+                // For regular text
+                return cell.formattedValue?.trim() || "";
+            };
             const rowNum = r + 1;
 
             // Check if this row starts a new activity (has UPLOAD checkbox)
