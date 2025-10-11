@@ -136,7 +136,7 @@ const ingestion = async (activities) => {
 
                                     // Compress video and upload to Azure
                                     console.log(`Video downloaded successfully for activity from "${activity.startRow}" to "${activity.endRow}"`);
-                                    compressedVideoUrl = await compressVideo(videoFile);
+                                    compressedVideoUrl = await compressVideo(videoFile, question.questionVideoSize);
                                 }
 
                                 if (question.questionImage) {

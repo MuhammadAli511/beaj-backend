@@ -79,7 +79,7 @@ const ingestion = async (activities) => {
 
                                 // Compress video and upload to Azure
                                 console.log(`Video downloaded successfully for activity from "${activity.startRow}" to "${activity.endRow}"`);
-                                const compressedVideoUrl = await compressVideo(videoFile);
+                                const compressedVideoUrl = await compressVideo(videoFile, question.questionVideoSize);
 
                                 // Check if document file already exists for this lesson
                                 const existingDocFiles = await documentFileRepository.getByLessonId(lessonId);
