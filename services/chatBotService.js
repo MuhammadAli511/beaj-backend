@@ -196,7 +196,7 @@ const webhookService = async (body, res) => {
                     }
                 }
                 // MAIN COURSE START FLOW - SENDING "START"
-                if (text_message_types.includes(message.type) && trigger_course_acceptable_messages.includes(messageContent.toLowerCase()) && currentUserState.dataValues.currentCourseId == null) {
+                if (text_message_types.includes(message.type) && trigger_course_acceptable_messages.includes(messageContent.toLowerCase())) {
                     const courseStarted = await startCourseForUser(profileId, userMobileNumber, beaj_team_numbers);
                     if (courseStarted != "french") {
                         return;
@@ -205,7 +205,7 @@ const webhookService = async (body, res) => {
                     }
                 }
                 // MAIN COURSE START FLOW - TRIGGERING ON "START"
-                if (text_message_types.includes(message.type) && course_start_acceptable_messages.includes(messageContent.toLowerCase()) && currentUserState.dataValues.currentCourseId == null) {
+                if (text_message_types.includes(message.type) && course_start_acceptable_messages.includes(messageContent.toLowerCase())) {
                     if (course_start_states.includes(currentUserState.dataValues.engagement_type)) {
                         let startingLesson = null;
                         if (currentUserState.dataValues.engagement_type != "Course Start") {
