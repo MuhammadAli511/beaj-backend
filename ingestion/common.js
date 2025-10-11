@@ -260,8 +260,6 @@ const commonValidation = async (activity) => {
 
         // If questionVideo exists should be a valid video url
         if (question.questionVideo) {
-            console.log("Validating question video URL:", question.questionVideo);
-            console.log("Using service account email:", question.questionVideoSize);
             const res = await validateDriveUrl(question.questionVideo, "video");
             addPermissionError(res, "question video");
 

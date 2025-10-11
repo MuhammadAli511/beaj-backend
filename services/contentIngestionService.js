@@ -72,17 +72,6 @@ const extractStructuredActivityData = (rows, activityStartRow, activityEndRow) =
     // For regular text
     return cell.formattedValue?.trim() || "";
 };
-
-
-const getVideoData = (col) => {
-    const cell = cells[col];
-    if (!cell) return "";
-    
-    // Always return the formattedValue for video columns
-    // This preserves both the URL/chip and the size information
-    return cell.formattedValue?.trim() || "";
-};
-
         // Check if this row starts a new question (has Q No)
         const questionNumber = get(columns_order.Q_NO);
         if (questionNumber) {
