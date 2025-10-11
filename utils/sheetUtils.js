@@ -983,6 +983,7 @@ const isAnswerBold = (answerCell) => {
 const compressSticker = async (stickerFileObject) => {
     const MAX_SIZE_KB = 100;
     const MAX_SIZE_BYTES = MAX_SIZE_KB * 1024;
+    const STICKER_SIZE = 512; // Target size for stickers
 
     if (!stickerFileObject || !stickerFileObject.buffer) {
         throw new Error("Invalid sticker file object (missing buffer)");
@@ -995,26 +996,28 @@ const compressSticker = async (stickerFileObject) => {
     const originalSizeKB = (stickerFileObject.buffer.length / 1024).toFixed(2);
     console.log(`Sticker size: ${originalSizeKB}KB`);
 
-    // Case 1: Already under 100KB
-    if (stickerFileObject.buffer.length <= MAX_SIZE_BYTES) {
-        return await azureBlobStorage.uploadToBlobStorage(
-            stickerFileObject.buffer,
-            fileNameFinal,
-            "image/webp"
-        );
-    }
-
-    // Case 2: Compress with sharp
+    // Always resize to 512x512 first, then compress if needed
     let quality = 90;
     let compressedBuffer = await sharp(stickerFileObject.buffer)
+        .resize(STICKER_SIZE, STICKER_SIZE, {
+            fit: 'cover',
+            position: 'center'
+        })
         .webp({ quality })
         .toBuffer();
 
+    console.log(`After resize to ${STICKER_SIZE}x${STICKER_SIZE}: ${(compressedBuffer.length / 1024).toFixed(2)}KB`);
+
+    // If still too large, reduce quality
     let attempts = 0;
     while (compressedBuffer.length > MAX_SIZE_BYTES && quality > 10 && attempts < 8) {
         quality -= 10;
         attempts++;
         compressedBuffer = await sharp(stickerFileObject.buffer)
+            .resize(STICKER_SIZE, STICKER_SIZE, {
+                fit: 'cover',
+                position: 'center'
+            })
             .webp({ quality })
             .toBuffer();
         console.log(
@@ -1022,20 +1025,18 @@ const compressSticker = async (stickerFileObject) => {
         );
     }
 
-    // If still too large → resize
-    let resizeAttempts = 0;
-    let width = 512; // default resize base
-    while (compressedBuffer.length > MAX_SIZE_BYTES && resizeAttempts < 5) {
-        resizeAttempts++;
-        width = Math.floor(width * 0.8);
-
+    // If still too large, try more aggressive compression
+    if (compressedBuffer.length > MAX_SIZE_BYTES) {
+        quality = 50; // More aggressive quality reduction
         compressedBuffer = await sharp(stickerFileObject.buffer)
-            .resize({ width })
+            .resize(STICKER_SIZE, STICKER_SIZE, {
+                fit: 'cover',
+                position: 'center'
+            })
             .webp({ quality })
             .toBuffer();
-
         console.log(
-            `Resize Attempt ${resizeAttempts}: Width=${width}, Size=${(compressedBuffer.length / 1024).toFixed(2)}KB`
+            `Final attempt: Quality=${quality}, Size=${(compressedBuffer.length / 1024).toFixed(2)}KB`
         );
     }
 
